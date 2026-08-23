@@ -346,7 +346,7 @@
       </div>
       <div id="colTabs">
         <button class="ctab sel" data-t="all">すべて</button>
-        <button class="ctab" data-t="tw">おかし</button>
+        <button class="ctab" data-t="tw">お菓子</button>
         <button class="ctab" data-t="en">敵</button>
         <button class="ctab" data-t="ch">仲間</button>
         <button class="ctab" data-t="lg">伝説</button>
@@ -1439,7 +1439,7 @@ function buildShop(){
 const EGGS = [
   { id:'e13', name:'ふつうの たまご',   lv:[1,2,3], cost:400,  c1:'#fff0f7', c2:'#ff8fc4' },
   { id:'e45', name:'きらきら たまご',   lv:[4,5],   cost:1200, c1:'#eef7ff', c2:'#9ed8ff' },
-  { id:'e6',  name:'でんせつの たまご', lv:[6],     cost:3000, c1:'#fff8e4', c2:'#ffd76e' },
+  { id:'e6',  name:'伝説の たまご', lv:[6],     cost:3000, c1:'#fff8e4', c2:'#ffd76e' },
   { id:'e7',  name:'にじいろの たまご', lv:[7],     cost:8000, c1:'#fdf0ff', c2:'#c9a7ff' },
 ];
 /* ダブりが 出たときに もらえる かけら と、かけらで 交換するのに いる数 */
@@ -2288,7 +2288,7 @@ const BONUS_EMO = ['🍬','🍩','🍪','🧁','🍓','🍭','🍰','🍮'];
 function startBonus(){
   bonus = { spawnLeft: 30, total: 30, spT: 0.4, items: [], got: 0 };
   btnWave.disabled = true;
-  btnWave.innerHTML = '🎁 ボーナスタイム！<br>おかしをタップ！';
+  btnWave.innerHTML = '🎁 ボーナスタイム！<br>お菓子をタップ！';
   floatTx(COLS*CELL/2, ROWS*CELL*0.35, '🎁 ボーナスウェーブ！', '#ff8fc4');
   floatTx(COLS*CELL/2, ROWS*CELL*0.45, '全部タップ！ひとつも落とさないで', '#b98ae0');
   beep(700,.12,'triangle',.06);
@@ -7549,7 +7549,7 @@ $('btnPw').innerHTML = keySvg(23, INLINE) + ' 合言葉・着せかえ';
    ========================================================== */
 const helpOv = $('helpOv'), helpBody = $('helpBody'), btnHelp = $('btnHelp'), helpClose = $('helpClose');
 const TOWER_TIPS = {
-  candy: '連射が速い基本のおかし。どこにでも',
+  candy: '連射が速い基本のお菓子。どこにでも',
   ice:   '当てた敵を遅くする。速い敵（あいすぼう・よるクッキー）の通り道に',
   choco: 'まわりをまとめて攻撃。群れ・ぶあついアーマー持ちに',
   star:  '遠くまで届く一撃。道の真ん中に置くと大活躍',
@@ -7560,9 +7560,9 @@ function buildHelp(){
     '<p>ウェーブが終わると <b>10秒で自動的に次が始まります</b>。' +
     '待ちきれないときはボタンをタップすると、<b>残り秒数×ボーナス⭐</b>がもらえます。' +
     '準備を取るか、⭐を取るか、毎回の駆け引き！</p></div>';
-  h += '<div class="hSec"><h3>🍬 おかし（タワー）の得意分野</h3><ul>' +
+  h += '<div class="hSec"><h3>🍬 お菓子（タワー）の得意分野</h3><ul>' +
     ORDER.map(k => '<li>' + TOWERS[k].ic + ' <b>' + TOWERS[k].name + '</b>：' + TOWER_TIPS[k] + '</li>').join('') +
-    '</ul><p style="margin-top:4px">置いたおかしをタップ →「強化」でレベルアップ。' +
+    '</ul><p style="margin-top:4px">置いたお菓子をタップ →「強化」でレベルアップ。' +
     '<b>レベルに上限はありません</b>。もぐったウェーブに応じて上限が伸びるので、' +
     '深く進むほど強く育てられます（⭐が続くかぎり）。</p></div>';
   h += '<div class="hSec"><h3>👾 敵のヒント</h3><ul>' +
@@ -7583,7 +7583,7 @@ function buildHelp(){
     '<li>早よびボーナスで⭐を稼いで、どんどん強化する</li>' +
     '<li>ワザは<b>ここぞ</b>で使う。ボス・ラッシュ・ハートのピンチに</li>' +
     '<li>20ウェーブごとのクリアで、仲間とハートがもらえます</li>' +
-    '<li><b>20ウェーブごと</b>のクリアのあとに<b>🎁ボーナスウェーブ</b>！降ってくるおかしを ' +
+    '<li><b>20ウェーブごと</b>のクリアのあとに<b>🎁ボーナスウェーブ</b>！降ってくるお菓子を ' +
     '全部タップすると💗+1。1こでも落としたらそこで終わりです</li>' +
     '<li>もらった💗は <b>20を超えて貯められます</b>（99こまで）</li>' +
     '<li>💗は<b>あと何回遊べるか</b>。負けると1こ減ります。敵に通されて減るのは上の ' +
@@ -9618,7 +9618,7 @@ function render(){
       ctx.restore();
       ctx.font = "700 " + (CELL*0.3) + "px 'Hiragino Maru Gothic ProN',sans-serif";
       ctx.fillStyle = '#b98ae0';
-      ctx.fillText('おかしを おとしちゃった…', W2/2, by + bh*0.68);
+      ctx.fillText('お菓子を おとしちゃった…', W2/2, by + bh*0.68);
       ctx.fillText('ゲット ' + bonus.got + 'こ', W2/2, by + bh*0.88);
     } else {
       for (const it of bonus.items){
