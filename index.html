@@ -251,7 +251,7 @@
   #kingCv{width:100%;border-radius:14px;box-shadow:0 6px 18px rgba(180,130,175,.35)}
   #kingCap{text-align:center;font-size:11px;opacity:.7;line-height:1.5}
 
-  /* ---------- あいことば・きせかえ ---------- */
+  /* ---------- 合言葉・着せかえ ---------- */
   #pwRow{text-align:center}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:14px;overflow-y:auto;z-index:5}
@@ -324,7 +324,7 @@
     </div>
     <div id="pwOv">
       <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)">
-        <div style="flex:1">🔑 あいことば・きせかえ</div>
+        <div style="flex:1">🔑 合言葉・着せかえ</div>
         <button class="mini gray" id="pwClose">閉じる</button>
       </div>
       <div id="pwBody"></div>
@@ -349,7 +349,7 @@
         <button class="ctab" data-t="tw">おかし</button>
         <button class="ctab" data-t="en">敵</button>
         <button class="ctab" data-t="ch">仲間</button>
-        <button class="ctab" data-t="lg">でんせつ</button>
+        <button class="ctab" data-t="lg">伝説</button>
         <button class="ctab" data-t="fr">👭 友だち</button>
         <button class="ctab" data-t="g1">★1</button>
         <button class="ctab" data-t="g2">★2</button>
@@ -360,8 +360,8 @@
         <button class="ctab" data-t="g7">🌈7</button>
       </div>
       <div id="colStats"></div>
-      <div id="colHint" style="display:none">📌 あつめたなかまをタップすると ワザバーに はったり はがしたり できるよ（7こまで）</div>
-      <div id="colDone" style="display:none">🏰 おかしの国が かんせいしたよ！ みんな あつまった 🎉</div>
+      <div id="colHint" style="display:none">📌 集めた仲間をタップすると ワザバーに貼ったり はがしたりできます（7こまで）</div>
+      <div id="colDone" style="display:none">🏰 おかしの国が完成しました！ みんな集まった 🎉</div>
       <div id="colGrid"></div>
       <div id="colTotal"></div>
     </div>
@@ -387,8 +387,8 @@
     <input id="avName" maxlength="8" placeholder="なまえ（8もじまで）">
     <div id="avRows"></div>
     <div id="avBtns">
-      <button class="mini" id="avSave">これで けってい ✨</button>
-      <button class="mini" id="avShare">📤 LINEで おくる</button>
+      <button class="mini" id="avSave">これで決定 ✨</button>
+      <button class="mini" id="avShare">📤 LINEで送る</button>
     </div>
     <div id="avMsg"></div>
     <div id="avFriends"></div>
@@ -434,7 +434,7 @@
     <button class="btn sm" id="btnSnd" aria-label="おと"></button>
   </div>
 
-  <div id="pwRow"><button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> あいことば・きせかえ</button></div>
+  <div id="pwRow"><button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> 合言葉・着せかえ</button></div>
 
   <div id="tip">ウェーブは自動で進みます。ボタンで「早よび」すると⭐ボーナス✨<br>遊びかたは <span class="bookIc"></span> を見てね</div>
 
@@ -703,13 +703,13 @@ const SP_THEMES = {
   },
 };
 const CODES = {
-  'さくらまんかい':       { theme:'sakura',    msg:'🌸 限定テーマ「さくらのくに」が とどいた！' },
-  'なつまつり':           { theme:'summer',    msg:'🎆 限定テーマ「なつまつりのよる」が とどいた！' },
-  'とりっくおあとりーと': { theme:'halloween', msg:'🎃 限定テーマ「おばけのおかしまつり」が とどいた！' },
-  'めりーくりすます':     { theme:'christmas', msg:'🎄 限定テーマ「せいなるよるのくに」が とどいた！' },
-  'あまいはーと':         { theme:'valentine', msg:'💝 限定テーマ「チョコとハートのくに」が とどいた！' },
+  'さくらまんかい':       { theme:'sakura',    msg:'🌸 限定テーマ「さくらのくに」が届きました！' },
+  'なつまつり':           { theme:'summer',    msg:'🎆 限定テーマ「なつまつりのよる」が届きました！' },
+  'とりっくおあとりーと': { theme:'halloween', msg:'🎃 限定テーマ「おばけのおかしまつり」が届きました！' },
+  'めりーくりすます':     { theme:'christmas', msg:'🎄 限定テーマ「せいなるよるのくに」が届きました！' },
+  'あまいはーと':         { theme:'valentine', msg:'💝 限定テーマ「チョコとハートのくに」が届きました！' },
   // 作者用のかくしコード：SNS動画の撮影に使う演出よびだし
-  'さつえいすたじお':     { studio: true,      msg:'📹 さつえいスタジオが つかえるようになった！' },
+  'さつえいすたじお':     { studio: true,      msg:'📹 撮影スタジオが使えるようになりました！' },
 };
 let redeemed = [], themeSel = '', themeOverride = null;
 try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catch(e){}
@@ -731,16 +731,16 @@ const themeOf = w => themeOverride ? themeOverride.th
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
    ========================================================== */
 const CHARS = [
-  { id:'purin',  name:'プリン',         title:'プリンのきし',       fx:'ワザ「まもりのたて」がつかえる' },
-  { id:'choco',  name:'チョコ',         title:'ゆうかんなトリュフ', fx:'ワザ「チョコばくだん」がつかえる' },
-  { id:'gumgum', name:'グミグミ',       title:'ぷるぷるグミ',       fx:'ワザ「ぷるぷるスロー」がつかえる' },
-  { id:'donut',  name:'ドーナツ',       title:'いやしのパンやさん', fx:'ワザ「ハートかいふく」がつかえる' },
-  { id:'taffy',  name:'タフィー',       title:'ふえふきキャンディ', fx:'ワザ「ふえのマーチ」＋そくどUP' },
+  { id:'purin',  name:'プリン',         title:'プリンのきし',       fx:'ワザ「まもりのたて」が使える' },
+  { id:'choco',  name:'チョコ',         title:'ゆうかんなトリュフ', fx:'ワザ「チョコばくだん」が使える' },
+  { id:'gumgum', name:'グミグミ',       title:'ぷるぷるグミ',       fx:'ワザ「ぷるぷるスロー」が使える' },
+  { id:'donut',  name:'ドーナツ',       title:'いやしのパンやさん', fx:'ワザ「ハートかいふく」が使える' },
+  { id:'taffy',  name:'タフィー',       title:'ふえふきキャンディ', fx:'ワザ「ふえのマーチ」＋速度UP' },
   { id:'cake',   name:'ケーキちゃん',   title:'ちいさなケーキ',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
-  { id:'fairy',  name:'ベリーようせい', title:'マカロンのようせい', fx:'ワザ「ようせいのこな」＋はんい+5%' },
+  { id:'fairy',  name:'ベリーようせい', title:'マカロンのようせい', fx:'ワザ「ようせいのこな」＋範囲+5%' },
   { id:'prince', name:'ベリーおうじ',   title:'マカロンのおうじ',   fx:'ワザ「いちごのはた」＋おほしさま+10%' },
-  { id:'apple',  name:'アップルひめ',   title:'あまいひめさま',     fx:'ワザ「りんごのいやし」＋かいふく+3' },
-  { id:'queen',  name:'おうひさま',     title:'おうさまのおきさき', fx:'ワザ「おうひのいのり」＋ねだん-20%' },
+  { id:'apple',  name:'アップルひめ',   title:'あまいひめさま',     fx:'ワザ「りんごのいやし」＋回復+3' },
+  { id:'queen',  name:'おうひさま',     title:'おうさまのおきさき', fx:'ワザ「おうひのいのり」＋値段-20%' },
   { id:'king',   name:'おうさま',       title:'ケーキのおうさま',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
 ];
 
@@ -758,11 +758,11 @@ const DEX_ENEMIES = Object.keys(ENEMIES).map(k => ({ id:'en_'+k, name:ENEMIES[k]
    ========================================================== */
 const LEGENDS = [
   { id:'whale',   name:'ほしのクジラ',       title:'ほしぞらのでんせつ', wave:60,
-    fx:'しゅくふく：はじまりのハート+2',                 tease:'ウェーブ60で なにかが おきる…' },
+    fx:'祝福：はじまりのハート+2',                 tease:'ウェーブ60で なにかが おきる…' },
   { id:'phoenix', name:'ふしちょう',         title:'ほのおのでんせつ',   wave:120,
-    fx:'しゅくふく：1プレイに1回 ハート0でふみとどまる', tease:'ウェーブ120で なにかが おきる…' },
+    fx:'祝福：1プレイに1回 ハート0でふみとどまる', tease:'ウェーブ120で なにかが おきる…' },
   { id:'chronos', name:'クロノスちょうろう', title:'ときのでんせつ',     wave:200,
-    fx:'しゅくふく：はやよびのまち時間+3びょう',         tease:'ウェーブ200で なにかが おきる…' },
+    fx:'祝福：早よびの待ち時間+3秒',         tease:'ウェーブ200で なにかが おきる…' },
 ];
 const hasLg = id => !!dex['lg_' + id];
 /* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
@@ -1533,7 +1533,7 @@ function buildEggScreen(){
   eggBar.innerHTML =
     '<div>おほしさま<b>⭐' + stars + '</b></div>' +
     '<div>かけら<b>🩷' + shards + '</b></div>' +
-    '<div>なかま<b>' + owned + ' / ' + all + '</b></div>';
+    '<div>仲間<b>' + owned + ' / ' + all + '</b></div>';
   eggList.innerHTML = '';
   for (const e of EGGS){
     const pool = eggPool(e), left = pool.filter(o => !hasGen(o)).length;
@@ -1549,13 +1549,13 @@ function buildEggScreen(){
     eggList.append(d);
   }
   // かくりつ表示。Apple の 審査でも 日本の 法律でも 出すことに なっている
-  eggRates.innerHTML = '<b>でてくる かくりつ</b><br>' + EGGS.map(e => {
+  eggRates.innerHTML = '<b>出てくる確率</b><br>' + EGGS.map(e => {
     const n = eggPool(e).length;
     return '・' + e.name + '：★' + e.lv.join('と') + 'の ' + n + '人から 1人。' +
-           'どの子も おなじ かくりつ（' + (100/n).toFixed(1) + '%）';
+           'どの子も同じ確率（' + (100/n).toFixed(1) + '%）';
   }).join('<br>') +
-  '<br>・すでに いる子が でたときは <b>かけら</b>に なるよ' +
-  '<br>・まだ いない子が のこっていれば、かならず その中から でるよ';
+  '<br>・すでにいる子が出たときは <b>かけら</b>になります' +
+  '<br>・まだいない子が残っていれば、かならず その中から出ます';
   buildShardBox();
 }
 
@@ -1565,7 +1565,7 @@ function buildShardBox(){
   const wrap = document.createElement('div');
   wrap.style.cssText = 'background:rgba(255,255,255,.75);border-radius:14px;padding:9px;font-size:11px';
   wrap.innerHTML = '<div style="color:var(--pink-d);font-weight:700;margin-bottom:5px">' +
-    '🩷 かけらで こうかん（いま ' + shards + 'こ）</div>' +
+    '🩷 かけらで交換（いま ' + shards + 'こ）</div>' +
     '<div style="font-size:10px;opacity:.7;margin-bottom:6px">' +
     '欲しい★を選ぶと、まだいない子から1人もらえます</div>';
   const row = document.createElement('div');
@@ -1596,7 +1596,7 @@ function buildShardBox(){
 function buyEgg(e){
   if (stars < e.cost){
     beep(160,.09,'square',.03,.7);
-    eggStage.innerHTML = '<div style="font-size:12px;color:#e06f9c">おほしさまが たりない…（⭐' +
+    eggStage.innerHTML = '<div style="font-size:12px;color:#e06f9c">おほしさまが足りません（⭐' +
       e.cost + '）</div>';
     return;
   }
@@ -1619,9 +1619,9 @@ function showEggResult(res, fromShard, e){
     '<div style="font-size:15px;color:var(--pink-d);font-weight:700;margin-top:4px">' + o.name + '</div>' +
     '<div style="font-size:11px;opacity:.7">★' + o.lv + (o.cells >= 4 ? '・2×2' : '') + '</div>' +
     (dup
-      ? '<div style="font-size:12px;color:#8a7a94;margin-top:5px">すでに いた子だったので<br>' +
-        '🩷 かけらが ' + res.shard + 'こ ふえた！</div>'
-      : '<div style="font-size:13px;color:#ff5f8a;margin-top:5px">✨ なかまに なった！ ✨</div>'));
+      ? '<div style="font-size:12px;color:#8a7a94;margin-top:5px">すでにいる子だったので<br>' +
+        '🩷 かけらが ' + res.shard + 'こ増えた！</div>'
+      : '<div style="font-size:13px;color:#ff5f8a;margin-top:5px">✨ 仲間になった！ ✨</div>'));
   eggStage.append(box);
   if (!dup){
     celebrate({ conf: 60, rings: true, fanfare: 1 });
@@ -1751,14 +1751,14 @@ function avPreview(){
 /* えらぶ ボタンの ならび。色は まるい 見本、それ以外は ことばで */
 function avBuildRows(){
   const rows = [
-    ['はだ',   's',  AV_SKIN,  'sw'],
-    ['かみがた','h',  AV_HAIR,  'tx'],
-    ['かみ色', 'hc', AV_HAIRC, 'sw'],
-    ['め',     'e',  AV_EYE,   'tx'],
-    ['くち',   'm',  AV_MOUTH, 'tx'],
-    ['ふく',   'w',  AV_WEAR,  'tx'],
-    ['ふく色', 'wc', AV_WEARC, 'sw'],
-    ['かざり', 'a',  AV_ACC,   'tx'],
+    ['肌',     's',  AV_SKIN,  'sw'],
+    ['髪型',   'h',  AV_HAIR,  'tx'],
+    ['髪色',   'hc', AV_HAIRC, 'sw'],
+    ['目',     'e',  AV_EYE,   'tx'],
+    ['口',     'm',  AV_MOUTH, 'tx'],
+    ['服',     'w',  AV_WEAR,  'tx'],
+    ['服の色', 'wc', AV_WEARC, 'sw'],
+    ['飾り',   'a',  AV_ACC,   'tx'],
   ];
   avRows.innerHTML = '';
   for (const [label, key, list, kind] of rows){
@@ -1788,7 +1788,7 @@ function avBuildFriends(){
   if (!avFriends.length) return;
   const t = document.createElement('div');
   t.style.cssText = 'grid-column:1/-1;font-size:11px;color:#b98ae0;text-align:center';
-  t.textContent = '👭 むかえた ともだち（' + avFriends.length + '人）';
+  t.textContent = '👭 迎えた友だち（' + avFriends.length + '人）';
   avFrEl.append(t);
   avFriends.forEach((f, i) => {
     const d = document.createElement('div'); d.className = 'avFr';
@@ -1800,7 +1800,7 @@ function avBuildFriends(){
     g.setTransform(dpr,0,0,dpr,0,0); portraitShade(g, S);
     d.append(c);
     d.insertAdjacentHTML('beforeend', '<div>' + f.n + '</div>' +
-      '<div class="avFrX" title="はずす">✖</div>');
+      '<div class="avFrX" title="外す">✖</div>');
     d.querySelector('.avFrX').onclick = () => {
       avFriends.splice(i, 1); avSave(); avBuildFriends(); beep(400,.06,'triangle',.03);
     };
@@ -1817,7 +1817,7 @@ function openAvatar(){
 }
 avNameEl.oninput = () => { avEdit.n = avNameEl.value.slice(0, 8); };
 $('avSave').onclick = () => {
-  if (!avNameEl.value.trim()){ avMsg.textContent = 'なまえを いれてね'; beep(160,.09,'square',.03,.7); return; }
+  if (!avNameEl.value.trim()){ avMsg.textContent = '名前を入力'; beep(160,.09,'square',.03,.7); return; }
   avEdit.n = avNameEl.value.trim().slice(0, 8);
   avMe = { ...avEdit };
   avSave(); buildShop(); syncShop();
@@ -1826,16 +1826,16 @@ $('avSave').onclick = () => {
 };
 /* LINEへ。line.me の 共有リンクは アプリを 入れていれば そのまま ひらく */
 $('avShare').onclick = () => {
-  if (!avNameEl.value.trim()){ avMsg.textContent = 'なまえを いれてね'; beep(160,.09,'square',.03,.7); return; }
+  if (!avNameEl.value.trim()){ avMsg.textContent = '名前を入力'; beep(160,.09,'square',.03,.7); return; }
   avEdit.n = avNameEl.value.trim().slice(0, 8);
   const code = avEncode(avEdit);
   const url = location.origin + location.pathname + '?f=' + encodeURIComponent(code);
-  const text = avEdit.n + ' が おかしの国に あそびにきたよ！🎀\n' +
-               'このリンクを開くと ' + avEdit.n + ' と たたかえるよ\n' + url +
-               '\n\n（あいことば：' + code + '）';
+  const text = avEdit.n + ' が おかしの国に遊びに来ました！🎀\n' +
+               'このリンクを開くと ' + avEdit.n + ' と戦えます\n' + url +
+               '\n\n（合言葉：' + code + '）';
   const share = 'https://line.me/R/msg/text/?' + encodeURIComponent(text);
   window.open(share, '_blank', 'noopener');
-  avMsg.innerHTML = 'LINEを ひらいたよ📤<br>とどかないときは あいことばを コピーして おくってね';
+  avMsg.innerHTML = 'LINEを開きました📤<br>届かないときは 合言葉をコピーして送ってください';
   beep(700,.1,'triangle',.04);
 };
 /* リンク（?f=...）で ひらいたら むかえる。
@@ -1860,7 +1860,7 @@ function avFromLink(){
   if (!a) return;
   if (avAddFriend(a)){
     // ばんめんが できてから 知らせる（起動ちょくごは まだ 何も 見えていない）
-    setTimeout(() => floatTx(cx(4), cy(5), a.n + 'が あそびにきた！', '#b98ae0'), 900);
+    setTimeout(() => floatTx(cx(4), cy(5), a.n + 'が遊びに来た！', '#b98ae0'), 900);
   }
   // dbg など ほかの しるしは のこす（f= だけ 消す）
   try{
@@ -1928,16 +1928,16 @@ function buildPick(){
       c.append(avThumb(avMe, 56));
       d.append(c);
       d.insertAdjacentHTML('beforeend',
-        '<div style="flex:1"><div class="pkN">🎀 ' + avMe.n + '（じぶん）</div>' +
+        '<div style="flex:1"><div class="pkN">🎀 ' + avMe.n + '（自分）</div>' +
         '<div class="pkC">⭐' + AV_TOWER.cost + '</div>' +
         '<div class="pkS">' + AV_TOWER.role + '・攻撃' + AV_TOWER.dmg +
         '・範囲' + AV_TOWER.range.toFixed(1) + '・2×2</div></div>' +
-        '<div style="font-size:11px;color:#b98ae0">つくりなおす ▶</div>');
+        '<div style="font-size:11px;color:#b98ae0">作り直す ▶</div>');
       d.onclick = ev => {
-        if (ev.target.textContent === 'つくりなおす ▶'){ pickOv.classList.remove('on'); openAvatar(); return; }
+        if (ev.target.textContent === '作り直す ▶'){ pickOv.classList.remove('on'); openAvatar(); return; }
         selTool = AV_TOWER_KEY; selTower = null;
         pickOv.classList.remove('on'); syncShop(); beep(700,.08,'triangle',.04);
-        floatTx(cx(4), cy(6), avMe.n + 'を おく ばしょを タップ（2×2）', '#b98ae0');
+        floatTx(cx(4), cy(6), avMe.n + 'を置く場所をタップ（2×2）', '#b98ae0');
       };
     } else {
       d.insertAdjacentHTML('beforeend',
@@ -1977,13 +1977,13 @@ function buildPick(){
       if (stars < T.cost){
         beep(160,.09,'square',.03,.7);
         pickHint.innerHTML = 'おほしさまが たりない…（' + o.name + 'は ⭐' + T.cost + '）<br>' +
-          'あと ⭐' + (T.cost - stars) + ' ためよう';
+          'あと ⭐' + (T.cost - stars) + ' 貯めよう';
         return;
       }
       selTool = o.id; selTower = null;
       pickOv.classList.remove('on');
       syncShop(); beep(700,.08,'triangle',.04);
-      floatTx(cx(4), cy(6), o.name + 'を おく ばしょを タップ', '#b98ae0');
+      floatTx(cx(4), cy(6), o.name + 'を置く場所をタップ', '#b98ae0');
     };
     pickGrid.append(d);
   }
@@ -2034,7 +2034,7 @@ function openInfo(t){
   btnUp.disabled = !up || stars < up;
   btnUp.textContent = up ? `強化 ⭐${fmtN(up)}`
     : t.lv < 5 ? `Lv${t.lv+1}はベストW${t.lv === 3 ? 60 : 100}で解放`
-    : 'さいだいレベル';
+    : '最大レベル';
   btnSell.textContent = `売る ⭐${fmtN(sellOf(t))}`;
 }
 function closeInfo(){
@@ -2071,7 +2071,7 @@ btnUp.onclick = () => {
   for (let i=0;i<18;i++) puff(px, py, '#fff2a8');
   for (let i=0;i<10;i++) puff(px, py, '#ffffff');
   for (let i=0;i<8;i++) mote(px, py - CELL*0.2, '#ffe27a');
-  floatTx(px, py - CELL*0.65, t.lv >= 5 ? 'さいきょう！' : 'レベルアップ！', '#ffb43f');
+  floatTx(px, py - CELL*0.65, t.lv >= 5 ? '最強！' : 'レベルアップ！', '#ffb43f');
   if (t.lv >= 5) celebrate({ conf: 60, rays: 2 });        // さいきょうはひときわ祝う
   else if (t.lv >= 3) celebrate({ conf: 30 });
   beep(620,.12,'triangle',.06);
@@ -2138,7 +2138,7 @@ function boardTap(px, py){
     const c2 = c+dc, r2 = r+dr;
     if (c2 >= COLS || r2 >= ROWS || pathCells.has(key(c2,r2)) || towerAt(c2,r2)){
       beep(160,.09,'square',.03,.7);
-      floatTx(cx(c), cy(r) - CELL*0.9, sp > 1 ? '2×2 ぶん あかないよ' : 'ここには おけないよ', '#e06f9c');
+      floatTx(cx(c), cy(r) - CELL*0.9, sp > 1 ? '2×2ぶん 空いていません' : 'ここには置けません', '#e06f9c');
       return;
     }
   }
@@ -2148,7 +2148,7 @@ function boardTap(px, py){
     // だまって いると「タップが きいていない」と おもわれる
     beep(160,.09,'square',.03,.7);
     floatTx(cx(c), cy(r) - CELL*0.9,
-            'おほしさまが たりない（⭐' + T.cost + '）', '#e06f9c');
+            'おほしさまが足りません（⭐' + T.cost + '）', '#e06f9c');
     return;
   }
 
@@ -2185,9 +2185,9 @@ function startWave(early){
   // LAP_WAVES ごとに 道が かわる。てきが 1体も いない ここでだけ 切りかえる
   const chg = applyLayout(wave);
   if (chg){
-    floatTx(COLS*CELL/2, CELL*3.0, '🍭 あたらしい みちが できた！', '#b98ae0');
+    floatTx(COLS*CELL/2, CELL*3.0, '🍭 新しい道ができた！', '#b98ae0');
     if (chg.moved)
-      floatTx(COLS*CELL/2, CELL*3.9, 'みちの上の なかま' + chg.moved + '人は ⭐' + fmtN(chg.back) + 'で もどしたよ', '#e05f9e');
+      floatTx(COLS*CELL/2, CELL*3.9, '道の上の仲間' + chg.moved + '人は ⭐' + fmtN(chg.back) + 'で戻しました', '#e05f9e');
   }
   bgmStart();          // 最初のウェーブからBGM開始（タップ後なので再生できる）
   spawnQ = waveList(wave).slice();
@@ -2288,9 +2288,9 @@ const BONUS_EMO = ['🍬','🍩','🍪','🧁','🍓','🍭','🍰','🍮'];
 function startBonus(){
   bonus = { spawnLeft: 30, total: 30, spT: 0.4, items: [], got: 0 };
   btnWave.disabled = true;
-  btnWave.innerHTML = '🎁 ボーナスタイム！<br>おかしを タップ！';
+  btnWave.innerHTML = '🎁 ボーナスタイム！<br>おかしをタップ！';
   floatTx(COLS*CELL/2, ROWS*CELL*0.35, '🎁 ボーナスウェーブ！', '#ff8fc4');
-  floatTx(COLS*CELL/2, ROWS*CELL*0.45, 'ぜんぶタップ！ひとつも おとさないでね', '#b98ae0');
+  floatTx(COLS*CELL/2, ROWS*CELL*0.45, '全部タップ！ひとつも落とさないで', '#b98ae0');
   beep(700,.12,'triangle',.06);
   setTimeout(()=>beep(930,.15,'triangle',.06),130);
 }
@@ -2508,7 +2508,7 @@ function update(dt){
       enemies.splice(i,1);
       if (e.av){
         avResult(e.av, false);
-        floatTx(COLS*CELL/2, ROWS*CELL - CELL*1.2, e.av.n + 'に とおされた…', '#b98ae0');
+        floatTx(COLS*CELL/2, ROWS*CELL - CELL*1.2, e.av.n + 'に通された…', '#b98ae0');
       }
       life -= (e.k === 'boss' ? 5 : 1);
       flash = 1; beep(200,.28,'sawtooth',.06,.5);
@@ -2677,13 +2677,13 @@ function killEnemy(e, px, py){
   if (unlock('en_' + e.k))
     floatTx(px, py - CELL*0.7, '図鑑に登録！', '#b98ae0');
   if (e.gi && unlock(e.gi.id))
-    floatTx(px, py - CELL*1.2, e.gi.name + 'が なかまに なった！', '#b98ae0');
+    floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
   if (e.av){
     stars += 60;
     const f = avResult(e.av, true);
     shards += 1; saveShards();
     floatTx(px, py - CELL*1.2,
-            e.av.n + 'に かった！ +⭐60 +🩷1' + (f ? '（通算 ' + f.w + '勝）' : ''), '#ff5f8a');
+            e.av.n + 'に勝った！ +⭐60 +🩷1' + (f ? '（通算 ' + f.w + '勝）' : ''), '#ff5f8a');
     celebrate({ conf: 30, rings: true, x: px, y: py, fanfare: 1 });
   }
   const g = goldOf(e.k);
@@ -2714,7 +2714,7 @@ function gameOver(){
     (newRec
       ? '<span style="' + badge + ';animation:blink .5s infinite alternate">✨ 新記録！ ウェーブ' + rec.bw + ' ✨</span>'
       : '<span style="' + badge + '">🏆 自己ベスト ウェーブ' + rec.bw + '</span>') +
-    '<br><span style="opacity:.7">倒した数：' + rec.kills + '　ランキング：上位' + rankPct() + '%くらい（めやす）</span><br>' +
+    '<br><span style="opacity:.7">倒した数：' + rec.kills + '　ランキング：上位' + rankPct() + '%くらい（目安）</span><br>' +
     'もう一度 挑戦してみよう ✨';
   // 💗は「あと なんかい あそべるか」。まけた ときに 1こだけ つかう。
   // てきが ゴールに 入っても へらない（へるのは げんきのバー）
@@ -6550,7 +6550,7 @@ function stageClear(){
   const gift = eggDraw(EGGS[eggIdx]);
   const got = CHARS.filter(c => dex['ch_'+c.id]).length;
   const done = got >= CHARS.length;
-  ovT.textContent = (done && ch) ? 'おかしの国 かんせい！🏰' : 'ステージ ' + stageNo + ' クリア！🎉';
+  ovT.textContent = (done && ch) ? 'おかしの国 完成！🏰' : 'ステージ ' + stageNo + ' クリア！🎉';
   ovB.innerHTML = '';
   if (ch){
     const th = charThumb(ch, 96);
@@ -6566,17 +6566,17 @@ function stageClear(){
       '<div style="font-size:12.5px;color:var(--pink-d)">🥚 ' + EGGS[eggIdx].name + 'から ' +
       gift.o.name + '（★' + gift.o.lv + '）' +
       (gift.dup ? '<br><span style="opacity:.7">すでにいるので 🩷かけら+' + gift.shard + '</span>'
-                : '<br>なかまに なった！✨') + '</div>');
+                : '<br>仲間になった！✨') + '</div>');
   }
   // Lv解放の節目なら いっしょにお知らせ
   let unlockMsg = '';
-  if (wave === 60)  unlockMsg = '<br>🔓 おかしを <b>Lv4</b> まで つよくできるようになった！';
-  if (wave === 100) unlockMsg = '<br>🔓 おかしを <b>Lv5</b> まで つよくできるようになった！';
+  // 強化レベルの上限は もぐったウェーブで のびる。節目ごとに いまの上限を知らせる
+  unlockMsg = '<br>🔓 強化レベルの上限は いま <b>Lv' + maxLv() + '</b>';
   const d = document.createElement('div');
   d.innerHTML = (ch
-    ? '<b>' + ch.name + '</b>（' + ch.title + '）が なかまになった！<br>✨ ' + ch.fx + ' ✨<br>なかま ' + got + ' / ' + CHARS.length +
-      (done ? '<br>ぜんいん あつまったよ！ あなたは でんせつのえいゆう ✨' : '')
-    : 'ハートが かいふくしたよ 💗<br>つぎのステージも がんばろう！') + unlockMsg;
+    ? '<b>' + ch.name + '</b>（' + ch.title + '）が仲間になった！<br>✨ ' + ch.fx + ' ✨<br>仲間 ' + got + ' / ' + CHARS.length +
+      (done ? '<br>全員 集まりました！ あなたは 伝説の英雄 ✨' : '')
+    : 'ハートが回復しました 💗<br>次のステージも がんばろう！') + unlockMsg;
   ovB.append(d);
   buildSkillBar();   // 新しいなかまのワザをすぐ使えるように
   ovAlt.style.display = 'none';
@@ -6611,17 +6611,17 @@ function legendArrival(L, preview){
     dex['lg_' + L.id].w = L.wave;
     saveDex();
   }
-  ovT.textContent = '✨ でんせつとの であい ✨';
+  ovT.textContent = '✨ 伝説との出会い ✨';
   ovB.innerHTML = '';
   const th = charThumb({ pid: L.id }, 110);
   th.style.display = 'block'; th.style.margin = '0 auto 4px';
   ovB.append(th);
   const d = document.createElement('div');
-  d.innerHTML = 'でんせつのなかま <b>' + L.name + '</b>（' + L.title + '）が<br>' +
+  d.innerHTML = '伝説の仲間 <b>' + L.name + '</b>（' + L.title + '）が<br>' +
     'あなたの がんばりを ずっと見ていました。<br>' +
     '<span style="display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
     'border:2px solid #ffd76e;border-radius:999px;padding:6px 14px;margin:7px 0;color:#c9821e">' +
-    L.fx + '</span><br>これからは ときどき そらを とんでくれるよ';
+    L.fx + '</span><br>これからは ときどき空を飛んでくれます';
   ovB.append(d);
   ovAlt.style.display = 'none';
   ovBtn.textContent = 'ありがとう ✨';
@@ -6711,7 +6711,7 @@ for (const o of GEN_LIST){
     dmg:   Math.round(A.dmg * k * (o.cells >= 4 ? 1.5 : o.cells >= 2 ? 1.2 : 1)),
     rate:  +(A.rate / (1 + (o.lv - 1) * 0.05)).toFixed(3),
     range: +(A.range * (1 + (o.lv - 1) * 0.04)).toFixed(2),
-    desc: '★' + o.lv + 'の なかま。' + A.desc + (o.cells >= 4 ? '（4マスつかう）' : ''),
+    desc: '★' + o.lv + 'の仲間。' + A.desc + (o.cells >= 4 ? '（4マスつかう）' : ''),
   };
 }
 /* 4マスの子は 2×2 を つかう。ふさがっている ますを かぞえるのに つかう */
@@ -6768,8 +6768,8 @@ function lazyThumb(o, size){
 function buildFriendGrid(){
   colCount.textContent = avFriends.length + '人';
   colHint.style.display = '';
-  colHint.innerHTML = 'ともだちは ステージの まん中（10ウェーブめ）に あそびにくるよ👭<br>' +
-    '🎀ボタンから じぶんの アバターを LINEで おくると、あいてにも きみが とうじょうするよ';
+  colHint.innerHTML = '友だちは ステージの真ん中（10ウェーブめ）に遊びに来ます👭<br>' +
+    '🎀ボタンから 自分のアバターを LINEで送ると、相手にも自分が登場します';
   colDone.style.display = 'none';
   colGrid.innerHTML = '';
   // まず じぶん
@@ -6778,16 +6778,16 @@ function buildFriendGrid(){
   if (avMe){
     me.append(avThumb(avMe, 56));
     me.insertAdjacentHTML('beforeend',
-      '<div style="flex:1"><div class="cNm">🎀 ' + avMe.n + '（じぶん）</div>' +
-      '<div class="cTt">★7の なかま・2×2</div></div>' +
-      '<button class="mini">つくりなおす</button>');
+      '<div style="flex:1"><div class="cNm">🎀 ' + avMe.n + '（自分）</div>' +
+      '<div class="cTt">★7の仲間・2×2</div></div>' +
+      '<button class="mini">作り直す</button>');
     me.querySelector('button').onclick = () => { colOv.classList.remove('on'); openAvatar(); };
   } else {
     me.insertAdjacentHTML('beforeend',
       '<div style="font-size:30px;flex:0 0 56px;text-align:center">🎀</div>' +
-      '<div style="flex:1"><div class="cNm">アバターを つくろう</div>' +
+      '<div style="flex:1"><div class="cNm">アバターを作ろう</div>' +
       '<div class="cTt">顔・髪型・服を選ぼう</div></div>' +
-      '<button class="mini">つくる</button>');
+      '<button class="mini">作る</button>');
     me.querySelector('button').onclick = () => { colOv.classList.remove('on'); openAvatar(); };
   }
   colGrid.append(me);
@@ -6797,9 +6797,9 @@ function buildFriendGrid(){
     d.className = 'cCard no';
     d.style.gridColumn = '1/-1';
     d.innerHTML = '<div style="font-size:28px;line-height:52px">👭</div>' +
-      '<div class="cNm">まだ だれも いないよ</div>' +
+      '<div class="cNm">まだ誰もいません</div>' +
       '<div class="cTt">友だちから届いたリンクを開くか、<br>' +
-      '🔑あいことば に コードを いれると なかまに なるよ</div>';
+      '🔑合言葉 に コードを入れると仲間になります</div>';
     colGrid.append(d);
     colTotal.textContent = '';
     return;
@@ -6812,8 +6812,8 @@ function buildFriendGrid(){
     d.insertAdjacentHTML('beforeend',
       '<div class="cNm">' + f.n + '</div>' +
       '<div class="cWin">' + w + '勝 <span>' + l + '敗</span></div>' +
-      (f.bw ? '<div class="cTt">さいこう ウェーブ' + f.bw + 'で かった</div>'
-            : '<div class="cTt">まだ たたかって いないよ</div>') +
+      (f.bw ? '<div class="cTt">最高ウェーブ' + f.bw + 'で勝利</div>'
+            : '<div class="cTt">まだ戦っていません</div>') +
       (f.d ? '<div class="cGet">' + f.d + '</div>' : ''));   // 日づけだけ（ほかの カードと そろえる）
     colGrid.append(d);
   }
@@ -6870,13 +6870,13 @@ function buildColGrid(){
             if (buyWait === o.pid){
               buyWait = null;
               if (stars < cost){
-                colHint.textContent = 'おほしさまが たりない…（⭐' + cost + '）';
+                colHint.textContent = 'おほしさまが足りません（⭐' + cost + '）';
                 beep(160,.09,'square',.03,.7);
               } else {
                 stars -= cost;
                 items[o.pid] = Math.min(ITEM_MAX, (items[o.pid]||0) + 1); saveItems();
                 beep(760,.1,'triangle',.05); syncHUD(); buildColGrid();
-                colHint.innerHTML = o.name + 'を 1こ かった！<br>もういちどタップで はろう';
+                colHint.innerHTML = o.name + 'を1こ買いました！<br>もう一度タップで貼れます';
               }
             } else {
               buyWait = o.pid;
@@ -6890,10 +6890,10 @@ function buildColGrid(){
           beep(r2 === 'off' ? 480 : 760, .08, 'triangle', .04);
           buildColGrid();
           if (r2 === 'off'){
-            colHint.textContent = o.name + 'を ずかんに もどしたよ';
+            colHint.textContent = o.name + 'を図鑑に戻しました';
           } else if (r2 && r2.swap){
             const sw = r2.swap === 'rpurin' ? 'にじいろプリン' : (CHARS.find(c => c.id === r2.swap) || {}).name;
-            colHint.innerHTML = o.name + 'を はった！<br>（' + sw + 'は ずかんにもどったよ）';
+            colHint.innerHTML = o.name + 'を貼りました！<br>（' + sw + 'は図鑑に戻りました）';
           }
         };
       }
@@ -6916,7 +6916,7 @@ function buildColGrid(){
     colGrid.append(d);
   }
   const gotAll = all.filter(o => dex[o.id]).length;
-  colTotal.textContent = 'ぜんぶで ' + gotAll + ' / ' + all.length + ' とうろく';
+  colTotal.textContent = '合計 ' + gotAll + ' / ' + all.length + ' 登録';
 }
 
 /* ==========================================================
@@ -6929,7 +6929,7 @@ const SKILLS = [
   { ch:'gumgum', name:'スロー',     base:60,  cd:10, needEnemy:true,  color:'#9be89b', desc:'敵全員を6秒スロー。速い敵の群れに' },
   { ch:'donut',  name:'かいふく',   base:120, cd:20, needEnemy:false, color:'#ff9ec9', desc:'ハート+4。守りが崩れたあとに' },
   { ch:'taffy',  name:'マーチ',     base:90,  cd:25, needEnemy:false, color:'#9ed8ff', desc:'8秒 攻撃速度2倍。ボスが来たら' },
-  { ch:'cake',   name:'おいわい',   base:90,  cd:18, needEnemy:true,  color:'#fff0b8', desc:'敵全体に小ダメージ。雑魚そうじに' },
+  { ch:'cake',   name:'おいわい',   base:90,  cd:18, needEnemy:true,  color:'#fff0b8', desc:'敵全体に小ダメージ。雑魚掃除に' },
   { ch:'fairy',  name:'こな',       base:80,  cd:25, needEnemy:false, color:'#ffd0df', desc:'8秒 範囲1.4倍。届かない敵に' },
   { ch:'prince', name:'はた',       base:90,  cd:30, needEnemy:false, color:'#ff8f8f', desc:'10秒 ⭐2倍。稼ぎどきに' },
   { ch:'apple',  name:'いやし',     base:60,  cd:12, needEnemy:false, color:'#ff5a5a', desc:'ハート+2。軽くて安い回復' },
@@ -6975,7 +6975,7 @@ if (Array.isArray(pins)){
 function savePins(){ try{ localStorage.setItem('sweetTD.pins', JSON.stringify(pins)); }catch(e){} }
 /* はる／はがすの切り替え。'on'／'off'／'none'／{swap:もどったなかま} を返す。
    はがしても数はへらない（ずかんにもどるだけ）。へるのはワザを使ったときだけ。
-   バーがいっぱいのときは、いちばん左のなかまが ずかんにもどって こうたい */
+   バーがいっぱいのときは、いちばん左の仲間が図鑑に戻って交代 */
 function togglePin(ch){
   const i = pins.indexOf(ch);
   if (i >= 0){ pins.splice(i, 1); savePins(); buildSkillBar(); return 'off'; }
@@ -7044,7 +7044,7 @@ function useSkill(s){
   } else if (s.ch === 'taffy'){
     buffs.spd = 8;                      // 8秒こうげきそくど2倍
     ring(W/2, H/2, '#9ed8ff', H*0.7);
-    floatTx(W/2, H*0.4, 'ふえのマーチ♪ そくど2ばい！', '#4aa8dd');
+    floatTx(W/2, H*0.4, 'ふえのマーチ♪ 速度2倍！', '#4aa8dd');
     beep(660,.1,'triangle',.05); setTimeout(()=>beep(880,.1,'triangle',.05),110);
     setTimeout(()=>beep(990,.14,'triangle',.05),220);
   } else if (s.ch === 'cake'){
@@ -7060,12 +7060,12 @@ function useSkill(s){
   } else if (s.ch === 'fairy'){
     buffs.rng = 8;                      // 8秒はんい1.4倍
     ring(W/2, H/2, '#ffd0df', H*0.7);
-    floatTx(W/2, H*0.4, 'ようせいのこな✨ はんいUP！', '#e06f9c');
+    floatTx(W/2, H*0.4, 'ようせいのこな✨ 範囲UP！', '#e06f9c');
     beep(880,.15,'triangle',.05);
   } else if (s.ch === 'prince'){
     buffs.gold = 10;                    // 10秒おほしさま2倍
     ring(W/2, H/2, '#ffd76e', H*0.7);
-    floatTx(W/2, H*0.4, 'いちごのはた！ ⭐2ばい！', '#e0a52e');
+    floatTx(W/2, H*0.4, 'いちごのはた！ ⭐2倍！', '#e0a52e');
     beep(700,.12,'triangle',.05); setTimeout(()=>beep(930,.16,'triangle',.05),120);
   } else if (s.ch === 'apple'){
     healHearts(2);
@@ -7075,13 +7075,13 @@ function useSkill(s){
   } else if (s.ch === 'queen'){
     for (const k in skCd) if (k !== 'queen') skCd[k] = 0;   // ほかのワザをすぐ使えるように
     ring(W/2, H/2, '#dcebf8', H*0.8);
-    floatTx(W/2, H*0.4, 'おうひのいのり✨ ワザふっかつ！', '#7d9fd0');
+    floatTx(W/2, H*0.4, 'おうひのいのり✨ ワザ復活！', '#7d9fd0');
     beep(620,.12,'triangle',.05); setTimeout(()=>beep(830,.12,'triangle',.05),110);
     setTimeout(()=>beep(1050,.2,'triangle',.06),220);
   } else if (s.ch === 'king'){
     buffs.dmg = 8;                      // 8秒こうげき2倍
     ring(W/2, H/2, '#ffe27a', H*0.8);
-    floatTx(W/2, H*0.4, 'おうのごうれい！ こうげき2ばい！', '#c9821e');
+    floatTx(W/2, H*0.4, 'おうのごうれい！ 攻撃2倍！', '#c9821e');
     beep(440,.2,'triangle',.06); setTimeout(()=>beep(660,.25,'triangle',.06),160);
   } else if (s.ch === 'rpurin'){
     spawnGift(W/2 - CELL, H*0.35);      // プレゼントを2こおとす
@@ -7093,7 +7093,7 @@ function useSkill(s){
   if (items[s.ch] <= 0){
     const i = pins.indexOf(s.ch);
     if (i >= 0){ pins.splice(i, 1); savePins(); }
-    floatTx(COLS*CELL/2, ROWS*CELL - CELL*1.1, s.name + 'を つかいきった！', '#b98ae0');
+    floatTx(COLS*CELL/2, ROWS*CELL - CELL*1.1, s.name + 'を使いきりました！', '#b98ae0');
     buildSkillBar();
   }
   syncHUD(); syncSkills();
@@ -7123,7 +7123,7 @@ function buildSkillBar(){
         lpFired = true;
         const nm = ch === 'rpurin' ? 'にじいろプリン' : (CHARS.find(c => c.id === ch) || {}).name;
         togglePin(ch);
-        floatTx(COLS*CELL/2, ROWS*CELL - CELL*0.6, nm + 'を ずかんにもどした', '#b98ae0');
+        floatTx(COLS*CELL/2, ROWS*CELL - CELL*0.6, nm + 'を図鑑に戻した', '#b98ae0');
         beep(480,.1,'triangle',.04);
       }, 550);
     });
@@ -7195,7 +7195,7 @@ function armLifeButton(fromBoot){
         const sec = Math.max(0, Math.ceil((at - Date.now())/1000));
         ovBtn.textContent = '次の💗まで あと ' + Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0');
       } else {
-        ovBtn.textContent = '💗が たまるまで まってね';
+        ovBtn.textContent = '💗がたまるまで待ってね';
       }
     }
   };
@@ -7236,7 +7236,7 @@ function tryResume(){
     .map(t => ({ k:t.k, c:t.c, r:t.r, lv:Math.min(5, Math.max(1, t.lv|0)),
                  cd:0, ang:-Math.PI/2, pulse:0, ph:Math.random()*6.3 }));
   continueUsed = !!rn.cu;
-  floatTx(COLS*CELL/2, ROWS*CELL/2, 'つづきから さいかい！', '#b98ae0');
+  floatTx(COLS*CELL/2, ROWS*CELL/2, '続きから再開！', '#b98ae0');
   syncHUD();
 }
 /* ゲームオーバーからの「つづきから」：たまっている💗の数だけ持って、そのウェーブから再開
@@ -7258,7 +7258,7 @@ function continueRun(refill, keepWave){
   ovAlt.style.display = 'none';
   btnWave.disabled = false;
   btnWave.innerHTML = '次のウェーブ ' + PLAY;
-  floatTx(COLS*CELL/2, ROWS*CELL/2, 'つづきから！がんばろう💗', '#ff6f9c');
+  floatTx(COLS*CELL/2, ROWS*CELL/2, '続きから！がんばろう💗', '#ff6f9c');
   beep(660,.15,'triangle',.06);
   saveRun();
   syncHUD();
@@ -7291,7 +7291,7 @@ function applyLoginReward(day){
   const addStart = n => {
     try{ localStorage.setItem('sweetTD.todayStars', JSON.stringify({ d: dateStr(), n })); }catch(e){}
     stars += n;                          // いま遊んでいるぶんにもすぐ足す
-    return 'きょうは スタートおほしさま <b>+' + n + '</b>！';
+    return '今日は スタートおほしさま <b>+' + n + '</b>！';
   };
   const owned = SKILLS.filter(s => hasCh(s.ch));
   const addStock = n => {
@@ -7315,12 +7315,12 @@ function applyLoginReward(day){
       if (!owned.length) return addStart(300);
       for (const s of owned) items[s.ch] = Math.min(ITEM_MAX, items[s.ch] + 1);
       saveItems();
-      return 'もっているワザの ストック <b>ぜんぶ+1</b>！';
+      return '所持しているワザのストック <b>全部+1</b>！';
     default:
       if (!dex['sp_rpurin']){
         unlock('sp_rpurin');
         if (pins.length < PIN_MAX && !pins.includes('rpurin')){ pins.push('rpurin'); savePins(); }
-        return 'でんせつのなかま <b>にじいろプリン</b> が なかまに！！<br>✨ プレゼントが おちやすくなる ✨';
+        return '伝説の仲間 <b>にじいろプリン</b> が仲間に！！<br>✨ プレゼントが おちやすくなる ✨';
       }
       return addStart(500);
   }
@@ -7346,12 +7346,12 @@ function checkLogin(){
       (i === day ? ';outline:3px solid #ffd76e' : '') + '">' + (on ? '✓' : i) + '</div>';
   }
   st += '</div>';
-  ovT.textContent = 'きょうのプレゼント🎁';
-  ovB.innerHTML = '<b>' + day + 'にちめ</b>の ログインボーナス！' + st + msg +
-    (day === 6 ? '<br><span style="opacity:.7">あしたは でんせつのなかまが…！？</span>' : '');
+  ovT.textContent = '今日のプレゼント🎁';
+  ovB.innerHTML = '<b>' + day + '日目</b>の ログインボーナス！' + st + msg +
+    (day === 6 ? '<br><span style="opacity:.7">あしたは 伝説の仲間が…！？</span>' : '');
   ovShare.style.display = 'none';
   ovAlt.style.display = 'none';
-  ovBtn.textContent = 'うけとる ✨';
+  ovBtn.textContent = '受け取る ✨';
   ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); };
   ov.classList.add('on');
   // 7日目（でんせつのなかま）はとびきり盛大に
@@ -7391,10 +7391,10 @@ function makeShareCard(){
   g.fillText('まほうのおかしの国をまもって', W2/2, 120);
   g.fillStyle = '#6b4a63';
   g.font = "800 92px 'Hiragino Maru Gothic ProN',sans-serif";
-  g.fillText('ウェーブ ' + Math.max(1, wave, rec.bw) + ' とうたつ！', W2/2, 260);
+  g.fillText('ウェーブ ' + Math.max(1, wave, rec.bw) + ' 到達！', W2/2, 260);
   const got = dexList().filter(o => o.cat === 'ch' && dex[o.id]).length;
   g.font = "800 38px 'Hiragino Maru Gothic ProN',sans-serif";
-  g.fillText('👑 なかま ' + got + 'にん　⭐ 倒した数 ' + rec.kills, W2/2, 340);
+  g.fillText('👑 仲間 ' + got + '人　⭐ 倒した数 ' + rec.kills, W2/2, 340);
   // なかまの似顔絵をならべる（いなければおかしのようせい）
   const picks = dexList().filter(o => o.cat === 'ch' && dex[o.id]).map(o => o.pid);
   const fill = ['tw_candy','tw_ice','tw_choco','tw_star'];
@@ -7411,7 +7411,7 @@ function makeShareCard(){
   return c;
 }
 async function shareScore(){
-  const text = 'まほうのおかしの国を ウェーブ' + Math.max(1, wave, rec.bw) + 'まで まもりぬいた！ #おかしの国TD';
+  const text = 'まほうのおかしの国を ウェーブ' + Math.max(1, wave, rec.bw) + 'まで守りぬいた！ #おかしの国TD';
   const url = 'https://okashi-no-kuni.github.io/';
   try{
     const blob = await new Promise(r => makeShareCard().toBlob(r, 'image/png'));
@@ -7542,7 +7542,7 @@ btnSnd.innerHTML = noteSvg(25, ICO_BTN);
 /* 文の中にならべる絵。まわりの行の高さを のばさないよう マイナスの余白つき */
 const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
 const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
-$('btnPw').innerHTML = keySvg(23, INLINE) + ' あいことば・きせかえ';
+$('btnPw').innerHTML = keySvg(23, INLINE) + ' 合言葉・着せかえ';
 
 /* ==========================================================
    遊びかたガイド（本のボタン）
@@ -7572,7 +7572,7 @@ function buildHelp(){
   h += '<div class="hSec"><h3>✨ 仲間ワザの使いかた</h3>' +
     '<p>👑図鑑で仲間をタップ → ワザバーに<b>貼る</b>（7こまで）。バーをタップで発動、<b>1こ減ります</b>。' +
     'バーがいっぱいのときは、いちばん左の仲間が図鑑に戻って<b>交代</b>。' +
-    'バーの仲間を<b>長おし</b>しても図鑑に戻せます。' +
+    'バーの仲間を<b>長押し</b>しても図鑑に戻せます。' +
     '敵のプレゼント🎁・ログインボーナス・⭐で買い足して補充してください。</p><ul style="margin-top:5px">' +
     SKILLS.map(s => {
       const c = CHARS.find(x => x.id === s.ch);
@@ -7584,47 +7584,47 @@ function buildHelp(){
     '<li>ワザは<b>ここぞ</b>で使う。ボス・ラッシュ・ハートのピンチに</li>' +
     '<li>20ウェーブごとのクリアで、仲間とハートがもらえます</li>' +
     '<li><b>20ウェーブごと</b>のクリアのあとに<b>🎁ボーナスウェーブ</b>！降ってくるおかしを ' +
-    'ぜんぶタップすると💗+1。1こでも落としたらそこで終わりです</li>' +
-    '<li>もらった💗は <b>20をこえて ためられます</b>（99こまで）</li>' +
-    '<li>💗は<b>あと何回あそべるか</b>。負けると1こ減ります。敵に通されて減るのは上の ' +
+    '全部タップすると💗+1。1こでも落としたらそこで終わりです</li>' +
+    '<li>もらった💗は <b>20を超えて貯められます</b>（99こまで）</li>' +
+    '<li>💗は<b>あと何回遊べるか</b>。負けると1こ減ります。敵に通されて減るのは上の ' +
     '<b>げんきのバー</b>で、💗はそのままです</li>' +
     '<li>進行は自動セーブ。💗がなくなっても、<b>' + REGEN_MIN + '分ごとに💗が1こずつ</b>回復（最大' + maxHearts() + '）。1こでもあれば そのウェーブから再開できます</li>' +
     '<li><b>ウェーブに終わりはありません</b>。200ウェーブごとに道の形が変わり、' +
     '敵は少しずつ強くなります。どこまで潜れるかが記録になります</li>' +
-    '<li>うわさでは、<b>ウェーブ60</b>で でんせつの仲間に会えるらしい…✨</li></ul></div>';
-  h += '<div class="hSec"><h3>🔑 あいことば</h3>' +
-    '<p>とくべつな「あいことば」を手に入れたら、メイン画面の<b>「🔑あいことば・きせかえ」</b>ボタンから入れてください。限定テーマが届きます🎁</p></div>';
+    '<li>うわさでは、<b>ウェーブ60</b>で 伝説の仲間に会えるらしい…✨</li></ul></div>';
+  h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
+    '<p>とくべつな「合言葉」を手に入れたら、メイン画面の<b>「🔑合言葉・着せかえ」</b>ボタンから入れてください。限定テーマが届きます🎁</p></div>';
   helpBody.innerHTML = h;
 }
 
 /* ==========================================================
-   あいことば・きせかえ（メイン画面の🔑ボタンからひらく）
+   合言葉・着せかえ（メイン画面の🔑ボタンからひらく）
    ========================================================== */
 const pwOv = $('pwOv'), pwBody = $('pwBody');
 let studioLg = 0;   // でんせつプレビューの順ぐり
 function buildPw(){
   pwBody.innerHTML =
-    '<p style="font-size:11.5px;line-height:1.7;margin:0">とくべつな「あいことば」を入れると、' +
-    '限定テーマ（見た目とBGMのきせかえ）がとどくよ🎁<br>あいことばは SNSのキャンペーンで配布中！</p>' +
+    '<p style="font-size:11.5px;line-height:1.7;margin:0">とくべつな「合言葉」を入れると、' +
+    '限定テーマ（見た目とBGMの着せかえ）が届きます🎁<br>合言葉は SNSのキャンペーンで配布中！</p>' +
     '<div style="display:flex;gap:6px;margin-top:9px">' +
-    '<input id="pwIn" placeholder="あいことばを入力" ' +
+    '<input id="pwIn" placeholder="合言葉を入力" ' +
     'style="flex:1;min-width:0;border:2px solid #ffd9ec;border-radius:10px;padding:9px;font:inherit;font-size:13px;background:rgba(255,255,255,.95)">' +
     '<button class="mini" id="pwBtn">送る</button></div>' +
     '<div id="pwMsg" style="font-size:11px;color:#b98ae0;margin-top:6px;line-height:1.5"></div>' +
     (redeemed.filter(id => SP_THEMES[id]).length
-      ? '<div style="font-size:11px;color:var(--pink-d);margin-top:10px">🎀 きせかえ</div>' : '') +
+      ? '<div style="font-size:11px;color:var(--pink-d);margin-top:10px">🎀 着せかえ</div>' : '') +
     redeemed.filter(id => SP_THEMES[id]).map(id =>
       '<button class="mini" data-sp="' + id + '" style="margin-top:6px;width:100%">' +
       (themeSel === id
         ? '「' + SP_THEMES[id].th.name + '」を使用中（タップで戻す）'
-        : '「' + SP_THEMES[id].th.name + '」にきせかえる') + '</button>').join('') +
+        : '「' + SP_THEMES[id].th.name + '」に着せかえる') + '</button>').join('') +
     (redeemed.includes('studio')
-      ? '<div style="font-size:11px;color:var(--pink-d);margin-top:12px">📹 さつえいスタジオ</div>' +
+      ? '<div style="font-size:11px;color:var(--pink-d);margin-top:12px">📹 撮影スタジオ</div>' +
         '<p style="font-size:10px;opacity:.6;margin:2px 0 0;line-height:1.5">SNS動画用に演出を呼び出せます。<br>記録が変わることがあるので、ふだんのデータでは注意！</p>' +
-        '<button class="mini" data-st="legend" style="margin-top:6px;width:100%">🐋 でんせつ降臨（プレビュー・図鑑にはのこらない）</button>' +
+        '<button class="mini" data-st="legend" style="margin-top:6px;width:100%">🐋 伝説降臨（プレビュー・図鑑には残らない）</button>' +
         '<button class="mini" data-st="party" style="margin-top:6px;width:100%">🎉 クリアのおいわい＋全員パレード</button>' +
         '<button class="mini" data-st="bonus" style="margin-top:6px;width:100%">🎁 ボーナスウェーブを今すぐ開始</button>' +
-        '<button class="mini" data-st="save" style="margin-top:6px;width:100%">📦 さつえい用セーブ（Lv5タワー・W54）をよみこむ</button>'
+        '<button class="mini" data-st="save" style="margin-top:6px;width:100%">📦 撮影用セーブ（Lv5タワー・W54）を読みこむ</button>'
       : '');
 
   // あいことばの入力
@@ -7632,7 +7632,7 @@ function buildPw(){
     const v = ($('pwIn').value || '').trim();
     const c = CODES[v];
     if (!c){
-      $('pwMsg').textContent = 'うーん、ちがうみたい…';
+      $('pwMsg').textContent = 'うーん、違うみたい…';
       beep(160,.09,'square',.03,.7);
       return;
     }
@@ -7641,13 +7641,13 @@ function buildPw(){
     const fr = avDecode($('pwIn').value.trim());
     if (fr){
       avAddFriend(fr);
-      $('pwMsg').innerHTML = fr.n + 'が あそびにきた！👭<br>ステージの とちゅうで たたかえるよ';
+      $('pwMsg').innerHTML = fr.n + 'が遊びに来た！👭<br>ステージの途中で戦えます';
       $('pwIn').value = '';
       beep(760,.12,'triangle',.05);
       return;
     }
     if (redeemed.includes(id)){
-      $('pwMsg').textContent = 'その あいことばは もう つかったよ✨';
+      $('pwMsg').textContent = 'その合言葉は もう使いました✨';
       return;
     }
     redeemed.push(id);
@@ -7685,7 +7685,7 @@ function buildPw(){
         nextT = 0; enemies = []; shots = []; spawnQ = [];
         btnWave.disabled = false; btnWave.innerHTML = '次のウェーブ ' + PLAY;
         saveRun(); syncHUD();
-        floatTx(COLS*CELL/2, ROWS*CELL/2, '📦 さつえい用セーブ よみこみ！', '#b98ae0');
+        floatTx(COLS*CELL/2, ROWS*CELL/2, '📦 撮影用セーブ 読みこみ！', '#b98ae0');
       }
       beep(700,.08,'triangle',.04);
     };
@@ -8063,14 +8063,14 @@ function drawKingdom(g, W, H){
     rr2(W/2 - W*0.155, H*0.085, W*0.31, H*0.055, H*0.028); g.stroke();
     g.font = "800 " + (W*0.03) + "px 'Hiragino Maru Gothic ProN',sans-serif";
     g.fillStyle = '#a06a10';
-    g.fillText('🎉 ぜんいん だいしゅうごう！ 🎉', W/2, H*0.113);
+    g.fillText('🎉 全員 大集合！ 🎉', W/2, H*0.113);
     let doneD = '';
     try{ doneD = localStorage.getItem('sweetTD.done') || ''; }catch(e){}
     if (doneD){
       g.font = "800 " + (W*0.022) + "px 'Hiragino Maru Gothic ProN',sans-serif";
       g.fillStyle = 'rgba(107,74,99,.75)';
       g.textAlign = 'right';
-      g.fillText('かんせい ' + doneD, W*0.955, H*0.955);
+      g.fillText('完成 ' + doneD, W*0.955, H*0.955);
       g.textAlign = 'center';
     }
   }
@@ -8087,10 +8087,10 @@ function buildKingdom(){
   g.setTransform(dpr,0,0,dpr,0,0);
   const r = drawKingdom(g, w, h);
   kingCap.textContent = r.complete
-    ? '🏆 ずかんぜんいんの かんせいの一枚！ ようせいも てきのみんなも おまつりだよ 🎉'
+    ? '🏆 図鑑コンプリート！ ようせいも 敵のみんなも おまつり 🎉'
     : r.got >= 12 && r.lgGot >= 3
-    ? '🏰 だいにぎわい！ ずかんをコンプリートすると かんせいの一枚に…✨'
-    : 'なかま ' + r.got + '/12・でんせつ ' + r.lgGot + '/3 が くらしているよ。あつめるほど にぎやかに✨';
+    ? '🏰 大にぎわい！ 図鑑をコンプリートすると 完成の一枚に…✨'
+    : '仲間 ' + r.got + '/12・伝説 ' + r.lgGot + '/3 が暮らしています。集めるほど にぎやかに✨';
 }
 /* ---------- ぜんいんコンプリート（全26キャラ）の完成イベント ---------- */
 let pendingComplete = false;
@@ -8104,7 +8104,7 @@ function checkComplete(){
 }
 function showComplete(){
   pendingComplete = false;
-  ovT.textContent = '🏰 おかしの国 かんせい！！';
+  ovT.textContent = '🏰 おかしの国 完成！！';
   ovB.innerHTML = '';
   // かんせいした国のプレビューをその場で描く
   const pw = 260, ph = Math.round(pw*0.78);
@@ -8117,9 +8117,9 @@ function showComplete(){
   drawKingdom(pg, pw, ph);
   ovB.append(pv);
   const d = document.createElement('div');
-  d.innerHTML = 'ずかんの <b>ぜんいん</b>が あつまって、<br><b>おかしの国が ほんとうに かんせい</b>しました！<br>' +
-    'タワーのようせいも、てきだったみんなも、いまでは おまつりのなかま🎉<br>' +
-    '<span style="opacity:.7">🏰ボタンから いつでも ながめられるよ</span>';
+  d.innerHTML = '図鑑の <b>全員</b>が あつまって、<br><b>おかしの国が ほんとうに完成</b>しました！<br>' +
+    'タワーのようせいも、敵だったみんなも、いまでは おまつりの仲間🎉<br>' +
+    '<span style="opacity:.7">🏰ボタンから いつでも見られます</span>';
   ovB.append(d);
   ovAlt.style.display = 'none';
   ovBtn.textContent = '国を見る 🏰';
@@ -8138,7 +8138,7 @@ $('kingShare').onclick = async () => {
   const c = document.createElement('canvas');
   c.width = W2; c.height = H2;
   const r = drawKingdom(c.getContext('2d'), W2, H2);
-  const text = 'わたしの まほうのおかしの国 🏰 なかま' + r.got + '/12 ✨ #おかしの国TD';
+  const text = 'わたしの まほうのおかしの国 🏰 仲間' + r.got + '/12 ✨ #おかしの国TD';
   const url = 'https://okashi-no-kuni.github.io/';
   try{
     const blob = await new Promise(res => c.toBlob(res, 'image/png'));
@@ -9630,7 +9630,7 @@ function render(){
         sparkle(it.x + CELL*0.34, it.y - CELL*0.3, CELL*0.07, it.ph*2, '#ffffff');
       }
       const left = bonus.spawnLeft + bonus.items.length;
-      const txt = '🎁 のこり ' + left + 'こ';
+      const txt = '🎁 残り ' + left + 'こ';
       ctx.font = "800 " + (CELL*0.4) + "px 'Hiragino Maru Gothic ProN',sans-serif";
       ctx.lineWidth = CELL*0.12; ctx.strokeStyle = '#ffffff'; ctx.lineJoin = 'round';
       ctx.strokeText(txt, COLS*CELL/2, CELL*1.2);
@@ -9857,7 +9857,7 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     const near = next && wave >= next.wave - 15;
     const canOwned = owned.length && wave >= 5;
     if (canOwned) return '所持ずみ';
-    if (near) return next.name + 'のかげ';
+    if (near) return next.name + 'の影';
     return 'なし';
   },
   life: () => life,
