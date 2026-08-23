@@ -455,8 +455,21 @@ document.addEventListener('dblclick', e => e.preventDefault());
    マップ
    ========================================================== */
 const COLS = 9, ROWS = 12;
-// 敵が通る道の曲がり角（セル座標）。-1 と ROWS は画面外の出入口。
-const WAY = [[1,-1],[1,2],[7,2],[7,5],[1,5],[1,8],[7,8],[7,12]];
+/* 敵が通る道の曲がり角（セル座標）。-1 と ROWS は画面外の出入口。
+   ウェーブに 終わりは なく、LAP_WAVES ごとに 道そのものが 変わる。
+   どの道も まがり角は たて・よこだけ、ながさ31〜34マス、
+   おける マスは 75〜78で そろえてある（むずかしさが 道で 変わらないように） */
+const LAP_WAVES = 200;
+const LAYOUTS = [
+  [[1,-1],[1,2],[7,2],[7,5],[1,5],[1,8],[7,8],[7,12]],
+  [[7,-1],[7,3],[1,3],[1,6],[7,6],[7,9],[1,9],[1,12]],
+  [[4,-1],[4,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,10],[6,10],[6,12]],
+  [[1,-1],[1,1],[7,1],[7,4],[3,4],[3,7],[7,7],[7,10],[1,10],[1,12]],
+  [[8,-1],[8,2],[3,2],[3,5],[8,5],[8,8],[1,8],[1,11],[5,11],[5,12]],
+];
+const lapOf = w => Math.floor(Math.max(0, w - 1) / LAP_WAVES);
+const wayOf = w => LAYOUTS[lapOf(w) % LAYOUTS.length];
+let WAY = LAYOUTS[0];
 
 /* ==========================================================
    おかし（タワー）の設定
@@ -472,9 +485,14 @@ const TOWERS = {
            desc:'遠くまでとどく強力な一撃' },
 };
 const ORDER = ['candy','ice','choco','star'];
-const UP_MUL = [0, 0.8, 1.4, 2.2, 3.2];        // レベル2〜5 の値段 = cost * これ
-// レベル上限は じぶんベストで解放されていく（一度解放すればずっと有効）
-const maxLv = () => rec.bw >= 100 ? 5 : rec.bw >= 60 ? 4 : 3;
+/* 強化の ねだん = cost × upMul(いまのレベル)。
+   1レベルごとに ねだんは ×1.55、こうげきは ×1.78 のびるので、
+   レベルが 上がるほど ⭐あたりの つよさが よくなる。
+   これが ないと てきの 複利に おいつけず、ウェーブ60あたりで 頭うちになる */
+const upMul = lv => 0.8 * Math.pow(1.55, lv - 1);
+/* レベルの 上限は もぐった ウェーブで のびる。じぶんベストで しばると
+   はじめての人が ずっと Lv3の ままに なるので、そのプレイの ウェーブで 決める */
+const maxLv = () => 3 + Math.floor(wave / 10);
 
 /* ==========================================================
    敵の設定
@@ -506,12 +524,17 @@ function waveList(n){
   if (n % 10 === 0 && n >= 40) out.push('boss');
   return out;
 }
-// 序盤からじわっと痛く、18をこえたらゆるやかな複利。
-// Lv5タワー＋ワザをつかいこなせば、がんばればW200に届くカーブにしてある
-const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.02, Math.max(0, n-18));
-// 後半はもらえるおほしさまも少しずつ増やして、強化が追いつくようにする
+/* ウェーブに 終わりは ない。どこかで かならず おいつかれる「かべ」が
+   来て、そこが その日の きろくになる。
+   かべの ばしょは 手で えらばず、tools/sim.mjs の モデルで はかって
+   ウェーブ380あたりに なるように 決めた。
+     HP    25をこえたら 1.020の 複利
+     ⭐    30をこえたら 1.004の 複利（HPより ゆっくり ＝ じわじわ おいつかれる）
+   数字を いじるときは かならず sim を かけなおすこと */
+const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.020, Math.max(0, n-25));
+const goldWave = n => Math.pow(1.004, Math.max(0, n-30));
 // （ベリーおうじが なかまだと さらに +10%）
-const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04) * (hasCh('prince') ? 1.1 : 1) * (buffs.gold > 0 ? 2 : 1));
+const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04) * goldWave(wave) * (hasCh('prince') ? 1.1 : 1) * (buffs.gold > 0 ? 2 : 1));
 
 /* ==========================================================
    ステージ（20ウェーブクリアごとに景色が変わる）
@@ -528,7 +551,7 @@ const THEMES = [
     spr:['#ffffff','#bfe8ff','#c9a7ff','#ffd0df'] },
   { name:'よぞらのくに',         g1:'#ded4f6', g2:'#d3c7f1', p1:'#d9b96a', p2:'#f6e2a4',
     spr:['#ffffff','#ffe27a','#ff9ec9','#bfe8ff'] },
-  // ---- 後半戦（W101〜200）はさらに新しい国へ ----
+  // ---- 後半（W101〜）はさらに新しい国へ。1周すると じゅんばんが ずれる ----
   { name:'キャラメルのさばく',   g1:'#f5dfb0', g2:'#efd49c', p1:'#b5722f', p2:'#dda45e',
     spr:['#ffffff','#ffd76e','#ff9ec9','#b98ae0'] },
   { name:'ソーダのうみべ',       g1:'#d3f2f5', g2:'#c2ebf0', p1:'#e8c49a', p2:'#fff0d8',
@@ -615,8 +638,10 @@ applyThemeSel();
 
 // ウェーブ w をたたかっている間のテーマ（w=0 はまだ始まっていないのでステージ1）
 // きせかえ中は限定テーマを優先する
+/* 景色は 20ウェーブごと。1周（200ウェーブ）すると 道が かわるので、
+   景色の じゅんばんも 1つ ずらして 前の周と 同じ ならびに ならないようにする */
 const themeOf = w => themeOverride ? themeOverride.th
-  : THEMES[Math.max(0, Math.ceil(w/STAGE_WAVES)-1) % THEMES.length];
+  : THEMES[(Math.max(0, Math.ceil(w/STAGE_WAVES)-1) + lapOf(w)) % THEMES.length];
 
 /* ==========================================================
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
@@ -731,6 +756,14 @@ let pathCells = new Set(), pathPts = [], segLen = [], pathLen = 0;
 /* ==========================================================
    ユーティリティ
    ========================================================== */
+/* ウェーブに 終わりが ないので、⭐も こうげき力も 何十万・何億に なる。
+   けたを ならべると HUDの カードから あふれるので、万・億で まるめる */
+function fmtN(n){
+  n = Math.round(n);
+  if (n < 10000) return String(n);
+  if (n < 100000000) return (n/10000).toFixed(n < 100000 ? 1 : 0).replace(/\.0$/,'') + '万';
+  return (n/100000000).toFixed(1).replace(/\.0$/,'') + '億';
+}
 const key = (c,r) => c + ',' + r;
 const cx  = c => (c + 0.5) * CELL;
 const cy  = r => (r + 0.5) * CELL;
@@ -1203,8 +1236,34 @@ function bgmStop(){ if (bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } }
 /* ==========================================================
    ゲーム開始
    ========================================================== */
+/* 道を いまの ウェーブの ものに 合わせる。かえたら {moved,back}、そのままなら false。
+   てきが 1体も いない ウェーブの さかいめでだけ よぶこと。
+   とちゅうで かえると 道の ながさが 変わり、まだ とちゅうの子が
+   いっせいに ゴールに 入って げんきが 一気に へってしまう */
+function applyLayout(w){
+  const nw = wayOf(w);
+  if (nw === WAY) return false;
+  WAY = nw;
+  buildPath(); measurePath();
+  // あたらしい道の 上に なった なかまは、こちらの つごうなので 全がく もどす
+  let back = 0, moved = 0;
+  for (let i = towers.length - 1; i >= 0; i--){
+    const t = towers[i], sp = tSpan(t);
+    let on = false;
+    for (let dc = 0; dc < sp; dc++) for (let dr = 0; dr < sp; dr++)
+      if (pathCells.has(key(t.c + dc, t.r + dr))) on = true;
+    if (!on) continue;
+    back += Math.round(sellOf(t) / 0.6);
+    towers.splice(i, 1); moved++;
+  }
+  if (moved){ stars += back; selTower = null; closeInfo(); syncHUD(); }
+  bakeGround();
+  return { moved, back };
+}
+
 function reset(){
   towers = []; enemies = []; shots = []; parts = []; floats = []; rings = [];
+  WAY = LAYOUTS[0];
   hearts = maxHearts(); life = maxLife(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
   selTool = null; selTower = null; running = false; over = false;
   spawnQ = []; spawnT = 0; speed = 1; flash = 0; nextT = 0;
@@ -1877,15 +1936,15 @@ function openInfo(t){
   else if (T.gen) infoIc.append(genThumb(T.gen, 46));
   else infoIc.textContent = T.ic;
   const cap = maxLv();
-  const up = t.lv < cap ? Math.round(T.cost * UP_MUL[t.lv]) : null;
+  const up = t.lv < cap ? Math.round(T.cost * upMul(t.lv)) : null;
   infoTx.innerHTML =
-    `<b>${T.name} Lv.${t.lv}</b>　こうげき ${Math.round(dmgOf(t))}　はんい ${rangeOf(t).toFixed(1)}<br>` +
+    `<b>${T.name} Lv.${t.lv}</b>　こうげき ${fmtN(dmgOf(t))}　はんい ${rangeOf(t).toFixed(1)}<br>` +
     `<span style="opacity:.65">${T.desc}</span>`;
   btnUp.disabled = !up || stars < up;
-  btnUp.textContent = up ? `つよくする ⭐${up}`
+  btnUp.textContent = up ? `つよくする ⭐${fmtN(up)}`
     : t.lv < 5 ? `Lv${t.lv+1}はベストW${t.lv === 3 ? 60 : 100}で解放`
     : 'さいだいレベル';
-  btnSell.textContent = `うる ⭐${sellOf(t)}`;
+  btnSell.textContent = `うる ⭐${fmtN(sellOf(t))}`;
 }
 function closeInfo(){
   infoEl.classList.remove('on'); shopEl.style.display = '';
@@ -1893,18 +1952,23 @@ function closeInfo(){
 }
 
 // なかまの「おうえん」ボーナス（ずっと有効）と、ワザの一時バフ（数秒だけ）
-const dmgOf   = t => TOWERS[t.k].dmg   * Math.pow(1.6, t.lv-1)  * (hasCh('king')  ? 1.1  : 1) * (buffs.dmg > 0 ? 2   : 1);
+/* レベル8より 先は うつ間かくを つめない。つめつづけると 1びょうに
+   何百発も とんで 重くなるため。そのぶんを こうげき力に まわすので、
+   まいびょうの ダメージは これまでと おなじ（1レベルで ×1.78） */
+const RATE_LV = 8;
+const spdLv   = t => Math.min(t.lv - 1, RATE_LV - 1);
+const dmgOf   = t => TOWERS[t.k].dmg   * Math.pow(1.6, t.lv-1) * Math.pow(1/0.9, (t.lv-1) - spdLv(t)) * (hasCh('king')  ? 1.1  : 1) * (buffs.dmg > 0 ? 2   : 1);
 const rangeOf = t => TOWERS[t.k].range * Math.pow(1.12, t.lv-1) * (hasCh('fairy') ? 1.05 : 1) * (buffs.rng > 0 ? 1.4 : 1);
-const rateOf  = t => TOWERS[t.k].rate  * Math.pow(0.9, t.lv-1)  * (hasCh('taffy') ? 0.93 : 1) * (buffs.spd > 0 ? 0.5 : 1);
+const rateOf  = t => TOWERS[t.k].rate  * Math.pow(0.9, spdLv(t))  * (hasCh('taffy') ? 0.93 : 1) * (buffs.spd > 0 ? 0.5 : 1);
 const sellOf  = t => {
   let paid = TOWERS[t.k].cost;
-  for (let i=1;i<t.lv;i++) paid += Math.round(TOWERS[t.k].cost*UP_MUL[i]);
+  for (let i=1;i<t.lv;i++) paid += Math.round(TOWERS[t.k].cost*upMul(i));
   return Math.round(paid*0.6);
 };
 
 btnUp.onclick = () => {
   const t = selTower; if (!t || t.lv >= maxLv()) return;
-  const c = Math.round(TOWERS[t.k].cost * UP_MUL[t.lv]);
+  const c = Math.round(TOWERS[t.k].cost * upMul(t.lv));
   if (stars < c) return;
   stars -= c; t.lv++; t.pulse = 1;
   // ずかんに「ここまで育てた」記録を残す
@@ -1939,7 +2003,7 @@ btnSell.onclick = () => {
    ========================================================== */
 function syncHUD(){
   vHp.textContent = Math.max(0, hearts);
-  vSt.textContent = stars;
+  vSt.textContent = fmtN(stars);
   vWv.textContent = wave;
   vBw.textContent = rec.bw > 0 ? '🏆 ベスト ' + rec.bw : '';
   hpBox.classList.toggle('low', hearts <= 3);
@@ -2023,10 +2087,17 @@ function startWave(early){
   if (early && nextT > 0 && wave > 0){
     const b = Math.ceil(nextT * (2 + wave*0.4));
     stars += b;
-    floatTx(COLS*CELL/2, CELL*1.4, 'はやよび +⭐' + b, '#ffb43f');
+    floatTx(COLS*CELL/2, CELL*1.4, 'はやよび +⭐' + fmtN(b), '#ffb43f');
   }
   nextT = 0;
   wave++;
+  // LAP_WAVES ごとに 道が かわる。てきが 1体も いない ここでだけ 切りかえる
+  const chg = applyLayout(wave);
+  if (chg){
+    floatTx(COLS*CELL/2, CELL*3.0, '🍭 あたらしい みちが できた！', '#b98ae0');
+    if (chg.moved)
+      floatTx(COLS*CELL/2, CELL*3.9, 'みちの上の なかま' + chg.moved + '人は ⭐' + fmtN(chg.back) + 'で もどしたよ', '#e05f9e');
+  }
   bgmStart();          // 最初のウェーブからBGM開始（タップ後なので再生できる）
   spawnQ = waveList(wave).slice();
   spawnSeq = 0;      // ウェーブごとに 0にもどす（おなじウェーブは いつも おなじ顔ぶれ）
@@ -2308,7 +2379,7 @@ function update(dt){
     } else if ((time*4|0) !== wvTick){
       wvTick = time*4|0;
       const b = Math.ceil(nextT * (2 + wave*0.4));
-      btnWave.innerHTML = PLAY + ' はやよび +⭐' + b + '<br>あと' + Math.ceil(nextT) + 'びょう';
+      btnWave.innerHTML = PLAY + ' はやよび +⭐' + fmtN(b) + '<br>あと' + Math.ceil(nextT) + 'びょう';
     }
   }
 
@@ -2440,9 +2511,9 @@ function update(dt){
   // ウェーブ終了
   if (running && !spawnQ.length && !enemies.length){
     running = false;
-    const bonus = Math.round((20 + wave*4) * (hasCh('cake') ? 1.2 : 1));
+    const bonus = Math.round((20 + wave*4) * goldWave(wave) * (hasCh('cake') ? 1.2 : 1));
     stars += bonus;
-    floatTx(COLS*CELL/2, ROWS*CELL/2, '+⭐'+bonus, '#ffb43f');
+    floatTx(COLS*CELL/2, ROWS*CELL/2, '+⭐'+fmtN(bonus), '#ffb43f');
     beep(700,.15,'triangle',.06); setTimeout(()=>beep(940,.22,'triangle',.06),130);
     btnWave.disabled = false;
     btnWave.innerHTML = 'つぎのウェーブ ' + PLAY;
@@ -6577,7 +6648,8 @@ function enemyLook(k, n, i){
     pool = EN_BY_LV[lv - d] || EN_BY_LV[lv + d] || null;
   if (!pool || !pool.length) return null;
   // おなじウェーブなら いつも おなじ顔ぶれに する（あつめる目あてが 立つように）
-  return pool[(n * 7 + i * 3) % pool.length];
+  // 周が かわると 顔ぶれも ずれる。おなじ道を 何周も 見るので、ここで 変化をつける
+  return pool[(n * 7 + i * 3 + lapOf(n) * 5) % pool.length];
 }
 /* 見た目を えがく。えがく じゅんばんは drawGen → かげ → にじいろ の 順 */
 function genThumb(o, size){
@@ -7063,6 +7135,7 @@ function tryResume(){
   try{ rn = JSON.parse(localStorage.getItem('sweetTD.run') || 'null'); }catch(e){}
   if (!rn) return;
   wave = Math.max(0, rn.w | 0);
+  applyLayout(wave);              // タワーの おき場所を しらべる前に 道を そろえる
   stars = Math.max(0, rn.st | 0);
   hearts = Math.min(HEART_STOCK_MAX, Math.max(0, rn.hp | 0));   // のこり回数は そのまま 引きつぐ
   // むかしの セーブには げんきが 入っていないので、そのときは 満タンから
@@ -7081,6 +7154,7 @@ function continueRun(refill, keepWave){
   over = false; running = false;
   enemies = []; shots = []; spawnQ = []; gifts = [];
   if (!keepWave) wave = Math.max(0, wave - 1);
+  applyLayout(wave);              // ウェーブが もどって 周が かわることが ある
   // 💗は gameOver() で すでに 1こ つかっている。ここでは げんきだけ 満タンに もどす
   life = maxLife();
   continueUsed = true;
@@ -9559,7 +9633,7 @@ let groundCv = null, groundKeyNow = '';
 function withCtx(g, fn){ const p = ctx; ctx = g; try{ fn(); } finally { ctx = p; } }
 
 /* じめんの見た目が かわる条件。ここが変わったときだけ 焼きなおす */
-const groundKey = () => themeOf(wave).name + '/' + CELL + '/' + DPR;
+const groundKey = () => themeOf(wave).name + '/' + CELL + '/' + DPR + '/' + lapOf(wave);
 
 function bakeGround(){
   const W = COLS*CELL, H = ROWS*CELL;
@@ -9669,6 +9743,8 @@ window.__chk = {
     return out;
   },
   drawAvatar, portraitShade,
+  /* つりあいの 検査（tools/sim.mjs）用。数字を いじったら かならず かけなおす */
+  bal: { hpScale, goldWave, upMul, waveList, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10) },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。
@@ -9689,6 +9765,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return 'なし';
   },
   life: () => life,
+  wave: () => wave,
+  way: () => JSON.stringify(WAY),
+  clear: () => { enemies.length = 0; spawnQ.length = 0; },
   setLife: v => { life = v; },
   stars: () => stars,
   shards: () => shards,
