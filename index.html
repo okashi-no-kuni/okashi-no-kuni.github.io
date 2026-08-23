@@ -277,10 +277,12 @@
   .cst.best{background:linear-gradient(135deg,#fff3cf,#ffe2f0);border-color:#ffd76e}
   .cst.best .cn{color:#c9821e}
 
-  #tip{font-size:10.5px;text-align:center;opacity:.55;line-height:1.5}
-  /* たてが みじかい 端末（SEなど）は、下の あんない文が 切れないように つめる */
+  /* 行間を つめてある。ここが ひろいと いちばん下の1行が 画面から はみ出す。
+     ばんめんの 大きさは いじりたくないので、下の 文字がわで つめる */
+  #tip{font-size:10.5px;text-align:center;opacity:.55;line-height:1.3;margin-top:-3px}
+  /* たてが みじかい 端末（SEなど）は もっと つめる */
   @media (max-height:720px){
-    #tip{font-size:9px;line-height:1.3}
+    #tip{font-size:9px;line-height:1.25}
     .mini{padding:7px 9px}
   }
 
@@ -9541,18 +9543,12 @@ function resize(){
     cv.style.width = W+'px'; cv.style.height = H+'px';
     ctx.setTransform(DPR,0,0,DPR,0,0);
   };
-  CELL = Math.max(22, Math.floor(Math.min(w/COLS, h/ROWS)));
+  /* ばんめんの 大きさは innerHeight から そのまま 決める。
+     はみ出しを はかって 自動で ちぢめる やりかたも ためしたが、
+     iOS は アドレスバーの 出入りで innerHeight と レイアウトの 高さが
+     ずれるので、ばんめんが 小さくなりすぎた。ここは さわらない */
+  CELL = Math.max(24, Math.floor(Math.min(w/COLS, h/ROWS)));
   applyCell();
-  /* ばんめん いがいの 高さ（HUD・ワザバー・ショップ・ボタン）は、きせかえや
-     文字の おりかえしで かわる。362の 決めうちでは 足りないことがあり、
-     いちばん下の「たたかいかたは 📕 を見てね」が 画面の外に 出て 切れていた。
-     1回 おいてみて じっさいの 高さを はかり、そこから 決めなおす。
-     はかった値から 1回で 決めるので、へらしすぎることが ない */
-  const other = document.documentElement.scrollHeight - cv.offsetHeight;
-  if (other > 0 && other < window.innerHeight){
-    const fit = Math.floor((window.innerHeight - other) / ROWS);
-    if (fit > 0 && fit < CELL){ CELL = Math.max(22, fit); applyCell(); }
-  }
   measurePath();
   /* てきの すすみぐあい e.d は ピクセルで もっている。マスが 小さくなると
      道も みじかくなるので、そのままだと「もう ゴールに ついている」あつかいに
