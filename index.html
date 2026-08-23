@@ -70,7 +70,8 @@
   .tw .ic{height:42px;display:flex;align-items:center;justify-content:center}
   .tw .ic canvas{display:block}
   .tw .nm{font-size:10.5px}
-  .tw .cs{font-size:11px;color:var(--pink-d)}
+  /* 「⭐110 ×2」が おりかえすと 4つの 高さが そろわないので おらせない */
+  .tw .cs{font-size:10.5px;color:var(--pink-d);white-space:nowrap}
 
   #info{display:none;padding:9px 11px;gap:8px;align-items:center}
   #info.on{display:flex}
@@ -217,9 +218,12 @@
   .cCard{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:14px;
     padding:7px 3px 6px;text-align:center}
   .cCard.no{opacity:.6;filter:grayscale(.7)}
-  /* まだ いない子は うすく。もっている子と ひとめで 見分けられる濃さにする */
-  .cCard.yet{opacity:.38;filter:grayscale(.5)}
-  .cCard.yet .cNm{font-weight:400}
+  /* まだ いない子は うすく。ただし カードごと すけさせると わくが 消えて、
+     字だけが 宙に うかんで 見える。わくは のこして 中身だけ うすくする */
+  .cCard.yet{background:rgba(255,255,255,.5);border-color:#f6e6f0;filter:grayscale(.45)}
+  .cCard.yet canvas{opacity:.4}
+  .cCard.yet .cNm{font-weight:400;color:#b5a2b3}
+  .cCard.yet .cTt{color:#bdaaba;opacity:.85}
   .cCard canvas{display:block;margin:0 auto}
   .cNm{font-size:11px;margin-top:2px}
   .cTt{font-size:9px;opacity:.6;line-height:1.3}
@@ -274,6 +278,11 @@
   .cst.best .cn{color:#c9821e}
 
   #tip{font-size:10.5px;text-align:center;opacity:.55;line-height:1.5}
+  /* たてが みじかい 端末（SEなど）は、下の あんない文が 切れないように つめる */
+  @media (max-height:720px){
+    #tip{font-size:9px;line-height:1.3}
+    .mini{padding:7px 9px}
+  }
 
   /* ---------- 画面ぜんたいにあふれる紙吹雪 ---------- */
   #confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:99}
@@ -1849,7 +1858,7 @@ function syncShop(){
     // ねだんのよこに、いま持っている数（盤面においてある数）。置く・売るでかわる。
     // つづきからで再開したあとも、のこっているおかしはそのまま数える
     const n = towers.filter(t => t.k === el.dataset.k).length;
-    el.querySelector('.twC').textContent = '・×' + n;
+    el.querySelector('.twC').textContent = ' ×' + n;
   }
 }
 
@@ -6463,8 +6472,8 @@ for (const b of colTabsEl.children){
 /* 図鑑にのる全カード。pid は似顔絵の描き分けキー */
 function dexList(){
   return [
-    ...DEX_TOWERS.map(o => ({ ...o, cat:'tw', pid:o.id, hint:'おいてみると とうろくされるよ' })),
-    ...DEX_ENEMIES.map(o => ({ ...o, cat:'en', pid:o.id, hint:'たおすと とうろくされるよ' })),
+    ...DEX_TOWERS.map(o => ({ ...o, cat:'tw', pid:o.id, hint:'おくと ずかんに' })),
+    ...DEX_ENEMIES.map(o => ({ ...o, cat:'en', pid:o.id, hint:'たおすと ずかんに' })),
     ...CHARS.map((c,i) => ({ id:'ch_'+c.id, pid:c.id, name:c.name, title:c.title, cat:'ch', fx:c.fx,
                              hint:'ステージ' + (i+1) + 'クリアで なかまに' })),
     { id:'sp_rpurin', pid:'rpurin', name:'にじいろプリン', title:'でんせつのプリン', cat:'ch',
@@ -9517,15 +9526,41 @@ function bakeGround(){
    サイズ
    ========================================================== */
 function resize(){
+  const prevLen = pathLen;
   const w = Math.min(document.getElementById('app').clientWidth - 20, 460);
   const h = window.innerHeight - 362;   // なかまワザのバーと🔑ボタンのぶんも確保する
-  CELL = Math.max(24, Math.floor(Math.min(w/COLS, h/ROWS)));
-  const W = COLS*CELL, H = ROWS*CELL;
-  DPR = Math.min(window.devicePixelRatio||1, 2.5);
-  cv.width = W*DPR; cv.height = H*DPR;
-  cv.style.width = W+'px'; cv.style.height = H+'px';
-  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const applyCell = () => {
+    const W = COLS*CELL, H = ROWS*CELL;
+    DPR = Math.min(window.devicePixelRatio||1, 2.5);
+    cv.width = W*DPR; cv.height = H*DPR;
+    cv.style.width = W+'px'; cv.style.height = H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  };
+  CELL = Math.max(22, Math.floor(Math.min(w/COLS, h/ROWS)));
+  applyCell();
+  /* ばんめん いがいの 高さは、きせかえや 文字の おりかえしで かわる。
+     362の 決めうちでは 足りないことがあり、いちばん下の
+     「たたかいかたは 📕 を見てね」が 画面の外に 出て 切れていた。
+     1回 おいてみて、はみ出していたら そのぶん マスを 小さくする */
+  for (let i = 0; i < 5; i++){
+    const over = document.documentElement.scrollHeight - window.innerHeight;
+    if (over <= 0) break;
+    const next = Math.max(22, CELL - Math.max(1, Math.ceil(over / ROWS)));
+    if (next === CELL) break;
+    CELL = next; applyCell();
+  }
   measurePath();
+  /* てきの すすみぐあい e.d は ピクセルで もっている。マスが 小さくなると
+     道も みじかくなるので、そのままだと「もう ゴールに ついている」あつかいに
+     なって、まだ とちゅうの子まで いっせいに 通りぬけ、💗が いっきに 0になる。
+     スマホは アドレスバーの 出入りで innerHeight が かわるため、
+     ふつうに あそんでいるだけで これが おきる。
+     道の長さの ひりつで すすみを つけかえて、見た目の いちを 保つ */
+  if (prevLen > 0 && pathLen > 0 && prevLen !== pathLen){
+    const k = pathLen / prevLen;
+    for (const e of enemies) e.d *= k;
+  }
+  const W = COLS*CELL, H = ROWS*CELL;
   for (const s of sparks){ s.x = Math.min(s.x, W); s.y = Math.min(s.y, H); }
   bakeGround();
 }
