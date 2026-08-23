@@ -59,6 +59,19 @@ const out = await p.evaluate(() => {
   }
   return { wall: '>5000' };
 });
+// 道は 周ごとに その場で 作る。ながさと おけるマスが そろっていないと
+// 道だけで むずかしさが 変わってしまうので、さいしょの 200周を しらべる
+const ways = await p.evaluate(() => {
+  const B = window.__chk.bal, out = { bad: [], seen: new Set(), n: 0 };
+  for (let lap = 0; lap < 200; lap++){
+    const w = B.makeWay(lap), m = B.wayMeasure(w);
+    if (m.len < 28 || m.len > 36 || m.free < 72 || m.free > 82)
+      out.bad.push('周' + lap + ' ながさ' + m.len.toFixed(1) + ' おける' + m.free);
+    out.seen.add(JSON.stringify(w));
+    if (B.makeWay(lap).toString() !== w.toString()) out.bad.push('周' + lap + ' 毎回ちがう形になる');
+  }
+  return { bad: out.bad, kinds: out.seen.size };
+});
 await b.close();
 
 const jp = n => n.toLocaleString('ja-JP');
@@ -66,7 +79,9 @@ console.log('かべの ウェーブ   : ' + out.wall);
 console.log('そのときの さいだいLv: ' + out.lv + '（上限 ' + (3 + Math.floor(out.wall/10)) + '）');
 console.log('そのときの ⭐/かい : ' + jp(out.reward));
 console.log('そのときの てき1体HP: ' + jp(out.hp1));
+console.log('道の しゅるい（200周）: ' + ways.kinds + ' しゅるい');
+if (ways.bad.length) console.log('道の はんい外: ' + ways.bad.slice(0,5).join(' / '));
 if (errs.length){ console.log('\nJSエラー: ' + errs.join(' / ')); process.exit(1); }
-const ok = typeof out.wall === 'number' && out.wall >= LOW && out.wall <= HIGH;
+const ok = typeof out.wall === 'number' && out.wall >= LOW && out.wall <= HIGH && ways.bad.length === 0;
 console.log('\n' + (ok ? '検査 OK ✅' : `検査 NG ❌（かべは ${LOW}〜${HIGH} に おさめること）`));
 process.exit(ok ? 0 : 1);
