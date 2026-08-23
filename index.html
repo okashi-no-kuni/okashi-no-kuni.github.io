@@ -656,11 +656,15 @@ const LEGENDS = [
     fx:'しゅくふく：はやよびのまち時間+3びょう',         tease:'ウェーブ200で なにかが おきる…' },
 ];
 const hasLg = id => !!dex['lg_' + id];
+/* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
+   たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
+   てきが ゴールに 入っても 💗は へらない（へるのは life） */
 const maxHearts = () => 20 + (hasLg('whale') ? 2 : 0);
+const maxLife   = () => 20 + (hasLg('whale') ? 2 : 0);   // クジラの しゅくふく：はじまりのハート+2
 /* ごほうびでもらう💗は上限をこえてためておける。ためすぎないように99でとめる */
 const HEART_STOCK_MAX = 99;
-/* ふつうの回復はいつもの上限まで。すでにためた💗は絶対にへらさない */
-const healHearts = n => { hearts = Math.max(hearts, Math.min(maxHearts(), hearts + n)); };
+/* かいふくワザや ステージクリアの ごほうびは、そのプレイの げんきを もどす */
+const healHearts = n => { life = Math.max(life, Math.min(maxLife(), life + n)); };
 /* 💗をつかいきったら、時間で少しずつ回復するライフ制。
    REGEN_MIN分ごとに💗1こ、maxHearts()まで（ふつう20こ→100分で満タン）。
    1こでもたまれば「つづきから」で再開できる。回復ペースはここだけ変えればOK */
@@ -710,7 +714,7 @@ const skillBar = $('skillBar'), colHint = $('colHint');
    ========================================================== */
 let CELL = 40;
 let towers = [], enemies = [], shots = [], parts = [], floats = [], sparks = [], rings = [];
-let hearts, stars, wave, selTool, selTower, running, spawnQ, spawnT, over;
+let hearts, life, stars, wave, selTool, selTower, running, spawnQ, spawnT, over;
 let speed = 1, time = 0, flash = 0;
 let nextT = 0, wvTick = -1;   // つぎのウェーブまでのカウントダウン
 let celebT = 0, wflash = 0;   // お祝いの光芒と白フラッシュ
@@ -1201,7 +1205,7 @@ function bgmStop(){ if (bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } }
    ========================================================== */
 function reset(){
   towers = []; enemies = []; shots = []; parts = []; floats = []; rings = [];
-  hearts = maxHearts(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
+  hearts = maxHearts(); life = maxLife(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
   selTool = null; selTower = null; running = false; over = false;
   spawnQ = []; spawnT = 0; speed = 1; flash = 0; nextT = 0;
   btnSpd.textContent = '1x';
@@ -1938,7 +1942,7 @@ function syncHUD(){
   vSt.textContent = stars;
   vWv.textContent = wave;
   vBw.textContent = rec.bw > 0 ? '🏆 ベスト ' + rec.bw : '';
-  hpBox.classList.toggle('low', hearts <= 5);
+  hpBox.classList.toggle('low', hearts <= 3);
   syncShop();
   syncSkills();
 }
@@ -2344,12 +2348,12 @@ function update(dt){
         avResult(e.av, false);
         floatTx(COLS*CELL/2, ROWS*CELL - CELL*1.2, e.av.n + 'に とおされた…', '#b98ae0');
       }
-      hearts -= (e.k === 'boss' ? 5 : 1);
+      life -= (e.k === 'boss' ? 5 : 1);
       flash = 1; beep(200,.28,'sawtooth',.06,.5);
-      if (hearts <= 0){
+      if (life <= 0){
         // ふしちょうのしゅくふく：1プレイに1回だけふみとどまる
         if (hasLg('phoenix') && !phoenixUsed){
-          phoenixUsed = true; hearts = 1;
+          phoenixUsed = true; life = 1;
           celebrate({ conf: 50, rings: true, fanfare: 1 });
           floatTx(COLS*CELL/2, ROWS*CELL/2, 'ふしちょうの ごかご！🔥', '#ff8a3a');
         } else {
@@ -2550,11 +2554,20 @@ function gameOver(){
       : '<span style="' + badge + '">🏆 じぶんベスト ウェーブ' + rec.bw + '</span>') +
     '<br><span style="opacity:.7">たおしたかず：' + rec.kills + '　ランキング：じょうい' + rankPct() + '%くらい（めやす）</span><br>' +
     'もういちど ちょうせんしてみよう ✨';
+  // 💗は「あと なんかい あそべるか」。まけた ときに 1こだけ つかう。
+  // てきが ゴールに 入っても へらない（へるのは げんきのバー）
+  hearts = Math.max(0, hearts - 1);
+  life = maxLife();                 // つぎの プレイは げんき満タンから
+  syncHUD();
   saveRun(Math.max(0, wave - 1));   // たおれたウェーブをやりなおせる状態で保存
   ovBtn.disabled = false;
-  // 💗をつかいきったら、時間で少しずつ回復。1こでもたまれば再開できる
-  if (!nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
-  ovB.innerHTML += '<br><span style="opacity:.75">やられちゃった…！ ' + REGEN_MIN + 'ふんごとに 💗が1こずつ もどるよ（さいだい' + maxHearts() + '）</span>';
+  if (hearts >= 1){
+    ovB.innerHTML += '<br><span style="opacity:.75">💗を 1こ つかったよ（のこり ' + hearts + '）</span>';
+  } else {
+    // つかいきったら、時間で少しずつ回復。1こでもたまれば再開できる
+    if (!nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
+    ovB.innerHTML += '<br><span style="opacity:.75">💗を つかいきっちゃった…！ ' + REGEN_MIN + 'ふんごとに 1こずつ もどるよ（さいだい' + maxHearts() + '）</span>';
+  }
   armLifeButton(false);
   ovAlt.textContent = 'さいしょから やりなおす';
   ovAlt.style.display = '';
@@ -6990,7 +7003,7 @@ function syncSkills(){
 function saveRun(w){
   try{
     localStorage.setItem('sweetTD.run', JSON.stringify({
-      w: (w !== undefined ? w : wave), st: stars, hp: hearts,
+      w: (w !== undefined ? w : wave), st: stars, hp: hearts, lf: life,
       cu: continueUsed ? 1 : 0,
       tw: towers.map(t => {
         return { k:t.k, c:t.c, r:t.r, lv:t.lv };
@@ -7051,7 +7064,9 @@ function tryResume(){
   if (!rn) return;
   wave = Math.max(0, rn.w | 0);
   stars = Math.max(0, rn.st | 0);
-  hearts = Math.min(HEART_STOCK_MAX, Math.max(0, rn.hp | 0));   // ためた💗も、やすみ中の💗もそのまま引きつぐ
+  hearts = Math.min(HEART_STOCK_MAX, Math.max(0, rn.hp | 0));   // のこり回数は そのまま 引きつぐ
+  // むかしの セーブには げんきが 入っていないので、そのときは 満タンから
+  life = rn.lf === undefined ? maxLife() : Math.min(maxLife(), Math.max(1, rn.lf | 0));
   towers = (rn.tw || [])
     .filter(t => TOWERS[t.k] && !pathCells.has(key(t.c, t.r)))
     .map(t => ({ k:t.k, c:t.c, r:t.r, lv:Math.min(5, Math.max(1, t.lv|0)),
@@ -7066,7 +7081,8 @@ function continueRun(refill, keepWave){
   over = false; running = false;
   enemies = []; shots = []; spawnQ = []; gifts = [];
   if (!keepWave) wave = Math.max(0, wave - 1);
-  hearts = Math.min(HEART_STOCK_MAX, refill || 1);
+  // 💗は gameOver() で すでに 1こ つかっている。ここでは げんきだけ 満タンに もどす
+  life = maxLife();
   continueUsed = true;
   setNextHeartAt(0);   // 再開したら回復タイマーは止める
   ovBtn.disabled = false;
@@ -7404,6 +7420,7 @@ function buildHelp(){
     '<li><b>20ウェーブごと</b>のクリアのあとに<b>🎁ボーナスウェーブ</b>！ふってくるおかしを ' +
     'ぜんぶタップすると💗+1。1こでも おとしたら そこでおしまい</li>' +
     '<li>もらった💗は <b>20をこえて ためられる</b>よ（99こまで）</li>' +
+    '<li>💗は<b>あと なんかい あそべるか</b>。まけると 1こ へるよ。てきに とおされても へるのは 上の <b>げんきのバー</b>で、💗は そのまま</li>' +
     '<li>進行はじどうセーブ。💗がなくなっても、<b>' + REGEN_MIN + 'ふんごとに💗が1こずつ</b>もどるよ（さいだい' + maxHearts() + '）。1こでもあれば そのウェーブから再開できる</li>' +
     '<li>うわさでは、<b>ウェーブ60</b>で でんせつのなかまに会えるらしい…✨</li></ul></div>';
   h += '<div class="hSec"><h3>🔑 あいことば</h3>' +
@@ -7495,7 +7512,7 @@ function buildPw(){
          ['choco',3,4],['choco',5,4],['ice',2,6],['ice',6,6],['candy',3,10],['candy',5,10]]
           .forEach(([kk,cc,rr]) => towers.push({ k:kk, c:cc, r:rr, lv:5, cd:0,
                                                  ang:-Math.PI/2, pulse:0, ph:Math.random()*6.3 }));
-        wave = 54; stars = 3000; hearts = maxHearts();
+        wave = 54; stars = 3000; hearts = maxHearts(); life = maxLife();
         nextT = 0; enemies = []; shots = []; spawnQ = [];
         btnWave.disabled = false; btnWave.innerHTML = 'つぎのウェーブ ' + PLAY;
         saveRun(); syncHUD();
@@ -8547,6 +8564,35 @@ function drawBoardOverlay(){
   }
   ctx.globalAlpha = 1;
 
+  /* おかしの国の げんき。💗は「あと なんかい あそべるか」なので、
+     いま たたかっている ぶんの たいりょくは これで 見せる。
+     DOMの 行にすると 下の あんない文が 画面から はみ出すので、
+     ばんめんの 中に えがいて レイアウトを 1ミリも 動かさない */
+  {
+    const mx = maxLife(), v = Math.max(0, Math.min(mx, life | 0));
+    const bh = CELL*0.28, by = CELL*0.15;
+    const bx0 = CELL*0.62, bx1 = W - CELL*0.2, bw = bx1 - bx0;
+    const low = v <= mx*0.3;
+    ctx.font = "800 " + (CELL*0.28) + "px 'Hiragino Maru Gothic ProN','Noto Sans JP',system-ui,sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('💗', CELL*0.16, by + bh/2);
+    ctx.fillStyle = 'rgba(255,255,255,.78)';
+    roundRect(bx0, by, bw, bh, bh/2); ctx.fill();
+    if (v > 0){
+      const fw = Math.max(bh, bw * v / mx);
+      const lg = ctx.createLinearGradient(bx0, 0, bx0 + fw, 0);
+      lg.addColorStop(0, low ? '#ff5f83' : '#ff8fc4');
+      lg.addColorStop(1, low ? '#ffa3b4' : '#ffc0dd');
+      ctx.fillStyle = lg;
+      roundRect(bx0, by, fw, bh, bh/2); ctx.fill();
+    }
+    ctx.textAlign = 'right';
+    ctx.lineWidth = CELL*0.08; ctx.strokeStyle = '#ffffff'; ctx.lineJoin = 'round';
+    ctx.strokeText(v, bx1 - CELL*0.12, by + bh/2);
+    ctx.fillStyle = low ? '#e0466d' : '#e05f9e';
+    ctx.fillText(v, bx1 - CELL*0.12, by + bh/2);
+  }
+
   // いまのステージ名（右上のかわいいラベル。左上は敵の入り口なので避ける）
   {
     const stN = Math.max(1, Math.ceil(Math.max(wave,1)/STAGE_WAVES));
@@ -8554,22 +8600,23 @@ function drawBoardOverlay(){
     ctx.font = "800 " + (CELL*0.27) + "px 'Hiragino Maru Gothic ProN','Noto Sans JP',system-ui,sans-serif";
     const lw = ctx.measureText(label).width;
     const bx = COLS*CELL - CELL*0.22 - lw - CELL*0.56;
+    const ly = CELL*0.46;   // げんきのバーの すぐ下。かさならないように さげてある
     // まるいピル（ピンクのふちどり＋ふんわり影）
     ctx.save();
     ctx.shadowColor = 'rgba(190,140,180,.4)'; ctx.shadowBlur = CELL*0.12; ctx.shadowOffsetY = CELL*0.04;
     ctx.fillStyle = 'rgba(255,255,255,.85)';
-    roundRect(bx, CELL*0.14, lw + CELL*0.56, CELL*0.6, CELL*0.3); ctx.fill();
+    roundRect(bx, ly, lw + CELL*0.56, CELL*0.6, CELL*0.3); ctx.fill();
     ctx.restore();
     ctx.strokeStyle = 'rgba(255,143,196,.75)'; ctx.lineWidth = 2;
-    roundRect(bx, CELL*0.14, lw + CELL*0.56, CELL*0.6, CELL*0.3); ctx.stroke();
+    roundRect(bx, ly, lw + CELL*0.56, CELL*0.6, CELL*0.3); ctx.stroke();
     // 白フチつきのピンク文字
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.lineWidth = CELL*0.09; ctx.strokeStyle = '#ffffff'; ctx.lineJoin = 'round';
-    ctx.strokeText(label, bx + CELL*0.28, CELL*0.45);
+    ctx.strokeText(label, bx + CELL*0.28, ly + CELL*0.31);
     ctx.fillStyle = '#e05f9e';
-    ctx.fillText(label, bx + CELL*0.28, CELL*0.45);
+    ctx.fillText(label, bx + CELL*0.28, ly + CELL*0.31);
     // ゆれるキラキラをそえる
-    sparkle(bx - CELL*0.12, CELL*0.3 + Math.sin(time*2.5)*CELL*0.05, CELL*0.09, time*2, '#ffd76e');
+    sparkle(bx - CELL*0.12, ly + CELL*0.16 + Math.sin(time*2.5)*CELL*0.05, CELL*0.09, time*2, '#ffd76e');
   }
 
   // そらをとぶでんせつ
@@ -9641,6 +9688,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     if (near) return next.name + 'のかげ';
     return 'なし';
   },
+  life: () => life,
+  setLife: v => { life = v; },
   stars: () => stars,
   shards: () => shards,
   bunch: () => {   // ともだちを ぎゅっと ならべて なまえの かさなりを 見る
