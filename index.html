@@ -9306,6 +9306,11 @@ function drawShot(s){
 
 function render(){
   const W = COLS*CELL, H = ROWS*CELL;
+  /* iOS は うらに まわった タブの canvas を すてることがある。もどってくると
+     ctx の 変換が 1倍に もどっていて、DPR ぶん（さいだい2.5倍）小さい
+     左上だけに ばんめんが えがかれ、のこりは 前の絵が こびりつく。
+     resize() のときだけ かけていると 直せないので、まいフレーム かけなおす */
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
   ctx.save();
   roundRect(0,0,W,H,20); ctx.clip();
@@ -9538,16 +9543,15 @@ function resize(){
   };
   CELL = Math.max(22, Math.floor(Math.min(w/COLS, h/ROWS)));
   applyCell();
-  /* ばんめん いがいの 高さは、きせかえや 文字の おりかえしで かわる。
-     362の 決めうちでは 足りないことがあり、いちばん下の
-     「たたかいかたは 📕 を見てね」が 画面の外に 出て 切れていた。
-     1回 おいてみて、はみ出していたら そのぶん マスを 小さくする */
-  for (let i = 0; i < 5; i++){
-    const over = document.documentElement.scrollHeight - window.innerHeight;
-    if (over <= 0) break;
-    const next = Math.max(22, CELL - Math.max(1, Math.ceil(over / ROWS)));
-    if (next === CELL) break;
-    CELL = next; applyCell();
+  /* ばんめん いがいの 高さ（HUD・ワザバー・ショップ・ボタン）は、きせかえや
+     文字の おりかえしで かわる。362の 決めうちでは 足りないことがあり、
+     いちばん下の「たたかいかたは 📕 を見てね」が 画面の外に 出て 切れていた。
+     1回 おいてみて じっさいの 高さを はかり、そこから 決めなおす。
+     はかった値から 1回で 決めるので、へらしすぎることが ない */
+  const other = document.documentElement.scrollHeight - cv.offsetHeight;
+  if (other > 0 && other < window.innerHeight){
+    const fit = Math.floor((window.innerHeight - other) / ROWS);
+    if (fit > 0 && fit < CELL){ CELL = Math.max(22, fit); applyCell(); }
   }
   measurePath();
   /* てきの すすみぐあい e.d は ピクセルで もっている。マスが 小さくなると
@@ -9565,6 +9569,9 @@ function resize(){
   bakeGround();
 }
 window.addEventListener('resize', resize);
+/* iOS は うらに まわると canvas の中みを すてることがある。
+   もどってきたら 焼いてある じめんも 消えているので、焼きなおす */
+document.addEventListener('visibilitychange', () => { if (!document.hidden) bakeGround(); });
 
 /* 盤面のタップ。タッチもマウスも Pointer Events で 同じようにあつかえる */
 cv.addEventListener('pointerdown', e => {
