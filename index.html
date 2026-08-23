@@ -455,21 +455,105 @@ document.addEventListener('dblclick', e => e.preventDefault());
    マップ
    ========================================================== */
 const COLS = 9, ROWS = 12;
-/* 敵が通る道の曲がり角（セル座標）。-1 と ROWS は画面外の出入口。
-   ウェーブに 終わりは なく、LAP_WAVES ごとに 道そのものが 変わる。
-   どの道も まがり角は たて・よこだけ、ながさ31〜34マス、
-   おける マスは 75〜78で そろえてある（むずかしさが 道で 変わらないように） */
+/* ==========================================================
+   道（周ごとに 作りかえる）
+   ----------------------------------------------------------
+   ウェーブに 終わりが ないので、道の形も 手で ぜんぶ 用意することは
+   できない。周ばんごうを たねにした 乱数で その場で 作る。
+   おなじ周なら いつでも おなじ形が 出るので、セーブとも ずれない。
+
+   どの形も つぎを まもる（道で むずかしさが 変わらないように）：
+     ながさ    28〜36マス   みじかい道 ＝ てきが すぐ ゴールに つく
+     おけるマス 72〜82      すくない ＝ なかまを ならべられない
+   はんいに 入るまで たねを ずらして 作りなおす。
+   ========================================================== */
 const LAP_WAVES = 200;
-const LAYOUTS = [
-  [[1,-1],[1,2],[7,2],[7,5],[1,5],[1,8],[7,8],[7,12]],
-  [[7,-1],[7,3],[1,3],[1,6],[7,6],[7,9],[1,9],[1,12]],
-  [[4,-1],[4,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,10],[6,10],[6,12]],
-  [[1,-1],[1,1],[7,1],[7,4],[3,4],[3,7],[7,7],[7,10],[1,10],[1,12]],
-  [[8,-1],[8,2],[3,2],[3,5],[8,5],[8,8],[1,8],[1,11],[5,11],[5,12]],
-];
 const lapOf = w => Math.floor(Math.max(0, w - 1) / LAP_WAVES);
-const wayOf = w => LAYOUTS[lapOf(w) % LAYOUTS.length];
-let WAY = LAYOUTS[0];
+/* さいしょの1周は 手で 作った道。はじめての人が 見る 画面なので */
+const FIRST_WAY = [[1,-1],[1,2],[7,2],[7,5],[1,5],[1,8],[7,8],[7,12]];
+
+/* 点から 線ぶんまでの きょり。道の しるしづけと 道づくりの 両方で つかう */
+function segDist(px, py, ax, ay, bx, by){
+  const dx = bx-ax, dy = by-ay, L2 = dx*dx + dy*dy;
+  const t = L2 ? Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / L2)) : 0;
+  return Math.hypot(px - (ax+dx*t), py - (ay+dy*t));
+}
+function wayMeasure(way){
+  let len = 0;
+  for (let i=0;i<way.length-1;i++)
+    len += Math.hypot(way[i+1][0]-way[i][0], way[i+1][1]-way[i][1]);
+  let free = 0;
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+    let on = false;
+    for (let i=0;i<way.length-1 && !on;i++)
+      if (segDist(c, r, way[i][0], way[i][1], way[i+1][0], way[i+1][1]) < 0.62) on = true;
+    if (!on) free++;
+  }
+  return { len, free };
+}
+/* たてに だんを おりながら よこに わたる。ななめに わたる形も 作る。
+   だんの 間かくは 2いじょう（1だんだと 道どうしが くっついて 見える） */
+function wayServant(R, diag){
+  const runs = 3 + (R()*3|0);
+  const left = (R()*3|0), right = COLS-1 - (R()*3|0);
+  if (right - left < 4) return null;
+  const top = 1 + (R()*2|0);
+  const gap = Math.floor((ROWS-2-top) / runs);
+  if (gap < 2) return null;
+  let side = R() < 0.5 ? left : right;
+  const way = [[side, -1]];
+  for (let i=0;i<runs;i++){
+    const other = side === left ? right : left, row = top + gap*i;
+    if (diag && i > 0) way.push([other, row]);
+    else { way.push([side, row]); way.push([other, row]); }
+    side = other;
+  }
+  way.push([side, ROWS]);
+  return way;
+}
+/* くしがた。たてに 何本も おりかえす */
+function wayComb(R){
+  const n = 2 + (R()*2|0);
+  const topR = 1 + (R()*2|0), botR = ROWS-2 - (R()*2|0);
+  if (botR - topR < 4) return null;
+  const step = Math.floor((COLS-1) / (n*2));
+  if (step < 2) return null;
+  const cols = [];
+  for (let i=0;i<=n*2;i++) cols.push(step*i);
+  const way = [[cols[0], -1]];
+  let down = R() < 0.5;
+  for (let i=0;i<cols.length;i++){
+    way.push([cols[i], down ? botR : topR]);
+    if (i < cols.length-1) way.push([cols[i+1], down ? botR : topR]);
+    down = !down;
+  }
+  way.push([cols[cols.length-1], down ? topR : botR]);
+  way.push([cols[cols.length-1], ROWS]);
+  return way;
+}
+const WAY_FAM = [ R => wayServant(R, false), R => wayServant(R, true), R => wayComb(R) ];
+/* たねつき乱数。Math.random だと 開くたびに 道が 変わってしまう */
+const wayRng = s => () => (s = (s*1664525 + 1013904223) >>> 0) / 4294967296;
+
+function makeWay(lap){
+  if (lap === 0) return FIRST_WAY;
+  for (let t=0;t<400;t++){
+    const R = wayRng((lap*7919 + t*104729 + 12345) >>> 0);
+    let way = WAY_FAM[(lap + t) % WAY_FAM.length](R);
+    if (!way) continue;
+    // 左右を ひっくり返して 形の かずを ふやす（たては 返さない＝てきは いつも 上から）
+    if (R() < 0.5) way = way.map(([c,r]) => [COLS-1-c, r]);
+    const m = wayMeasure(way);
+    if (m.len >= 28 && m.len <= 36 && m.free >= 72 && m.free <= 82) return way;
+  }
+  return FIRST_WAY;                    // ここには 来ない はずだが、来ても あそべるように
+}
+const wayCache = {};
+const wayOf = w => {
+  const lap = lapOf(w);
+  return wayCache[lap] || (wayCache[lap] = makeWay(lap));
+};
+let WAY = FIRST_WAY;
 
 /* ==========================================================
    おかし（タワー）の設定
@@ -789,13 +873,20 @@ function sparkle(x,y,r,rot,color){
   ctx.closePath(); ctx.fill(); ctx.restore();
 }
 
+/* おけない ますを 決める。
+   道は「まがり角を つないだ 折れ線」を ふとく なぞって えがいている。
+   ますを たどって しるしを つける やりかたでは、ななめの 道で
+   線の 下に あるのに おけて しまう ますが 出る。
+   ますの まん中から 折れ線までの きょりで 決めれば、
+   ななめでも 曲がりくねっても おなじ しくみで 合う */
 function buildPath(){
   pathCells.clear();
-  for (let i=0;i<WAY.length-1;i++){
-    let [c0,r0] = WAY[i]; const [c1,r1] = WAY[i+1];
-    const dc = Math.sign(c1-c0), dr = Math.sign(r1-r0);
-    while (c0 !== c1 || r0 !== r1){ pathCells.add(key(c0,r0)); c0 += dc; r0 += dr; }
-    pathCells.add(key(c1,r1));
+  const near = 0.62;                    // 道はば（マス）の はんぶんより 少し ひろめ
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+    for (let i=0;i<WAY.length-1;i++){
+      const [c0,r0] = WAY[i], [c1,r1] = WAY[i+1];
+      if (segDist(c, r, c0, r0, c1, r1) < near){ pathCells.add(key(c,r)); break; }
+    }
   }
 }
 function measurePath(){
@@ -1263,7 +1354,7 @@ function applyLayout(w){
 
 function reset(){
   towers = []; enemies = []; shots = []; parts = []; floats = []; rings = [];
-  WAY = LAYOUTS[0];
+  WAY = FIRST_WAY;
   hearts = maxHearts(); life = maxLife(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
   selTool = null; selTower = null; running = false; over = false;
   spawnQ = []; spawnT = 0; speed = 1; flash = 0; nextT = 0;
@@ -9744,7 +9835,8 @@ window.__chk = {
   },
   drawAvatar, portraitShade,
   /* つりあいの 検査（tools/sim.mjs）用。数字を いじったら かならず かけなおす */
-  bal: { hpScale, goldWave, upMul, waveList, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10) },
+  bal: { hpScale, goldWave, upMul, waveList, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10),
+         makeWay, wayMeasure, LAP_WAVES },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。
@@ -9768,6 +9860,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   wave: () => wave,
   way: () => JSON.stringify(WAY),
   clear: () => { enemies.length = 0; spawnQ.length = 0; },
+  setWay: a => { WAY = a; buildPath(); measurePath(); bakeGround(); },
+  free: () => { let n=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!pathCells.has(key(c,r))) n++; return n; },
+  pathLen: () => pathLen,
   setLife: v => { life = v; },
   stars: () => stars,
   shards: () => shards,
