@@ -365,9 +365,6 @@
   #colStats{display:flex;gap:6px}
   .cst{flex:1;min-width:0;background:rgba(255,255,255,.8);border:2px solid rgba(255,255,255,.9);
     border-radius:12px;padding:6px 2px;text-align:center;line-height:1.25}
-  /* 「ウェーブ380」は ほかの2つより 長い。3つを 同じはばに すると
-     ここだけ おりかえして、数字が よこに そろわなくなる */
-  .cst.best{flex:1.3}
   .cst .ck{font-size:calc(9px * var(--fs));opacity:.6}
   /* おりかえさせない。おりかえると その札だけ 数字が 下がる。
      入りきらないぶんは fitStat() が 文字を 小さくして あわせる */
@@ -7533,8 +7530,9 @@ function fitStat(el){
   el.style.fontSize = '';
   const w = el.clientWidth;
   if (!w) return;                                   // まだ 出ていない
-  for (let k = 0.95; k >= 0.7 && el.scrollWidth > w; k -= 0.05)
-    el.style.fontSize = 'calc(15px * var(--fs) * ' + k.toFixed(2) + ')';
+  // 小数で 引くと 0.65 が 0.6499… に なって 1だん 手前で 止まる。整数で かぞえる
+  for (let k = 95; k >= 55 && el.scrollWidth > w; k -= 5)
+    el.style.fontSize = 'calc(15px * var(--fs) * ' + (k/100) + ')';
 }
 function buildColGrid(){
   // じぶんの きろくは どの タブでも 出す
