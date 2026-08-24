@@ -866,8 +866,8 @@ const CODES = {
 let redeemed = [], bought = [], themeSel = '', themeOverride = null;
 try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catch(e){}
 /* 買った着せかえは 合言葉(sweetTD.codes)と 別に もつ。混ぜると
-   「その合言葉は もう使いました」の 判定に ひっかかってしまう */
-try{ bought = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
+   「その合言葉は もう使いました」の 判定に ひっかかってしまう。
+   中身の よみこみは restorePurchases() と 同じ loadOwned() を とおす */
 function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(bought)); }catch(e){} }
 
 /* ---- 30日パスポート ----
@@ -883,12 +883,41 @@ const passLeft = () => Math.max(0, Math.ceil((passUntil() - Date.now()) / 864000
 /* 💎で 買ったもの ぜんぶ（着せかえも、1回だけの パックも ここに入る）*/
 const owns   = id => bought.includes(id);
 const addOwn = id => { if (!owns(id)) bought.push(id); saveBought(); };
+
+/* ---- 買ったものの 復元（Apple の Restore Purchases）----
+   非消費型（着せかえ・はじめてパック）は、機種を かえたり 消したりしても
+   もう一度 お金を はらわせては いけない。Apple は そのための ボタンを
+   画面に 出すことを もとめている。
+
+   いまは サーバーも IAP も ないので、できるのは 端末に のこっている
+   記録の 読みなおしだけ。App Store 版では、ここを
+   restoreCompletedTransactions() の 結果に さしかえる。
+   さしかえ先を 1か所に するために、読みこみも この関数を とおす */
+function loadOwned(){
+  let a = [];
+  try{ a = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
+  if (!Array.isArray(a)) return [];
+  // 知らない id は すてる。書きかえられた セーブで 画面が こわれないように
+  const known = new Set(['pack_start', ...SHOP_THEMES.map(t => t.id)]);
+  return a.filter(x => typeof x === 'string' && known.has(x));
+}
+function restorePurchases(){
+  bought = loadOwned();
+  saveBought();
+  applyThemeSel();                     // 買ったテーマを えらんでいたなら つけ直す
+  return {
+    themes: SHOP_THEMES.map(t => t.id).filter(owns).map(id => SP_THEMES[id].th.name),
+    pack:   owns('pack_start'),
+    pass:   passLeft(),
+  };
+}
 const hasTheme = id => redeemed.includes(id) || owns(id);
 function saveThemeSel(){ try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){} }
 function applyThemeSel(){
   themeOverride = (themeSel && hasTheme(themeSel) && SP_THEMES[themeSel])
     ? SP_THEMES[themeSel] : null;
 }
+bought = loadOwned();
 applyThemeSel();
 
 // ウェーブ w をたたかっている間のテーマ（w=0 はまだ始まっていないのでステージ1）
@@ -8479,6 +8508,9 @@ function buildGemSection(){
       '<div class="spTx"><div class="spN">💎' + g.gems + '</div>' +
       '<div class="spD">1つあたり 約¥' + (g.yen / g.gems).toFixed(1) + '（ねだんは目やす）</div></div>' +
       '<div class="spP">' + yen(g.yen) + '</div></div>';
+  // Apple は 非消費型を 売る アプリに 復元ボタンを 出すことを もとめている
+  h += '<button class="mini gray" id="restoreBtn" style="width:100%;margin-top:2px">' +
+       '↺ 買ったものを復元</button>';
   h += '<div class="spSoon">💎を ほんとうに 買えるようになるのは、' +
     '<b>App Store に出すとき</b>です。いまは押しても お金は かかりません。<br>' +
     'いまは <b>毎日のログインボーナスで 💎+2</b> もらえます。' +
@@ -8522,6 +8554,19 @@ function buildShopScreen(){
   h += buildGemSection();
   h += '<div id="shopMsg" style="font-size:calc(12px * var(--fs));color:var(--pink-d);text-align:center;min-height:18px"></div>';
   shopBody.innerHTML = h;
+  // 買ったものの 復元
+  $('restoreBtn').onclick = () => {
+    const r = restorePurchases();
+    buildShopScreen();                 // ✓の つきかたを 出しなおす
+    const got = [];
+    if (r.pack) got.push('はじめてパック');
+    if (r.themes.length) got.push('着せかえ ' + r.themes.length + '種（' + r.themes.join('・') + '）');
+    if (r.pass) got.push('パスポート のこり' + r.pass + '日');
+    $('shopMsg').innerHTML = got.length
+      ? '復元しました：' + got.join('／')
+      : 'この端末に 買ったものは ありませんでした';
+    beep(700,.08,'triangle',.04);
+  };
   // 年れいの えらびボタン
   shopBody.querySelectorAll('[data-age]').forEach(el => {
     el.onclick = () => {
