@@ -775,7 +775,48 @@ const SP_THEMES = {
                 89,-1,-1,86, 89,-1,-1, 0,  91,-1,-1,88, 91,-1,-1, 0,
                 93,-1,89,-1, 84,-1,81, 0,  81,-1,84,-1, 77,-1,-1, 0] },
   },
+
+  /* ---- ここから下は 💎で買う着せかえ（合言葉では 出さない） ----
+     CODES に のせないので、合言葉からは 手に入らない。
+     手に入れたかどうかは bought（sweetTD.own）で もつ */
+  dream: {   // ゆめいろ：ラベンダーの野に さくらいろの道
+    th: { name:'ゆめいろパステル', g1:'#f3e6ff', g2:'#ffe0f2', p1:'#b98ae0', p2:'#ecd8ff',
+          spr:['#ff9ec9','#c9a7ff','#8fe3c4','#ffffff'] },
+    bgm: { bpm:104, vol:.050, dr:.55, ar:.9,
+           ch:['F','Bb','C','F',  'Bb','C','F','F'],
+           mel:[77,-1,81,-1, 84,-1,81, 0,  82,-1,86,-1, 82,-1,-1, 0,
+                84,-1,79,-1, 76,-1,79,-1,  77,-1,-1,-1, 81,-1,-1, 0,
+                86,-1,-1,82, 86,-1,-1, 0,  88,-1,-1,84, 88,-1,-1, 0,
+                89,-1,84,-1, 81,-1,77, 0,  79,-1,81,-1, 77,-1,-1, 0] },
+  },
+  lemon: {   // レモン：きいろの野に はちみつ色の道
+    th: { name:'レモンのおかやま', g1:'#fff6cf', g2:'#fdefb8', p1:'#e0a83c', p2:'#ffe6a0',
+          spr:['#ffffff','#ffd76e','#8fe3c4','#ff9ec9'] },
+    bgm: { bpm:126, vol:.048, dr:1, ar:.85,
+           ch:['G','C','D','G',  'C','D','G','G'],
+           mel:[79,83,79, 0, 74, 0,76,79,  81,-1,84,-1, 81,-1,-1, 0,
+                83,-1,86,-1, 83,-1,79, 0,  79,-1,-1, 0, 74,-1,-1, 0,
+                84,-1,-1,81, 84,-1,-1, 0,  86,-1,-1,83, 86,-1,-1, 0,
+                88,-1,86,-1, 83,-1,79, 0,  83,86,91,-1, 79,-1,-1, 0] },
+  },
+  mermaid: {   // にんぎょ：ふかい海の野に さんごの道
+    th: { name:'にんぎょのうみ', g1:'#c4e9ea', g2:'#a9dee2', p1:'#e08a9a', p2:'#ffd6dd',
+          spr:['#ffffff','#8fe3c4','#ffd0df','#bfe8ff'] },
+    bgm: { bpm:92, vol:.052, dr:.5, ar:1,
+           ch:['D','A','Bm','G',  'G','A','D','D'],
+           mel:[78,-1,81,-1, 86,-1,-1, 0,  85,-1,81,-1, 78,-1,-1, 0,
+                83,-1,86,-1, 83,-1,81, 0,  79,-1,-1,-1, 74,-1,-1, 0,
+                86,-1,-1,83, 86,-1,-1, 0,  88,-1,-1,85, 88,-1,-1, 0,
+                90,-1,86,-1, 81,-1,78, 0,  81,-1,86,-1, 74,-1,-1, 0] },
+  },
 };
+/* 💎で買える着せかえ。ならべた順に ショップへ出る。
+   アイコンは その国が ひとめで わかるものを 1つずつ */
+const SHOP_THEMES = [
+  { id:'dream',   ic:'🌈' },
+  { id:'lemon',   ic:'🍋' },
+  { id:'mermaid', ic:'🐚' },
+];
 const CODES = {
   'さくらまんかい':       { theme:'sakura',    msg:'🌸 限定テーマ「さくらのくに」が届きました！' },
   'なつまつり':           { theme:'summer',    msg:'🎆 限定テーマ「なつまつりのよる」が届きました！' },
@@ -785,11 +826,16 @@ const CODES = {
   // 作者用のかくしコード：SNS動画の撮影に使う演出よびだし
   'さつえいすたじお':     { studio: true,      msg:'📹 撮影スタジオが使えるようになりました！' },
 };
-let redeemed = [], themeSel = '', themeOverride = null;
+let redeemed = [], bought = [], themeSel = '', themeOverride = null;
 try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catch(e){}
-try{ themeSel = localStorage.getItem('sweetTD.themeSel') || ''; }catch(e){}
+/* 買った着せかえは 合言葉(sweetTD.codes)と 別に もつ。混ぜると
+   「その合言葉は もう使いました」の 判定に ひっかかってしまう */
+try{ bought = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
+function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(bought)); }catch(e){} }
+const hasTheme = id => redeemed.includes(id) || bought.includes(id);
+function saveThemeSel(){ try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){} }
 function applyThemeSel(){
-  themeOverride = (themeSel && redeemed.includes(themeSel) && SP_THEMES[themeSel])
+  themeOverride = (themeSel && hasTheme(themeSel) && SP_THEMES[themeSel])
     ? SP_THEMES[themeSel] : null;
 }
 applyThemeSel();
@@ -7764,9 +7810,9 @@ function buildPw(){
     'style="flex:1;min-width:0;border:2px solid #ffd9ec;border-radius:10px;padding:9px;font:inherit;font-size:13px;background:rgba(255,255,255,.95)">' +
     '<button class="mini" id="pwBtn">送る</button></div>' +
     '<div id="pwMsg" style="font-size:11px;color:#b98ae0;margin-top:6px;line-height:1.5"></div>' +
-    (redeemed.filter(id => SP_THEMES[id]).length
+    (Object.keys(SP_THEMES).filter(hasTheme).length
       ? '<div style="font-size:11px;color:var(--pink-d);margin-top:10px">🎀 着せかえ</div>' : '') +
-    redeemed.filter(id => SP_THEMES[id]).map(id =>
+    Object.keys(SP_THEMES).filter(hasTheme).map(id =>
       '<button class="mini" data-sp="' + id + '" style="margin-top:6px;width:100%">' +
       (themeSel === id
         ? '「' + SP_THEMES[id].th.name + '」を使用中（タップで戻す）'
@@ -7807,7 +7853,7 @@ function buildPw(){
     try{ localStorage.setItem('sweetTD.codes', JSON.stringify(redeemed)); }catch(e){}
     if (c.theme){
       themeSel = c.theme;
-      try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){}
+      saveThemeSel();
       applyThemeSel();
     }
     celebrate({ conf: 90, rays: 2, fanfare: 1 });
@@ -7848,7 +7894,7 @@ function buildPw(){
     b.onclick = () => {
       const id = b.dataset.sp;
       themeSel = themeSel === id ? '' : id;
-      try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){}
+      saveThemeSel();
       applyThemeSel();
       beep(700,.08,'triangle',.04);
       buildPw();
@@ -7919,6 +7965,18 @@ const SHOP_ITEMS = [
       hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
       return '💗が満タンに！';
     } },
+  /* 着せかえは ランダムなしの 買いきり。買ったら すぐ その見た目に する。
+     じめんは groundKey がテーマ名で 変わるので loop が 焼きなおす */
+  ...SHOP_THEMES.map(({ id, ic }) => ({
+    id: 'th_' + id, sec:'着せかえ', ic, name:'「' + SP_THEMES[id].th.name + '」',
+    desc:'ステージの見た目とBGMが変わります', cost: 60,
+    can: () => !hasTheme(id),
+    poor: () => 'もう持っています',
+    buy: () => {
+      bought.push(id); saveBought();
+      themeSel = id; saveThemeSel(); applyThemeSel();
+      return '「' + SP_THEMES[id].th.name + '」に着せかえました！';
+    } })),
 ];
 function buildShopScreen(){
   shopGem.textContent = '💎 ' + fmtN(gems);
@@ -7930,7 +7988,7 @@ function buildShopScreen(){
       '<div class="spIc">' + it.ic + '</div>' +
       '<div class="spTx"><div class="spN">' + it.name + '</div>' +
       '<div class="spD">' + ((it.can && !it.can()) ? it.poor() : it.desc) + '</div></div>' +
-      '<div class="spP">💎' + it.cost + '</div></div>';
+      '<div class="spP">' + ((it.can && !it.can()) ? '✓' : '💎' + it.cost) + '</div></div>';
   }
   h += '<div class="spSec">💎ジュエル</div>' +
     '<div class="spSoon">💎を買えるようにするのは、App Store に出すときです。' +
@@ -10201,6 +10259,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   life: () => life,
   setWeek: n => { weekDbg = n; },
   setGems: n => { gems = n; saveGems(); },
+  giveTheme: id => { if (!bought.includes(id)) bought.push(id); saveBought();
+                     themeSel = id; saveThemeSel(); applyThemeSel(); },
+  themes: () => Object.keys(SP_THEMES).filter(hasTheme),
   gems: () => gems,
   weekly: () => weekly && weekly.name,
   queue: () => spawnQ.slice(),
