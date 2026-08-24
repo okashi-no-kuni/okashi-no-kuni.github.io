@@ -29,6 +29,11 @@
   html,body{height:100%}
   body{
     margin:0;
+    /* iOS と Android は 画面より ひろい ブロックの 中の 文字を
+       かってに 大きくする。そうなると 札に 入るはずの 文字が はみ出すので
+       止めておく */
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
     font-family:system-ui,-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
     font-weight:800;
     color:var(--ink);
