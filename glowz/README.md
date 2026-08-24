@@ -1,4 +1,4 @@
-# GLOWZ / Growz Planet
+# GLOWZ / Glowz Planet
 
 夜職店舗のための **AI経営プラットフォーム**。
 ブランドガイド（ChatGPT作成のデザイン見本）から起こした、動くプロトタイプです。
