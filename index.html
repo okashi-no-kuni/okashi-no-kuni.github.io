@@ -775,7 +775,48 @@ const SP_THEMES = {
                 89,-1,-1,86, 89,-1,-1, 0,  91,-1,-1,88, 91,-1,-1, 0,
                 93,-1,89,-1, 84,-1,81, 0,  81,-1,84,-1, 77,-1,-1, 0] },
   },
+
+  /* ---- ここから下は 💎で買う着せかえ（合言葉では 出さない） ----
+     CODES に のせないので、合言葉からは 手に入らない。
+     手に入れたかどうかは bought（sweetTD.own）で もつ */
+  dream: {   // ゆめいろ：ラベンダーの野に さくらいろの道
+    th: { name:'ゆめいろパステル', g1:'#f3e6ff', g2:'#ffe0f2', p1:'#b98ae0', p2:'#ecd8ff',
+          spr:['#ff9ec9','#c9a7ff','#8fe3c4','#ffffff'] },
+    bgm: { bpm:104, vol:.050, dr:.55, ar:.9,
+           ch:['F','Bb','C','F',  'Bb','C','F','F'],
+           mel:[77,-1,81,-1, 84,-1,81, 0,  82,-1,86,-1, 82,-1,-1, 0,
+                84,-1,79,-1, 76,-1,79,-1,  77,-1,-1,-1, 81,-1,-1, 0,
+                86,-1,-1,82, 86,-1,-1, 0,  88,-1,-1,84, 88,-1,-1, 0,
+                89,-1,84,-1, 81,-1,77, 0,  79,-1,81,-1, 77,-1,-1, 0] },
+  },
+  lemon: {   // レモン：きいろの野に はちみつ色の道
+    th: { name:'レモンのおかやま', g1:'#fff6cf', g2:'#fdefb8', p1:'#e0a83c', p2:'#ffe6a0',
+          spr:['#ffffff','#ffd76e','#8fe3c4','#ff9ec9'] },
+    bgm: { bpm:126, vol:.048, dr:1, ar:.85,
+           ch:['G','C','D','G',  'C','D','G','G'],
+           mel:[79,83,79, 0, 74, 0,76,79,  81,-1,84,-1, 81,-1,-1, 0,
+                83,-1,86,-1, 83,-1,79, 0,  79,-1,-1, 0, 74,-1,-1, 0,
+                84,-1,-1,81, 84,-1,-1, 0,  86,-1,-1,83, 86,-1,-1, 0,
+                88,-1,86,-1, 83,-1,79, 0,  83,86,91,-1, 79,-1,-1, 0] },
+  },
+  mermaid: {   // にんぎょ：ふかい海の野に さんごの道
+    th: { name:'にんぎょのうみ', g1:'#c4e9ea', g2:'#a9dee2', p1:'#e08a9a', p2:'#ffd6dd',
+          spr:['#ffffff','#8fe3c4','#ffd0df','#bfe8ff'] },
+    bgm: { bpm:92, vol:.052, dr:.5, ar:1,
+           ch:['D','A','Bm','G',  'G','A','D','D'],
+           mel:[78,-1,81,-1, 86,-1,-1, 0,  85,-1,81,-1, 78,-1,-1, 0,
+                83,-1,86,-1, 83,-1,81, 0,  79,-1,-1,-1, 74,-1,-1, 0,
+                86,-1,-1,83, 86,-1,-1, 0,  88,-1,-1,85, 88,-1,-1, 0,
+                90,-1,86,-1, 81,-1,78, 0,  81,-1,86,-1, 74,-1,-1, 0] },
+  },
 };
+/* 💎で買える着せかえ。ならべた順に ショップへ出る。
+   アイコンは その国が ひとめで わかるものを 1つずつ */
+const SHOP_THEMES = [
+  { id:'dream',   ic:'🌈' },
+  { id:'lemon',   ic:'🍋' },
+  { id:'mermaid', ic:'🐚' },
+];
 const CODES = {
   'さくらまんかい':       { theme:'sakura',    msg:'🌸 限定テーマ「さくらのくに」が届きました！' },
   'なつまつり':           { theme:'summer',    msg:'🎆 限定テーマ「なつまつりのよる」が届きました！' },
@@ -785,11 +826,16 @@ const CODES = {
   // 作者用のかくしコード：SNS動画の撮影に使う演出よびだし
   'さつえいすたじお':     { studio: true,      msg:'📹 撮影スタジオが使えるようになりました！' },
 };
-let redeemed = [], themeSel = '', themeOverride = null;
+let redeemed = [], bought = [], themeSel = '', themeOverride = null;
 try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catch(e){}
-try{ themeSel = localStorage.getItem('sweetTD.themeSel') || ''; }catch(e){}
+/* 買った着せかえは 合言葉(sweetTD.codes)と 別に もつ。混ぜると
+   「その合言葉は もう使いました」の 判定に ひっかかってしまう */
+try{ bought = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
+function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(bought)); }catch(e){} }
+const hasTheme = id => redeemed.includes(id) || bought.includes(id);
+function saveThemeSel(){ try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){} }
 function applyThemeSel(){
-  themeOverride = (themeSel && redeemed.includes(themeSel) && SP_THEMES[themeSel])
+  themeOverride = (themeSel && hasTheme(themeSel) && SP_THEMES[themeSel])
     ? SP_THEMES[themeSel] : null;
 }
 applyThemeSel();
@@ -6186,6 +6232,403 @@ const AV_ACC   = ['なし','リボン','ぼうし','めがね','かんむり','�
 
 const avDefault = () => ({ n:'', s:0, h:0, hc:0, e:0, m:0, w:0, wc:0, a:0 });
 
+/* ==========================================================
+   ふく（AV_WEAR_DRAW）
+   ----------------------------------------------------------
+   もともとは シルエットが 2しゅるいしか なく、上から もようを
+   のせて 見わけていた。ならべると「ぜんぶ 同じ服」に 見えたので、
+   1着ずつ 胴の形・そで・すそから 別々に えがくことにした。
+
+   ぜんぶ (g, o) を うけとる。o = { M, by, R, wear, skin }。
+   あしと くつは これより 先に えがいてあるので、すそを かぶせると
+   ももが 下に もぐって「ふくと あしが はなれている」ように 見えない。
+   ========================================================== */
+/* ふくの こい色・うすい色。上下で 少しだけ 色を ずらすと、
+   1まいの ぬのでなく「上着とズボン」の 組みあわせに 見える */
+function avShade(hex, t){
+  const n = parseInt(hex.slice(1), 16);
+  const f = v => Math.round(t < 0 ? v*(1+t) : v + (255-v)*t);
+  return 'rgb(' + f((n>>16)&255) + ',' + f((n>>8)&255) + ',' + f(n&255) + ')';
+}
+const AV_LINE = 'rgba(120,90,120,.22)';   // 胴と おなじ色の そでが とけないように 引く ふち
+
+/* ズボン。2本に わけると、ワンピースとの ちがいが ひとめで わかる */
+function avPants(g, o, col, len, hipW){
+  const { M, by, R } = o;
+  g.fillStyle = col;
+  for (const s of [-1,1]){ gRR(g, M + s*R*0.42 - R*0.3, by + R*0.04, R*0.6, len, R*0.16); g.fill(); }
+  const w = hipW === undefined ? R*1.36 : hipW;
+  gRR(g, M - w/2, by - R*0.06, w, R*0.38, R*0.13); g.fill();
+}
+
+/* うで。そでの形で 服の印象が いちばん 変わるので、1着ずつ えらぶ */
+function avArm(g, o, kind){
+  const { M, by, R, wear, skin } = o;
+  g.strokeStyle = AV_LINE; g.lineWidth = R*0.05;
+  for (const s of [-1,1]){
+    if (kind === 'bare'){                 // そでなし
+      g.fillStyle = skin;
+      g.beginPath(); g.ellipse(M + s*R*0.84, by - R*0.24, R*0.15, R*0.46, s*0.3, 0, GTAU); g.fill();
+    } else if (kind === 'wide'){          // ふりそで・ローブ：手もとが ひろがる
+      g.fillStyle = wear;
+      g.beginPath();
+      g.moveTo(M + s*R*0.6,  by - R*0.76);
+      g.quadraticCurveTo(M + s*R*1.06, by - R*0.5,  M + s*R*1.12, by + R*0.3);
+      g.quadraticCurveTo(M + s*R*0.84, by + R*0.42, M + s*R*0.56, by + R*0.16);
+      g.closePath(); g.fill(); g.stroke();
+    } else if (kind === 'puff'){          // ぱふそで：かたが まるく ふくらむ
+      g.fillStyle = skin;
+      g.beginPath(); g.ellipse(M + s*R*0.9, by - R*0.06, R*0.13, R*0.34, s*0.3, 0, GTAU); g.fill();
+      // まるごと ふちを引くと、胴に かさなった ところに 線が のこって
+      // そでが 宙に うかんで 見える。外がわの かげだけで 立体を 出す
+      g.fillStyle = wear;
+      g.beginPath(); g.arc(M + s*R*0.72, by - R*0.56, R*0.28, 0, GTAU); g.fill();
+      g.fillStyle = 'rgba(120,90,120,.12)';
+      g.beginPath(); g.arc(M + s*R*0.72, by - R*0.56, R*0.28, s>0 ? -0.5 : 1.4, s>0 ? 1.7 : 3.6); g.fill();
+    } else if (kind === 'short'){         // はんそで
+      g.fillStyle = skin;
+      g.beginPath(); g.ellipse(M + s*R*0.88, by, R*0.13, R*0.32, s*0.3, 0, GTAU); g.fill();
+      g.fillStyle = wear;
+      g.beginPath(); g.ellipse(M + s*R*0.74, by - R*0.5, R*0.21, R*0.28, s*0.2, 0, GTAU); g.fill(); g.stroke();
+    } else if (kind === 'cuff'){          // ながそで＋そでぐち
+      g.fillStyle = wear;
+      g.beginPath(); g.ellipse(M + s*R*0.84, by - R*0.3, R*0.19, R*0.48, s*0.3, 0, GTAU); g.fill(); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.7)';
+      g.beginPath(); g.ellipse(M + s*R*0.94, by + R*0.04, R*0.15, R*0.1, s*0.3, 0, GTAU); g.fill();
+    } else {                              // ながそで（ふつう）
+      g.fillStyle = wear;
+      g.beginPath(); g.ellipse(M + s*R*0.84, by - R*0.28, R*0.18, R*0.46, s*0.3, 0, GTAU); g.fill(); g.stroke();
+    }
+  }
+  g.fillStyle = skin;                     // て は そでの さきに
+  for (const s of [-1,1]){
+    g.beginPath(); g.arc(M + s*R*1.0, by + R*0.16, R*0.17, 0, GTAU); g.fill();
+  }
+}
+
+/* AV_WEAR の ならびと そろえること（0=ワンピース … 11=エプロン）*/
+const AV_WEAR_DRAW = [
+  /* 0 ワンピース：むねから すそへ ゆるやかな Aライン。こしに リボン */
+  (g, o) => { const { M, by, R, wear } = o;
+    g.fillStyle = wear;
+    g.beginPath();
+    g.moveTo(M - R*0.56, by - R*0.84);
+    g.lineTo(M - R*0.5, by - R*0.02);
+    g.quadraticCurveTo(M - R*0.92, by + R*0.4, M - R*0.96, by + R*0.76);
+    g.quadraticCurveTo(M, by + R*0.96, M + R*0.96, by + R*0.76);
+    g.quadraticCurveTo(M + R*0.92, by + R*0.4, M + R*0.5, by - R*0.02);
+    g.lineTo(M + R*0.56, by - R*0.84);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.9)';                 // まるい えり
+    g.beginPath(); g.ellipse(M, by - R*0.82, R*0.34, R*0.17, 0, 0, Math.PI); g.fill();
+    g.fillStyle = avShade(wear, -0.3);                    // こしの リボン
+    gRR(g, M - R*0.52, by - R*0.14, R*1.04, R*0.18, R*0.08); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    for (const s of [-1,1]){
+      g.beginPath(); g.ellipse(M + s*R*0.15, by - R*0.05, R*0.14, R*0.09, s*0.5, 0, GTAU); g.fill();
+    }
+    // すその ふちどりは 線で 引く。四角で のせると すそから はみ出す
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = R*0.08;
+    g.beginPath(); g.moveTo(M - R*0.93, by + R*0.72);
+    g.quadraticCurveTo(M, by + R*0.9, M + R*0.93, by + R*0.72); g.stroke();
+    avArm(g, o, 'puff');
+  },
+
+  /* 1 パーカー：四角い ゆったりした 胴＋ハーフパンツ。フードと ひも */
+  (g, o) => { const { M, by, R, wear } = o;
+    const dk = avShade(wear, -0.3);
+    avPants(g, o, avShade(wear, -0.5), R*0.62, R*1.4);
+    g.fillStyle = dk;                                     // うしろの フード
+    g.beginPath(); g.ellipse(M, by - R*0.76, R*0.62, R*0.3, 0, 0, GTAU); g.fill();
+    g.fillStyle = wear;
+    gRR(g, M - R*0.78, by - R*0.8, R*1.56, R*1.2, R*0.26); g.fill();
+    g.fillStyle = dk;                                     // すその リブ
+    gRR(g, M - R*0.78, by + R*0.24, R*1.56, R*0.16, R*0.07); g.fill();
+    g.fillStyle = 'rgba(120,90,120,.14)';                 // おなかの ポケット
+    gRR(g, M - R*0.46, by - R*0.18, R*0.92, R*0.36, R*0.12); g.fill();
+    g.fillStyle = dk;                                     // フードの うちがわ
+    g.beginPath(); g.ellipse(M, by - R*0.78, R*0.44, R*0.2, 0, 0, Math.PI); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.92)'; g.lineWidth = R*0.07; g.lineCap = 'round';
+    for (const s of [-1,1]){
+      g.beginPath(); g.moveTo(M + s*R*0.16, by - R*0.58); g.lineTo(M + s*R*0.2, by - R*0.24); g.stroke();
+    }
+    g.fillStyle = 'rgba(255,255,255,.92)';
+    for (const s of [-1,1]){ g.beginPath(); g.arc(M + s*R*0.2, by - R*0.22, R*0.06, 0, GTAU); g.fill(); }
+    avArm(g, o, 'cuff');
+  },
+
+  /* 2 セーラー：みじかい 上着＋プリーツスカート。大きな えりと スカーフ */
+  (g, o) => { const { M, by, R, wear } = o;
+    g.fillStyle = avShade(wear, -0.3);
+    g.beginPath();                                        // 台形の スカート
+    g.moveTo(M - R*0.6, by + R*0.04); g.lineTo(M + R*0.6, by + R*0.04);
+    g.lineTo(M + R*0.98, by + R*0.72); g.lineTo(M - R*0.98, by + R*0.72);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.32)'; g.lineWidth = R*0.05;   // ひだ
+    for (const d of [-0.62,-0.31,0,0.31,0.62]){
+      g.beginPath(); g.moveTo(M + R*d*0.6, by + R*0.1); g.lineTo(M + R*d, by + R*0.7); g.stroke();
+    }
+    g.fillStyle = wear;
+    gRR(g, M - R*0.66, by - R*0.84, R*1.32, R*0.98, R*0.2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.94)';                // セーラーえり
+    g.beginPath();
+    g.moveTo(M - R*0.72, by - R*0.82); g.lineTo(M + R*0.72, by - R*0.82);
+    g.lineTo(M + R*0.5, by - R*0.2); g.lineTo(M, by + R*0.02); g.lineTo(M - R*0.5, by - R*0.2);
+    g.closePath(); g.fill();
+    g.fillStyle = '#ff5f8a';                              // スカーフ
+    g.beginPath();
+    g.moveTo(M, by - R*0.36); g.lineTo(M + R*0.16, by - R*0.12);
+    g.lineTo(M, by + R*0.3); g.lineTo(M - R*0.16, by - R*0.12);
+    g.closePath(); g.fill();
+    avArm(g, o, 'short');
+  },
+
+  /* 3 ドレス：こしで きゅっと しぼって、そこから 大きく ひろがる。
+     ワンピースと ちがうのは この しぼりと すその 長さ */
+  (g, o) => { const { M, by, R, wear } = o;
+    g.fillStyle = wear;
+    g.beginPath();
+    g.moveTo(M - R*0.58, by - R*0.8);
+    g.quadraticCurveTo(M - R*0.46, by - R*0.3, M - R*0.36, by - R*0.02);   // こしの しぼり
+    g.bezierCurveTo(M - R*0.9, by + R*0.3, M - R*1.14, by + R*0.6, M - R*1.2, by + R*0.9);
+    g.quadraticCurveTo(M, by + R*1.14, M + R*1.2, by + R*0.9);
+    g.bezierCurveTo(M + R*1.14, by + R*0.6, M + R*0.9, by + R*0.3, M + R*0.36, by - R*0.02);
+    g.quadraticCurveTo(M + R*0.46, by - R*0.3, M + R*0.58, by - R*0.8);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.3)';                 // 上の だんの すそ
+    g.beginPath();
+    g.moveTo(M - R*0.6, by + R*0.16);
+    g.bezierCurveTo(M - R*0.86, by + R*0.32, M - R*0.94, by + R*0.44, M - R*0.96, by + R*0.56);
+    for (let i=-3;i<=3;i++){                              // スカラップ（なみの すそ）
+      g.arc(M + R*i*0.32, by + R*0.58, R*0.17, Math.PI, 0, true);
+    }
+    g.bezierCurveTo(M + R*0.94, by + R*0.44, M + R*0.86, by + R*0.32, M + R*0.6, by + R*0.16);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';                // むねの ハートがた
+    g.beginPath();
+    g.moveTo(M - R*0.52, by - R*0.76);
+    g.quadraticCurveTo(M - R*0.26, by - R*0.4, M, by - R*0.54);
+    g.quadraticCurveTo(M + R*0.26, by - R*0.4, M + R*0.52, by - R*0.76);
+    g.closePath(); g.fill();
+    g.fillStyle = '#ffd76e';                              // こしの かざり
+    g.beginPath(); g.arc(M, by - R*0.02, R*0.12, 0, GTAU); g.fill();
+    for (const [dx,dy] of [[-0.5,0.24],[0.48,0.36],[0.04,0.62],[-0.22,0.5]])
+      gspark(g, M + R*dx, by + R*dy, R*0.12, 0.4, 'rgba(255,255,255,.9)');
+    avArm(g, o, 'puff');
+  },
+
+  /* 4 まほうのローブ：かたに マント、すそは とがる。ふりそで */
+  (g, o) => { const { M, by, R, wear } = o;
+    const dk = avShade(wear, -0.34);
+    g.fillStyle = wear;                                   // 下へ ひろがり、すそが とがる
+    g.beginPath();
+    g.moveTo(M - R*0.58, by - R*0.82);
+    g.lineTo(M - R*0.96, by + R*0.6);
+    g.lineTo(M - R*0.62, by + R*0.5); g.lineTo(M - R*0.31, by + R*0.9);
+    g.lineTo(M, by + R*0.5);          g.lineTo(M + R*0.31, by + R*0.9);
+    g.lineTo(M + R*0.62, by + R*0.5); g.lineTo(M + R*0.96, by + R*0.6);
+    g.lineTo(M + R*0.58, by - R*0.82);
+    g.closePath(); g.fill();
+    g.fillStyle = avShade(wear, 0.3);                     // まえの あわせ
+    g.beginPath();
+    g.moveTo(M - R*0.2, by - R*0.3); g.lineTo(M + R*0.2, by - R*0.3);
+    g.lineTo(M + R*0.14, by + R*0.52); g.lineTo(M - R*0.14, by + R*0.52);
+    g.closePath(); g.fill();
+    g.fillStyle = dk;                                     // かたに かける みじかい マント
+    g.beginPath();
+    g.moveTo(M - R*0.8, by - R*0.72);
+    g.quadraticCurveTo(M, by - R*0.94, M + R*0.8, by - R*0.72);
+    g.quadraticCurveTo(M + R*0.5, by - R*0.34, M, by - R*0.26);
+    g.quadraticCurveTo(M - R*0.5, by - R*0.34, M - R*0.8, by - R*0.72);
+    g.closePath(); g.fill();
+    g.fillStyle = '#ffd76e';                              // えりの とめ具
+    g.beginPath(); g.arc(M, by - R*0.66, R*0.11, 0, GTAU); g.fill();
+    g.fillStyle = dk;                                     // ベルト
+    gRR(g, M - R*0.6, by + R*0.02, R*1.2, R*0.16, R*0.06); g.fill();
+    for (const [dx,dy] of [[-0.5,0.4],[0.46,0.32],[0.02,0.48],[0.26,0.6]])
+      gspark(g, M + R*dx, by + R*dy, R*0.13, 0.4, 'rgba(255,255,255,.85)');
+    avArm(g, o, 'wide');
+  },
+
+  /* 5 パジャマ：ゆったりした 上着＋ながズボン。しましまと かえりえり */
+  (g, o) => { const { M, by, R, wear } = o;
+    const lt = avShade(wear, 0.24);
+    avPants(g, o, lt, R*0.94, R*1.4);
+    g.fillStyle = 'rgba(255,255,255,.5)';                 // すそぐち
+    for (const s of [-1,1]){ gRR(g, M + s*R*0.42 - R*0.3, by + R*0.86, R*0.6, R*0.12, R*0.06); g.fill(); }
+    g.fillStyle = wear;
+    gRR(g, M - R*0.74, by - R*0.82, R*1.48, R*1.0, R*0.2); g.fill();
+    g.save();                                             // しましまは 上着の中だけに
+    gRR(g, M - R*0.74, by - R*0.82, R*1.48, R*1.0, R*0.2); g.clip();
+    g.fillStyle = 'rgba(255,255,255,.42)';
+    for (let i=0;i<4;i++){ gRR(g, M - R*0.74, by - R*0.64 + i*R*0.28, R*1.48, R*0.12, R*0.06); g.fill(); }
+    g.restore();
+    g.fillStyle = 'rgba(255,255,255,.9)';                 // かえりえり
+    g.beginPath();
+    g.moveTo(M - R*0.46, by - R*0.82); g.lineTo(M, by - R*0.3); g.lineTo(M + R*0.46, by - R*0.82);
+    g.lineTo(M + R*0.2, by - R*0.86); g.lineTo(M, by - R*0.5); g.lineTo(M - R*0.2, by - R*0.86);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(120,90,120,.26)';                 // ボタン
+    for (let i=0;i<3;i++){ g.beginPath(); g.arc(M, by - R*0.2 + i*R*0.24, R*0.06, 0, GTAU); g.fill(); }
+    g.fillStyle = 'rgba(255,255,255,.7)';                 // むねの おつきさま
+    g.beginPath(); g.arc(M - R*0.44, by - R*0.36, R*0.14, 0.7, 4.3); g.fill();
+    avArm(g, o, 'cuff');
+  },
+
+  /* 6 きもの：ひろがらない まっすぐな シルエット。あわせと おび、ふりそで */
+  (g, o) => { const { M, by, R, wear } = o;
+    g.fillStyle = wear;
+    g.beginPath();
+    g.moveTo(M - R*0.64, by - R*0.82); g.lineTo(M - R*0.52, by + R*0.86);
+    g.lineTo(M + R*0.52, by + R*0.86); g.lineTo(M + R*0.64, by - R*0.82);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';                // えりの あわせ
+    g.beginPath();
+    g.moveTo(M - R*0.46, by - R*0.8); g.lineTo(M, by - R*0.1);
+    g.lineTo(M + R*0.46, by - R*0.8); g.lineTo(M + R*0.22, by - R*0.86);
+    g.lineTo(M, by - R*0.4); g.lineTo(M - R*0.22, by - R*0.86);
+    g.closePath(); g.fill();
+    g.fillStyle = '#e8506f';                              // おび
+    gRR(g, M - R*0.58, by - R*0.06, R*1.14, R*0.3, R*0.06); g.fill();
+    g.fillStyle = '#ffd76e';                              // おびじめ
+    gRR(g, M - R*0.58, by + R*0.08, R*1.14, R*0.08, R*0.04); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.4)';                 // すそもよう
+    for (const [dx,dy] of [[-0.3,0.62],[0.06,0.74],[0.34,0.58]]){
+      g.beginPath(); g.arc(M + R*dx, by + R*dy, R*0.11, 0, GTAU); g.fill();
+    }
+    avArm(g, o, 'wide');
+  },
+
+  /* 7 Tシャツ：みじかい 箱がたの 上＋ショートパンツ。むねに ほし */
+  (g, o) => { const { M, by, R, wear } = o;
+    avPants(g, o, avShade(wear, -0.5), R*0.5, R*1.3);
+    g.fillStyle = wear;
+    gRR(g, M - R*0.72, by - R*0.84, R*1.44, R*1.0, R*0.16); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';                // まるい えりぐり
+    g.beginPath(); g.ellipse(M, by - R*0.84, R*0.3, R*0.15, 0, 0, Math.PI); g.fill();
+    gspark(g, M, by - R*0.24, R*0.32, 0.5, 'rgba(255,255,255,.95)');
+    g.strokeStyle = 'rgba(120,90,120,.18)'; g.lineWidth = R*0.05;   // すその ぬいめ
+    g.beginPath(); g.moveTo(M - R*0.64, by + R*0.06); g.lineTo(M + R*0.64, by + R*0.06); g.stroke();
+    avArm(g, o, 'short');
+  },
+
+  /* 8 コート：ひざ下まで ある 前あき。おおきな えりと ベルト */
+  (g, o) => { const { M, by, R, wear } = o;
+    const dk = avShade(wear, -0.3), lt = avShade(wear, 0.32);
+    g.fillStyle = lt;                                     // 中に 着ている ふく
+    gRR(g, M - R*0.44, by - R*0.8, R*0.88, R*1.3, R*0.14); g.fill();
+    g.fillStyle = wear;                                   // 前あきなので 左右 べつに
+    for (const s of [-1,1]){
+      g.beginPath();
+      g.moveTo(M + s*R*0.08, by - R*0.84);
+      g.lineTo(M + s*R*0.7, by - R*0.84);
+      g.quadraticCurveTo(M + s*R*0.96, by + R*0.3, M + s*R*0.88, by + R*0.84);
+      g.lineTo(M + s*R*0.07, by + R*0.84);
+      g.closePath(); g.fill();
+    }
+    g.fillStyle = dk;                                     // おおきな えり
+    for (const s of [-1,1]){
+      g.beginPath();
+      g.moveTo(M + s*R*0.05, by - R*0.84); g.lineTo(M + s*R*0.7, by - R*0.84);
+      g.lineTo(M + s*R*0.24, by - R*0.16);
+      g.closePath(); g.fill();
+    }
+    g.fillStyle = dk;                                     // ベルト
+    gRR(g, M - R*0.84, by + R*0.06, R*1.68, R*0.2, R*0.08); g.fill();
+    g.fillStyle = '#ffd76e';                              // バックル
+    gRR(g, M - R*0.13, by + R*0.04, R*0.26, R*0.24, R*0.06); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';                // ふたならびの ボタン
+    for (const s of [-1,1]) for (let i=0;i<2;i++){
+      g.beginPath(); g.arc(M + s*R*0.32, by - R*0.34 + i*R*0.24, R*0.07, 0, GTAU); g.fill();
+    }
+    avArm(g, o, 'cuff');
+  },
+
+  /* 9 チュチュ：ぴったりの レオタード＋よこに ひろがる すそ。
+     ふわふわを 下に たらすと ドレスと 見わけが つかないので、
+     バレエらしく 水平に つき出す */
+  (g, o) => { const { M, by, R, wear } = o;
+    g.fillStyle = wear;
+    gRR(g, M - R*0.44, by - R*0.82, R*0.88, R*1.02, R*0.22); g.fill();
+    // 白いだけだと 背景に とけて 見えないので、服の色を ふちに のこす
+    g.fillStyle = avShade(wear, 0.3);
+    g.beginPath(); g.ellipse(M, by + R*0.38, R*1.16, R*0.34, 0, 0, GTAU); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.8)';
+    g.beginPath(); g.ellipse(M, by + R*0.36, R*1.0, R*0.26, 0, 0, GTAU); g.fill();
+    g.fillStyle = avShade(wear, 0.55);
+    g.beginPath(); g.ellipse(M, by + R*0.28, R*0.8, R*0.22, 0, 0, GTAU); g.fill();
+    g.fillStyle = wear;                                   // こしの おび
+    gRR(g, M - R*0.46, by + R*0.1, R*0.92, R*0.16, R*0.07); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';                // むねの かた ひも（Vに かける）
+    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = R*0.09; g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(M - R*0.34, by - R*0.8); g.lineTo(M, by - R*0.44); g.lineTo(M + R*0.34, by - R*0.8);
+    g.stroke();
+    g.fillStyle = '#ff9ec9';                              // むねの ちいさな リボン
+    for (const s of [-1,1]){
+      g.beginPath(); g.ellipse(M + s*R*0.1, by - R*0.4, R*0.1, R*0.07, s*0.5, 0, GTAU); g.fill();
+    }
+    for (const [dx,dy] of [[-0.78,0.2],[0.76,0.24],[0,0.56]])
+      gspark(g, M + R*dx, by + R*dy, R*0.12, 0.4, 'rgba(255,255,255,.9)');
+    avArm(g, o, 'bare');
+  },
+
+  /* 10 スポーツ：かたひもの タンクトップ＋ハーフパンツ。よこ ライン */
+  (g, o) => { const { M, by, R, wear } = o;
+    const dk = avShade(wear, -0.36);
+    avPants(g, o, dk, R*0.56, R*1.24);
+    g.fillStyle = wear;
+    g.beginPath();
+    g.moveTo(M - R*0.42, by - R*0.86); g.lineTo(M - R*0.2, by - R*0.86);
+    g.quadraticCurveTo(M, by - R*0.62, M + R*0.2, by - R*0.86);
+    g.lineTo(M + R*0.42, by - R*0.86);
+    g.quadraticCurveTo(M + R*0.68, by - R*0.46, M + R*0.64, by + R*0.14);
+    g.lineTo(M - R*0.64, by + R*0.14);
+    g.quadraticCurveTo(M - R*0.68, by - R*0.46, M - R*0.42, by - R*0.86);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.9)';                 // よこの ライン
+    for (const s of [-1,1]){ gRR(g, M + s*R*0.54 - R*0.04, by - R*0.4, R*0.08, R*0.54, R*0.04); g.fill(); }
+    gRR(g, M - R*0.62, by + R*0.02, R*1.24, R*0.09, R*0.045); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.85)';                // ゼッケン
+    g.beginPath(); g.arc(M, by - R*0.3, R*0.2, 0, GTAU); g.fill();
+    g.fillStyle = dk;
+    g.beginPath(); g.arc(M, by - R*0.3, R*0.1, 0, GTAU); g.fill();
+    avArm(g, o, 'bare');
+  },
+
+  /* 11 エプロン：下に ワンピース、上に むねあて＋こしリボン */
+  (g, o) => { const { M, by, R, wear } = o;
+    g.fillStyle = wear;
+    g.beginPath();
+    g.moveTo(M - R*0.56, by - R*0.84);
+    g.quadraticCurveTo(M - R*0.66, by + R*0.2, M - R*0.92, by + R*0.76);
+    g.quadraticCurveTo(M, by + R*0.94, M + R*0.92, by + R*0.76);
+    g.quadraticCurveTo(M + R*0.66, by + R*0.2, M + R*0.56, by - R*0.84);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.94)';                // むねあてと すそ
+    g.beginPath();
+    g.moveTo(M - R*0.3, by - R*0.74); g.lineTo(M + R*0.3, by - R*0.74);
+    g.lineTo(M + R*0.34, by - R*0.08); g.lineTo(M + R*0.6, by + R*0.68);
+    g.quadraticCurveTo(M, by + R*0.84, M - R*0.6, by + R*0.68);
+    g.lineTo(M - R*0.34, by - R*0.08);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.94)'; g.lineWidth = R*0.1; g.lineCap = 'round';
+    for (const s of [-1,1]){                              // かたひも
+      g.beginPath(); g.moveTo(M + s*R*0.26, by - R*0.72);
+      g.quadraticCurveTo(M + s*R*0.44, by - R*0.88, M + s*R*0.5, by - R*0.8); g.stroke();
+    }
+    g.fillStyle = 'rgba(120,90,120,.14)';                 // ポケット
+    gRR(g, M - R*0.26, by + R*0.2, R*0.52, R*0.26, R*0.08); g.fill();
+    g.fillStyle = avShade(wear, -0.32);                   // こしの リボン
+    gRR(g, M - R*0.54, by - R*0.1, R*1.08, R*0.16, R*0.07); g.fill();
+    for (const s of [-1,1]){
+      g.beginPath(); g.ellipse(M + s*R*0.16, by - R*0.02, R*0.15, R*0.1, s*0.5, 0, GTAU); g.fill();
+    }
+    avArm(g, o, 'short');
+  },
+];
+
+
 /* かみの けを ふさっと えがく。まるを かさねると 手がきの やわらかさが 出る */
 function avHairBlob(g, x, y, rx, ry, rot){
   g.beginPath(); g.ellipse(x, y, rx, ry, rot || 0, 0, GTAU); g.fill();
@@ -6276,123 +6719,12 @@ function drawAvatar(g, S, av){
     g.beginPath(); g.ellipse(M + s*R*0.3, by + R*1.32, R*0.22, R*0.14, 0, 0, GTAU); g.fill();
   }
 
-  /* ---- からだ（ふく）---- */
-  g.fillStyle = wear;
-  if (W === 3 || W === 4 || W === 6 || W === 9){   // ドレス・ローブ・きもの・チュチュ：すそが ひろがる
-    g.beginPath();
-    g.moveTo(M - R*0.52, by - R*0.8);
-    g.bezierCurveTo(M - R*0.68, by + R*0.1, M - R*1.0, by + R*0.5, M - R*1.1, by + R*0.82);
-    g.quadraticCurveTo(M, by + R*1.06, M + R*1.1, by + R*0.82);
-    g.bezierCurveTo(M + R*1.0, by + R*0.5, M + R*0.68, by + R*0.1, M + R*0.52, by - R*0.8);
-    g.closePath(); g.fill();
-  } else {
-    gRR(g, M - R*0.7, by - R*0.84, R*1.4, R*1.5, R*0.4); g.fill();
-    g.fillStyle = wear;                   // スカート／ズボンの すそ
-    gRR(g, M - R*0.84, by + R*0.16, R*1.68, R*0.5, R*0.2); g.fill();
-  }
-  /* ふくの もよう */
-  if (W === 1){                           // パーカー：フードと ひも
-    g.fillStyle = 'rgba(255,255,255,.5)';
-    g.beginPath(); g.ellipse(M, by - R*0.6, R*0.6, R*0.3, 0, 0, Math.PI); g.fill();
-    g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = R*0.07; g.lineCap='round';
-    for (const s of [-1,1]){
-      g.beginPath(); g.moveTo(M + s*R*0.14, by - R*0.42); g.lineTo(M + s*R*0.18, by + R*0.06); g.stroke();
-    }
-  } else if (W === 2){                    // セーラー：えりと スカーフ
-    g.fillStyle = 'rgba(255,255,255,.92)';
-    g.beginPath();
-    g.moveTo(M - R*0.6, by - R*0.62); g.lineTo(M + R*0.6, by - R*0.62);
-    g.lineTo(M + R*0.4, by - R*0.14); g.lineTo(M, by + R*0.04); g.lineTo(M - R*0.4, by - R*0.14);
-    g.closePath(); g.fill();
-    g.fillStyle = '#ff5f8a';
-    g.beginPath();
-    g.moveTo(M, by - R*0.34); g.lineTo(M + R*0.15, by - R*0.14);
-    g.lineTo(M, by + R*0.24); g.lineTo(M - R*0.15, by - R*0.14);
-    g.closePath(); g.fill();
-  } else if (W === 4){                    // ローブ：ほしの もよう
-    g.fillStyle = 'rgba(255,255,255,.7)';
-    for (const [dx,dy] of [[-0.46,0.34],[0.42,0.5],[0.0,0.66],[-0.2,-0.16]])
-      gspark(g, M + R*dx, by + R*dy, R*0.13, 0.4, 'rgba(255,255,255,.85)');
-  } else if (W === 5){                    // パジャマ：しましま
-    g.fillStyle = 'rgba(255,255,255,.45)';
-    g.save(); gRR(g, M - R*0.7, by - R*0.84, R*1.4, R*1.5, R*0.4); g.clip();
-    for (let i=-1;i<=4;i++){ gRR(g, M - R*0.7, by - R*0.6 + i*R*0.3, R*1.4, R*0.13, R*0.065); g.fill(); }
-    g.restore();
-  } else if (W === 6){                    // きもの：あわせと おび
-    g.fillStyle = 'rgba(255,255,255,.85)';
-    g.beginPath();                        // えりの あわせ
-    g.moveTo(M - R*0.44, by - R*0.72); g.lineTo(M, by - R*0.1);
-    g.lineTo(M + R*0.44, by - R*0.72); g.lineTo(M + R*0.2, by - R*0.8);
-    g.lineTo(M, by - R*0.36); g.lineTo(M - R*0.2, by - R*0.8);
-    g.closePath(); g.fill();
-    g.fillStyle = '#e8506f';              // おび
-    gRR(g, M - R*0.62, by - R*0.06, R*1.24, R*0.3, R*0.08); g.fill();
-    g.fillStyle = '#ffd76e';              // おびじめ
-    gRR(g, M - R*0.62, by + R*0.06, R*1.24, R*0.08, R*0.04); g.fill();
-    g.fillStyle = 'rgba(255,255,255,.4)';  // すそもよう
-    for (const [dx,dy] of [[-0.5,0.6],[0.1,0.76],[0.56,0.58]]){
-      g.beginPath(); g.arc(M + R*dx, by + R*dy, R*0.11, 0, GTAU); g.fill();
-    }
-  } else if (W === 7){                    // Tシャツ：むねに ほし
-    g.fillStyle = 'rgba(255,255,255,.9)';
-    gspark(g, M, by - R*0.2, R*0.3, 0.5, 'rgba(255,255,255,.95)');
-    g.fillStyle = 'rgba(120,90,120,.16)';  // そでの きれめ
-    for (const s2 of [-1,1]){
-      gRR(g, M + s2*R*0.58 - R*0.05, by - R*0.7, R*0.1, R*0.44, R*0.05); g.fill();
-    }
-  } else if (W === 8){                    // コート：まえあきと ボタン
-    g.strokeStyle = 'rgba(120,90,120,.3)'; g.lineWidth = R*0.05;
-    g.beginPath(); g.moveTo(M, by - R*0.8); g.lineTo(M, by + R*0.62); g.stroke();
-    g.fillStyle = 'rgba(255,255,255,.85)';
-    for (let i=0;i<3;i++){
-      g.beginPath(); g.arc(M + R*0.14, by - R*0.5 + i*R*0.38, R*0.08, 0, GTAU); g.fill();
-    }
-    g.fillStyle = 'rgba(255,255,255,.55)';  // おおきな えり
-    g.beginPath();
-    g.moveTo(M - R*0.6, by - R*0.84); g.lineTo(M, by - R*0.3); g.lineTo(M + R*0.6, by - R*0.84);
-    g.closePath(); g.fill();
-  } else if (W === 9){                    // チュチュ：ふわふわの すそ
-    g.fillStyle = 'rgba(255,255,255,.55)';
-    for (let i=-3;i<=3;i++){
-      g.beginPath();
-      g.ellipse(M + R*i*0.3, by + R*0.72, R*0.28, R*0.2, 0, 0, GTAU); g.fill();
-    }
-    g.fillStyle = 'rgba(255,255,255,.9)';   // むねの リボン
-    g.beginPath(); g.arc(M, by - R*0.34, R*0.11, 0, GTAU); g.fill();
-  } else if (W === 10){                   // スポーツ：そでの ライン
-    g.fillStyle = 'rgba(255,255,255,.85)';
-    for (const s2 of [-1,1]){
-      gRR(g, M + s2*R*0.56 - R*0.04, by - R*0.72, R*0.08, R*0.9, R*0.04); g.fill();
-    }
-    gRR(g, M - R*0.7, by + R*0.14, R*1.4, R*0.1, R*0.05); g.fill();
-    g.fillStyle = 'rgba(255,255,255,.5)';
-    g.beginPath(); g.arc(M, by - R*0.42, R*0.14, 0, GTAU); g.fill();
-  } else if (W === 11){                   // エプロン
-    g.fillStyle = 'rgba(255,255,255,.9)';
-    g.beginPath();
-    g.moveTo(M - R*0.3, by - R*0.74); g.lineTo(M + R*0.3, by - R*0.74);
-    g.lineTo(M + R*0.36, by - R*0.1); g.lineTo(M + R*0.5, by + R*0.62);
-    g.lineTo(M - R*0.5, by + R*0.62); g.lineTo(M - R*0.36, by - R*0.1);
-    g.closePath(); g.fill();
-    g.strokeStyle = 'rgba(120,90,120,.22)'; g.lineWidth = R*0.05;
-    g.beginPath(); g.moveTo(M - R*0.5, by - R*0.08); g.lineTo(M + R*0.5, by - R*0.08); g.stroke();
-    g.fillStyle = '#ff8fa8';               // こしの リボン
-    for (const s2 of [-1,1]){
-      g.beginPath(); g.ellipse(M + s2*R*0.16, by - R*0.08, R*0.12, R*0.08, s2*0.4, 0, GTAU); g.fill();
-    }
-  }
-  /* うで */
-  g.fillStyle = wear;
-  g.strokeStyle = 'rgba(120,90,120,.22)'; g.lineWidth = R*0.05;   // おなじ色だと 胴に とけるので ふちを引く
-  for (const s of [-1,1]){
-    g.beginPath();
-    g.ellipse(M + s*R*0.84, by - R*0.28, R*0.18, R*0.46, s*0.3, 0, GTAU);
-    g.fill(); g.stroke();
-  }
-  g.fillStyle = skin;                     // て
-  for (const s of [-1,1]){
-    g.beginPath(); g.arc(M + s*R*1.0, by + R*0.16, R*0.17, 0, GTAU); g.fill();
-  }
+  /* ---- からだ（ふく）----
+     もようだけを 差しかえていたころは、どれも おなじ シルエットで
+     ならべると「ぜんぶ 同じ服」に 見えていた。だから 1着ずつ
+     胴の形・そで・すその 形から 別々に えがく（AV_WEAR_DRAW）*/
+  (AV_WEAR_DRAW[W] || AV_WEAR_DRAW[0])(g, { M, by, R, wear, skin });
+
   /* ---- くび と あたま ---- */
   g.fillStyle = skin;
   gRR(g, M - R*0.2, hy + R*0.68, R*0.4, R*0.44, R*0.12); g.fill();
@@ -7764,9 +8096,9 @@ function buildPw(){
     'style="flex:1;min-width:0;border:2px solid #ffd9ec;border-radius:10px;padding:9px;font:inherit;font-size:13px;background:rgba(255,255,255,.95)">' +
     '<button class="mini" id="pwBtn">送る</button></div>' +
     '<div id="pwMsg" style="font-size:11px;color:#b98ae0;margin-top:6px;line-height:1.5"></div>' +
-    (redeemed.filter(id => SP_THEMES[id]).length
+    (Object.keys(SP_THEMES).filter(hasTheme).length
       ? '<div style="font-size:11px;color:var(--pink-d);margin-top:10px">🎀 着せかえ</div>' : '') +
-    redeemed.filter(id => SP_THEMES[id]).map(id =>
+    Object.keys(SP_THEMES).filter(hasTheme).map(id =>
       '<button class="mini" data-sp="' + id + '" style="margin-top:6px;width:100%">' +
       (themeSel === id
         ? '「' + SP_THEMES[id].th.name + '」を使用中（タップで戻す）'
@@ -7807,7 +8139,7 @@ function buildPw(){
     try{ localStorage.setItem('sweetTD.codes', JSON.stringify(redeemed)); }catch(e){}
     if (c.theme){
       themeSel = c.theme;
-      try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){}
+      saveThemeSel();
       applyThemeSel();
     }
     celebrate({ conf: 90, rays: 2, fanfare: 1 });
@@ -7848,7 +8180,7 @@ function buildPw(){
     b.onclick = () => {
       const id = b.dataset.sp;
       themeSel = themeSel === id ? '' : id;
-      try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){}
+      saveThemeSel();
       applyThemeSel();
       beep(700,.08,'triangle',.04);
       buildPw();
@@ -7919,6 +8251,18 @@ const SHOP_ITEMS = [
       hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
       return '💗が満タンに！';
     } },
+  /* 着せかえは ランダムなしの 買いきり。買ったら すぐ その見た目に する。
+     じめんは groundKey がテーマ名で 変わるので loop が 焼きなおす */
+  ...SHOP_THEMES.map(({ id, ic }) => ({
+    id: 'th_' + id, sec:'着せかえ', ic, name:'「' + SP_THEMES[id].th.name + '」',
+    desc:'ステージの見た目とBGMが変わります', cost: 60,
+    can: () => !hasTheme(id),
+    poor: () => 'もう持っています',
+    buy: () => {
+      bought.push(id); saveBought();
+      themeSel = id; saveThemeSel(); applyThemeSel();
+      return '「' + SP_THEMES[id].th.name + '」に着せかえました！';
+    } })),
 ];
 function buildShopScreen(){
   shopGem.textContent = '💎 ' + fmtN(gems);
@@ -7930,7 +8274,7 @@ function buildShopScreen(){
       '<div class="spIc">' + it.ic + '</div>' +
       '<div class="spTx"><div class="spN">' + it.name + '</div>' +
       '<div class="spD">' + ((it.can && !it.can()) ? it.poor() : it.desc) + '</div></div>' +
-      '<div class="spP">💎' + it.cost + '</div></div>';
+      '<div class="spP">' + ((it.can && !it.can()) ? '✓' : '💎' + it.cost) + '</div></div>';
   }
   h += '<div class="spSec">💎ジュエル</div>' +
     '<div class="spSoon">💎を買えるようにするのは、App Store に出すときです。' +
@@ -10201,6 +10545,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   life: () => life,
   setWeek: n => { weekDbg = n; },
   setGems: n => { gems = n; saveGems(); },
+  giveTheme: id => { if (!bought.includes(id)) bought.push(id); saveBought();
+                     themeSel = id; saveThemeSel(); applyThemeSel(); },
+  themes: () => Object.keys(SP_THEMES).filter(hasTheme),
   gems: () => gems,
   weekly: () => weekly && weekly.name,
   queue: () => spawnQ.slice(),
