@@ -202,6 +202,10 @@
   .spTx{flex:1;min-width:0}
   .spN{font-size:13.5px;font-weight:800;color:var(--pink-d)}
   .spD{font-size:10.5px;opacity:.7;line-height:1.5}
+  /* かくりつの 1行。品ものの すぐ下に つける（はなすと どれの話か 分からない）*/
+  .spNote{font-size:9.5px;line-height:1.5;color:#8a7a94;background:rgba(255,255,255,.6);
+    border-radius:10px;padding:6px 10px;margin:-5px 4px 0}
+  .spNote.poor{opacity:.5}
   .spP{flex:0 0 auto;font-size:13px;font-weight:800;color:#7d5fd0;
     background:linear-gradient(180deg,#e6dcff,#cfc0f7);border-radius:999px;padding:7px 13px}
   .spSoon{background:rgba(255,255,255,.6);border:2px dashed #ded4f6;border-radius:16px;
@@ -832,7 +836,10 @@ try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catc
    「その合言葉は もう使いました」の 判定に ひっかかってしまう */
 try{ bought = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
 function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(bought)); }catch(e){} }
-const hasTheme = id => redeemed.includes(id) || bought.includes(id);
+/* 💎で 買ったもの ぜんぶ（着せかえも、1回だけの パックも ここに入る）*/
+const owns   = id => bought.includes(id);
+const addOwn = id => { if (!owns(id)) bought.push(id); saveBought(); };
+const hasTheme = id => redeemed.includes(id) || owns(id);
 function saveThemeSel(){ try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){} }
 function applyThemeSel(){
   themeOverride = (themeSel && hasTheme(themeSel) && SP_THEMES[themeSel])
@@ -8241,11 +8248,45 @@ const shopOv = $('shopOv'), shopBody = $('shopBody'), shopGem = $('shopGem');
 /* 売りもの。ここに 足していけば ショップに 出る。
    ⭐は 単品で 売らない。後半は 1ウェーブで 何万も 手に入るので、
    買った ⭐が すぐ 値うちを なくして「損した」に なるため。
-   ⭐は はじめてパックの 中身としてだけ 出す（あとで 追加） */
+   ⭐は はじめてパックの 中身としてだけ 出す */
+const PACK_STARS = 3000;              // 伝説のたまご 1こぶん。はじめの 1歩として ちょうどいい
+const PACK_LV    = 4;                 // わたす なかまの ★
+const packPool   = () => GEN_LIST.filter(o => o.side === 'ch' && o.lv === PACK_LV);
 const SHOP_ITEMS = [
+  /* 1回だけの はじめてパック。ランダムが 入るので、たまごと おなじ
+     「おなじ★の子から 均等に 1人」に して かくりつを 1行で 言いきれる形に する。
+     おだい中は 買えない。あそこの ⭐は もどるときに 消えるので、
+     買った ⭐が そのまま きえてしまう */
+  { id:'pack_start', sec:'はじめての方に', ic:'🎁', name:'はじめてパック',
+    desc:'⭐' + PACK_STARS.toLocaleString() + ' ＋ ★' + PACK_LV + 'のなかま1人。1回だけ',
+    note: () => {
+      const n = packPool().length;
+      return '★' + PACK_LV + 'の' + n + '人から1人。どの子も同じ確率（' +
+        (100/n).toFixed(1) + '%）。すでに全員そろっているときは かけら🩷' +
+        (SHARD_GET[PACK_LV] || 1) + 'こ になります';
+    },
+    cost: 30,
+    can:  () => !owns('pack_start') && !weekly,
+    done: () => owns('pack_start'),
+    poor: () => owns('pack_start') ? 'もう買いました' : '今週のおだい中は買えません',
+    buy: () => {
+      addOwn('pack_start');
+      stars += PACK_STARS; saveRun(); syncHUD(); syncShop();
+      const news = packPool().filter(o => !hasGen(o));
+      if (news.length){
+        const o = news[(Math.random() * news.length) | 0];
+        unlock(o.id);
+        return '⭐' + PACK_STARS.toLocaleString() + ' と ★' + PACK_LV + '「' + o.name + '」が仲間に！';
+      }
+      const n = SHARD_GET[PACK_LV] || 1;
+      shards += n; saveShards();
+      return '⭐' + PACK_STARS.toLocaleString() + '！ ★' + PACK_LV +
+             'は全員そろっていたので かけら🩷' + n + 'こ';
+    } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
     desc:'あと何回あそべるかが 満タンに もどります', cost:10,
-    can: () => hearts < maxHearts(),
+    can:  () => hearts < maxHearts(),
+    done: () => hearts >= maxHearts(),
     poor: () => 'もう満タンです',
     buy: () => {
       hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
@@ -8256,10 +8297,11 @@ const SHOP_ITEMS = [
   ...SHOP_THEMES.map(({ id, ic }) => ({
     id: 'th_' + id, sec:'着せかえ', ic, name:'「' + SP_THEMES[id].th.name + '」',
     desc:'ステージの見た目とBGMが変わります', cost: 60,
-    can: () => !hasTheme(id),
+    can:  () => !hasTheme(id),
+    done: () => hasTheme(id),
     poor: () => 'もう持っています',
     buy: () => {
-      bought.push(id); saveBought();
+      addOwn(id);
       themeSel = id; saveThemeSel(); applyThemeSel();
       return '「' + SP_THEMES[id].th.name + '」に着せかえました！';
     } })),
@@ -8270,11 +8312,15 @@ function buildShopScreen(){
   for (const it of SHOP_ITEMS){
     if (it.sec !== sec){ sec = it.sec; h += '<div class="spSec">' + sec + '</div>'; }
     const ok = (!it.can || it.can()) && gems >= it.cost;
+    const got = it.done ? it.done() : false;
     h += '<div class="spIt' + (ok ? '' : ' poor') + '" data-id="' + it.id + '">' +
       '<div class="spIc">' + it.ic + '</div>' +
       '<div class="spTx"><div class="spN">' + it.name + '</div>' +
       '<div class="spD">' + ((it.can && !it.can()) ? it.poor() : it.desc) + '</div></div>' +
-      '<div class="spP">' + ((it.can && !it.can()) ? '✓' : '💎' + it.cost) + '</div></div>';
+      '<div class="spP">' + (got ? '✓' : '💎' + it.cost) + '</div></div>' +
+      // ランダムが 入るものは かくりつを かならず 出す（Apple 3.1.1／景品表示法）
+      // 品ものが うすくなるときは 説明も いっしょに うすくする
+      (it.note ? '<div class="spNote' + (ok ? '' : ' poor') + '">' + it.note() + '</div>' : '');
   }
   h += '<div class="spSec">💎ジュエル</div>' +
     '<div class="spSoon">💎を買えるようにするのは、App Store に出すときです。' +
