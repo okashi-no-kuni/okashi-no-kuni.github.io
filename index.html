@@ -875,14 +875,58 @@ function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(b
    遊ばない日が あったときに 減るのか 減らないのかが あいまいになる。
    買いなおすと、のこりに 30日 たされる（切りすてない）*/
 const PASS_DAYS = 30;
-function passUntil(){ try{ return +localStorage.getItem('sweetTD.pass') || 0; }catch(e){ return 0; } }
+/* パスポートは 期間が あるので、きげんも レシート（expiresDate）が 正。
+   端末の 時計を もどせば ずっと つかえる——を ふせぐのは サーバーの 仕事 */
+function passUntil(){
+  // レシートが あるなら、そこに 書いていない＝入っていない。端末の 記録には もどさない
+  const r = receiptOwned();
+  if (r) return r.passUntil || 0;
+  try{ return +localStorage.getItem('sweetTD.pass') || 0; }catch(e){ return 0; }
+}
 function setPassUntil(t){ try{ localStorage.setItem('sweetTD.pass', String(t)); }catch(e){} }
 const passOn   = () => passUntil() > Date.now();
 /* のこり日数。きょうを 1日目と かぞえるので 切りあげ */
 const passLeft = () => Math.max(0, Math.ceil((passUntil() - Date.now()) / 86400000));
-/* 💎で 買ったもの ぜんぶ（着せかえも、1回だけの パックも ここに入る）*/
-const owns   = id => bought.includes(id);
-const addOwn = id => { if (!owns(id)) bought.push(id); saveBought(); };
+/* ==========================================================
+   レシート確認（IAP を つないだ あとの 話）
+   ----------------------------------------------------------
+   localStorage は 書きかえ放題なので、買ったかどうかを そこだけで
+   決めては いけない。ほんとうの もちものは Apple の レシートで きめる。
+
+   ながれ：
+     1. アプリが Transaction / AppTransaction の JWS を うけとる
+     2. **サーバーへ おくる**。端末の中で たしかめても、その こたえ
+        じたいを 書きかえられるので 意味がない
+     3. サーバーが App Store Server API で しらべる
+        （/inApps/v1/transactions/{id}。verifyReceipt は 古い API）
+        ・署名の 鎖を Apple の ルート証明書まで たどる
+        ・bundleId と environment（Sandbox / Production）を 見る
+        ・払いもどし（revocationDate）が ないか 見る
+        ・パスポートは expiresDate を 見る。端末の 時計は つかわない
+     4. たしかめが 通った もちものだけを かえす
+
+   receiptOwned() は その こたえの 置きばしょ。いまは レシートが ないので
+   null が かえり、端末の 記録を つかう。**レシートが 入ったら、そこに
+   ないものは 持っていない あつかいに なる**——ここが 書きかえ対策の 本体。
+   ========================================================== */
+function receiptOwned(){
+  try{
+    const r = JSON.parse(localStorage.getItem('sweetTD.receipt') || 'null');
+    // at（たしかめた 時こく）が ないものは、たしかめて いないのと 同じ
+    if (r && r.at && Array.isArray(r.own)) return r;
+  }catch(e){}
+  return null;
+}
+
+/* 💎で 買ったもの ぜんぶ（着せかえも、1回だけの パックも ここに入る）。
+   レシートが あれば そちらが 正。なければ 端末の 記録を つかう */
+const owns = id => {
+  const r = receiptOwned();
+  return r ? r.own.includes(id) : bought.includes(id);
+};
+/* 買った直後に すぐ つかえるように 端末にも 書く。IAP を つないだら、
+   ここで レシートの たしかめを まってから 反映するように 変える */
+const addOwn = id => { if (!bought.includes(id)) bought.push(id); saveBought(); };
 
 /* ---- 買ったものの 復元（Apple の Restore Purchases）----
    非消費型（着せかえ・はじめてパック）は、機種を かえたり 消したりしても
@@ -902,6 +946,9 @@ function loadOwned(){
   return a.filter(x => typeof x === 'string' && known.has(x));
 }
 function restorePurchases(){
+  /* App Store 版では、ここで restoreCompletedTransactions() の こたえを
+     サーバーで たしかめて sweetTD.receipt に 入れる。
+     レシートが すでに あるなら 端末の 記録より そちらが 正 */
   bought = loadOwned();
   saveBought();
   applyThemeSel();                     // 買ったテーマを えらんでいたなら つけ直す
@@ -10869,6 +10916,11 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   weekly: () => weekly && weekly.name,
   pass: () => passLeft(),
   spent: () => monthSpent(),
+  // レシートが 入ったときの ふるまいを ためす（本番は サーバーが 書く）
+  setReceipt: r => { try{ r ? localStorage.setItem('sweetTD.receipt', JSON.stringify(r))
+                            : localStorage.removeItem('sweetTD.receipt'); }catch(e){}
+                     applyThemeSel(); },
+  owned: () => SHOP_THEMES.map(t => t.id).filter(owns).concat(owns('pack_start') ? ['pack_start'] : []),
   setSpent: n => { try{ localStorage.setItem('sweetTD.spend', JSON.stringify({ m: monthKey(), yen: n })); }catch(e){} },
   setPass: d => setPassUntil(d ? Date.now() + d*86400000 : 0),
   leaveWeek: () => { closePanels(); leaveWeekly(); },
