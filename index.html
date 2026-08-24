@@ -184,6 +184,29 @@
   .avFrX{position:absolute;top:-6px;right:-4px;font-size:13px;cursor:pointer;opacity:.6}
 
   /* ---------- なかまえらび ---------- */
+  /* ---------- ショップ ---------- */
+  #shopOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
+    background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:5}
+  #shopOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
+  #shopHead{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--pink-d)}
+  #shopHead>div:first-child{flex:1;white-space:nowrap}
+  #shopGem{font-size:13px;font-weight:800;color:#7d5fd0;background:rgba(255,255,255,.85);
+    border:2px solid #ded4f6;border-radius:999px;padding:4px 10px;white-space:nowrap}
+  #shopBody{display:flex;flex-direction:column;gap:9px}
+  #shopBody>*{flex:0 0 auto}
+  .spSec{font-size:11px;color:var(--pink-d);font-weight:800;margin:2px 0 -3px}
+  .spIt{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.85);
+    border:2px solid #ffd9ec;border-radius:16px;padding:10px 12px}
+  .spIt.poor{opacity:.5}
+  .spIc{font-size:26px;width:34px;text-align:center;flex:0 0 auto}
+  .spTx{flex:1;min-width:0}
+  .spN{font-size:13.5px;font-weight:800;color:var(--pink-d)}
+  .spD{font-size:10.5px;opacity:.7;line-height:1.5}
+  .spP{flex:0 0 auto;font-size:13px;font-weight:800;color:#7d5fd0;
+    background:linear-gradient(180deg,#e6dcff,#cfc0f7);border-radius:999px;padding:7px 13px}
+  .spSoon{background:rgba(255,255,255,.6);border:2px dashed #ded4f6;border-radius:16px;
+    padding:11px 12px;font-size:11px;line-height:1.6;opacity:.8}
+
   /* ---------- 今週のおだい ---------- */
   #wkOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:5}
@@ -424,6 +447,15 @@
     <div id="avFriends"></div>
   </div>
 
+  <div id="shopOv">
+    <div id="shopHead">
+      <div>🛍 ショップ</div>
+      <div id="shopGem"></div>
+      <button class="mini gray" id="shopClose">閉じる</button>
+    </div>
+    <div id="shopBody"></div>
+  </div>
+
   <div id="wkOv">
     <div id="wkHead">
       <div>🏅 今週のおだい</div>
@@ -473,8 +505,9 @@
   </div>
 
   <div id="pwRow">
+    <button class="mini" id="btnShop">🛍 ショップ</button>
     <button class="mini" id="btnWk">🏅 今週のおだい</button>
-    <button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> 合言葉・着せかえ</button>
+    <button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> 合言葉</button>
   </div>
 
   <div id="tip">ウェーブは自動で進みます。ボタンで「早よび」すると⭐ボーナス✨<br>遊びかたは <span class="bookIc"></span> を見てね</div>
@@ -868,7 +901,7 @@ const skillBar = $('skillBar'), colHint = $('colHint');
    ひらく前に ほかの画面を とじる。
    下のボタンは もういちど おすと とじる（いま開いている画面は光る）。
    要素は あとの行で 作られるので、$() で そのつど 引く（TDZ よけ） */
-const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv'];
+const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv'];
 const panelOpen = id => $(id).classList.contains('on');
 function syncNav(){
   $('btnCol').classList.toggle('on',  panelOpen('colOv'));
@@ -1522,6 +1555,27 @@ const SHARD_COST = { 1:5, 2:5, 3:5, 4:12, 5:12, 6:30, 7:60 };
 let shards = 0;
 try{ shards = +localStorage.getItem('sweetTD.shards') || 0; }catch(e){}
 function saveShards(){ try{ localStorage.setItem('sweetTD.shards', String(shards)); }catch(e){} }
+
+/* ==========================================================
+   💎ジュエル（いずれの 課金つうか）
+   ----------------------------------------------------------
+   ⭐と かけらは「あそんで ためる」もの。💎だけが 買うもの。
+   ここを 混ぜると、あとで 課金を 入れるときに 直せなくなる。
+
+   買いものは buyGem() の 1か所だけを とおす。
+   App Store に 出すときは、この中を Apple の IAP に さしかえる。
+   localStorage は 書きかえ放題なので、そのときは レシートで
+   もういちど たしかめること（CLAUDE.md の きまりごと）。
+   ========================================================== */
+let gems = 0;
+try{ gems = +localStorage.getItem('sweetTD.gems') || 0; }catch(e){}
+function saveGems(){ try{ localStorage.setItem('sweetTD.gems', String(gems)); }catch(e){} }
+/* 💎を つかう ゆいいつの 入口。たりなければ false */
+function payGems(n){
+  if (gems < n){ beep(160,.09,'square',.03,.7); return false; }
+  gems -= n; saveGems();
+  return true;
+}
 
 /* その たまごから 出る子。なかま（味方）だけ */
 const eggPool = e => GEN_LIST.filter(o => o.side === 'ch' && e.lv.includes(o.lv));
@@ -7382,6 +7436,9 @@ function todayStartStars(){
   return 0;
 }
 function applyLoginReward(day){
+  // 毎日 💎を すこしだけ。買えないうちも ショップが 動くようにしておく。
+  // 課金を つないだら、ここの数は 見なおすこと
+  gems += 2; saveGems();
   const addStart = n => {
     try{ localStorage.setItem('sweetTD.todayStars', JSON.stringify({ d: dateStr(), n })); }catch(e){}
     stars += n;                          // いま遊んでいるぶんにもすぐ足す
@@ -7638,7 +7695,7 @@ btnSnd.innerHTML = noteSvg(25, ICO_BTN);
 /* 文の中にならべる絵。まわりの行の高さを のばさないよう マイナスの余白つき */
 const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
 const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
-$('btnPw').innerHTML = keySvg(23, INLINE) + ' 合言葉・着せかえ';
+$('btnPw').innerHTML = keySvg(23, INLINE) + ' 合言葉';   // 3つ ならぶので みじかく
 
 /* ==========================================================
    遊びかたガイド（本のボタン）
@@ -7846,6 +7903,57 @@ function saveWeekRec(r){ try{ localStorage.setItem('sweetTD.week', JSON.stringif
 const WEEK_PRIZE = [ {w:10, n:2}, {w:20, n:5}, {w:30, n:10}, {w:40, n:20} ];
 
 let weekly = null;      // おだい中なら ルール。ふだんは null
+
+/* ---------- ショップ ---------- */
+const shopOv = $('shopOv'), shopBody = $('shopBody'), shopGem = $('shopGem');
+/* 売りもの。ここに 足していけば ショップに 出る。
+   ⭐は 単品で 売らない。後半は 1ウェーブで 何万も 手に入るので、
+   買った ⭐が すぐ 値うちを なくして「損した」に なるため。
+   ⭐は はじめてパックの 中身としてだけ 出す（あとで 追加） */
+const SHOP_ITEMS = [
+  { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
+    desc:'あと何回あそべるかが 満タンに もどります', cost:10,
+    can: () => hearts < maxHearts(),
+    poor: () => 'もう満タンです',
+    buy: () => {
+      hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
+      return '💗が満タンに！';
+    } },
+];
+function buildShopScreen(){
+  shopGem.textContent = '💎 ' + fmtN(gems);
+  let h = '', sec = '';
+  for (const it of SHOP_ITEMS){
+    if (it.sec !== sec){ sec = it.sec; h += '<div class="spSec">' + sec + '</div>'; }
+    const ok = (!it.can || it.can()) && gems >= it.cost;
+    h += '<div class="spIt' + (ok ? '' : ' poor') + '" data-id="' + it.id + '">' +
+      '<div class="spIc">' + it.ic + '</div>' +
+      '<div class="spTx"><div class="spN">' + it.name + '</div>' +
+      '<div class="spD">' + ((it.can && !it.can()) ? it.poor() : it.desc) + '</div></div>' +
+      '<div class="spP">💎' + it.cost + '</div></div>';
+  }
+  h += '<div class="spSec">💎ジュエル</div>' +
+    '<div class="spSoon">💎を買えるようにするのは、App Store に出すときです。' +
+    'いまは <b>毎日のログインボーナスで 💎+2</b> もらえます。<br>' +
+    'ここで買ったものは、アプリ版でもそのまま引きつげるように作ってあります。</div>';
+  h += '<div id="shopMsg" style="font-size:12px;color:var(--pink-d);text-align:center;min-height:18px"></div>';
+  shopBody.innerHTML = h;
+  shopBody.querySelectorAll('.spIt').forEach(el => {
+    el.onclick = () => {
+      const it = SHOP_ITEMS.find(x => x.id === el.dataset.id);
+      const msg = $('shopMsg');
+      if (it.can && !it.can()){ msg.textContent = it.poor(); beep(160,.09,'square',.03,.7); return; }
+      if (!payGems(it.cost)){ msg.textContent = '💎が足りません（あと ' + (it.cost - gems) + '）'; return; }
+      const done = it.buy();
+      beep(760,.12,'triangle',.05); setTimeout(()=>beep(980,.16,'triangle',.05),110);
+      celebrate({ conf: 40, fanfare: 1 });
+      buildShopScreen();              // 作りなおすので、文は そのあとに 入れる
+      $('shopMsg').textContent = done;
+    };
+  });
+}
+$('btnShop').onclick = () => togglePanel('shopOv', buildShopScreen);
+$('shopClose').onclick = () => closePanels();
 
 /* ---------- 今週のおだい：入る・出る・結果・画面 ---------- */
 const wkOv = $('wkOv'), wkBody = $('wkBody');
@@ -10092,6 +10200,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   },
   life: () => life,
   setWeek: n => { weekDbg = n; },
+  setGems: n => { gems = n; saveGems(); },
+  gems: () => gems,
   weekly: () => weekly && weekly.name,
   queue: () => spawnQ.slice(),
   wave: () => wave,
