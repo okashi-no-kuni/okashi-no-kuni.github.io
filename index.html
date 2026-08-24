@@ -7516,9 +7516,13 @@ function buildFriendGrid(){
 function buildColGrid(){
   // じぶんの きろくは どの タブでも 出す
   colStats.innerHTML =
-    '<div class="cst best"><div class="ck">🏆 自己ベスト</div><div class="cn">ウェーブ' + rec.bw + '</div></div>' +
-    '<div class="cst"><div class="ck">倒した数</div><div class="cn">' + rec.kills + '</div></div>' +
-    '<div class="cst"><div class="ck">ランキング（目安）</div><div class="cn">' + (rec.bw > 0 ? '上位' + rankPct() + '%' : '—') + '</div></div>';
+    /* 3つの 見出しは かならず 1行に おさめること。1つでも おりかえすと
+       その札だけ 数字が 下がって、3つの 数字が よこに そろわなくなる。
+       せまい画面（320・375px）で 実際に そうなっていた。
+       🏆は 金色の 札そのものが「いちばん」を あらわしているので いらない */
+    '<div class="cst best"><div class="ck">自己ベスト</div><div class="cn">ウェーブ' + rec.bw + '</div></div>' +
+    '<div class="cst"><div class="ck">倒した数</div><div class="cn">' + fmtN(rec.kills) + '</div></div>' +
+    '<div class="cst"><div class="ck">順位の目安</div><div class="cn">' + (rec.bw > 0 ? '上位' + rankPct() + '%' : '—') + '</div></div>';
   if (colTab === 'fr'){ buildFriendGrid(); return; }
   const all = dexList();
   if (colIo) colIo.disconnect();
