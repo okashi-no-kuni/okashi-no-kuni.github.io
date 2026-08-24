@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja" data-brand="business">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GLOWZ BUSINESS — ダッシュボード</title>
+<meta name="description" content="GLOWZ BUSINESS OS — 店舗経営を支えるAIダッシュボード">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/glowz.css">
+<style>
+/* 画面の骨格：左に固定サイドバー、右が中身。
+   1080px を切ったらサイドバーは下のタブに変える（PCと店舗タブレットの両方で使うため） */
+.app{display:flex;min-height:100vh}
+
+.side{
+  width:222px;flex:none;position:sticky;top:0;height:100vh;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-right:1px solid rgba(255,255,255,.9);
+  display:flex;flex-direction:column;padding:22px 14px;
+}
+.side .brand{display:flex;align-items:center;gap:10px;padding:0 8px 20px;border-bottom:1px solid var(--sv-1);margin-bottom:14px}
+.side .brand .logo{font-size:calc(19px * var(--fs))}
+.nav a{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:12px;margin-bottom:2px;
+  font-size:calc(12.5px * var(--fs));color:var(--ink-2);font-weight:500;
+  transition:background .18s,color .18s;
+}
+.nav a:hover{background:var(--sv-1)}
+.nav a.on{background:linear-gradient(120deg,var(--accent-soft),rgba(255,255,255,.4));color:var(--accent-ink);font-weight:600}
+.nav a.on .ic{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
+.ic{
+  width:26px;height:26px;flex:none;border-radius:8px;display:grid;place-items:center;
+  background:#fff;border:1px solid var(--sv-2);color:var(--ink-2);line-height:1;
+}
+.ic .i{width:15px;height:15px}
+.side .foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--sv-1)}
+
+.main{flex:1;min-width:0;padding:22px 26px 40px}
+.top{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.top h1{font-family:var(--font-h);font-size:calc(21px * var(--fs));font-weight:600}
+.top .who{margin-left:auto;display:flex;align-items:center;gap:10px}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;padding:6px 13px 6px 7px;border-radius:99px;
+  background:#fff;box-shadow:var(--sh-1);font-size:calc(12px * var(--fs));font-weight:500;
+}
+.bell{position:relative;width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:var(--sh-1);display:grid;place-items:center;color:var(--ink-2)}
+.bell .i{width:17px;height:17px}
+.bell b{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--ng);border:1.5px solid #fff}
+
+/* KPI は 3列 → 2列 → 1列 */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.kpis .card{display:flex;flex-direction:column}
+.kpis canvas{width:100%;height:42px;margin-top:10px}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.mini .card{display:flex;align-items:center;gap:14px}
+.mini .ringwrap{position:relative;width:62px;height:62px;flex:none}
+.mini .ringwrap canvas{width:62px;height:62px}
+.mini .ringwrap span{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-h);font-weight:600;font-size:calc(15px * var(--fs))}
+
+.split{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin-bottom:14px}
+#sales{width:100%;height:230px}
+
+/* flex にすると、文中の <b> まで別の flex アイテムになって
+   gap のぶんだけ文が切れて見える。点は absolute で置き、li は普通の文にする */
+.ai li{position:relative;padding:8px 0 8px 15px;font-size:calc(12px * var(--fs));color:var(--ink-2);line-height:1.75}
+.ai li + li{border-top:1px solid var(--sv-1)}
+.ai li .d{position:absolute;left:1px;top:17px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+.rank .row .no{
+  width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center;
+  font-family:var(--font-h);font-size:11px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--sv-3),var(--sv-4));
+}
+.rank .row:nth-child(1) .no{background:linear-gradient(135deg,#E8C77A,#C9A24B)}
+.rank .row:nth-child(2) .no{background:linear-gradient(135deg,#DDE1E7,#B0B6C0)}
+.rank .row:nth-child(3) .no{background:linear-gradient(135deg,#E2C0A0,#BF9A76)}
+
+.bottombar{display:none}
+
+@media (max-width:1080px){
+  .app{display:block}
+  .side{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;height:auto;
+    flex-direction:row;border-right:0;border-top:1px solid rgba(255,255,255,.9);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:30;
+    box-shadow:0 -6px 24px rgba(120,110,135,.10);
+  }
+  .side .brand,.side .foot{display:none}
+  .nav{display:flex;width:100%;overflow-x:auto;gap:2px;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex-direction:column;gap:4px;padding:7px 12px;font-size:calc(10px * var(--fs));white-space:nowrap}
+  .main{padding:18px 16px 96px}
+  .split{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .kpis,.mini{grid-template-columns:1fr 1fr}
+  .kpis .card:last-child{grid-column:1/-1}
+}
+@media (max-width:460px){
+  .kpis,.mini{grid-template-columns:1fr}
+  .kpis .card:last-child{grid-column:auto}
+  .top h1{font-size:calc(18px * var(--fs))}
+  .main{padding:16px 13px 96px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand">
+      <div class="planet" style="width:26px;height:26px"><div class="pearl" style="width:20px;height:20px"></div><i class="ring"></i></div>
+      <div>
+        <div class="logo">GLOWZ</div>
+        <div class="logo-sub">BUSINESS</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#" class="on"><i class="ic"><svg class="i"><use href="#i-grid"/></svg></i>ダッシュボード</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-chart"/></svg></i>売上分析</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-users"/></svg></i>顧客管理</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-heart"/></svg></i>キャスト管理</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-calendar"/></svg></i>予約管理</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-clock"/></svg></i>シフト管理</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-sparkle"/></svg></i>AIアシスタント</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-doc"/></svg></i>レポート</a>
+      <a href="#"><i class="ic"><svg class="i"><use href="#i-gear"/></svg></i>設定</a>
+    </nav>
+    <div class="foot">
+      <div class="tiny muted">プラン</div>
+      <div class="sm" style="font-weight:600">GLOWZ Manager</div>
+      <a href="../index.html" class="tiny" style="color:var(--accent)">← ブランド一覧へ</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <h1>ダッシュボード</h1>
+      <div class="who">
+        <span class="chip"><i class="ic" style="width:20px;height:20px;font-size:11px"><svg class="i"><use href="#i-building"/></svg></i>LUMINA Group</span>
+        <span class="chip"><span class="av" style="width:22px;height:22px;font-size:10px">田</span>田中 店長</span>
+        <button class="bell" aria-label="お知らせ"><svg class="i"><use href="#i-bell"/></svg><b></b></button>
+      </div>
+    </div>
+
+    <!-- 上段：金額の大きいものだけ。細かい数字は次の段に落とす -->
+    <section class="kpis">
+      <div class="card">
+        <div class="kpi-l">本日の売上</div>
+        <div class="kpi-v">¥<span id="k1">0</span></div>
+        <div><span class="delta up">▲ 12.4%</span> <span class="tiny muted">前日比</span></div>
+        <canvas id="s1"></canvas>
+      </div>
+      <div class="card">
+        <div class="kpi-l">今月の売上</div>
+        <div class="kpi-v">¥<span id="k2">0</span></div>
+        <div><span class="delta up">▲ 15.8%</span> <span class="tiny muted">前月比</span></div>
+        <canvas id="s2"></canvas>
+      </div>
+      <div class="card">
+        <div class="kpi-l">今月の新規顧客</div>
+        <div class="kpi-v"><span id="k3">0</span><span class="u">人</span></div>
+        <div><span class="delta up">▲ 8.5%</span> <span class="tiny muted">前月比</span></div>
+        <canvas id="s3"></canvas>
+      </div>
+    </section>
+
+    <section class="mini">
+      <div class="card">
+        <div>
+          <div class="kpi-l">本日の予約件数</div>
+          <div class="kpi-v">28<span class="u">件</span></div>
+          <span class="delta up">＋8件</span>
+        </div>
+      </div>
+      <div class="card">
+        <div>
+          <div class="kpi-l">出勤キャスト</div>
+          <div class="kpi-v">24<span class="u">人</span></div>
+          <span class="delta up">＋3人</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ringwrap"><canvas id="rate"></canvas><span>82%</span></div>
+        <div>
+          <div class="kpi-l">稼働率</div>
+          <div class="sm" style="font-weight:600;margin-top:2px">出勤 24人 ／ 欠勤 5人</div>
+          <span class="delta up">＋6%</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="card">
+        <div class="card-t"><span class="ico"><svg class="i"><use href="#i-chart"/></svg></span>売上推移<span class="tiny muted" style="font-weight:400">（直近30日）</span><a href="#" class="card-more">詳細を見る ›</a></div>
+        <canvas id="sales"></canvas>
+      </div>
+
+      <div class="card ai">
+        <div class="card-t"><span class="ico"><svg class="i"><use href="#i-sparkle"/></svg></span>AIからの経営サマリー</div>
+        <ul>
+          <li><i class="d"></i>売上は今日も目標比 <b>12.9%</b> 増。この調子なら月末着地は <b>¥41,200,000</b> 前後です。</li>
+          <li><i class="d"></i><b>14:00〜16:00</b> の予約が不足しています。この帯にクーポンを出すと稼働率が上がります。</li>
+          <li><i class="d"></i><b>白石 りな</b>さんのリピート率が上位10%です。指名特典の対象に追加しませんか。</li>
+          <li><i class="d"></i>広告経由のCPAが悪化しています。<b>SNS流入</b>のほうが単価が高い傾向です。</li>
+        </ul>
+        <button class="btn btn-2 w sm" style="margin-top:12px">詳細を見る</button>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="card rank">
+        <div class="card-t"><span class="ico"><svg class="i"><use href="#i-crown"/></svg></span>人気キャスト TOP5<a href="#" class="card-more">すべて見る ›</a></div>
+        <div id="ranklist"></div>
+      </div>
+      <div class="card">
+        <div class="card-t"><span class="ico"><svg class="i"><use href="#i-calendar"/></svg></span>本日の予約状況</div>
+        <div id="slots"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../assets/icons.js"></script>
+<script src="../assets/glowz.js"></script>
+<script>
+/* ---- ダミーデータ。サーバーにつなぐときはここだけ差しかえる ------------- */
+const CASTS = [
+  { n:'一ノ瀬 莉子', t:'本指名 62件', v:1285000 },
+  { n:'桜井 みなみ', t:'本指名 54件', v:1045000 },
+  { n:'白石 りな',   t:'リピート率 78%', v:980000 },
+  { n:'鳳翔 れいか', t:'新規指名 41件', v:825000 },
+  { n:'天音 あい',   t:'満足度 4.8', v:790000 },
+];
+const SLOTS = [
+  { t:'12:00', n:'蓮 (Ren)',       c:'90分コース',  s:'確定' },
+  { t:'14:00', n:'翔 (Syo)',       c:'90分コース',  s:'確定' },
+  { t:'16:00', n:'湊 (Minato)',    c:'120分コース', s:'調整中' },
+  { t:'18:00', n:'律 (Ritsu)',     c:'90分コース',  s:'確定' },
+  { t:'20:00', n:'大和 (Yamato)',  c:'120分コース', s:'確定' },
+];
+
+/* 30日ぶんの売上。乱数ではなく固定の形にしてある。
+   毎回グラフが変わると「見た目が崩れていないか」の確認ができないため */
+const SALES = (() => {
+  const base = [ 84,79,92,88,101,118,126, 91,86,97,94,108,124,133,
+                 98,93,104,99,115,131,142, 104,99,111,107,122,138,151, 118,128 ];
+  const d = new Date(2026, 4, 1);
+  return base.map((v, i) => ({
+    l: `${d.getMonth()+1}/${i+1}`,
+    v: v * 10000
+  }));
+})();
+
+/* ---- 描画 ---------------------------------------------------------------- */
+countUp(document.getElementById('k1'), 1284000);
+countUp(document.getElementById('k2'), 38256000);
+countUp(document.getElementById('k3'), 182);
+
+onDraw(() => {
+  lineChart(document.getElementById('sales'), SALES);
+  sparkline(document.getElementById('s1'), [62,58,71,66,79,74,88,84,96,101,112,128]);
+  sparkline(document.getElementById('s2'), [180,196,188,214,231,225,248,262,281,297,312,338]);
+  sparkline(document.getElementById('s3'), [98,104,112,108,124,131,127,142,151,163,171,182], '#2A5F8F');
+  ring(document.getElementById('rate'), 82, { thick:7 });
+});
+
+document.getElementById('ranklist').innerHTML = CASTS.map((c,i) => `
+  <div class="row">
+    <span class="no">${i+1}</span>
+    <span class="av" style="width:34px;height:34px;font-size:13px">${c.n[0]}</span>
+    <span>
+      <span class="nm">${c.n}</span><br>
+      <span class="sub">${c.t}</span>
+    </span>
+    <span class="amt">${fmtYen(c.v)}</span>
+  </div>`).join('');
+
+document.getElementById('slots').innerHTML = SLOTS.map(s => `
+  <div class="row">
+    <span class="serif" style="font-weight:600;width:44px">${s.t}</span>
+    <span>
+      <span class="nm">${s.n}</span><br>
+      <span class="sub">${s.c}</span>
+    </span>
+    <span style="margin-left:auto"><span class="badge ${s.s==='確定'?'ok':'rec'}">${s.s}</span></span>
+  </div>`).join('');
+</script>
+</body>
+</html>

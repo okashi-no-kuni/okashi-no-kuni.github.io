@@ -1,0 +1,362 @@
+/* ==========================================================================
+   GLOWZ デザインシステム
+   ブランドガイドの3色（BUSINESS / THERAPIST / CUSTOMER）を
+   data-brand 属性ひとつで切りかえる。ページ側は色を直接書かない。
+   共通要素は Pearl（パール）・Silver（シルバー）・Aurora（オーロラ）・Glass（ガラス質感）。
+   ========================================================================== */
+
+/* ---- 共通トークン ------------------------------------------------------ */
+:root{
+  /* シルバーはブランド3色すべてに共通で入る。ここだけは brand で変えない */
+  --sv-0:#FFFFFF;
+  --sv-1:#F4F5F7;
+  --sv-2:#E3E5E9;
+  --sv-3:#C8CBD2;
+  --sv-4:#9BA0AA;
+  --sv-5:#6E737D;
+
+  /* 文字。真っ黒を使わないのは、パール／オーロラの上で黒が浮いて硬く見えるため */
+  --ink-1:#22252B;
+  --ink-2:#4E535D;
+  --ink-3:#858A95;
+  --ink-4:#B4B8C1;
+
+  --ok:#3DBB8A;
+  --warn:#E8A33D;
+  --ng:#E06A6A;
+
+  --r-s:10px;
+  --r-m:16px;
+  --r-l:22px;
+  --r-xl:30px;
+
+  /* 影は黒ではなく紫がかった半透明。パール表面の反射に近く、輪郭が硬くならない */
+  --sh-1:0 1px 2px rgba(120,110,135,.05), 0 2px 8px rgba(120,110,135,.05);
+  --sh-2:0 2px 6px rgba(120,110,135,.07), 0 8px 24px rgba(120,110,135,.08);
+  --sh-3:0 6px 14px rgba(120,110,135,.10), 0 20px 48px rgba(120,110,135,.12);
+
+  --font-h:"Playfair Display","Noto Serif JP",serif;
+  --font-b:"Noto Sans JP",-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+
+  /* 文字サイズはここ1つで全体を上げ下げする */
+  --fs:1;
+}
+
+/* ---- BUSINESS：Pearl White × Silver（信頼・清潔・プロフェッショナル）---- */
+[data-brand="business"]{
+  --bg-1:#F7F8FA;
+  --bg-2:#E6E8EC;
+  --bg-3:#C0C3C8;
+  --accent:#3E8FD6;
+  --accent-2:#2A5F8F;
+  --accent-soft:#E8F1FA;
+  --accent-ink:#1F4A70;
+  --pearl-hi:#FFFFFF;
+  --pearl-mid:#EDEFF3;
+  --pearl-lo:#CFD3DA;
+  --pearl-sh:#A8ADB7;
+  --pearl-glow:rgba(180,200,225,.55);
+  --aur-a:rgba(255,255,255,.9);
+  --aur-b:rgba(198,212,230,.55);
+  --aur-c:rgba(226,230,238,.7);
+}
+
+/* ---- THERAPIST：Pearl Pink × Silver（優しさ・上品・女性らしさ）---------- */
+[data-brand="therapist"]{
+  --bg-1:#FFF0F6;
+  --bg-2:#FFD6E6;
+  --bg-3:#D3D5DB;
+  --accent:#F2529C;
+  --accent-2:#C9A7FF;
+  --accent-soft:#FFE7F1;
+  --accent-ink:#B8306E;
+  --pearl-hi:#FFFFFF;
+  --pearl-mid:#FFE4EF;
+  --pearl-lo:#FFC0DA;
+  --pearl-sh:#D89BB8;
+  --pearl-glow:rgba(255,175,210,.6);
+  --aur-a:rgba(255,255,255,.9);
+  --aur-b:rgba(255,182,214,.6);
+  --aur-c:rgba(214,196,240,.5);
+}
+
+/* ---- CUSTOMER：Pearl Champagne × Silver（高級感・特別感・ときめき）------ */
+[data-brand="customer"]{
+  --bg-1:#FFF7ED;
+  --bg-2:#F1E6D3;
+  --bg-3:#C8C8CF;
+  --accent:#C9A24B;
+  --accent-2:#8C7340;
+  --accent-soft:#FBF2E1;
+  --accent-ink:#6E5827;
+  --pearl-hi:#FFFFFF;
+  --pearl-mid:#FDF3E2;
+  --pearl-lo:#EBD8B4;
+  --pearl-sh:#C0A87D;
+  --pearl-glow:rgba(240,214,160,.6);
+  --aur-a:rgba(255,255,255,.9);
+  --aur-b:rgba(238,214,170,.6);
+  --aur-c:rgba(228,224,214,.65);
+}
+
+/* ---- リセット ---------------------------------------------------------- */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font-b);
+  color:var(--ink-1);
+  background:var(--bg-1);
+  -webkit-font-smoothing:antialiased;
+  font-size:calc(14px * var(--fs));
+  line-height:1.7;
+  letter-spacing:.01em;
+}
+h1,h2,h3,h4{margin:0;font-weight:600;line-height:1.35;letter-spacing:.02em}
+p{margin:0}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+ul{margin:0;padding:0;list-style:none}
+input,select{font:inherit;color:inherit}
+img{max-width:100%;display:block}
+
+/* ==========================================================================
+   Aurora — 背景
+   ぼかした大きな円を重ねて、シルクの流れを作る。
+   固定配置にして、中身をスクロールしても背景が動かないようにする。
+   ========================================================================== */
+.aurora{
+  position:fixed; inset:0; z-index:-1; overflow:hidden;
+  background:linear-gradient(165deg, var(--bg-1) 0%, var(--bg-2) 52%, var(--bg-1) 100%);
+}
+.aurora span{
+  position:absolute; border-radius:50%;
+  filter:blur(70px);
+  will-change:transform;
+}
+.aurora span:nth-child(1){width:70vw;height:70vw;left:-18vw;top:-22vw;background:var(--aur-a);opacity:.85;animation:aur 26s ease-in-out infinite}
+.aurora span:nth-child(2){width:62vw;height:62vw;right:-16vw;top:8vh;background:var(--aur-b);opacity:.7;animation:aur 32s ease-in-out infinite reverse}
+.aurora span:nth-child(3){width:80vw;height:60vw;left:6vw;bottom:-28vw;background:var(--aur-c);opacity:.65;animation:aur 38s ease-in-out infinite}
+@keyframes aur{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(4%,-5%,0) scale(1.12)}
+}
+/* 上に薄いシルクの筋を1枚のせると、単なるグラデより布に見える */
+.aurora::after{
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(115deg,
+    rgba(255,255,255,0) 0px,
+    rgba(255,255,255,.10) 40px,
+    rgba(255,255,255,0) 110px);
+  mix-blend-mode:soft-light;
+}
+@media (prefers-reduced-motion:reduce){ .aurora span{animation:none} }
+
+/* ==========================================================================
+   Pearl — パール球
+   写真ではなくCSSで描く。拡大しても割れず、色もブランドごとに変わる。
+   ハイライト（左上）と反射光（下）の2つを入れると球に見える。
+   ========================================================================== */
+.pearl{
+  position:relative; border-radius:50%; flex:none;
+  background:radial-gradient(circle at 33% 27%,
+    #fff 0%, var(--pearl-hi) 12%, var(--pearl-mid) 40%,
+    var(--pearl-lo) 72%, var(--pearl-sh) 100%);
+  box-shadow:
+    inset -5px -7px 16px rgba(90,80,100,.13),
+    inset 5px 6px 18px rgba(255,255,255,.6),
+    0 8px 22px rgba(120,110,135,.22);
+}
+.pearl::before{ /* つやのハイライト */
+  content:''; position:absolute; left:20%; top:14%; width:28%; height:21%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at center, rgba(255,255,255,.98), rgba(255,255,255,0) 72%);
+}
+.pearl::after{ /* 下からの反射光。これが無いと球ではなく円に見える */
+  content:''; position:absolute; left:16%; bottom:7%; width:68%; height:28%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at center, var(--pearl-glow), rgba(255,255,255,0) 74%);
+  opacity:.75;
+}
+
+/* 土星のわ。ロゴ用。
+   まるい輪を rotate しただけでは、球のうしろを通る「わ」に見えない。
+   平たい楕円（横3.5：たて1）にして、そこから かたむける。 */
+.planet{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.planet .ring{
+  position:absolute; inset:21% -34%;
+  border:1.5px solid transparent;
+  border-radius:50%;
+  background:linear-gradient(96deg,
+    rgba(201,162,75,.15), rgba(201,162,75,.9) 22%,
+    rgba(255,255,255,.95) 50%, rgba(201,162,75,.75) 78%, rgba(201,162,75,.15)) border-box;
+  -webkit-mask:linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  transform:rotate(-20deg);
+  pointer-events:none;
+}
+
+/* ==========================================================================
+   Glass — カード
+   ========================================================================== */
+.card{
+  background:rgba(255,255,255,.82);
+  backdrop-filter:blur(14px) saturate(1.2);
+  -webkit-backdrop-filter:blur(14px) saturate(1.2);
+  border:1px solid rgba(255,255,255,.9);
+  border-radius:var(--r-l);
+  box-shadow:var(--sh-2);
+  padding:18px 20px;
+}
+.card.flat{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}
+.card-t{
+  font-size:calc(13px * var(--fs)); font-weight:600; color:var(--ink-2);
+  display:flex; align-items:center; gap:8px; margin-bottom:12px;
+}
+.card-t .ico{display:inline-flex;align-items:center;color:var(--accent);line-height:1}
+.card-t .i{width:15px;height:15px}
+/* 一覧の行に置くアイコン */
+.rowi{display:inline-flex;align-items:center;color:var(--accent)}
+.row .i,.rowi .i{width:17px;height:17px}
+.card-more{margin-left:auto;font-size:calc(12px * var(--fs));color:var(--accent);font-weight:500}
+
+/* ---- 数字（KPI）------------------------------------------------------- */
+.kpi-l{font-size:calc(12px * var(--fs));color:var(--ink-3);font-weight:500}
+.kpi-v{
+  font-family:var(--font-h);
+  font-size:calc(27px * var(--fs)); font-weight:600; letter-spacing:.01em;
+  line-height:1.2; color:var(--ink-1); margin-top:2px;
+}
+.kpi-v .u{font-size:.6em;margin-left:2px;color:var(--ink-2)}
+.delta{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:calc(11px * var(--fs));font-weight:600;
+  padding:2px 8px;border-radius:99px;margin-top:6px;
+}
+.delta.up{color:#1E7F5C;background:rgba(61,187,138,.14)}
+.delta.dn{color:#A5433F;background:rgba(224,106,106,.14)}
+.delta.flat{color:var(--ink-3);background:var(--sv-1)}
+
+/* ---- ボタン 3種 -------------------------------------------------------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 22px;border-radius:99px;
+  font-size:calc(13px * var(--fs));font-weight:600;letter-spacing:.04em;
+  transition:transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn-1{ /* Primary */
+  color:#fff;
+  background:linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow:0 6px 18px rgba(120,110,135,.24);
+}
+.btn-1:hover{box-shadow:0 8px 24px rgba(120,110,135,.32)}
+.btn-2{ /* Secondary */
+  color:var(--accent-ink); background:#fff;
+  border:1px solid var(--sv-2); box-shadow:var(--sh-1);
+}
+.btn-2:hover{border-color:var(--accent);background:var(--accent-soft)}
+.btn-3{ /* Tertiary */
+  color:var(--accent); background:transparent;
+  border:1px solid var(--accent);
+}
+.btn-3:hover{background:var(--accent-soft)}
+.btn.w{width:100%}
+.btn.sm{padding:8px 16px;font-size:calc(12px * var(--fs))}
+
+/* ---- 入力 --------------------------------------------------------------- */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:calc(12px * var(--fs));color:var(--ink-2);font-weight:500;margin-bottom:6px}
+.inp,.sel{
+  width:100%;padding:12px 14px;
+  border:1px solid var(--sv-2);border-radius:var(--r-s);
+  background:#fff;font-size:calc(13px * var(--fs));
+  transition:border-color .2s, box-shadow .2s;
+}
+.inp:focus,.sel:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.sel{
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23858A95' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:36px;
+}
+
+/* ---- バッジ ------------------------------------------------------------- */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:99px;
+  font-size:calc(10px * var(--fs));font-weight:700;letter-spacing:.06em;
+}
+.badge.new{background:var(--sv-2);color:var(--sv-5)}
+.badge.vip{background:linear-gradient(135deg,#E8C77A,#C9A24B);color:#fff}
+.badge.hot{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+.badge.rec{background:var(--accent-soft);color:var(--accent-ink)}
+.badge.ok{background:rgba(61,187,138,.16);color:#1E7F5C}
+
+/* ---- 一覧の行 ----------------------------------------------------------- */
+.row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.row + .row{border-top:1px solid var(--sv-1)}
+.row .nm{font-size:calc(13px * var(--fs));font-weight:600}
+.row .sub{font-size:calc(11px * var(--fs));color:var(--ink-3)}
+.row .amt{margin-left:auto;font-family:var(--font-h);font-weight:600;font-size:calc(14px * var(--fs))}
+
+/* ---- アバター（写真の代わり）-------------------------------------------
+   実写素材が入るまでの仮。ブランド共通要素の「パール」をそのまま使う。
+   accent のべた塗りにすると、シャンパン色だけ濃くて重くなり、
+   3ブランドで見え方がそろわなかった。
+   中に <img> を1つ足せば、そのまま写真に差しかわる。
+   ------------------------------------------------------------------------ */
+.av{
+  position:relative;border-radius:50%;flex:none;overflow:hidden;
+  display:grid;place-items:center;
+  font-family:var(--font-h);font-weight:600;color:var(--accent-ink);
+  background:radial-gradient(circle at 33% 27%,
+    #fff 0%, var(--pearl-hi) 12%, var(--pearl-mid) 40%,
+    var(--pearl-lo) 74%, var(--pearl-sh) 100%);
+  box-shadow:
+    inset -3px -4px 10px rgba(90,80,100,.12),
+    inset 3px 4px 12px rgba(255,255,255,.6),
+    0 3px 10px rgba(120,110,135,.2);
+}
+.av::after{
+  content:'';position:absolute;left:16%;top:11%;width:30%;height:23%;
+  border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,255,255,.9),transparent 72%);
+}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* ---- 進みぐあいのバー ---------------------------------------------------- */
+.bar{height:7px;border-radius:99px;background:var(--sv-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .9s cubic-bezier(.2,.8,.2,1)}
+
+/* ---- 見出しのロゴ字 ------------------------------------------------------ */
+.logo{font-family:var(--font-h);font-weight:500;letter-spacing:.22em;line-height:1}
+.logo-sub{font-size:calc(9px * var(--fs));letter-spacing:.34em;color:var(--ink-3);font-weight:500}
+
+/* ---- キラキラ ------------------------------------------------------------ */
+.spark{position:absolute;pointer-events:none;opacity:.9}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1.15)}}
+
+/* ---- スクロールバー ------------------------------------------------------ */
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--sv-3);border-radius:99px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---- 小物 ---------------------------------------------------------------- */
+.grid{display:grid;gap:14px}
+.mt-a{margin-top:auto}
+.muted{color:var(--ink-3)}
+.tiny{font-size:calc(11px * var(--fs))}
+.sm{font-size:calc(12px * var(--fs))}
+.serif{font-family:var(--font-h)}
+.center{text-align:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---- アイコン ------------------------------------------------------------
+   線の太さは 1.6px 固定。大きさを変えても線が太らないように
+   vector-effect ではなく viewBox 固定＋stroke-width 指定でそろえる。 */
+.i{
+  width:1.25em;height:1.25em;flex:none;
+  fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;
+  display:inline-block;vertical-align:-.22em;
+}
+.i.fill{fill:currentColor;stroke:none}

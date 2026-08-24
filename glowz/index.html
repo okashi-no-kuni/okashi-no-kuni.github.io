@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ja" data-brand="customer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Growz Planet — Grow Together. Glow Forever.</title>
+<meta name="description" content="人とビジネスの成長を支えるプラットフォーム。GLOWZ — AI経営OSシリーズ。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/glowz.css">
+<style>
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+
+/* ---- 表紙 --------------------------------------------------------------- */
+.cover{min-height:62vh;display:grid;place-items:center;text-align:center;padding:60px 0 34px}
+.cover .planet{width:120px;height:120px;margin:0 auto 24px}
+.cover .planet .pearl{width:96px;height:96px}
+.cover h1{font-family:var(--font-h);font-size:clamp(34px,6vw,60px);font-weight:500;letter-spacing:.04em}
+.cover .tag{font-family:var(--font-h);font-size:calc(14px * var(--fs));color:var(--ink-2);letter-spacing:.18em;margin-top:10px}
+.cover .jp{font-size:calc(12.5px * var(--fs));color:var(--ink-3);margin-top:14px}
+
+/* キラキラ。表紙に置いておくと、開いた瞬間から動いて見える */
+.cover{position:relative;overflow:hidden}
+.st{position:absolute;pointer-events:none;animation:twinkle 3.4s ease-in-out infinite}
+
+.sec{padding-block:38px}
+.sec > h2{font-family:var(--font-h);font-size:calc(20px * var(--fs));font-weight:600;margin-bottom:6px}
+.sec > .lead{font-size:calc(12.5px * var(--fs));color:var(--ink-3);margin-bottom:20px}
+
+/* ---- 3つのOS ------------------------------------------------------------ */
+.oss{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.os{
+  border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-2);
+  border:1px solid rgba(255,255,255,.9);background:#fff;
+  display:flex;flex-direction:column;
+  transition:transform .22s, box-shadow .28s;
+}
+.os:hover{transform:translateY(-5px);box-shadow:var(--sh-3)}
+.os .top{position:relative;padding:26px 20px 22px;text-align:center;overflow:hidden}
+.os .top .pearl{width:74px;height:74px;margin:0 auto 16px;position:relative;z-index:1}
+.os .top .silk{
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(118deg,rgba(255,255,255,0) 0,rgba(255,255,255,.5) 30px,rgba(255,255,255,0) 78px);
+  mix-blend-mode:soft-light;
+}
+.os .nm{font-family:var(--font-h);font-size:calc(22px * var(--fs));font-weight:500;letter-spacing:.2em;position:relative;z-index:1}
+.os .kind{font-size:calc(10px * var(--fs));letter-spacing:.3em;color:var(--ink-3);margin-top:3px;position:relative;z-index:1}
+.os .bd{padding:18px 20px 20px;display:flex;flex-direction:column;flex:1}
+.os .cat{font-size:calc(12.5px * var(--fs));font-weight:600;margin-bottom:5px}
+.os .ds{font-size:calc(11.5px * var(--fs));color:var(--ink-3);line-height:1.75;margin-bottom:14px}
+.os .sw{display:flex;gap:6px;margin-bottom:16px}
+.os .sw i{flex:1;height:26px;border-radius:7px;border:1px solid rgba(0,0,0,.05);position:relative}
+.os .sw i::after{content:attr(data-h);position:absolute;left:0;right:0;top:30px;font-size:8.5px;color:var(--ink-4);text-align:center;font-family:var(--font-b)}
+.os .sw{margin-bottom:30px}
+.os .btn{margin-top:auto}
+
+/* 3色ぶんの見た目。data-brand を各カードに付けて切りかえる */
+[data-brand="business"] .top{background:linear-gradient(150deg,#FFFFFF,#F7F8FA 45%,#E6E8EC)}
+[data-brand="therapist"] .top{background:linear-gradient(150deg,#FFFFFF,#FFF0F6 45%,#FFD6E6)}
+[data-brand="customer"] .top{background:linear-gradient(150deg,#FFFFFF,#FFF7ED 45%,#F1E6D3)}
+
+/* ---- ブランド構造 -------------------------------------------------------- */
+.tree{background:rgba(255,255,255,.7);border-radius:var(--r-xl);padding:26px 22px;border:1px solid rgba(255,255,255,.9)}
+.tree .node{
+  background:#fff;border:1px solid var(--sv-2);border-radius:var(--r-m);
+  padding:11px 16px;text-align:center;box-shadow:var(--sh-1);
+}
+.tree .node b{display:block;font-size:calc(13px * var(--fs));font-family:var(--font-h);letter-spacing:.1em}
+.tree .node span{font-size:calc(10px * var(--fs));color:var(--ink-3)}
+.tree .lv{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.tree .bar{width:1px;height:22px;background:var(--sv-3);margin:0 auto}
+.tree .kids{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+.tree .kids .node{padding:10px 8px}
+.tree .kids .node b{font-size:calc(11px * var(--fs))}
+
+/* ---- ロードマップ -------------------------------------------------------- */
+.road{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);border-radius:var(--r-l);padding:18px 20px;box-shadow:var(--sh-1)}
+.step .n{font-family:var(--font-h);font-size:calc(11px * var(--fs));letter-spacing:.24em;color:var(--accent);font-weight:600}
+.step h3{font-size:calc(14px * var(--fs));margin:6px 0 8px}
+.step p{font-size:calc(11.5px * var(--fs));color:var(--ink-3);line-height:1.8}
+.step ul{margin-top:10px}
+.step li{font-size:calc(11.5px * var(--fs));color:var(--ink-2);padding:4px 0 4px 16px;position:relative}
+.step li::before{content:'';position:absolute;left:2px;top:12px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.step.now{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--sh-2)}
+
+/* ---- 下の帯 -------------------------------------------------------------- */
+.vals{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding-block:24px 46px}
+.val{text-align:center}
+.val .e{width:36px;height:36px;margin:0 auto 8px;border-radius:12px;display:grid;place-items:center;color:var(--accent);background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.9);box-shadow:var(--sh-1)}
+.val .i{width:18px;height:18px}
+.val b{display:block;font-family:var(--font-h);font-size:calc(11.5px * var(--fs));letter-spacing:.08em}
+.val span{font-size:calc(10px * var(--fs));color:var(--ink-3)}
+
+@media (max-width:900px){
+  .oss,.road{grid-template-columns:1fr}
+  .tree .kids{grid-template-columns:repeat(3,1fr)}
+  .vals{grid-template-columns:repeat(2,1fr);gap:18px}
+}
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="wrap">
+    <div class="planet"><div class="pearl"></div><i class="ring"></i></div>
+    <h1>Growz Planet</h1>
+    <div class="tag">Grow Together. Glow Forever.</div>
+    <p class="jp">人とビジネスの成長を支えるプラットフォーム</p>
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>GLOWZ — AI経営OSシリーズ</h2>
+  <p class="lead">3つの入口。ひとつのデータ基盤。</p>
+
+  <div class="oss">
+
+    <article class="os" data-brand="business">
+      <div class="top">
+        <div class="silk"></div>
+        <div class="pearl"></div>
+        <div class="nm">GLOWZ</div>
+        <div class="kind">BUSINESS OS</div>
+      </div>
+      <div class="bd">
+        <div class="cat">Pearl White × Silver</div>
+        <div class="ds">信頼・清潔・プロフェッショナル<br>店舗経営OS（オーナー・店長向け）</div>
+        <div class="sw">
+          <i style="background:#F7F8FA" data-h="#F7F8FA"></i>
+          <i style="background:#E6E8EC" data-h="#E6E8EC"></i>
+          <i style="background:#C0C3C8" data-h="#C0C3C8"></i>
+        </div>
+        <a class="btn btn-1 w" href="business/index.html">ダッシュボードを開く</a>
+      </div>
+    </article>
+
+    <article class="os" data-brand="therapist">
+      <div class="top">
+        <div class="silk"></div>
+        <div class="pearl"></div>
+        <div class="nm">GLOWZ</div>
+        <div class="kind">THERAPIST OS</div>
+      </div>
+      <div class="bd">
+        <div class="cat">Pearl Pink × Silver</div>
+        <div class="ds">優しさ・上品・女性らしさ<br>キャスト／セラピスト向けアプリ</div>
+        <div class="sw">
+          <i style="background:#FFF0F6" data-h="#FFF0F6"></i>
+          <i style="background:#FFD6E6" data-h="#FFD6E6"></i>
+          <i style="background:#D3D5DB" data-h="#D3D5DB"></i>
+        </div>
+        <a class="btn btn-1 w" href="therapist/index.html">アプリを開く</a>
+      </div>
+    </article>
+
+    <article class="os" data-brand="customer">
+      <div class="top">
+        <div class="silk"></div>
+        <div class="pearl"></div>
+        <div class="nm">GLOWZ</div>
+        <div class="kind">CUSTOMER WEB</div>
+      </div>
+      <div class="bd">
+        <div class="cat">Pearl Champagne × Silver</div>
+        <div class="ds">高級感・特別感・ときめき<br>お客様向けWeb／PWA（男女共通）</div>
+        <div class="sw">
+          <i style="background:#FFF7ED" data-h="#FFF7ED"></i>
+          <i style="background:#F1E6D3" data-h="#F1E6D3"></i>
+          <i style="background:#C8C8CF" data-h="#C8C8CF"></i>
+        </div>
+        <a class="btn btn-1 w" href="customer/index.html">サイトを開く</a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>ブランド構造</h2>
+  <p class="lead">Growz Planet が世界観、GLOWZ が製品シリーズ。</p>
+  <div class="tree">
+    <div class="lv"><div class="node" style="min-width:220px"><b>GROWZ PLANET</b><span>プラットフォーム／世界観／ブランド</span></div></div>
+    <div class="bar"></div>
+    <div class="lv"><div class="node" style="min-width:180px"><b>GLOWZ</b><span>AI経営OS</span></div></div>
+    <div class="bar"></div>
+    <div class="kids">
+      <div class="node"><b>Manager</b><span>店舗管理</span></div>
+      <div class="node"><b>Cast</b><span>キャスト管理・営業</span></div>
+      <div class="node"><b>CRM</b><span>顧客管理</span></div>
+      <div class="node"><b>AI</b><span>経営・営業分析</span></div>
+      <div class="node"><b>Booking</b><span>自社予約</span></div>
+      <div class="node"><b>Market</b><span>集客（最後）</span></div>
+    </div>
+    <div class="bar"></div>
+    <div class="lv"><div class="node" style="min-width:280px"><b>共通基盤</b><span>AI・データ分析・セキュリティ・決済・予約システム</span></div></div>
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>作る順番</h2>
+  <p class="lead">Market（集客プラットフォーム）を最初に作らないのがポイント。</p>
+  <div class="road">
+    <div class="step now">
+      <div class="n">STEP 1 — いまここ</div>
+      <h3>デザインシステム＋画面</h3>
+      <p>静的HTML／ダミーデータ。GitHub Pages で公開でき、そのまま営業資料になる。</p>
+      <ul>
+        <li>ブランド3色のトークン</li>
+        <li>BUSINESS ダッシュボード</li>
+        <li>THERAPIST アプリ（5画面）</li>
+        <li>CUSTOMER Web</li>
+      </ul>
+    </div>
+    <div class="step">
+      <div class="n">STEP 2</div>
+      <h3>データをつなぐ</h3>
+      <p>ログイン・店舗・キャスト・予約・売上を実データにする。ここからサーバーが要る。</p>
+      <ul>
+        <li>認証／権限（オーナー・店長・キャスト）</li>
+        <li>予約とシフト</li>
+        <li>売上・報酬の自動計算</li>
+        <li>個人情報の取りあつかい設計</li>
+      </ul>
+    </div>
+    <div class="step">
+      <div class="n">STEP 3</div>
+      <h3>AIと集客</h3>
+      <p>店長AI・オーナーAI・本部AIを同じデータ基盤の上に載せる。Market は最後。</p>
+      <ul>
+        <li>経営サマリーの自動生成</li>
+        <li>シフト最適化の提案</li>
+        <li>顧客向けメッセージ生成</li>
+        <li>GLOWZ Market（集客）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="wrap vals">
+  <div class="val"><span class="e"><svg class="i"><use href="#i-sparkle"/></svg></span><b>Grow Together</b><span>共に成長する未来へ</span></div>
+  <div class="val"><span class="e"><svg class="i"><use href="#i-shield"/></svg></span><b>Trust &amp; Safety</b><span>安心・安全の徹底</span></div>
+  <div class="val"><span class="e"><svg class="i"><use href="#i-sparkle"/></svg></span><b>AI Powered</b><span>AIが経営をサポート</span></div>
+  <div class="val"><span class="e"><svg class="i"><use href="#i-lock"/></svg></span><b>Data Security</b><span>データを厳重に保護</span></div>
+  <div class="val"><span class="e"><svg class="i"><use href="#i-globe"/></svg></span><b>Global Expansion</b><span>世界へ広がるプラットフォーム</span></div>
+</section>
+
+<script src="assets/icons.js"></script>
+<script src="assets/glowz.js"></script>
+<script>
+/* 表紙のキラキラ。4方向にとがった星をSVGで置く */
+const cover = document.querySelector('.cover');
+const star = 'M12 0 L14.2 9.8 L24 12 L14.2 14.2 L12 24 L9.8 14.2 L0 12 L9.8 9.8 Z';
+for (let i = 0; i < 16; i++){
+  const s = document.createElement('span');
+  const sz = 6 + Math.random() * 13;
+  s.className = 'st';
+  s.style.cssText =
+    `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;` +
+    `animation-delay:${(Math.random()*3.4).toFixed(2)}s`;
+  s.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${star}" fill="rgba(201,162,75,.5)"/></svg>`;
+  cover.appendChild(s);
+}
+</script>
+</body>
+</html>

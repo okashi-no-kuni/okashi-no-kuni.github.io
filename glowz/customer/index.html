@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ja" data-brand="customer">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GLOWZ CUSTOMER — 特別な時間を、最高の出会いから。</title>
+<meta name="description" content="GLOWZ CUSTOMER — 理想のひとときを、ここから見つけよう。">
+<meta name="theme-color" content="#FFF7ED">
+<meta name="rating" content="adult">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/glowz.css">
+<style>
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ---- ヘッダー ---------------------------------------------------------- */
+.hd{
+  position:sticky;top:0;z-index:40;
+  background:rgba(255,255,255,.8);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.9);
+}
+.hd .in{display:flex;align-items:center;gap:14px;padding-block:11px}
+.hd .logo{font-size:calc(17px * var(--fs))}
+.hnav{display:flex;gap:4px;margin-left:18px}
+.hnav a{padding:8px 14px;border-radius:99px;font-size:calc(12.5px * var(--fs));font-weight:500;color:var(--ink-2);transition:background .18s,color .18s}
+.hnav a:hover,.hnav a.on{background:var(--accent-soft);color:var(--accent-ink)}
+.hact{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icb{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:var(--sh-1);display:grid;place-items:center;color:var(--ink-2)}
+.icb .i{width:17px;height:17px}
+.burger{display:none}
+
+/* ---- ヒーロー ---------------------------------------------------------- */
+.hero{position:relative;overflow:hidden;padding-block:44px 40px}
+.hero .in{display:grid;grid-template-columns:1fr .82fr;gap:34px;align-items:center}
+.hero h1{
+  font-family:var(--font-h);font-weight:600;
+  font-size:clamp(26px, 4.4vw, 44px);line-height:1.42;letter-spacing:.03em;
+}
+.hero .lead{margin-top:12px;color:var(--ink-2);font-size:calc(13.5px * var(--fs))}
+
+/* 検索カード。ヒーローの中に置くと、開いた瞬間に「何をする所か」が伝わる */
+.search{margin-top:22px;max-width:470px}
+.tabs2{display:flex;gap:6px;background:var(--sv-1);padding:4px;border-radius:99px;margin-bottom:16px}
+.tabs2 button{flex:1;padding:9px;border-radius:99px;font-size:calc(12px * var(--fs));font-weight:600;letter-spacing:.08em;color:var(--ink-3);transition:.2s}
+.tabs2 button.on{background:#fff;color:var(--accent-ink);box-shadow:var(--sh-1)}
+
+/* 人物写真が入る枠。素材が届くまではパールとキラキラで埋める */
+.visual{position:relative;aspect-ratio:4/4.3;border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-3)}
+.visual .bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(120% 90% at 70% 15%, rgba(255,255,255,.95), transparent 60%),
+    radial-gradient(90% 80% at 25% 80%, var(--pearl-glow), transparent 65%),
+    linear-gradient(160deg, #FDF6E9, #EFDFC4 55%, #E4E2DA);
+}
+.visual .pearl{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);width:44%;aspect-ratio:1}
+.visual .st{position:absolute;animation:twinkle 3.4s ease-in-out infinite;pointer-events:none}
+.visual .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 20px;font-size:calc(11px * var(--fs));color:var(--accent-ink);background:linear-gradient(transparent,rgba(255,255,255,.85))}
+
+/* ---- ランキング -------------------------------------------------------- */
+.sec{padding-block:36px}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin-bottom:18px}
+.sec-h h2{font-family:var(--font-h);font-size:calc(21px * var(--fs));font-weight:600}
+.sec-h a{margin-left:auto;font-size:calc(12px * var(--fs));color:var(--accent);font-weight:600}
+
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.cst{
+  background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.9);
+  border-radius:var(--r-l);padding:16px 12px 14px;text-align:center;
+  box-shadow:var(--sh-1);transition:transform .2s, box-shadow .25s;position:relative;
+}
+.cst:hover{transform:translateY(-4px);box-shadow:var(--sh-3)}
+.cst .no{
+  position:absolute;left:12px;top:12px;width:24px;height:24px;border-radius:9px;
+  display:grid;place-items:center;font-family:var(--font-h);font-size:11px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--sv-3),var(--sv-4));
+}
+.cst:nth-child(1) .no{background:linear-gradient(135deg,#E8C77A,#C9A24B)}
+.cst:nth-child(2) .no{background:linear-gradient(135deg,#DDE1E7,#AEB4BE)}
+.cst:nth-child(3) .no{background:linear-gradient(135deg,#E2C0A0,#BF9A76)}
+.cst .av{width:82px;height:82px;margin:6px auto 11px;font-size:29px}
+.cst .n{font-size:calc(13px * var(--fs));font-weight:600}
+.cst .t{font-size:calc(10.5px * var(--fs));color:var(--accent-ink);margin-top:4px}
+.cst .st{font-size:calc(10px * var(--fs));color:var(--ink-3);margin-top:6px}
+
+/* ---- 安心の3つ ---------------------------------------------------------- */
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.trust > div{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.7);border-radius:var(--r-m);padding:16px 18px;border:1px solid rgba(255,255,255,.9)}
+.trust .e{width:34px;height:34px;flex:none;border-radius:11px;display:grid;place-items:center;color:var(--accent);background:linear-gradient(135deg,var(--accent-soft),#fff);border:1px solid rgba(255,255,255,.9)}
+.trust .i{width:17px;height:17px}
+.trust b{display:block;font-size:calc(12.5px * var(--fs))}
+.trust span{font-size:calc(11px * var(--fs));color:var(--ink-3)}
+
+/* ---- フッター ----------------------------------------------------------- */
+.ft{margin-top:24px;padding-block:28px 40px;border-top:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.55)}
+.ft .cols{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:22px}
+.ft h4{font-size:calc(11.5px * var(--fs));margin-bottom:9px}
+.ft li a{font-size:calc(11.5px * var(--fs));color:var(--ink-3);line-height:2}
+.ft li a:hover{color:var(--accent-ink)}
+.ft .r18{
+  display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:7px 14px;border-radius:99px;
+  background:#fff;border:1px solid var(--sv-2);font-size:calc(11px * var(--fs));color:var(--ink-2);
+}
+.ft .r18 b{color:#fff;background:var(--ng);border-radius:50%;width:22px;height:22px;display:grid;place-items:center;font-size:9px}
+
+/* 仮ビジュアルにキラキラを散らす。素材が入るまで、ここが空に見えないように */
+{
+  const v = document.getElementById('visual');
+  const star = 'M12 0 14.2 9.8 24 12 14.2 14.2 12 24 9.8 14.2 0 12 9.8 9.8Z';
+  for (let i = 0; i < 14; i++){
+    const s = document.createElement('span');
+    const sz = 5 + Math.random() * 12;
+    s.className = 'st';
+    s.style.cssText = `left:${8+Math.random()*84}%;top:${6+Math.random()*82}%;` +
+      `width:${sz}px;height:${sz}px;animation-delay:${(Math.random()*3.4).toFixed(2)}s`;
+    s.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${star}" fill="rgba(201,162,75,.55)"/></svg>`;
+    v.appendChild(s);
+  }
+}
+
+/* ---- 年齢確認 -----------------------------------------------------------
+   風営法まわりの成人向けサービスの入口なので、最初にここを通す。
+   一度「はい」を押したら sessionStorage に残して、同じ訪問では出さない。 */
+.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;
+  background:rgba(60,50,45,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.gate.off{display:none}
+.gate .box{max-width:400px;width:100%;text-align:center;padding:32px 26px}
+.gate .pearl{width:64px;height:64px;margin:0 auto 16px}
+.gate h2{font-family:var(--font-h);font-size:calc(19px * var(--fs));margin-bottom:10px}
+.gate p{font-size:calc(12px * var(--fs));color:var(--ink-2);line-height:1.85;margin-bottom:20px}
+.gate .btns{display:grid;gap:9px}
+
+@media (max-width:980px){
+  .hero .in{grid-template-columns:1fr}
+  .visual{width:100%;max-width:380px;margin-inline:auto;order:-1;aspect-ratio:4/3.2}
+  .visual .pearl{width:34%}
+  .cards{grid-template-columns:repeat(3,1fr)}
+  .hnav{display:none}
+  .burger{display:grid}
+  .trust{grid-template-columns:1fr}
+  .ft .cols{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .sec{padding-block:26px}
+  .hero{padding-block:26px 20px}
+  .ft .cols{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="wrap in">
+    <div class="planet" style="width:24px;height:24px"><div class="pearl" style="width:19px;height:19px"></div><i class="ring"></i></div>
+    <div>
+      <div class="logo">GLOWZ</div>
+      <div class="logo-sub">CUSTOMER</div>
+    </div>
+    <nav class="hnav">
+      <a href="#" class="on">探す</a>
+      <a href="#rank">ランキング</a>
+      <a href="#">キャンペーン</a>
+      <a href="#">初めての方へ</a>
+    </nav>
+    <div class="hact">
+      <button class="icb" aria-label="検索"><svg class="i"><use href="#i-search"/></svg></button>
+      <button class="icb" aria-label="ログイン"><svg class="i"><use href="#i-user"/></svg></button>
+      <button class="btn btn-1 sm" style="letter-spacing:.06em">会員登録</button>
+      <button class="icb burger" aria-label="メニュー"><svg class="i"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap in">
+    <div>
+      <h1>特別な時間を、<br>最高の出会いから。</h1>
+      <p class="lead">理想のひとときを、ここから見つけよう。</p>
+
+      <div class="card search">
+        <div class="tabs2">
+          <button class="on" data-sex="men">FOR MEN</button>
+          <button data-sex="women">FOR WOMEN</button>
+        </div>
+        <div class="field">
+          <label for="area">エリアを選択</label>
+          <select class="sel" id="area">
+            <option>東京都</option><option>神奈川県</option><option>大阪府</option>
+            <option>愛知県</option><option>福岡県</option><option>北海道</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="date">日時を選択</label>
+          <select class="sel" id="date">
+            <option>6月1日（土） 20:00〜</option>
+            <option>6月1日（土） 22:00〜</option>
+            <option>6月2日（日） 18:00〜</option>
+            <option>今すぐ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="type">タイプを選択</label>
+          <select class="sel" id="type">
+            <option>すべてのタイプ</option><option>癒し系</option><option>お姉さん系</option>
+            <option>清楚系</option><option>ギャル系</option>
+          </select>
+        </div>
+        <button class="btn btn-1 w" id="go">検索する</button>
+        <p class="tiny muted center" style="margin-top:10px">現在 <b id="cnt">0</b> 名が予約受付中です</p>
+      </div>
+    </div>
+
+    <!-- 人物写真が入る枠。<img> を1行足せばそのまま差しかわる -->
+    <div class="visual" id="visual">
+      <div class="bg"></div>
+      <div class="pearl"></div>
+      <div class="cap">※ メインビジュアルは素材差しかえ用の仮置きです</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec wrap" id="rank">
+  <div class="sec-h">
+    <h2>人気ランキング</h2>
+    <span class="tiny muted">週間 ・ 東京都</span>
+    <a href="#">すべて見る ›</a>
+  </div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section class="sec wrap">
+  <div class="trust">
+    <div>
+      <span class="e"><svg class="i"><use href="#i-shield"/></svg></span>
+      <div><b>安心・安全への取り組み</b><span>身分確認・衛生管理を徹底しています</span></div>
+    </div>
+    <div>
+      <span class="e"><svg class="i"><use href="#i-lock"/></svg></span>
+      <div><b>プライバシー保護</b><span>個人情報は厳重に管理しています</span></div>
+    </div>
+    <div>
+      <span class="e"><svg class="i"><use href="#i-clock"/></svg></span>
+      <div><b>24時間サポート</b><span>いつでもサポート対応いたします</span></div>
+    </div>
+  </div>
+</section>
+
+<footer class="ft">
+  <div class="wrap cols">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="planet" style="width:24px;height:24px"><div class="pearl" style="width:19px;height:19px"></div><i class="ring"></i></div>
+        <div><div class="logo">GLOWZ</div><div class="logo-sub">by Growz Planet</div></div>
+      </div>
+      <p class="tiny muted" style="margin-top:12px">人とビジネスの成長を支えるプラットフォーム</p>
+      <div class="r18"><b>18</b>18歳未満の方はご利用いただけません</div>
+    </div>
+    <div><h4>サービス</h4><ul><li><a href="#">探す</a></li><li><a href="#">ランキング</a></li><li><a href="#">キャンペーン</a></li><li><a href="#">初めての方へ</a></li></ul></div>
+    <div><h4>ヘルプ</h4><ul><li><a href="#">よくある質問</a></li><li><a href="#">お問い合わせ</a></li><li><a href="#">安心・安全への取り組み</a></li></ul></div>
+    <div><h4>運営</h4><ul><li><a href="#">利用規約</a></li><li><a href="#">プライバシーポリシー</a></li><li><a href="#">特定商取引法に基づく表記</a></li><li><a href="../index.html">ブランド一覧</a></li></ul></div>
+  </div>
+</footer>
+
+<!-- 年齢確認 -->
+<div class="gate" id="gate">
+  <div class="card box">
+    <div class="pearl"></div>
+    <h2>年齢確認</h2>
+    <p>当サイトは成人向けのサービスを取り扱っています。<br>
+    <b>18歳未満（高校生を含む）</b>の方はご利用いただけません。<br>
+    あなたは18歳以上ですか？</p>
+    <div class="btns">
+      <button class="btn btn-1 w" id="yes">はい（18歳以上です）</button>
+      <button class="btn btn-2 w" id="no">いいえ</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/icons.js"></script>
+<script src="../assets/glowz.js"></script>
+<script>
+const CASTS = [
+  { n:'桜井 みなみ', t:'人気急上昇',    s:'★4.9 ・ 口コミ 128件' },
+  { n:'一ノ瀬 莉子', t:'本指名多数',    s:'★4.9 ・ 口コミ 214件' },
+  { n:'白石 りな',   t:'リピーター多数', s:'★4.8 ・ 口コミ 176件' },
+  { n:'美咲 れいか', t:'新人おすすめ',  s:'★4.8 ・ 口コミ 42件'  },
+  { n:'天音 あい',   t:'満足度No.1',    s:'★5.0 ・ 口コミ 98件'  },
+];
+document.getElementById('cards').innerHTML = CASTS.map((c, i) => `
+  <a href="#" class="cst">
+    <span class="no">${i+1}</span>
+    <span class="av">${c.n[0]}</span>
+    <div class="n">${c.n}</div>
+    <div class="t">${c.t}</div>
+    <div class="st">${c.s}</div>
+  </a>`).join('');
+
+countUp(document.getElementById('cnt'), 142);
+
+/* FOR MEN / FOR WOMEN でタイプの選択肢が変わる。
+   男女共通プラットフォームであることが、ここで初めて目に見える */
+const TYPES = {
+  men:   ['すべてのタイプ','癒し系','お姉さん系','清楚系','ギャル系'],
+  women: ['すべてのタイプ','優しい系','爽やか系','大人系','年下系'],
+};
+document.querySelectorAll('.tabs2 button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs2 button').forEach(x => x.classList.toggle('on', x === b));
+  document.getElementById('type').innerHTML =
+    TYPES[b.dataset.sex].map(t => `<option>${t}</option>`).join('');
+});
+
+document.getElementById('go').onclick = () => {
+  const a = area.value, d = date.value, t = type.value;
+  alert(`検索：${a} / ${d} / ${t}\n\n（一覧画面はこの次に作ります）`);
+};
+
+/* 仮ビジュアルにキラキラを散らす。素材が入るまで、ここが空に見えないように */
+{
+  const v = document.getElementById('visual');
+  const star = 'M12 0 14.2 9.8 24 12 14.2 14.2 12 24 9.8 14.2 0 12 9.8 9.8Z';
+  for (let i = 0; i < 14; i++){
+    const s = document.createElement('span');
+    const sz = 5 + Math.random() * 12;
+    s.className = 'st';
+    s.style.cssText = `left:${8+Math.random()*84}%;top:${6+Math.random()*82}%;` +
+      `width:${sz}px;height:${sz}px;animation-delay:${(Math.random()*3.4).toFixed(2)}s`;
+    s.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="${star}" fill="rgba(201,162,75,.55)"/></svg>`;
+    v.appendChild(s);
+  }
+}
+
+/* ---- 年齢確認 ------------------------------------------------------------
+   sessionStorage にしてあるのは、タブを閉じたらまた確認するため。
+   localStorage だと共用端末で次の人にも「確認済み」が引きつがれる。 */
+const gate = document.getElementById('gate');
+if (sessionStorage.getItem('glowz.age') === 'ok') gate.classList.add('off');
+document.getElementById('yes').onclick = () => {
+  sessionStorage.setItem('glowz.age', 'ok');
+  gate.classList.add('off');
+};
+document.getElementById('no').onclick = () => {
+  location.href = 'https://www.google.co.jp/';
+};
+</script>
+</body>
+</html>
