@@ -16,6 +16,14 @@
     --ink:#6b4a63;
     --card:rgba(255,255,255,.72);
     --line:rgba(255,255,255,.9);
+    /* 文字の 大きさの ばいりつ。ここ 1つで ぜんぶの 文字が かわる。
+       絵文字アイコン（21px以上）は 入れものの 大きさが 決まっているので かけない */
+    --fs:1.10;
+    /* よこに 5つ ならぶ タイル（仲間バー・ワザ枠）の 中の 文字だけは
+       別あつかい。はばが 画面の 5分の1で 決まっているので、少しでも
+       大きくすると「キャンディ」「図鑑から貼る」が おりかえして
+       5つの 高さが そろわなくなる。ここは 大きくできない */
+    --fsT:1;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   html,body{height:100%}
@@ -41,9 +49,9 @@
     box-shadow:0 4px 14px rgba(190,140,180,.22);backdrop-filter:blur(6px);
   }
   .stat{flex:1;padding:6px 4px;text-align:center;line-height:1.1}
-  .stat .k{font-size:10px;opacity:.6;letter-spacing:.06em}
-  .stat .v{font-size:19px;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:center;gap:3px}
-  .stat .sub{font-size:9px;color:#e0a52e;line-height:1.2}
+  .stat .k{font-size:calc(10px * var(--fs));opacity:.6;letter-spacing:.06em}
+  .stat .v{font-size:calc(19px * var(--fs));font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:center;gap:3px}
+  .stat .sub{font-size:calc(9px * var(--fs));color:#e0a52e;line-height:1.2}
   #hpBox.low .v{color:#ff5a8a;animation:blink .6s infinite alternate}
   @keyframes blink{to{opacity:.45}}
 
@@ -69,16 +77,16 @@
      こうしておくと 中の絵の大きさを変えても、下の名前とねだんの位置がずれない */
   .tw .ic{height:42px;display:flex;align-items:center;justify-content:center}
   .tw .ic canvas{display:block}
-  .tw .nm{font-size:10.5px}
+  .tw .nm{font-size:calc(10.5px * var(--fsT))}
   /* 「⭐110 ×2」が おりかえすと 4つの 高さが そろわないので おらせない */
-  .tw .cs{font-size:10.5px;color:var(--pink-d);white-space:nowrap}
+  .tw .cs{font-size:calc(10.5px * var(--fsT));color:var(--pink-d);white-space:nowrap}
 
   #info{display:none;padding:9px 11px;gap:8px;align-items:center}
   #info.on{display:flex}
   #infoIc{font-size:31px}
-  #infoTx{flex:1;font-size:11.5px;line-height:1.5}
-  #infoTx b{font-size:14px}
-  .mini{border:none;border-radius:12px;padding:9px 11px;font:inherit;font-size:12px;color:#fff;
+  #infoTx{flex:1;font-size:calc(11.5px * var(--fs));line-height:1.5}
+  #infoTx b{font-size:calc(14px * var(--fs))}
+  .mini{border:none;border-radius:12px;padding:9px 11px;font:inherit;font-size:calc(12px * var(--fs));color:#fff;
     background:linear-gradient(180deg,#ffa6d0,var(--pink));box-shadow:0 3px 0 var(--pink-d);cursor:pointer}
   .mini:active{transform:translateY(2px);box-shadow:0 1px 0 var(--pink-d)}
   .mini.gray{background:linear-gradient(180deg,#cfc4dd,#a898bd);box-shadow:0 3px 0 #857399}
@@ -96,22 +104,22 @@
   .sk:active{transform:scale(.95)}
   .sk:disabled{opacity:.45}
   .sk canvas{display:block;margin:0 auto}
-  .skN{font-size:9.5px}
-  .skC{font-size:9.5px;color:var(--pink-d)}
+  .skN{font-size:calc(9.5px * var(--fsT))}
+  .skC{font-size:calc(9.5px * var(--fsT));color:var(--pink-d)}
   .skCd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    background:rgba(255,255,255,.66);border-radius:12px;font-size:17px;color:var(--pink-d)}
+    background:rgba(255,255,255,.66);border-radius:12px;font-size:calc(17px * var(--fs));color:var(--pink-d)}
   .skStock{position:absolute;top:-4px;right:-3px;background:linear-gradient(180deg,#ffb3dc,var(--pink));
-    color:#fff;font-size:9px;border-radius:9px;padding:1px 4px;box-shadow:0 1px 0 var(--pink-d)}
+    color:#fff;font-size:calc(9px * var(--fs));border-radius:9px;padding:1px 4px;box-shadow:0 1px 0 var(--pink-d)}
 
   /* ---------- controls ---------- */
   #ctrl{display:flex;gap:6px}
   .btn{
-    flex:1;border:none;border-radius:16px;padding:12px 8px;font:inherit;font-size:15px;color:#fff;
+    flex:1;border:none;border-radius:16px;padding:12px 8px;font:inherit;font-size:calc(15px * var(--fs));color:#fff;
     background:linear-gradient(180deg,#ffb3dc,var(--pink));
     box-shadow:0 4px 0 var(--pink-d), 0 6px 16px rgba(224,95,158,.3);cursor:pointer;
   }
   .btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--pink-d)}
-  .btn.sm{flex:0 0 50px;font-size:17.5px;line-height:1.03;
+  .btn.sm{flex:0 0 50px;font-size:calc(17.5px * var(--fs));line-height:1.03;
     display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#c9b6ff,#a586f5);box-shadow:0 4px 0 #7d5fd0}
   .btn.sm:active{box-shadow:0 1px 0 #7d5fd0}
   /* いま ひらいている画面の ボタン。もう一度 おすと とじる目じるし */
@@ -124,32 +132,32 @@
     gap:12px;border-radius:20px;background:rgba(255,240,250,.9);backdrop-filter:blur(5px);text-align:center;padding:22px}
   #ov.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
   @keyframes pop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
-  #ovT{font-size:26px;color:var(--pink-d)}
-  #ovB{font-size:13.5px;line-height:1.7;opacity:.8}
+  #ovT{font-size:calc(26px * var(--fs));color:var(--pink-d)}
+  #ovB{font-size:calc(13.5px * var(--fs));line-height:1.7;opacity:.8}
 
   /* ---------- たまご ---------- */
   #eggOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:5}
   #eggOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #eggHead{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)}
+  #eggHead{display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
   #eggHead>div{flex:1}
-  #eggBar{display:flex;gap:6px;font-size:12px}
+  #eggBar{display:flex;gap:6px;font-size:calc(12px * var(--fs))}
   #eggBar>div{flex:1;background:rgba(255,255,255,.8);border-radius:12px;padding:7px;text-align:center}
-  #eggBar b{display:block;font-size:15px;color:var(--pink-d)}
+  #eggBar b{display:block;font-size:calc(15px * var(--fs));color:var(--pink-d)}
   #eggList{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
   .eg{border:2px solid #ffd9ec;border-radius:16px;padding:9px 6px;text-align:center;cursor:pointer;
     background:rgba(255,255,255,.85);position:relative}
   .eg.poor{opacity:.5;filter:grayscale(.55)}
   .eg canvas{display:block;margin:0 auto}
-  .egN{font-size:11.5px;margin-top:3px}
-  .egC{font-size:12px;color:#e0a52e;font-weight:700}
-  .egX{font-size:9.5px;opacity:.6;line-height:1.35;margin-top:2px}
-  .egSw{position:absolute;top:5px;right:7px;font-size:10px;color:#b98ae0}
+  .egN{font-size:calc(11.5px * var(--fs));margin-top:3px}
+  .egC{font-size:calc(12px * var(--fs));color:#e0a52e;font-weight:700}
+  .egX{font-size:calc(9.5px * var(--fs));opacity:.6;line-height:1.35;margin-top:2px}
+  .egSw{position:absolute;top:5px;right:7px;font-size:calc(10px * var(--fs));color:#b98ae0}
   /* たて方向の flex では 中身が ちぢんで はみ出し、下の ぶんと 重なる。
      どれも ちぢませない */
   #eggOv>*{flex:0 0 auto}
   #eggStage{text-align:center}
-  #eggRates{font-size:9.5px;color:#8a7a94;background:rgba(255,255,255,.6);border-radius:10px;
+  #eggRates{font-size:calc(9.5px * var(--fs));color:#8a7a94;background:rgba(255,255,255,.6);border-radius:10px;
     padding:7px 8px;line-height:1.7}
   #eggRates b{color:var(--pink-d)}
 
@@ -157,18 +165,18 @@
   #avOv{position:absolute;inset:0;display:none;flex-direction:column;gap:7px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:4}
   #avOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #avHead{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)}
+  #avHead{display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
   #avHead>div{flex:1}
   #avStage{display:flex;justify-content:center;flex:0 0 auto}
   #avCv{border-radius:20px}
   #avName{width:100%;box-sizing:border-box;border:2px solid #ffd9ec;border-radius:12px;
-    padding:9px 12px;font:inherit;font-size:15px;text-align:center;background:#fff;color:var(--ink)}
+    padding:9px 12px;font:inherit;font-size:calc(15px * var(--fs));text-align:center;background:#fff;color:var(--ink)}
   .avRow{display:flex;align-items:center;gap:5px}
-  .avRow>b{flex:0 0 62px;font-size:10.5px;color:#b98ae0;font-weight:700}
+  .avRow>b{flex:0 0 62px;font-size:calc(10.5px * var(--fs));color:#b98ae0;font-weight:700}
   .avOpts{flex:1;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:1px}
   .avOpts::-webkit-scrollbar{display:none}
   .avOpt{flex:0 0 auto;border:2px solid transparent;border-radius:11px;padding:5px 9px;
-    font:inherit;font-size:10.5px;background:rgba(255,255,255,.75);cursor:pointer;
+    font:inherit;font-size:calc(10.5px * var(--fs));background:rgba(255,255,255,.75);cursor:pointer;
     white-space:nowrap;color:var(--ink)}
   .avOpt.sel{border-color:var(--pink);background:#fff;box-shadow:0 0 0 2px rgba(255,143,196,.3)}
   .avSw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,.9);
@@ -176,100 +184,104 @@
   .avSw.sel{border-color:var(--pink-d);box-shadow:0 0 0 3px rgba(255,143,196,.4)}
   #avBtns{display:flex;gap:6px}
   #avBtns>button{flex:1}
-  #avMsg{text-align:center;font-size:11px;color:#b98ae0;min-height:15px;line-height:1.5}
+  #avMsg{text-align:center;font-size:calc(11px * var(--fs));color:#b98ae0;min-height:15px;line-height:1.5}
   #avFriends{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .avFr{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:12px;
-    padding:4px 2px;text-align:center;font-size:9.5px;position:relative}
+    padding:4px 2px;text-align:center;font-size:calc(9.5px * var(--fs));position:relative}
   .avFr canvas{display:block;margin:0 auto}
-  .avFrX{position:absolute;top:-6px;right:-4px;font-size:13px;cursor:pointer;opacity:.6}
+  .avFrX{position:absolute;top:-6px;right:-4px;font-size:calc(13px * var(--fs));cursor:pointer;opacity:.6}
 
   /* ---------- なかまえらび ---------- */
   /* ---------- ショップ ---------- */
   #shopOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:5}
   #shopOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #shopHead{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--pink-d)}
+  #shopHead{display:flex;align-items:center;gap:6px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
   #shopHead>div:first-child{flex:1;white-space:nowrap}
-  #shopGem{font-size:13px;font-weight:800;color:#7d5fd0;background:rgba(255,255,255,.85);
+  #shopGem{font-size:calc(13px * var(--fs));font-weight:800;color:#7d5fd0;background:rgba(255,255,255,.85);
     border:2px solid #ded4f6;border-radius:999px;padding:4px 10px;white-space:nowrap}
   #shopBody{display:flex;flex-direction:column;gap:9px}
   #shopBody>*{flex:0 0 auto}
-  .spSec{font-size:11px;color:var(--pink-d);font-weight:800;margin:2px 0 -3px}
+  .spSec{font-size:calc(11px * var(--fs));color:var(--pink-d);font-weight:800;margin:2px 0 -3px}
   .spIt{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.85);
     border:2px solid #ffd9ec;border-radius:16px;padding:10px 12px}
   .spIt.poor{opacity:.5}
   .spIc{font-size:26px;width:34px;text-align:center;flex:0 0 auto}
   .spTx{flex:1;min-width:0}
-  .spN{font-size:13.5px;font-weight:800;color:var(--pink-d)}
-  .spD{font-size:10.5px;opacity:.7;line-height:1.5}
-  .spP{flex:0 0 auto;font-size:13px;font-weight:800;color:#7d5fd0;
+  .spN{font-size:calc(13.5px * var(--fs));font-weight:800;color:var(--pink-d)}
+  .spD{font-size:calc(10.5px * var(--fs));opacity:.7;line-height:1.5}
+  /* かくりつの 1行。品ものの すぐ下に つける（はなすと どれの話か 分からない）*/
+  .spNote{font-size:calc(9.5px * var(--fs));line-height:1.5;color:#8a7a94;background:rgba(255,255,255,.6);
+    border-radius:10px;padding:6px 10px;margin:-5px 4px 0}
+  .spNote.poor{opacity:.5}
+  .spP{flex:0 0 auto;font-size:calc(13px * var(--fs));font-weight:800;color:#7d5fd0;
     background:linear-gradient(180deg,#e6dcff,#cfc0f7);border-radius:999px;padding:7px 13px}
   .spSoon{background:rgba(255,255,255,.6);border:2px dashed #ded4f6;border-radius:16px;
-    padding:11px 12px;font-size:11px;line-height:1.6;opacity:.8}
+    padding:11px 12px;font-size:calc(11px * var(--fs));line-height:1.6;opacity:.8}
 
   /* ---------- 今週のおだい ---------- */
   #wkOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:5}
   #wkOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #wkHead{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)}
+  #wkHead{display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
   #wkHead>div{flex:1}
   #wkBody{display:flex;flex-direction:column;gap:9px}
   #wkBody>*{flex:0 0 auto}
   .wkCard{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:16px;padding:12px}
-  .wkR{font-size:17px;font-weight:800;color:var(--pink-d);text-align:center}
-  .wkD{font-size:11.5px;line-height:1.6;opacity:.75;text-align:center;margin-top:4px}
+  .wkR{font-size:calc(17px * var(--fs));font-weight:800;color:var(--pink-d);text-align:center}
+  .wkD{font-size:calc(11.5px * var(--fs));line-height:1.6;opacity:.75;text-align:center;margin-top:4px}
   .wkB{display:flex;gap:8px}
   .wkB>div{flex:1;background:rgba(255,255,255,.8);border:2px solid #ffd9ec;border-radius:14px;
     padding:8px;text-align:center}
-  .wkK{font-size:10px;opacity:.6}
-  .wkN{font-size:17px;font-weight:800;color:var(--pink-d)}
+  .wkK{font-size:calc(10px * var(--fs));opacity:.6}
+  .wkN{font-size:calc(17px * var(--fs));font-weight:800;color:var(--pink-d)}
   .wkM{display:flex;flex-direction:column;gap:5px}
-  .wkM>div{display:flex;align-items:center;gap:8px;font-size:12px;
+  .wkM>div{display:flex;align-items:center;gap:8px;font-size:calc(12px * var(--fs));
     background:rgba(255,255,255,.7);border-radius:11px;padding:7px 10px}
   .wkM b{flex:1;font-weight:800;color:var(--pink-d)}
   .wkM .got{color:#4fb392;font-weight:800}
   #pickOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
     background:rgba(255,244,251,.96);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:3}
   #pickOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #pickHead{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)}
+  #pickHead{display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
   #pickHead>div{flex:1}
   #pickTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none}
   #pickTabs::-webkit-scrollbar{display:none}
-  #pickHint{text-align:center;font-size:10px;color:#b98ae0;background:rgba(255,255,255,.55);
+  #pickHint{text-align:center;font-size:calc(10px * var(--fs));color:#b98ae0;background:rgba(255,255,255,.55);
     border-radius:10px;padding:5px 4px}
   #pickGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
   .pk{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:14px;
     padding:6px 3px 5px;text-align:center;cursor:pointer}
   .pk.poor{opacity:.5;filter:grayscale(.6)}
   .pk canvas{display:block;margin:0 auto}
-  .pkN{font-size:10.5px;margin-top:2px;line-height:1.2}
-  .pkC{font-size:10px;color:#e0a52e}
-  .pkS{font-size:9px;opacity:.6}
+  .pkN{font-size:calc(10.5px * var(--fs));margin-top:2px;line-height:1.2}
+  .pkC{font-size:calc(10px * var(--fs));color:#e0a52e}
+  .pkS{font-size:calc(9px * var(--fs));opacity:.6}
 
   /* ---------- コレクション図鑑 ---------- */
   #colOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
     background:rgba(255,244,251,.96);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:2}
   #colOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #colHead{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--pink-d)}
+  #colHead{display:flex;align-items:center;gap:6px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
   /* 見出しは 1行に おさめる。おさまらないときは 文字を ちぢめる（おりかえさない）*/
   #colTtl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #colCount{font-size:12px;opacity:.8}
+  #colCount{font-size:calc(12px * var(--fs));opacity:.8}
   /* 見出しの まる ボタンは 幅を つめる（コレクションが おりかえさないように）*/
   #colHead .mini{padding:9px 8px;flex:0 0 auto}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
   @media (max-width:345px){
-    #colTtl{font-size:12.5px}
-    #colHead .mini{padding:8px 6px;font-size:11px}
+    #colTtl{font-size:calc(12.5px * var(--fs))}
+    #colHead .mini{padding:8px 6px;font-size:calc(11px * var(--fs))}
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
   #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #colTabs::-webkit-scrollbar{display:none}
-  .ctab{flex:0 0 auto;border:none;border-radius:11px;padding:7px 9px;font:inherit;font-size:11px;color:var(--ink);
+  .ctab{flex:0 0 auto;border:none;border-radius:11px;padding:7px 9px;font:inherit;font-size:calc(11px * var(--fs));color:var(--ink);
     background:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap}
   .ctab.sel{background:linear-gradient(180deg,#ffb3dc,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
   #colDone{background:linear-gradient(90deg,#ffe9b8,#ffd9ec);border-radius:12px;padding:8px;
-    text-align:center;font-size:12.5px}
+    text-align:center;font-size:calc(12.5px * var(--fs))}
   #colGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
   .cCard{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:14px;
     padding:7px 3px 6px;text-align:center}
@@ -281,11 +293,11 @@
   .cCard.yet .cNm{font-weight:400;color:#b5a2b3}
   .cCard.yet .cTt{color:#bdaaba;opacity:.85}
   .cCard canvas{display:block;margin:0 auto}
-  .cNm{font-size:11px;margin-top:2px}
-  .cTt{font-size:9px;opacity:.6;line-height:1.3}
-  .cLv{font-size:9px;color:#e0a52e;letter-spacing:.08em}
-  .cGet{font-size:8.5px;opacity:.5;line-height:1.3;margin-top:1px}
-  .cWin{font-size:10px;color:var(--pink-d);font-weight:700}
+  .cNm{font-size:calc(11px * var(--fs));margin-top:2px}
+  .cTt{font-size:calc(9px * var(--fs));opacity:.6;line-height:1.3}
+  .cLv{font-size:calc(9px * var(--fs));color:#e0a52e;letter-spacing:.08em}
+  .cGet{font-size:calc(8.5px * var(--fs));opacity:.5;line-height:1.3;margin-top:1px}
+  .cWin{font-size:calc(10px * var(--fs));color:var(--pink-d);font-weight:700}
   .cWin span{color:#8fb0d8}
   .cMe{grid-column:1/-1;background:linear-gradient(90deg,#fff0f8,#f4ecff);
     border:2px solid #ffd9ec;border-radius:14px;padding:8px;display:flex;
@@ -294,10 +306,10 @@
   /* まん中を ちぢめられるように しないと、ボタンに 字が かぶる */
   .cMe>div:nth-child(2){min-width:0}
   .cMe .cNm,.cMe .cTt{text-align:left}
-  .cMe button{flex:0 0 auto;white-space:nowrap;font-size:11px;padding:7px 10px}
+  .cMe button{flex:0 0 auto;white-space:nowrap;font-size:calc(11px * var(--fs));padding:7px 10px}
   .cCard{position:relative}
-  .cPin{position:absolute;top:-7px;right:-5px;font-size:15px;filter:drop-shadow(0 1px 1px rgba(120,90,120,.4))}
-  #colHint{text-align:center;font-size:10px;color:#b98ae0;background:rgba(255,255,255,.55);
+  .cPin{position:absolute;top:-7px;right:-5px;font-size:calc(15px * var(--fs));filter:drop-shadow(0 1px 1px rgba(120,90,120,.4))}
+  #colHint{text-align:center;font-size:calc(10px * var(--fs));color:#b98ae0;background:rgba(255,255,255,.55);
     border-radius:10px;padding:5px 4px}
 
   /* ---------- おかしの国のパノラマ ---------- */
@@ -305,7 +317,7 @@
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:4}
   #kingOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
   #kingCv{width:100%;border-radius:14px;box-shadow:0 6px 18px rgba(180,130,175,.35)}
-  #kingCap{text-align:center;font-size:11px;opacity:.7;line-height:1.5}
+  #kingCap{text-align:center;font-size:calc(11px * var(--fs));opacity:.7;line-height:1.5}
 
   /* ---------- 合言葉・着せかえ ---------- */
   #pwRow{text-align:center}
@@ -319,27 +331,32 @@
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:3}
   #helpOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
   .hSec{background:rgba(255,255,255,.8);border:2px solid #ffd9ec;border-radius:14px;padding:9px 11px}
-  .hSec h3{margin:0 0 5px;font-size:13px;color:var(--pink-d)}
-  .hSec p, .hSec li{font-size:11px;line-height:1.6;margin:0}
+  .hSec h3{margin:0 0 5px;font-size:calc(13px * var(--fs));color:var(--pink-d)}
+  .hSec p, .hSec li{font-size:calc(11px * var(--fs));line-height:1.6;margin:0}
   .hSec ul{margin:0;padding-left:0;list-style:none}
   .hSec li{margin-bottom:4px}
   .hSec b{color:var(--pink-d)}
-  #colTotal{text-align:center;font-size:11px;opacity:.7;padding:2px 0 4px}
+  #colTotal{text-align:center;font-size:calc(11px * var(--fs));opacity:.7;padding:2px 0 4px}
   #colStats{display:flex;gap:6px}
   .cst{flex:1;background:rgba(255,255,255,.8);border:2px solid rgba(255,255,255,.9);
     border-radius:12px;padding:6px 2px;text-align:center;line-height:1.25}
-  .cst .ck{font-size:9px;opacity:.6}
-  .cst .cn{font-size:15px;color:var(--pink-d);font-variant-numeric:tabular-nums}
+  .cst .ck{font-size:calc(9px * var(--fs));opacity:.6}
+  .cst .cn{font-size:calc(15px * var(--fs));color:var(--pink-d);font-variant-numeric:tabular-nums}
   .cst.best{background:linear-gradient(135deg,#fff3cf,#ffe2f0);border-color:#ffd76e}
   .cst.best .cn{color:#c9821e}
 
   /* 行間を つめてある。ここが ひろいと いちばん下の1行が 画面から はみ出す。
      ばんめんの 大きさは いじりたくないので、下の 文字がわで つめる */
-  #tip{font-size:10.5px;text-align:center;opacity:.55;line-height:1.3;margin-top:-3px}
+  #tip{font-size:calc(10.5px * var(--fs));text-align:center;opacity:.55;line-height:1.3;margin-top:-3px}
   /* たてが みじかい 端末（SEなど）は もっと つめる */
   @media (max-height:720px){
-    #tip{font-size:9px;line-height:1.25}
+    #tip{font-size:calc(9px * var(--fs));line-height:1.25}
     .mini{padding:7px 9px}
+  }
+  /* 下の3つは よこに ならぶので、せまい画面では 文字を 小さくせずに
+     まわりの あきだけ つめる。文字を 小さくすると 読めなくなる */
+  @media (max-width:370px){
+    #pwRow .mini{padding:7px 5px}
   }
 
   /* ---------- 画面ぜんたいにあふれる紙吹雪 ---------- */
@@ -370,7 +387,7 @@
       <button class="mini" id="ovShare" style="display:none">記録をシェア 📤</button>
     </div>
     <div id="kingOv">
-      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)">
+      <div style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
         <div style="flex:1">🏰 わたしの おかしの国</div>
         <button class="mini" id="kingShare">📤</button>
         <button class="mini gray" id="kingClose">戻る</button>
@@ -379,13 +396,13 @@
       <div id="kingCap"></div>
     </div>
     <div id="pwOv">
-      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)">
+      <div style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
         <div style="flex:1">🔑 合言葉・着せかえ</div>
       </div>
       <div id="pwBody"></div>
     </div>
     <div id="helpOv">
-      <div id="colHeadH" style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)">
+      <div id="colHeadH" style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
         <div style="flex:1"><span class="bookIc"></span> 遊びかたガイド</div>
       </div>
       <div id="helpBody"></div>
@@ -507,7 +524,7 @@
   <div id="pwRow">
     <button class="mini" id="btnShop">🛍 ショップ</button>
     <button class="mini" id="btnWk">🏅 今週のおだい</button>
-    <button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> 合言葉</button>
+    <button class="mini" id="btnPw"><span style="font-size:calc(17px * var(--fs));line-height:.7">🔑</span> 合言葉</button>
   </div>
 
   <div id="tip">ウェーブは自動で進みます。ボタンで「早よび」すると⭐ボーナス✨<br>遊びかたは <span class="bookIc"></span> を見てね</div>
@@ -832,7 +849,10 @@ try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catc
    「その合言葉は もう使いました」の 判定に ひっかかってしまう */
 try{ bought = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
 function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(bought)); }catch(e){} }
-const hasTheme = id => redeemed.includes(id) || bought.includes(id);
+/* 💎で 買ったもの ぜんぶ（着せかえも、1回だけの パックも ここに入る）*/
+const owns   = id => bought.includes(id);
+const addOwn = id => { if (!owns(id)) bought.push(id); saveBought(); };
+const hasTheme = id => redeemed.includes(id) || owns(id);
 function saveThemeSel(){ try{ localStorage.setItem('sweetTD.themeSel', themeSel); }catch(e){} }
 function applyThemeSel(){
   themeOverride = (themeSel && hasTheme(themeSel) && SP_THEMES[themeSel])
@@ -1736,10 +1756,10 @@ function buildEggScreen(){
 function buildShardBox(){
   eggStage.innerHTML = '';
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'background:rgba(255,255,255,.75);border-radius:14px;padding:9px;font-size:11px';
+  wrap.style.cssText = 'background:rgba(255,255,255,.75);border-radius:14px;padding:9px;font-size:calc(11px * var(--fs))';
   wrap.innerHTML = '<div style="color:var(--pink-d);font-weight:700;margin-bottom:5px">' +
     '🩷 かけらで交換（いま ' + shards + 'こ）</div>' +
-    '<div style="font-size:10px;opacity:.7;margin-bottom:6px">' +
+    '<div style="font-size:calc(10px * var(--fs));opacity:.7;margin-bottom:6px">' +
     '欲しい★を選ぶと、まだいない子から1人もらえます</div>';
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;justify-content:center';
@@ -1748,7 +1768,7 @@ function buildShardBox(){
     const left = GEN_LIST.filter(o => o.side === 'ch' && o.lv === lv && !hasGen(o)).length;
     const b = document.createElement('button');
     b.className = 'mini' + (shards < need || !left ? ' gray' : '');
-    b.style.cssText = 'font-size:10.5px;padding:6px 8px';
+    b.style.cssText = 'font-size:calc(10.5px * var(--fs));padding:6px 8px';
     b.textContent = (lv === 7 ? '🌈7' : '★' + lv) + '・🩷' + need;
     b.disabled = shards < need || !left;
     b.onclick = () => {
@@ -1769,7 +1789,7 @@ function buildShardBox(){
 function buyEgg(e){
   if (stars < e.cost){
     beep(160,.09,'square',.03,.7);
-    eggStage.innerHTML = '<div style="font-size:12px;color:#e06f9c">おほしさまが足りません（⭐' +
+    eggStage.innerHTML = '<div style="font-size:calc(12px * var(--fs));color:#e06f9c">おほしさまが足りません（⭐' +
       e.cost + '）</div>';
     return;
   }
@@ -1789,12 +1809,12 @@ function showEggResult(res, fromShard, e){
   th.style.cssText = 'margin:0 auto';
   box.append(th);
   box.insertAdjacentHTML('beforeend',
-    '<div style="font-size:15px;color:var(--pink-d);font-weight:700;margin-top:4px">' + o.name + '</div>' +
-    '<div style="font-size:11px;opacity:.7">★' + o.lv + (o.cells >= 4 ? '・2×2' : '') + '</div>' +
+    '<div style="font-size:calc(15px * var(--fs));color:var(--pink-d);font-weight:700;margin-top:4px">' + o.name + '</div>' +
+    '<div style="font-size:calc(11px * var(--fs));opacity:.7">★' + o.lv + (o.cells >= 4 ? '・2×2' : '') + '</div>' +
     (dup
-      ? '<div style="font-size:12px;color:#8a7a94;margin-top:5px">すでにいる子だったので<br>' +
+      ? '<div style="font-size:calc(12px * var(--fs));color:#8a7a94;margin-top:5px">すでにいる子だったので<br>' +
         '🩷 かけらが ' + res.shard + 'こ増えた！</div>'
-      : '<div style="font-size:13px;color:#ff5f8a;margin-top:5px">✨ 仲間になった！ ✨</div>'));
+      : '<div style="font-size:calc(13px * var(--fs));color:#ff5f8a;margin-top:5px">✨ 仲間になった！ ✨</div>'));
   eggStage.append(box);
   if (!dup){
     celebrate({ conf: 60, rings: true, fanfare: 1 });
@@ -1807,7 +1827,7 @@ function showEggResult(res, fromShard, e){
   eggStage.innerHTML = ''; eggStage.append(box);
   const again = document.createElement('button');
   again.className = 'mini';
-  again.style.cssText = 'margin-top:8px;font-size:12px';
+  again.style.cssText = 'margin-top:8px;font-size:calc(12px * var(--fs))';
   again.textContent = 'もう一度選ぶ';
   again.onclick = () => buildEggScreen();
   box.append(again);
@@ -1960,7 +1980,7 @@ function avBuildFriends(){
   avFrEl.innerHTML = '';
   if (!avFriends.length) return;
   const t = document.createElement('div');
-  t.style.cssText = 'grid-column:1/-1;font-size:11px;color:#b98ae0;text-align:center';
+  t.style.cssText = 'grid-column:1/-1;font-size:calc(11px * var(--fs));color:#b98ae0;text-align:center';
   t.textContent = '👭 迎えた友だち（' + avFriends.length + '人）';
   avFrEl.append(t);
   avFriends.forEach((f, i) => {
@@ -2088,7 +2108,7 @@ function buildPick(){
     d.insertAdjacentHTML('beforeend',
       '<div style="flex:1;min-width:0"><div class="pkN">🥚 たまごを開く</div>' +
       '<div class="pkS">残り ' + left + '人　🩷かけら ' + shards + 'こ</div></div>' +
-      '<div style="font-size:11px;color:#b98ae0;white-space:nowrap">開く ▶</div>');
+      '<div style="font-size:calc(11px * var(--fs));color:#b98ae0;white-space:nowrap">開く ▶</div>');
     d.onclick = () => { pickOv.classList.remove('on'); openEggScreen('pick'); };
     pickGrid.append(d);
   }
@@ -2109,7 +2129,7 @@ function buildPick(){
         '<div class="pkC">⭐' + AV_TOWER.cost + '</div>' +
         '<div class="pkS">' + AV_TOWER.role + '・攻撃' + AV_TOWER.dmg +
         '・範囲' + AV_TOWER.range.toFixed(1) + '・2×2</div></div>' +
-        '<div style="font-size:11px;color:#b98ae0">作り直す ▶</div>');
+        '<div style="font-size:calc(11px * var(--fs));color:#b98ae0">作り直す ▶</div>');
       d.onclick = ev => {
         if (ev.target.textContent === '作り直す ▶'){ openAvatar('pickOv'); return; }
         selTool = AV_TOWER_KEY; selTower = null;
@@ -2121,7 +2141,7 @@ function buildPick(){
         '<div style="font-size:30px;flex:0 0 56px;text-align:center">🎀</div>' +
         '<div style="flex:1"><div class="pkN">アバターを作る</div>' +
         '<div class="pkS">顔・髪型・服を選んで<br>自分を盤面に出そう</div></div>' +
-        '<div style="font-size:11px;color:#b98ae0">作る ▶</div>');
+        '<div style="font-size:calc(11px * var(--fs));color:#b98ae0">作る ▶</div>');
       d.onclick = () => openAvatar('pickOv');
     }
     pickGrid.append(d);
@@ -2896,7 +2916,7 @@ function gameOver(){
   ovT.textContent = 'おかしの国が…！';
   const badge = 'display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
     'border:2px solid #ffd76e;border-radius:999px;padding:7px 16px;margin:7px 0;' +
-    'color:#c9821e;font-size:16px;opacity:1';
+    'color:#c9821e;font-size:calc(16px * var(--fs));opacity:1';
   ovB.innerHTML = 'ウェーブ <b>'+wave+'</b> まで守りぬいた！<br>' +
     (newRec
       ? '<span style="' + badge + ';animation:blink .5s infinite alternate">✨ 新記録！ ウェーブ' + rec.bw + ' ✨</span>'
@@ -7043,7 +7063,7 @@ function stageClear(){
     gth.style.cssText = 'display:block;margin:6px auto 2px';
     ovB.append(gth);
     ovB.insertAdjacentHTML('beforeend',
-      '<div style="font-size:12.5px;color:var(--pink-d)">🥚 ' + EGGS[eggIdx].name + 'から ' +
+      '<div style="font-size:calc(12.5px * var(--fs));color:var(--pink-d)">🥚 ' + EGGS[eggIdx].name + 'から ' +
       gift.o.name + '（★' + gift.o.lv + '）' +
       (gift.dup ? '<br><span style="opacity:.7">すでにいるので 🩷かけら+' + gift.shard + '</span>'
                 : '<br>仲間になった！✨') + '</div>');
@@ -7823,7 +7843,7 @@ function checkLogin(){
   let st = '<div style="display:flex;gap:5px;justify-content:center;margin:8px 0">';
   for (let i=1;i<=7;i++){
     const on = i <= day;
-    st += '<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;' +
+    st += '<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:calc(13px * var(--fs));' +
       (on ? 'background:linear-gradient(180deg,#ffb3dc,#ff8fc4);color:#fff;box-shadow:0 2px 0 #e05f9e'
           : 'background:rgba(255,255,255,.75);opacity:.6') +
       (i === day ? ';outline:3px solid #ffd76e' : '') + '">' + (on ? '✓' : i) + '</div>';
@@ -8089,23 +8109,23 @@ const pwOv = $('pwOv'), pwBody = $('pwBody');
 let studioLg = 0;   // でんせつプレビューの順ぐり
 function buildPw(){
   pwBody.innerHTML =
-    '<p style="font-size:11.5px;line-height:1.7;margin:0">とくべつな「合言葉」を入れると、' +
+    '<p style="font-size:calc(11.5px * var(--fs));line-height:1.7;margin:0">とくべつな「合言葉」を入れると、' +
     '限定テーマ（見た目とBGMの着せかえ）が届きます🎁<br>合言葉は SNSのキャンペーンで配布中！</p>' +
     '<div style="display:flex;gap:6px;margin-top:9px">' +
     '<input id="pwIn" placeholder="合言葉を入力" ' +
-    'style="flex:1;min-width:0;border:2px solid #ffd9ec;border-radius:10px;padding:9px;font:inherit;font-size:13px;background:rgba(255,255,255,.95)">' +
+    'style="flex:1;min-width:0;border:2px solid #ffd9ec;border-radius:10px;padding:9px;font:inherit;font-size:calc(13px * var(--fs));background:rgba(255,255,255,.95)">' +
     '<button class="mini" id="pwBtn">送る</button></div>' +
-    '<div id="pwMsg" style="font-size:11px;color:#b98ae0;margin-top:6px;line-height:1.5"></div>' +
+    '<div id="pwMsg" style="font-size:calc(11px * var(--fs));color:#b98ae0;margin-top:6px;line-height:1.5"></div>' +
     (Object.keys(SP_THEMES).filter(hasTheme).length
-      ? '<div style="font-size:11px;color:var(--pink-d);margin-top:10px">🎀 着せかえ</div>' : '') +
+      ? '<div style="font-size:calc(11px * var(--fs));color:var(--pink-d);margin-top:10px">🎀 着せかえ</div>' : '') +
     Object.keys(SP_THEMES).filter(hasTheme).map(id =>
       '<button class="mini" data-sp="' + id + '" style="margin-top:6px;width:100%">' +
       (themeSel === id
         ? '「' + SP_THEMES[id].th.name + '」を使用中（タップで戻す）'
         : '「' + SP_THEMES[id].th.name + '」に着せかえる') + '</button>').join('') +
     (redeemed.includes('studio')
-      ? '<div style="font-size:11px;color:var(--pink-d);margin-top:12px">📹 撮影スタジオ</div>' +
-        '<p style="font-size:10px;opacity:.6;margin:2px 0 0;line-height:1.5">SNS動画用に演出を呼び出せます。<br>記録が変わることがあるので、ふだんのデータでは注意！</p>' +
+      ? '<div style="font-size:calc(11px * var(--fs));color:var(--pink-d);margin-top:12px">📹 撮影スタジオ</div>' +
+        '<p style="font-size:calc(10px * var(--fs));opacity:.6;margin:2px 0 0;line-height:1.5">SNS動画用に演出を呼び出せます。<br>記録が変わることがあるので、ふだんのデータでは注意！</p>' +
         '<button class="mini" data-st="legend" style="margin-top:6px;width:100%">🐋 伝説降臨（プレビュー・図鑑には残らない）</button>' +
         '<button class="mini" data-st="party" style="margin-top:6px;width:100%">🎉 クリアのおいわい＋全員パレード</button>' +
         '<button class="mini" data-st="bonus" style="margin-top:6px;width:100%">🎁 ボーナスウェーブを今すぐ開始</button>' +
@@ -8241,11 +8261,45 @@ const shopOv = $('shopOv'), shopBody = $('shopBody'), shopGem = $('shopGem');
 /* 売りもの。ここに 足していけば ショップに 出る。
    ⭐は 単品で 売らない。後半は 1ウェーブで 何万も 手に入るので、
    買った ⭐が すぐ 値うちを なくして「損した」に なるため。
-   ⭐は はじめてパックの 中身としてだけ 出す（あとで 追加） */
+   ⭐は はじめてパックの 中身としてだけ 出す */
+const PACK_STARS = 3000;              // 伝説のたまご 1こぶん。はじめの 1歩として ちょうどいい
+const PACK_LV    = 4;                 // わたす なかまの ★
+const packPool   = () => GEN_LIST.filter(o => o.side === 'ch' && o.lv === PACK_LV);
 const SHOP_ITEMS = [
+  /* 1回だけの はじめてパック。ランダムが 入るので、たまごと おなじ
+     「おなじ★の子から 均等に 1人」に して かくりつを 1行で 言いきれる形に する。
+     おだい中は 買えない。あそこの ⭐は もどるときに 消えるので、
+     買った ⭐が そのまま きえてしまう */
+  { id:'pack_start', sec:'はじめての方に', ic:'🎁', name:'はじめてパック',
+    desc:'⭐' + PACK_STARS.toLocaleString() + ' ＋ ★' + PACK_LV + 'のなかま1人。1回だけ',
+    note: () => {
+      const n = packPool().length;
+      return '★' + PACK_LV + 'の' + n + '人から1人。どの子も同じ確率（' +
+        (100/n).toFixed(1) + '%）。すでに全員そろっているときは かけら🩷' +
+        (SHARD_GET[PACK_LV] || 1) + 'こ になります';
+    },
+    cost: 30,
+    can:  () => !owns('pack_start') && !weekly,
+    done: () => owns('pack_start'),
+    poor: () => owns('pack_start') ? 'もう買いました' : '今週のおだい中は買えません',
+    buy: () => {
+      addOwn('pack_start');
+      stars += PACK_STARS; saveRun(); syncHUD(); syncShop();
+      const news = packPool().filter(o => !hasGen(o));
+      if (news.length){
+        const o = news[(Math.random() * news.length) | 0];
+        unlock(o.id);
+        return '⭐' + PACK_STARS.toLocaleString() + ' と ★' + PACK_LV + '「' + o.name + '」が仲間に！';
+      }
+      const n = SHARD_GET[PACK_LV] || 1;
+      shards += n; saveShards();
+      return '⭐' + PACK_STARS.toLocaleString() + '！ ★' + PACK_LV +
+             'は全員そろっていたので かけら🩷' + n + 'こ';
+    } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
     desc:'あと何回あそべるかが 満タンに もどります', cost:10,
-    can: () => hearts < maxHearts(),
+    can:  () => hearts < maxHearts(),
+    done: () => hearts >= maxHearts(),
     poor: () => 'もう満タンです',
     buy: () => {
       hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
@@ -8256,10 +8310,11 @@ const SHOP_ITEMS = [
   ...SHOP_THEMES.map(({ id, ic }) => ({
     id: 'th_' + id, sec:'着せかえ', ic, name:'「' + SP_THEMES[id].th.name + '」',
     desc:'ステージの見た目とBGMが変わります', cost: 60,
-    can: () => !hasTheme(id),
+    can:  () => !hasTheme(id),
+    done: () => hasTheme(id),
     poor: () => 'もう持っています',
     buy: () => {
-      bought.push(id); saveBought();
+      addOwn(id);
       themeSel = id; saveThemeSel(); applyThemeSel();
       return '「' + SP_THEMES[id].th.name + '」に着せかえました！';
     } })),
@@ -8270,17 +8325,21 @@ function buildShopScreen(){
   for (const it of SHOP_ITEMS){
     if (it.sec !== sec){ sec = it.sec; h += '<div class="spSec">' + sec + '</div>'; }
     const ok = (!it.can || it.can()) && gems >= it.cost;
+    const got = it.done ? it.done() : false;
     h += '<div class="spIt' + (ok ? '' : ' poor') + '" data-id="' + it.id + '">' +
       '<div class="spIc">' + it.ic + '</div>' +
       '<div class="spTx"><div class="spN">' + it.name + '</div>' +
       '<div class="spD">' + ((it.can && !it.can()) ? it.poor() : it.desc) + '</div></div>' +
-      '<div class="spP">' + ((it.can && !it.can()) ? '✓' : '💎' + it.cost) + '</div></div>';
+      '<div class="spP">' + (got ? '✓' : '💎' + it.cost) + '</div></div>' +
+      // ランダムが 入るものは かくりつを かならず 出す（Apple 3.1.1／景品表示法）
+      // 品ものが うすくなるときは 説明も いっしょに うすくする
+      (it.note ? '<div class="spNote' + (ok ? '' : ' poor') + '">' + it.note() + '</div>' : '');
   }
   h += '<div class="spSec">💎ジュエル</div>' +
     '<div class="spSoon">💎を買えるようにするのは、App Store に出すときです。' +
     'いまは <b>毎日のログインボーナスで 💎+2</b> もらえます。<br>' +
     'ここで買ったものは、アプリ版でもそのまま引きつげるように作ってあります。</div>';
-  h += '<div id="shopMsg" style="font-size:12px;color:var(--pink-d);text-align:center;min-height:18px"></div>';
+  h += '<div id="shopMsg" style="font-size:calc(12px * var(--fs));color:var(--pink-d);text-align:center;min-height:18px"></div>';
   shopBody.innerHTML = h;
   shopBody.querySelectorAll('.spIt').forEach(el => {
     el.onclick = () => {
@@ -10432,7 +10491,9 @@ function bakeGround(){
 function resize(){
   const prevLen = pathLen;
   const w = Math.min(document.getElementById('app').clientWidth - 20, 460);
-  const h = window.innerHeight - 362;   // なかまワザのバーと🔑ボタンのぶんも確保する
+  // 文字を 1.10倍に した ぶん、下の バーが 22px ほど 高くなったので
+  // とっておく ぶんも 同じだけ ふやす（384 = 362 + 22）
+  const h = window.innerHeight - 384;   // なかまワザのバーと🔑ボタンのぶんも確保する
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
