@@ -862,6 +862,17 @@ try{ redeemed = JSON.parse(localStorage.getItem('sweetTD.codes') || '[]'); }catc
    「その合言葉は もう使いました」の 判定に ひっかかってしまう */
 try{ bought = JSON.parse(localStorage.getItem('sweetTD.own') || '[]'); }catch(e){}
 function saveBought(){ try{ localStorage.setItem('sweetTD.own', JSON.stringify(bought)); }catch(e){} }
+
+/* ---- 30日パスポート ----
+   「いつまで有効か」の 1つの 時こくだけを もつ。日数で もつと、
+   遊ばない日が あったときに 減るのか 減らないのかが あいまいになる。
+   買いなおすと、のこりに 30日 たされる（切りすてない）*/
+const PASS_DAYS = 30;
+function passUntil(){ try{ return +localStorage.getItem('sweetTD.pass') || 0; }catch(e){ return 0; } }
+function setPassUntil(t){ try{ localStorage.setItem('sweetTD.pass', String(t)); }catch(e){} }
+const passOn   = () => passUntil() > Date.now();
+/* のこり日数。きょうを 1日目と かぞえるので 切りあげ */
+const passLeft = () => Math.max(0, Math.ceil((passUntil() - Date.now()) / 86400000));
 /* 💎で 買ったもの ぜんぶ（着せかえも、1回だけの パックも ここに入る）*/
 const owns   = id => bought.includes(id);
 const addOwn = id => { if (!owns(id)) bought.push(id); saveBought(); };
@@ -7865,6 +7876,17 @@ function applyLoginReward(day){
       return addStart(500);
   }
 }
+/* パスポート中の 毎日の ごほうび。⭐は わたさない。
+   ⭐を ふやすと tools/sim.mjs で はかった かべの いちが ずれるため、
+   バランスに ひびかない かけらと 💗だけに してある */
+const PASS_SHARDS = 3;
+function passDaily(){
+  if (!passOn()) return '';
+  shards += PASS_SHARDS; saveShards();
+  hearts = maxHearts(); setNextHeartAt(0); saveRun();
+  return '<br>🎫 パスポート：かけら <b>+' + PASS_SHARDS + '</b>／💗が満タンに！' +
+         '<span style="opacity:.7">（のこり' + passLeft() + '日）</span>';
+}
 function checkLogin(){
   const today = dateStr();
   let lg = { last:'', streak:0 };
@@ -7875,7 +7897,8 @@ function checkLogin(){
   const day = (lg.last === yest) ? (lg.streak % 7) + 1 : 1;   // 途切れたら1日目から
   lg.last = today; lg.streak = day;
   try{ localStorage.setItem('sweetTD.login', JSON.stringify(lg)); }catch(e){}
-  const msg = applyLoginReward(day);
+  let msg = applyLoginReward(day);
+  msg += passDaily();   // パスポートの ぶんは ログインボーナスの あとに たす
   buildSkillBar();      // ごほうびのストックや新しいなかまをバーへ反映
   let st = '<div style="display:flex;gap:5px;justify-content:center;margin:8px 0">';
   for (let i=1;i<=7;i++){
@@ -8332,6 +8355,22 @@ const SHOP_ITEMS = [
       shards += n; saveShards();
       return '⭐' + PACK_STARS.toLocaleString() + '！ ★' + PACK_LV +
              'は全員そろっていたので かけら🩷' + n + 'こ';
+    } },
+  /* 30日パスポート。買いなおすと のこりに たされる。
+     ⭐や 攻撃力は 上げない。強さを 売ると、子どもも あそぶゲームで
+     いちばん 言われる「課金しないと 勝てない」に なってしまう */
+  { id:'pass', sec:'はじめての方に', ic:'🎫', name:'30日パスポート',
+    desc:'毎日 かけら🩷' + PASS_SHARDS + ' ＋ 💗が満タンに。' + PASS_DAYS + '日ぶん',
+    note: () => passOn()
+      ? 'のこり ' + passLeft() + '日。いま買うと そこから ' + PASS_DAYS + '日 たされます'
+      : '買ったその日から すぐ1回ぶん。強さは 変わりません',
+    cost: 90,
+    buy: () => {
+      setPassUntil(Math.max(Date.now(), passUntil()) + PASS_DAYS*86400000);
+      // 買ったその日から つかえるように、1回ぶんは すぐ わたす
+      shards += PASS_SHARDS; saveShards();
+      hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
+      return '🎫 パスポート ' + passLeft() + '日ぶん！ かけら🩷+' + PASS_SHARDS + '・💗満タン';
     } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
     desc:'あと何回あそべるかが 満タンに もどります', cost:10,
@@ -10648,6 +10687,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   themes: () => Object.keys(SP_THEMES).filter(hasTheme),
   gems: () => gems,
   weekly: () => weekly && weekly.name,
+  pass: () => passLeft(),
+  setPass: d => setPassUntil(d ? Date.now() + d*86400000 : 0),
   leaveWeek: () => { closePanels(); leaveWeekly(); },
   queue: () => spawnQ.slice(),
   wave: () => wave,
