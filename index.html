@@ -231,6 +231,13 @@
     background:linear-gradient(180deg,#e6dcff,#cfc0f7);border-radius:999px;padding:7px 13px}
   .spSoon{background:rgba(255,255,255,.6);border:2px dashed #ded4f6;border-radius:16px;
     padding:11px 12px;font-size:calc(11px * var(--fs));line-height:1.6;opacity:.8}
+  .gemPack .spP{background:linear-gradient(180deg,#ffe0f0,#ffc2de);color:var(--pink-d)}
+  .ageBox{background:rgba(255,255,255,.8);border:2px solid #ded4f6;border-radius:16px;
+    padding:11px 12px;font-size:calc(11.5px * var(--fs));line-height:1.6}
+  .ageLeft{font-size:calc(10.5px * var(--fs));color:#7d5fd0}
+  .ageRow{display:flex;gap:5px;margin-top:8px}
+  .ageRow .mini{flex:1;min-width:0;padding:8px 2px;font-size:calc(10.5px * var(--fs));white-space:nowrap}
+  .ageNote{margin-top:8px;font-size:calc(10px * var(--fs));line-height:1.6;opacity:.65}
 
   /* ---------- 今週のおだい ---------- */
   #wkOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
@@ -1670,6 +1677,67 @@ function payGems(n){
   gems -= n; saveGems();
   return true;
 }
+
+/* ==========================================================
+   未成年の 月あたりの 上限
+   ----------------------------------------------------------
+   しばりが かかるのは「💎を お金で 買うとき」だけ。
+   持っている💎を つかうのは 何回でも できる（買ったあとに
+   つかえなくなるほうが 混乱するし、返金の話にもなる）。
+
+   金がくは JOGA／CESA の 目やすに あわせている。
+     16歳未満     … 月 5,000円
+     16〜19歳     … 月 20,000円
+     20歳以上     … 上限なし
+
+   **localStorage は 書きかえ放題なので、これは あくまで 画面がわの
+   歯どめ**。ほんとうの しばりは、Apple の ファミリー共有／承認と
+   サーバーがわの レシート確認で かける。ここを 本気の 防止だと
+   思わないこと。
+   ========================================================== */
+const AGE_BANDS = [
+  { id:'u16',   name:'16歳未満',  cap:5000  },
+  { id:'u20',   name:'16〜19歳',  cap:20000 },
+  { id:'adult', name:'20歳以上',  cap:0     },   // 0 = 上限なし
+];
+function ageBand(){
+  try{ return AGE_BANDS.find(a => a.id === localStorage.getItem('sweetTD.age')) || null; }catch(e){ return null; }
+}
+function setAgeBand(id){ try{ localStorage.setItem('sweetTD.age', id); }catch(e){} }
+const monthKey = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); };
+/* 今月 いくら つかったか。月が かわると まっさらに もどる */
+function monthSpent(){
+  try{
+    const r = JSON.parse(localStorage.getItem('sweetTD.spend') || 'null');
+    if (r && r.m === monthKey()) return r.yen | 0;
+  }catch(e){}
+  return 0;
+}
+function addSpent(yen){
+  try{ localStorage.setItem('sweetTD.spend', JSON.stringify({ m: monthKey(), yen: monthSpent() + yen })); }catch(e){}
+}
+/* あと いくら 買えるか。上限なしは Infinity */
+function spendLeft(){
+  const a = ageBand();
+  if (!a || !a.cap) return Infinity;
+  return Math.max(0, a.cap - monthSpent());
+}
+/* お金の 入り口。ほんとうの 買いものは この 2つで はさむ。
+
+     const r = canPayYen(n); if (!r.ok) return …    ← 買う前に しらべる
+     …Apple の 買いもの…
+     recordYen(n);                                  ← はらえてから 記録
+
+   1つの関数に まとめて 先に 記録すると、買いものを とちゅうで やめたり
+   しっぱいしたときに、はらっていない お金が 上限から 引かれてしまう。
+   いまは お金の やりとりが ないので recordYen() は まだ よばれない */
+function canPayYen(n){
+  if (!ageBand()) return { ok:false, why:'age' };          // まだ 年れいを 聞いていない
+  if (n > spendLeft()) return { ok:false, why:'cap' };
+  return { ok:true };
+}
+function recordYen(n){ addSpent(n); }
+const yen = n => '¥' + n.toLocaleString();
 
 /* その たまごから 出る子。なかま（味方）だけ */
 const eggPool = e => GEN_LIST.filter(o => o.side === 'ch' && e.lv.includes(o.lv));
@@ -8395,6 +8463,46 @@ const SHOP_ITEMS = [
       return '「' + SP_THEMES[id].th.name + '」に着せかえました！';
     } })),
 ];
+/* 💎の パック。ねだんは App Store に 出すときに 決めるので、
+   ここでは 目やすとして 出しておく。買うのは payYen() を とおす */
+const GEM_PACKS = [
+  { id:'g1', gems:60,  yen:320,  ic:'💎' },
+  { id:'g2', gems:200, yen:980,  ic:'💎' },
+  { id:'g3', gems:550, yen:2500, ic:'💎' },
+];
+function buildGemSection(){
+  const a = ageBand(), left = spendLeft();
+  let h = '<div class="spSec">💎ジュエル</div>';
+  for (const g of GEM_PACKS)
+    h += '<div class="spIt gemPack" data-pack="' + g.id + '">' +
+      '<div class="spIc">' + g.ic + '</div>' +
+      '<div class="spTx"><div class="spN">💎' + g.gems + '</div>' +
+      '<div class="spD">1つあたり 約¥' + (g.yen / g.gems).toFixed(1) + '（ねだんは目やす）</div></div>' +
+      '<div class="spP">' + yen(g.yen) + '</div></div>';
+  h += '<div class="spSoon">💎を ほんとうに 買えるようになるのは、' +
+    '<b>App Store に出すとき</b>です。いまは押しても お金は かかりません。<br>' +
+    'いまは <b>毎日のログインボーナスで 💎+2</b> もらえます。' +
+    'ここで買ったものは、アプリ版でもそのまま引きつげるように作ってあります。</div>';
+  // 年れいと 今月の のこりを 出す。未成年の 上限は 出しておかないと 意味がない
+  h += '<div class="spSec">年齢と ひと月の上限</div>';
+  h += '<div class="ageBox">' +
+    (a
+      ? '<div><b>' + a.name + '</b>' + (a.cap
+          ? '：ひと月 ' + yen(a.cap) + 'まで<br><span class="ageLeft">今月あと ' + yen(left) +
+            '（つかった額 ' + yen(monthSpent()) + '）</span>'
+          : '：上限なし') + '</div>'
+      : '<div>💎を買う前に 年齢を えらんでください。<br>' +
+        '<span class="ageLeft">未成年は ひと月に つかえる額が 決まっています</span></div>') +
+    '<div class="ageRow">' +
+    AGE_BANDS.map(x => '<button class="mini' + (a && a.id === x.id ? '' : ' gray') +
+      '" data-age="' + x.id + '">' + x.name + '</button>').join('') +
+    '</div>' +
+    '<div class="ageNote">この設定は この端末に だけ 残ります。' +
+    'ほんとうの 制限は App Store の ファミリー共有と レシート確認で かけます。' +
+    'おうちの人と 相談してから 買ってください。</div>' +
+    '</div>';
+  return h;
+}
 function buildShopScreen(){
   shopGem.textContent = '💎 ' + fmtN(gems);
   let h = '', sec = '';
@@ -8411,13 +8519,40 @@ function buildShopScreen(){
       // 品ものが うすくなるときは 説明も いっしょに うすくする
       (it.note ? '<div class="spNote' + (ok ? '' : ' poor') + '">' + it.note() + '</div>' : '');
   }
-  h += '<div class="spSec">💎ジュエル</div>' +
-    '<div class="spSoon">💎を買えるようにするのは、App Store に出すときです。' +
-    'いまは <b>毎日のログインボーナスで 💎+2</b> もらえます。<br>' +
-    'ここで買ったものは、アプリ版でもそのまま引きつげるように作ってあります。</div>';
+  h += buildGemSection();
   h += '<div id="shopMsg" style="font-size:calc(12px * var(--fs));color:var(--pink-d);text-align:center;min-height:18px"></div>';
   shopBody.innerHTML = h;
-  shopBody.querySelectorAll('.spIt').forEach(el => {
+  // 年れいの えらびボタン
+  shopBody.querySelectorAll('[data-age]').forEach(el => {
+    el.onclick = () => {
+      setAgeBand(el.dataset.age);
+      buildShopScreen();
+      $('shopMsg').textContent = '年齢を「' + ageBand().name + '」にしました';
+      beep(700,.08,'triangle',.04);
+    };
+  });
+  // 💎パック。まだ お金は かからないが、上限の 通り道は 本番と 同じにしておく
+  shopBody.querySelectorAll('.gemPack').forEach(el => {
+    el.onclick = () => {
+      const g = GEM_PACKS.find(x => x.id === el.dataset.pack);
+      const msg = $('shopMsg');
+      const r = canPayYen(g.yen);
+      if (!r.ok){
+        msg.textContent = r.why === 'age'
+          ? 'さきに 年齢を えらんでください'
+          : '今月の上限に とどきました（あと ' + yen(spendLeft()) + '）';
+        beep(160,.09,'square',.03,.7);
+        return;
+      }
+      /* ここで Apple の 買いものを よぶ。いまは お金の やりとりが ないので
+         💎も ふやさない。ふやすと ただで 手に入る 抜け道に なる */
+      buildShopScreen();
+      $('shopMsg').innerHTML = 'App Store 版で ' + yen(g.yen) + ' の 💎' + g.gems +
+        ' が買えるようになります<br><span style="opacity:.7">（いまは お金は かかっていません）</span>';
+      beep(520,.09,'triangle',.04);
+    };
+  });
+  shopBody.querySelectorAll('.spIt:not(.gemPack)').forEach(el => {
     el.onclick = () => {
       const it = SHOP_ITEMS.find(x => x.id === el.dataset.id);
       const msg = $('shopMsg');
@@ -10688,6 +10823,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   gems: () => gems,
   weekly: () => weekly && weekly.name,
   pass: () => passLeft(),
+  spent: () => monthSpent(),
+  setSpent: n => { try{ localStorage.setItem('sweetTD.spend', JSON.stringify({ m: monthKey(), yen: n })); }catch(e){} },
   setPass: d => setPassUntil(d ? Date.now() + d*86400000 : 0),
   leaveWeek: () => { closePanels(); leaveWeekly(); },
   queue: () => spawnQ.slice(),
