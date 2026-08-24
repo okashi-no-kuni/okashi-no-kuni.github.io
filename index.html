@@ -203,8 +203,17 @@
   #colOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
     background:rgba(255,244,251,.96);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:2}
   #colOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #colHead{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)}
-  #colHead>div{flex:1}
+  #colHead{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--pink-d)}
+  /* 見出しは 1行に おさめる。おさまらないときは 文字を ちぢめる（おりかえさない）*/
+  #colTtl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #colCount{font-size:12px;opacity:.8}
+  /* 見出しの まる ボタンは 幅を つめる（コレクションが おりかえさないように）*/
+  #colHead .mini{padding:9px 8px;flex:0 0 auto}
+  /* とても せまい 画面でも 見出しが 切れないように つめる */
+  @media (max-width:345px){
+    #colTtl{font-size:12.5px}
+    #colHead .mini{padding:8px 6px;font-size:11px}
+  }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
   #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -338,7 +347,7 @@
     </div>
     <div id="colOv">
       <div id="colHead">
-        <div>👑 コレクション <span id="colCount" style="white-space:nowrap"></span></div>
+        <div id="colTtl">コレクション <span id="colCount"></span></div>
         <button class="mini" id="colKing">🏰</button>
         <button class="mini" id="colAv">🎀</button>
         <button class="mini" id="colShare">📤</button>
@@ -731,24 +740,24 @@ const themeOf = w => themeOverride ? themeOverride.th
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
    ========================================================== */
 const CHARS = [
-  { id:'purin',  name:'プリン',         title:'プリンのきし',       fx:'ワザ「まもりのたて」が使える' },
-  { id:'choco',  name:'チョコ',         title:'ゆうかんなトリュフ', fx:'ワザ「チョコばくだん」が使える' },
+  { id:'purin',  name:'プリン',         title:'プリンの騎士',       fx:'ワザ「まもりのたて」が使える' },
+  { id:'choco',  name:'チョコ',         title:'勇敢なトリュフ', fx:'ワザ「チョコばくだん」が使える' },
   { id:'gumgum', name:'グミグミ',       title:'ぷるぷるグミ',       fx:'ワザ「ぷるぷるスロー」が使える' },
-  { id:'donut',  name:'ドーナツ',       title:'いやしのパンやさん', fx:'ワザ「ハートかいふく」が使える' },
-  { id:'taffy',  name:'タフィー',       title:'ふえふきキャンディ', fx:'ワザ「ふえのマーチ」＋速度UP' },
-  { id:'cake',   name:'ケーキちゃん',   title:'ちいさなケーキ',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
-  { id:'fairy',  name:'ベリーようせい', title:'マカロンのようせい', fx:'ワザ「ようせいのこな」＋範囲+5%' },
-  { id:'prince', name:'ベリーおうじ',   title:'マカロンのおうじ',   fx:'ワザ「いちごのはた」＋おほしさま+10%' },
-  { id:'apple',  name:'アップルひめ',   title:'あまいひめさま',     fx:'ワザ「りんごのいやし」＋回復+3' },
-  { id:'queen',  name:'おうひさま',     title:'おうさまのおきさき', fx:'ワザ「おうひのいのり」＋値段-20%' },
-  { id:'king',   name:'おうさま',       title:'ケーキのおうさま',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
+  { id:'donut',  name:'ドーナツ',       title:'癒しのパン屋さん', fx:'ワザ「ハートかいふく」が使える' },
+  { id:'taffy',  name:'タフィー',       title:'笛ふきキャンディ', fx:'ワザ「ふえのマーチ」＋速度UP' },
+  { id:'cake',   name:'ケーキちゃん',   title:'小さなケーキ',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
+  { id:'fairy',  name:'ベリーようせい', title:'マカロンの妖精', fx:'ワザ「ようせいのこな」＋範囲+5%' },
+  { id:'prince', name:'ベリーおうじ',   title:'マカロンの王子',   fx:'ワザ「いちごのはた」＋おほしさま+10%' },
+  { id:'apple',  name:'アップルひめ',   title:'甘い姫さま',     fx:'ワザ「りんごのいやし」＋回復+3' },
+  { id:'queen',  name:'おうひさま',     title:'王さまのお妃', fx:'ワザ「おうひのいのり」＋値段-20%' },
+  { id:'king',   name:'おうさま',       title:'ケーキの王さま',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
 ];
 
 /* ずかん用のよみもの。おかし（タワー）は置くと、てきはたおすと登録される */
 const ENEMY_TITLES = {
-  slime:'ぷるぷるの いたずらっこ', fast:'ぼうつきで すばしっこい', tank:'かたくて おもたい',
-  crystal:'こおりのよろい', bat:'つばさで とんでくる', golem:'2だんの おもたいやつ',
-  boss:'おかしの国を ねらうボス',
+  slime:'ぷるぷるの いたずらっ子', fast:'棒つきで すばしっこい', tank:'固くて重い',
+  crystal:'氷の鎧', bat:'翼で飛んでくる', golem:'2段の重いやつ',
+  boss:'お菓子の国を狙うボス',
 };
 const DEX_TOWERS  = ORDER.map(k => ({ id:'tw_'+k, name:TOWERS[k].name, title:TOWERS[k].desc }));
 const DEX_ENEMIES = Object.keys(ENEMIES).map(k => ({ id:'en_'+k, name:ENEMIES[k].name, title:ENEMY_TITLES[k] }));
@@ -757,11 +766,11 @@ const DEX_ENEMIES = Object.keys(ENEMIES).map(k => ({ id:'en_'+k, name:ENEMIES[k]
    でんせつのなかま：とうたつウェーブで出会えて、永続の「しゅくふく」をくれる
    ========================================================== */
 const LEGENDS = [
-  { id:'whale',   name:'ほしのクジラ',       title:'ほしぞらのでんせつ', wave:60,
+  { id:'whale',   name:'ほしのクジラ',       title:'星空の伝説', wave:60,
     fx:'祝福：はじまりのハート+2',                 tease:'ウェーブ60で なにかが おきる…' },
-  { id:'phoenix', name:'ふしちょう',         title:'ほのおのでんせつ',   wave:120,
+  { id:'phoenix', name:'ふしちょう',         title:'炎の伝説',   wave:120,
     fx:'祝福：1プレイに1回 ハート0でふみとどまる', tease:'ウェーブ120で なにかが おきる…' },
-  { id:'chronos', name:'クロノスちょうろう', title:'ときのでんせつ',     wave:200,
+  { id:'chronos', name:'クロノスちょうろう', title:'時の伝説',     wave:200,
     fx:'祝福：早よびの待ち時間+3秒',         tease:'ウェーブ200で なにかが おきる…' },
 ];
 const hasLg = id => !!dex['lg_' + id];
@@ -6653,7 +6662,7 @@ function dexList(){
     ...DEX_ENEMIES.map(o => ({ ...o, cat:'en', pid:o.id, hint:'倒すと図鑑に登録' })),
     ...CHARS.map((c,i) => ({ id:'ch_'+c.id, pid:c.id, name:c.name, title:c.title, cat:'ch', fx:c.fx,
                              hint:'ステージ' + (i+1) + 'クリアで仲間に' })),
-    { id:'sp_rpurin', pid:'rpurin', name:'にじいろプリン', title:'でんせつのプリン', cat:'ch',
+    { id:'sp_rpurin', pid:'rpurin', name:'にじいろプリン', title:'伝説のプリン', cat:'ch',
       fx:'ワザ「にじのおくりもの」＋ドロップUP', hint:'ログインボーナス7日目で仲間に' },
     ...LEGENDS.map(l => ({ id:'lg_'+l.id, pid:l.id, name:l.name, title:l.title, cat:'lg', fx:l.fx,
                            hint:l.tease, legend:true })),
