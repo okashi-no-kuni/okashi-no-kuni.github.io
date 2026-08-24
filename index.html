@@ -358,10 +358,16 @@
   .hSec b{color:var(--pink-d)}
   #colTotal{text-align:center;font-size:calc(11px * var(--fs));opacity:.7;padding:2px 0 4px}
   #colStats{display:flex;gap:6px}
-  .cst{flex:1;background:rgba(255,255,255,.8);border:2px solid rgba(255,255,255,.9);
+  .cst{flex:1;min-width:0;background:rgba(255,255,255,.8);border:2px solid rgba(255,255,255,.9);
     border-radius:12px;padding:6px 2px;text-align:center;line-height:1.25}
+  /* 「ウェーブ380」は ほかの2つより 長い。3つを 同じはばに すると
+     ここだけ おりかえして、数字が よこに そろわなくなる */
+  .cst.best{flex:1.3}
   .cst .ck{font-size:calc(9px * var(--fs));opacity:.6}
-  .cst .cn{font-size:calc(15px * var(--fs));color:var(--pink-d);font-variant-numeric:tabular-nums}
+  /* おりかえさせない。おりかえると その札だけ 数字が 下がる。
+     入りきらないぶんは fitStat() が 文字を 小さくして あわせる */
+  .cst .cn{font-size:calc(15px * var(--fs));color:var(--pink-d);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
   .cst.best{background:linear-gradient(135deg,#fff3cf,#ffe2f0);border-color:#ffd76e}
   .cst.best .cn{color:#c9821e}
 
@@ -7513,6 +7519,18 @@ function buildFriendGrid(){
   colTotal.textContent = '通算 ' + tw + '勝 ' + tl + '敗';
 }
 
+/* 札に 入る 大きさまで 数字を 縮める。
+   フォントの はばは 端末で ちがう（iPhone の 丸ゴシックは Linux の
+   代わりのフォントより 広い）ので、決めうちの px では はみ出す。
+   実際、393px で 大丈夫に 見えていたのに iPhone では おりかえしていた。
+   はかって 合わせるのが いちばん たしか */
+function fitStat(el){
+  el.style.fontSize = '';
+  const w = el.clientWidth;
+  if (!w) return;                                   // まだ 出ていない
+  for (let k = 0.95; k >= 0.7 && el.scrollWidth > w; k -= 0.05)
+    el.style.fontSize = 'calc(15px * var(--fs) * ' + k.toFixed(2) + ')';
+}
 function buildColGrid(){
   // じぶんの きろくは どの タブでも 出す
   colStats.innerHTML =
@@ -7523,6 +7541,7 @@ function buildColGrid(){
     '<div class="cst best"><div class="ck">自己ベスト</div><div class="cn">ウェーブ' + rec.bw + '</div></div>' +
     '<div class="cst"><div class="ck">倒した数</div><div class="cn">' + fmtN(rec.kills) + '</div></div>' +
     '<div class="cst"><div class="ck">順位の目安</div><div class="cn">' + (rec.bw > 0 ? '上位' + rankPct() + '%' : '—') + '</div></div>';
+  colStats.querySelectorAll('.cn').forEach(fitStat);
   if (colTab === 'fr'){ buildFriendGrid(); return; }
   const all = dexList();
   if (colIo) colIo.disconnect();
