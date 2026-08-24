@@ -406,6 +406,7 @@
   <div id="pickOv">
     <div id="pickHead">
       <div>🧸 仲間を選ぶ</div>
+      <button class="mini gray" id="pickClose">閉じる</button>
     </div>
     <div id="pickTabs">
       <button class="ctab sel" data-p="1">★1</button>
@@ -1921,6 +1922,9 @@ for (const b of pickTabs.children) b.onclick = () => {
   buildPick(); beep(660,.06,'triangle',.03);
 };
 function openPick(){ togglePanel('pickOv', buildPick); }
+/* 仲間を選ぶ・たまご・アバターは 画面ぜんぶを おおうので、下のボタンが 見えない。
+   ここだけは「閉じる」で ばんめんに もどす（ほかの画面は 下のボタンで 行き来する） */
+$('pickClose').onclick = () => closePanels();
 function buildPick(){
   // もっている子だけ。もっていない子を ならべても おけないので まぎらわしい
   const all  = GEN_LIST.filter(o => o.side === 'ch' && o.lv === pickLv);
