@@ -184,6 +184,27 @@
   .avFrX{position:absolute;top:-6px;right:-4px;font-size:13px;cursor:pointer;opacity:.6}
 
   /* ---------- なかまえらび ---------- */
+  /* ---------- 今週のおだい ---------- */
+  #wkOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
+    background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:5}
+  #wkOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
+  #wkHead{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--pink-d)}
+  #wkHead>div{flex:1}
+  #wkBody{display:flex;flex-direction:column;gap:9px}
+  #wkBody>*{flex:0 0 auto}
+  .wkCard{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:16px;padding:12px}
+  .wkR{font-size:17px;font-weight:800;color:var(--pink-d);text-align:center}
+  .wkD{font-size:11.5px;line-height:1.6;opacity:.75;text-align:center;margin-top:4px}
+  .wkB{display:flex;gap:8px}
+  .wkB>div{flex:1;background:rgba(255,255,255,.8);border:2px solid #ffd9ec;border-radius:14px;
+    padding:8px;text-align:center}
+  .wkK{font-size:10px;opacity:.6}
+  .wkN{font-size:17px;font-weight:800;color:var(--pink-d)}
+  .wkM{display:flex;flex-direction:column;gap:5px}
+  .wkM>div{display:flex;align-items:center;gap:8px;font-size:12px;
+    background:rgba(255,255,255,.7);border-radius:11px;padding:7px 10px}
+  .wkM b{flex:1;font-weight:800;color:var(--pink-d)}
+  .wkM .got{color:#4fb392;font-weight:800}
   #pickOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
     background:rgba(255,244,251,.96);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:3}
   #pickOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
@@ -403,6 +424,14 @@
     <div id="avFriends"></div>
   </div>
 
+  <div id="wkOv">
+    <div id="wkHead">
+      <div>🏅 今週のおだい</div>
+      <button class="mini gray" id="wkClose">閉じる</button>
+    </div>
+    <div id="wkBody"></div>
+  </div>
+
   <div id="pickOv">
     <div id="pickHead">
       <div>🧸 仲間を選ぶ</div>
@@ -443,7 +472,10 @@
     <button class="btn sm" id="btnSnd" aria-label="おと"></button>
   </div>
 
-  <div id="pwRow"><button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> 合言葉・着せかえ</button></div>
+  <div id="pwRow">
+    <button class="mini" id="btnWk">🏅 今週のおだい</button>
+    <button class="mini" id="btnPw"><span style="font-size:17px;line-height:.7">🔑</span> 合言葉・着せかえ</button>
+  </div>
 
   <div id="tip">ウェーブは自動で進みます。ボタンで「早よび」すると⭐ボーナス✨<br>遊びかたは <span class="bookIc"></span> を見てね</div>
 
@@ -778,7 +810,8 @@ const hasLg = id => !!dex['lg_' + id];
    たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
 const maxHearts = () => 20 + (hasLg('whale') ? 2 : 0);
-const maxLife   = () => 20 + (hasLg('whale') ? 2 : 0);   // クジラの しゅくふく：はじまりのハート+2
+const maxLife   = () => (weekly && weekly.life) ? weekly.life
+  : 20 + (hasLg('whale') ? 2 : 0);   // クジラの しゅくふく：はじまりのハート+2
 /* ごほうびでもらう💗は上限をこえてためておける。ためすぎないように99でとめる */
 const HEART_STOCK_MAX = 99;
 /* かいふくワザや ステージクリアの ごほうびは、そのプレイの げんきを もどす */
@@ -835,7 +868,7 @@ const skillBar = $('skillBar'), colHint = $('colHint');
    ひらく前に ほかの画面を とじる。
    下のボタンは もういちど おすと とじる（いま開いている画面は光る）。
    要素は あとの行で 作られるので、$() で そのつど 引く（TDZ よけ） */
-const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv'];
+const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv'];
 const panelOpen = id => $(id).classList.contains('on');
 function syncNav(){
   $('btnCol').classList.toggle('on',  panelOpen('colOv'));
@@ -1375,7 +1408,7 @@ function bgmStop(){ if (bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } }
    とちゅうで かえると 道の ながさが 変わり、まだ とちゅうの子が
    いっせいに ゴールに 入って げんきが 一気に へってしまう */
 function applyLayout(w){
-  const nw = wayOf(w);
+  const nw = weekly ? weekWay() : wayOf(w);
   if (nw === WAY) return false;
   WAY = nw;
   buildPath(); measurePath();
@@ -2235,6 +2268,14 @@ function startWave(early){
   }
   bgmStart();          // 最初のウェーブからBGM開始（タップ後なので再生できる）
   spawnQ = waveList(wave).slice();
+  if (weekly){
+    // おだいの ぶん。waveList そのものは いじらない（tools/sim.mjs が つかうため）
+    if (weekly.many){
+      const base = spawnQ.slice(), add = Math.round(base.length * (weekly.many - 1));
+      for (let i = 0; i < add; i++) spawnQ.push(base[i % base.length]);
+    }
+    if (weekly.boss && wave % weekly.boss === 0) spawnQ.push('boss');
+  }
   spawnSeq = 0;      // ウェーブごとに 0にもどす（おなじウェーブは いつも おなじ顔ぶれ）
   // ともだちが いると、ステージの まん中の ウェーブが「ともだちバトル」になる
   friendWave = isFriendWave(wave);
@@ -2546,7 +2587,7 @@ function update(dt){
       }
     }
     const mul = e.stun > 0 ? 0 : (e.slow > 0 ? (1 - e.slowAmt) : 1);
-    e.d += E.spd * CELL * mul * dt;
+    e.d += E.spd * CELL * mul * dt * (weekly && weekly.spd ? weekly.spd : 1);
     e.wob += dt*9;
     if (e.d >= pathLen){
       enemies.splice(i,1);
@@ -2653,7 +2694,7 @@ function update(dt){
     btnWave.disabled = false;
     btnWave.innerHTML = '次のウェーブ ' + PLAY;
     nextT = NEXT_WAIT + (hasLg('chronos') ? 3 : 0);   // クロノスのしゅくふくで じっくり
-    rec.bw = Math.max(rec.bw, wave); saveRec();
+    if (!weekly){ rec.bw = Math.max(rec.bw, wave); saveRec(); }
     syncHUD();
     // 10ウェーブの節目はちいさなお祝い（クリアの節目はstageClearが盛大にやる）
     if (wave % 10 === 0 && wave % STAGE_WAVES !== 0) celebrate({ conf: 30, fanfare: 1 });
@@ -2662,7 +2703,7 @@ function update(dt){
     // ボーナスウェーブは20ウェーブごと（ウェーブ数にはカウントしない）。
     // クリアのお祝いと同じ回なので、ここでは よやくだけして、
     // お祝いの画面がとじてパレードを見せてから始める（下のまちうけ処理）
-    if (wave % 20 === 0){
+    if (wave % 20 === 0 && !weekly){
       bonusWait = 2.4;
       btnWave.disabled = true;                       // まちのあいだ はやよびで飛ばされないように
       btnWave.innerHTML = '🎁 このあと<br>ボーナスタイム！';
@@ -2704,7 +2745,7 @@ const nameRects = [];                                 // ともだちの なま�
 const isFriendWave = n => avFriends.length > 0 && n >= 10 && n % STAGE_WAVES === 10;
 function spawnEnemy(k, d0){
   const E = ENEMIES[k];
-  const hp = E.hp * hpScale(wave);
+  const hp = E.hp * hpScale(wave) * (weekly && weekly.hp ? weekly.hp : 1);
   const i = spawnSeq++;
   // ともだちバトルでは 'golem'（おもい役）が ともだち本人になる
   const av = (friendWave && k === 'golem') ? avFriends[(i/3|0) % avFriends.length] : null;
@@ -2746,11 +2787,12 @@ function killEnemy(e, px, py){
 }
 
 function gameOver(){
+  if (weekly) return weeklyOver();   // おだいは 別の結果画面（自己ベストを 動かさない）
   over = true; running = false;
   closePanels();   // 結果の画面が 図鑑などの うしろに かくれないように
   bgmStop();           // しずかに結果とむきあう
   const newRec = wave > 0 && wave > rec.bw;      // 更新前のベストとくらべて新記録か
-  rec.plays++; rec.bw = Math.max(rec.bw, wave); saveRec();
+  if (!weekly){ rec.plays++; rec.bw = Math.max(rec.bw, wave); saveRec(); }
   ovT.textContent = 'おかしの国が…！';
   const badge = 'display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
     'border:2px solid #ffd76e;border-radius:999px;padding:7px 16px;margin:7px 0;' +
@@ -6579,6 +6621,13 @@ function unlock(id){
 /* ステージクリア（20ウェーブ）ごとのごほうび。なかまを1人むかえて、次のステージへ */
 function stageClear(){
   const stageNo = wave / STAGE_WAVES;
+  // 今週のおだい中は ごほうびを わたさない。ふだんより 短いプレイで
+  // たまごや 💗を ためる ぬけ道に なってしまうため
+  if (weekly){
+    celebrate({ rays: 3, conf: 120, rings: true, fanfare: 1 });
+    floatTx(COLS*CELL/2, ROWS*CELL/2, 'ステージ' + stageNo + ' クリア！🎉', '#e05f9e');
+    return;
+  }
   healHearts(3 + (hasCh('apple') ? 3 : 0));   // ごほうびにハートを回復（ためた💗はへらさない）
   const ch = CHARS.find(c => !dex['ch_'+c.id]);
   if (ch){
@@ -7208,6 +7257,7 @@ function syncSkills(){
    プレイのオートセーブ（とちゅうのウェーブから再開できる）
    ========================================================== */
 function saveRun(w){
+  if (weekly) return;   // おだい中は ふだんの進行を 上書きしない
   try{
     localStorage.setItem('sweetTD.run', JSON.stringify({
       w: (w !== undefined ? w : wave), st: stars, hp: hearts, lf: life,
@@ -7455,7 +7505,9 @@ function makeShareCard(){
   return c;
 }
 async function shareScore(){
-  const text = 'まほうのおかしの国を ウェーブ' + Math.max(1, wave, rec.bw) + 'まで守りぬいた！ #おかしの国TD';
+  const text = weekly
+    ? '今週のおだい「' + weekly.name + '」で ウェーブ' + Math.max(1, wave) + 'まで！ #おかしの国TD'
+    : 'まほうのおかしの国を ウェーブ' + Math.max(1, wave, rec.bw) + 'まで守りぬいた！ #おかしの国TD';
   const url = 'https://okashi-no-kuni.github.io/';
   try{
     const blob = await new Promise(r => makeShareCard().toBlob(r, 'image/png'));
@@ -7748,6 +7800,140 @@ function buildPw(){
 }
 $('btnPw').onclick = () => togglePanel('pwOv', buildPw);
 btnHelp.onclick = () => togglePanel('helpOv', buildHelp);
+
+/* ==========================================================
+   今週のおだい（週替わりステージ）
+   ----------------------------------------------------------
+   サーバーが ないので 全国ランキングは 作れない。かわりに
+   「その週は 世界じゅうで おなじ おだい」に して、記録を SNSで
+   見せ合える形にする。週ばんごうから おだいと道を 決めるので、
+   だれが いつ ひらいても おなじ おだいが 出る。
+
+   ふだんのプレイとは 別もの。入るときに ふだんの進行を保存し、
+   終わったら そこへ もどす（saveRun は おだい中は 何もしない）。
+   💗（あと何回あそべるか）は 共通。ずるく ためられないように。
+   ========================================================== */
+/* 月曜はじまりの 週ばんごう。1970-01-05（月）からの 週かず */
+let weekDbg = null;      // ?dbg=1 の 見た目たしかめ用。ふだんは null
+function weekNo(){
+  if (weekDbg !== null) return weekDbg;
+  const d = new Date();
+  const utc = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.floor((utc - Date.UTC(1970,0,5)) / 604800000);
+}
+/* おだいは 敵と盤面がわだけを いじる。ねだんやUIに 手を入れると
+   直すところが 増えて こわれやすいので、ここは わざと せまくしてある */
+const WEEK_RULES = [
+  { id:'hard',  name:'かたい敵',     desc:'敵のHPが 1.6倍。育てる速さが ためされます',       hp:1.6 },
+  { id:'fast',  name:'はやい敵',     desc:'敵の速さが 1.35倍。減速の仲間が 活躍します',      spd:1.35 },
+  { id:'thin',  name:'げんき5',      desc:'げんきが 5しかありません。1体も通せない',          life:5 },
+  { id:'many',  name:'大群',         desc:'敵の数が 1.6倍。まとめて攻撃できる仲間が 強い',    many:1.6 },
+  { id:'boss',  name:'ボスだらけ',   desc:'5ウェーブごとに ボスが来ます',                     boss:5 },
+  { id:'rush',  name:'はやい大群',   desc:'数1.3倍・速さ1.2倍。とにかく手数が いります',      many:1.3, spd:1.2 },
+];
+const weekRule = () => WEEK_RULES[weekNo() % WEEK_RULES.length];
+const weekWay  = () => makeWay(1000 + weekNo());     // ふだんの周とは かぶらない たね
+/* 今週の きろく。週が かわると まっさらに もどる */
+function weekRec(){
+  try{
+    const r = JSON.parse(localStorage.getItem('sweetTD.week') || 'null');
+    if (r && r.w === weekNo()) return r;
+  }catch(e){}
+  return { w: weekNo(), bw: 0, got: [] };
+}
+function saveWeekRec(r){ try{ localStorage.setItem('sweetTD.week', JSON.stringify(r)); }catch(e){} }
+/* ごほうびは かけら。⭐は ふだんのプレイに ひびくので わたさない */
+const WEEK_PRIZE = [ {w:10, n:2}, {w:20, n:5}, {w:30, n:10}, {w:40, n:20} ];
+
+let weekly = null;      // おだい中なら ルール。ふだんは null
+
+/* ---------- 今週のおだい：入る・出る・結果・画面 ---------- */
+const wkOv = $('wkOv'), wkBody = $('wkBody');
+/* 週が かわるまでの 日かず（月曜はじまり） */
+function weekDaysLeft(){
+  const d = new Date();
+  return 7 - ((d.getDay() + 6) % 7);       // 月曜=7、日曜=1
+}
+function enterWeekly(){
+  saveRun();                    // ふだんの進行を のこす（weekly を 立てる前に）
+  const hp = hearts;            // 💗は 共通。リセットで 満タンに しない
+  weekly = weekRule();
+  closePanels();
+  reset();
+  hearts = Math.min(HEART_STOCK_MAX, hp);
+  WAY = weekWay(); buildPath(); measurePath(); bakeGround();
+  life = maxLife();
+  syncHUD();
+  floatTx(COLS*CELL/2, ROWS*CELL/2, '🏅 ' + weekly.name, '#e05f9e');
+  celebrate({ conf: 70, rings: true, fanfare: 1 });
+}
+function leaveWeekly(){
+  const hp = hearts;            // おだいで つかった ぶんを もちこす
+  weekly = null;
+  reset();
+  tryResume();                  // ふだんの進行に もどす（道も ここで そろう）
+  hearts = Math.min(HEART_STOCK_MAX, hp);
+  saveRun();
+  bakeGround();
+  syncHUD();
+}
+/* おだいの 結果。ふだんの gameOver とは 別（自己ベストを 動かさない） */
+function weeklyOver(){
+  over = true; running = false;
+  bgmStop();
+  const r = weekRec(), best = wave > r.bw;
+  if (best) r.bw = wave;
+  let gain = 0; const names = [];
+  for (const p of WEEK_PRIZE)
+    if (wave >= p.w && !r.got.includes(p.w)){ r.got.push(p.w); gain += p.n; names.push('ウェーブ' + p.w); }
+  if (gain){ shards += gain; saveShards(); }
+  saveWeekRec(r);
+  hearts = Math.max(0, hearts - 1);
+  life = maxLife();
+  if (hearts < 1 && !nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
+  syncHUD();
+  const badge = 'display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
+    'border:2px solid #ffd76e;border-radius:999px;padding:7px 16px;margin:7px 0;color:#c9821e';
+  ovT.textContent = '🏅 今週のおだい おわり';
+  ovB.innerHTML = '「<b>' + weekly.name + '</b>」で ウェーブ <b>' + wave + '</b> まで！<br>' +
+    (best ? '<span style="' + badge + ';animation:blink .5s infinite alternate">✨ 今週の新記録！ ✨</span>'
+          : '<span style="' + badge + '">🏅 今週のベスト ウェーブ' + r.bw + '</span>') +
+    (gain ? '<br>🩷 かけら +' + gain + '（' + names.join('・') + ' 達成）' : '') +
+    '<br><span style="opacity:.75">💗を1こ使いました（残り ' + hearts + '）</span>';
+  ovBtn.disabled = false;
+  ovBtn.textContent = 'ふだんの国へ戻る';
+  ovBtn.onclick = () => { ov.classList.remove('on'); leaveWeekly(); };
+  ovAlt.textContent = 'もう一度 挑戦';
+  ovAlt.style.display = hearts >= 1 ? '' : 'none';
+  ovAlt.onclick = () => { ov.classList.remove('on'); enterWeekly(); };
+  ovShare.style.display = '';
+  ov.classList.add('on');
+  if (best) celebrate({ rays: 2.5, conf: 110, fanfare: 1 });
+  else beep(180,.5,'sawtooth',.06,.4);
+}
+function buildWeek(){
+  const R = weekRule(), r = weekRec();
+  wkBody.innerHTML =
+    '<div class="wkCard"><div class="wkR">' + R.name + '</div>' +
+    '<div class="wkD">' + R.desc + '</div></div>' +
+    '<div class="wkB">' +
+      '<div><div class="wkK">今週のベスト</div><div class="wkN">' +
+        (r.bw ? 'ウェーブ' + r.bw : '—') + '</div></div>' +
+      '<div><div class="wkK">おだいの残り</div><div class="wkN">' + weekDaysLeft() + '日</div></div>' +
+    '</div>' +
+    '<div class="wkM">' + WEEK_PRIZE.map(p => {
+      const got = r.got.includes(p.w);
+      return '<div><b>ウェーブ' + p.w + '</b><span>🩷 かけら ' + p.n + '</span>' +
+             '<span class="got">' + (got ? ' 達成 ✓' : '') + '</span></div>';
+    }).join('') + '</div>' +
+    '<button class="btn" id="wkGo" style="width:100%">🏅 挑戦する（💗1）</button>' +
+    '<div class="wkD">おだいと道は毎週かわります。世界じゅうで同じおだいです。<br>' +
+    'ふだんの進行や自己ベストにはひびきません（💗だけ共通）</div>';
+  $('wkGo').disabled = hearts < 1;
+  $('wkGo').onclick = () => enterWeekly();
+}
+$('btnWk').onclick = () => togglePanel('wkOv', buildWeek);
+$('wkClose').onclick = () => closePanels();
 
 /* ==========================================================
    おかしの国のパノラマ（あつめたなかまが住みつく一枚絵）
@@ -9905,6 +10091,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return 'なし';
   },
   life: () => life,
+  setWeek: n => { weekDbg = n; },
+  weekly: () => weekly && weekly.name,
+  queue: () => spawnQ.slice(),
   wave: () => wave,
   way: () => JSON.stringify(WAY),
   clear: () => { enemies.length = 0; spawnQ.length = 0; },
