@@ -6341,7 +6341,6 @@ const RAINBOW_OF = [
    数字は check.mjs --fit の 自動あわせで 出したもの。手で いじらなくてよい */
 const FIT = {
   'おはぎ':{sc:1.223},
-  'きんつば':{sc:1.255},
   'まじょ':{dy:0.02},
   'まほうつかい':{dy:0.028},
   'まんじゅう':{sc:1.193},
@@ -6350,25 +6349,14 @@ const FIT = {
   'わたあめ':{dy:-0.008},
   'わらびもち':{sc:1.28},
   'イルカ':{dx:0.005},
-  'オウム':{dx:0.095},
-  'カラス':{dx:0.11},
   'カンガルー':{dy:0.013},
-  'クジャク':{dx:0.085},
   'クジラ':{dx:0.01},
   'クラゲ':{dy:-0.105},
   'コアラ':{dx:-0.042},
   'シャチ':{dx:0.005},
   'ゼリー':{sc:1.371},
-  'ゾウ':{dx:-0.042},
   'タツノオトシゴ':{sc:1.185},
-  'ダチョウ':{dx:0.085, dy:-0.138},
-  'ドラゴン':{dx:0.017},
-  'ニワトリ':{dx:0.085},
   'ハクチョウ':{dx:0.085},
-  'ハト':{dx:0.085},
-  'フェニックス':{dx:0.095},
-  'フラミンゴ':{dy:-0.115},
-  'ペガサス':{dy:0.065},
   'マシュマロ':{sc:1.306},
   'ユニコーン':{dy:0.065},
   'ワシ':{dx:0.11},
@@ -7527,7 +7515,15 @@ function buildColGrid(){
       colIo.unobserve(e.target); f();
     }
   }, { root: colOv, rootMargin: '240px' });
-  const list = colTab === 'all' ? all : all.filter(o => o.cat === colTab);
+  /* 「敵」「仲間」の タブは、ウェーブに 出てくる7体・ステージクリアの子だけでなく
+     コレクションの子も その分けかた（gen.side）で いっしょに 出す。
+     ここを 分けたままだと、なかまと敵を 分けなおしても タブの中身が
+     変わらず、直っていないように 見える */
+  const inTab = o =>
+    colTab === 'en' ? (o.cat === 'en' || (o.gen && o.gen.side === 'en')) :
+    colTab === 'ch' ? (o.cat === 'ch' || (o.gen && o.gen.side === 'ch')) :
+    o.cat === colTab;
+  const list = colTab === 'all' ? all : all.filter(inTab);
   colCount.textContent = list.filter(o => dex[o.id]).length + ' / ' + list.length;
   colHint.style.display = (colTab === 'ch') ? '' : 'none';
   colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>いっぱいのときは いちばん左と交代';
