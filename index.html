@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#ffd9ec">
 <title>まほうのおかしの国をまもって</title>
+<!-- ホーム画面に 追加したときの アイコン。
+     apple-touch-icon が ないと、iPhone は ページの 縮小画像を アイコンに してしまう。
+     絵は tools/make-icons.mjs が 作る（手で 画像を 作らないこと）-->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="おかしの国">
 <style>
   :root{
     --pink:#ff8fc4;
@@ -1698,7 +1707,7 @@ function buildShop(){
     };
     shopEl.append(d);
   }
-  // 5つめは なかまえらびの 入り口。152体を バーに ならべるのは むりなので 別画面にする
+  // 5つめは なかまえらびの 入り口。130体を バーに ならべるのは むりなので 別画面にする
   const pk = document.createElement('div');
   pk.className = 'tw';
   pk.dataset.k = '__pick';
@@ -2098,7 +2107,7 @@ const AV_TOWER = { name:'じぶん', ic:'🎀', cost:700, dmg:52, rate:0.62, ran
                    color:'#ff8fc4', dark:'#e05f9e', splash:0.9, cells:4, avatar:true,
                    role:'範囲', desc:'自分のアバター。まわりの敵もまとめて（4マス使用）' };
 TOWERS[AV_TOWER_KEY] = AV_TOWER;
-/* 見た目は まいフレーム えがくと 重いので、200体と おなじく 焼いておく */
+/* 見た目は まいフレーム えがくと 重いので、コレクションと おなじく 焼いておく */
 const avSpriteCache = new Map();
 function avKey(a){ return AV_KEYS.map(k => a[k] || 0).join('') + '|' + (a.n || ''); }
 function avSprite(a, px){
@@ -2265,7 +2274,7 @@ function avFromLink(){
 }
 
 /* ---------- なかまえらび ----------
-   なかまは 152体いるので 買いものバーには のらない。★べつの 別画面から えらぶ。
+   なかまは 130体いるので 買いものバーには のらない。★べつの 別画面から えらぶ。
    えらぶと ふつうの おかしと おなじように ばんめんに おける */
 const pickOv = $('pickOv'), pickGrid = $('pickGrid'), pickTabs = $('pickTabs'), pickHint = $('pickHint');
 let pickLv = 1, pickIo = null;
@@ -2552,7 +2561,7 @@ function boardTap(px, py){
   stars -= T.cost;
   towers.push({ k:selTool, c, r, lv:1, cd:0, ang:-Math.PI/2, pulse:1, ph:Math.random()*6.3 });
   // なかまの id は そのまま（c_xxx）。'tw_' を つけると ありもしない id が
-  // ずかんに たまり、152体は 一生 とうろくされない
+  // ずかんに たまり、なかまは 一生 とうろくされない
   const dexId = T.avatar ? null : (T.ally ? selTool : 'tw_' + selTool);
   if (dexId && unlock(dexId)){
     if (!T.ally) dex[dexId].lv = 1;
@@ -3151,7 +3160,7 @@ function gameOver(){
   }
 }
 /* ==========================================================
-   コレクションの200体
+   コレクションのキャラ（165体）
    ------------------------------------------------------------
    おかしの形だけでは 200種類も 見わけがつかないので、
    からだの「型」（quad=けもの / fowl=とり / bug=むし / hero=人 ほか）に
@@ -6201,21 +6210,15 @@ const CREATURES = [
   ['whale',    'クジラ',     ['#6b87a8','#cfe6ff','#4f6a88'], 6, 'ch'],
   // --- りくの生きもの ---
   ['turtle',   'カメ',       ['#7aa864','#cdbb8e','#5e8a4c'], 3, 'ch'],
-  ['bird',     'ことり',     ['#ffd95e','#fff3c4','#e8a02a'], 2, 'ch'],
   // --- ゆめの生きもの ---
   ['dragon',   'ドラゴン',   ['#6fbf95','#cdeddc','#a8e0c4'], 6,'en',{dx:0.015}],
   ['unicorn',  'ユニコーン', ['#fdfaff','#c9a7ff','#ffd76e'], 6, 'ch',{dy:0.065}],
-  ['unicorn',  'ペガサス',   ['#fdfaff','#cfe6ff','#e8e4f0'], 6,'ch',{key:'pegasus', wing:true, dy:0.065}],
-  ['fowl','フェニックス',['#ff8f3a','#ffd76e','#e8503f'], 6,'ch',{key:'phoenix', crest:'spike', crestC:'#ffd76e', tail:'long', beak:'hook'}],
-  ['fowl','グリフォン', ['#c9a06a','#e8d4bc','#ffd76e'], 6,'en',{key:'griffin', beak:'hook', crest:'tuft', tail:'tuft'}],
   ['fairy',    'ようせい',   ['#ffb3d4','#ffd9ea','#d8a860'], 5, 'ch'],
   ['butterfly','ちょうちょ', ['#a88060','#c9a07a','#8a6448'], 3, 'ch'],
   // --- 和菓子。あんこ色・もち色など、その和菓子の 実際の色で ---
   ['dango',    'だんご',     ['#f0e4d0','#c9e8a8','#ffc2d4'], 1,'ch'],
   ['daifuku',  'だいふく',   ['#fdfaff','#e8c2d4','#8a5a6a'], 1,'ch'],
   ['youkan',   'ようかん',   ['#5b3a4a','#8a5a6a','#3a2430'], 2,'ch'],
-  ['dorayaki', 'どらやき',   ['#e0a860','#6b4530','#c98a44'], 2,'ch'],
-  ['taiyaki',  'たいやき',   ['#e0a860','#c98a44','#6b4530'], 3,'ch'],
   // --- 洋菓子 ---
   ['candy',    'キャンディ', ['#ff8fc4','#ffd0e2','#e05f9e'], 1,'ch'],
   ['cookie',   'クッキー',   ['#e0b878','#8a5a30','#c99a52'], 1,'ch'],
@@ -6243,7 +6246,6 @@ const CREATURES = [
   ['sakuramochi','さくらもち',['#ffc2dd','#6f9e5e','#e88ab0'], 2,'ch'],
   ['monaka',   'もなか',     ['#f0e0c0','#5b3a4a','#d8c4a0'], 2,'ch'],
   ['ohagi',    'おはぎ',     ['#7a4a5e','#5b3a4a','#5b3a4a'], 3,'ch'],
-  ['kintsuba', 'きんつば',   ['#6b4458','#fff8f0','#4a2c3c'], 3,'ch'],
   ['castella', 'カステラ',   ['#ffdc94','#8a5a30','#9a5f2a'], 3,'ch'],
   ['anmitsu',  'あんみつ',   ['#8fd8c4','#5b3a4a','#5fc4a0'], 3,'ch'],
   ['popcorn',  'ポップコーン',['#fff6e0','#e8503f','#ffe8c0'], 3,'ch'],
@@ -6261,25 +6263,16 @@ const CREATURES = [
   ['mont',     'モンブラン', ['#e8b060','#e0b878','#c98a44'], 5,'ch'],
 
   // --- そら（鳥）。くちばし・とさか・尾・首の長さで 見わける ---
-  ['fowl','スズメ',    ['#b98a5a','#fff0d8','#5b4430'], 1,'ch',{key:'sparrow', mark:'belly'}],
-  ['fowl','ハト',      ['#a8b0c0','#eef0f6','#e8a0b0'], 1,'ch',{key:'dove',   tail:'fan', mark:'belly'}],
   ['fowl','ヒヨコ',    ['#ffd95e','#fff3c4','#e8a02a'], 1,'ch',{key:'chick',  slim:false}],
-  ['fowl','インコ',    ['#5fd48f','#ffd76e','#ff8f4a'], 2,'ch',{key:'parrot', crest:'spike', crestC:'#ffd76e', tail:'long'}],
-  ['fowl','ツバメ',    ['#3f4a6b','#ffffff','#e8503f'], 2,'ch',{key:'swallow',tail:'fork', slim:true, mark:'belly'}],
   ['fowl','ニワトリ',  ['#fdfaff','#e8503f','#ffb43f'], 2,'en',{key:'chicken',crest:'comb', tail:'fan'}],
   ['fowl','ハチドリ',  ['#3fc9b0','#ff8fc4','#5f8fd8'], 3,'ch',{key:'hummingbird',beak:'long', tail:'long', slim:true}],
-  ['fowl','フラミンゴ',['#ff9ec9','#ffd0e2','#2f2f3a'], 3,'ch',{key:'flamingo',dy:-0.115, neck:0.8, longLeg:true, slim:true, legC:'#e8809f'}],
   ['fowl','カモメ',    ['#fdfaff','#c8d4e0','#ffb43f'], 3,'ch',{key:'gull',   mark:'belly', markC:'rgba(200,212,224,.6)'}],
   ['fowl','ハクチョウ',['#fdfaff','#f4f7fb','#e6ecf4'], 4,'ch',{key:'swan',   neck:0.9, sneck:true, beakC:'#ff8f4a', knob:'#4a3f4a', wing:true, tail:'fan'}],
   ['fowl','フクロウ',  ['#a8845e','#e8d4bc','#ffd76e'], 4,'en',{key:'owl',    crest:'tuft', beak:'hook', mark:'belly', markC:'rgba(240,225,200,.75)'}],
-  ['fowl','ペリカン',  ['#fdfaff','#e0e6ee','#ffb43f'], 4,'ch',{key:'pelican',beak:'long', neck:0.5}],
-  ['fowl','クジャク',  ['#3f8fd8','#3fc9a8','#ffd76e'], 5,'ch',{key:'peacock',crest:'spike', crestC:'#3fc9a8', tail:'fan', neck:0.6}],
   ['fowl','ワシ',      ['#5b4030','#fdfaff','#4a3426'], 5,'en',{key:'eagle',  beak:'hook', beakC:'#ffc23f', headC:'#fdfaff', neck:0.1, legC:'#ffc23f', tail:'fan', slim:true}],
   // --- そら（むし） ---
   ['bug','テントウムシ',['#e8503f','#2f2f3a','#2f2f3a'], 1,'ch',{key:'ladybug',wing:'shell', mark:'dots', bodyC:'#2f2f3a'}],
   ['bug','ミツバチ',   ['#ffd05e','#2f2f3a','#ffd05e'], 2,'ch',{key:'bee',    wing:'clear', stripe:true, bodyC:'#ffd05e'}],
-  ['bug','トンボ',     ['#7fc4e8','#5f9ed8','#5f9ed8'], 2,'ch',{key:'dragonfly',wing:'clear', bodyC:'#5f9ed8'}],
-  ['bug','カブトムシ', ['#5b4430','#3a2c20','#3a2c20'], 4,'en',{key:'beetle', wing:'shell', horn:'beetle', bodyC:'#3a2c20'}],
 
   // --- もり／りく（4本あしの けもの）。みみ・しっぽ・はなさき・もようで 見わける ---
   ['quad','ウサギ',   ['#fdfaff','#ffe4ee','#ffc2d4'], 1,'ch',{key:'rabbit', ear:'long', tail:'puff', stout:0.92, mark:'belly'}],
@@ -6288,8 +6281,6 @@ const CREATURES = [
   ['quad','イヌ',     ['#d8a86a','#fff0d8','#8a6a4a'], 2,'ch',{key:'dog',    ear:'droop', tail:'short', snout:'long', mark:'belly'}],
   ['quad','リス',     ['#e0975a','#ffe8c8','#8a5a30'], 2,'ch',{key:'squirrel',ear:'tuftear', tail:'bushy', stout:0.9, mark:'belly'}],
   ['quad','ハリネズミ',['#d8b98a','#fff0d8','#8a6a58'],2,'ch',{key:'hedgehog',ear:'round', head:'small', snout:'long', stout:1.0, mark:'quill', markC:'#7a6350'}],
-  ['quad','キツネ',   ['#e88a4a','#fff0e0','#c05f2a'], 3,'en',{key:'fox',    ear:'point', tail:'bushy', snout:'long', mark:'belly', markC:'rgba(255,255,255,.85)'}],
-  ['quad','タヌキ',   ['#8f7a68','#f0e4d8','#4a3e34'], 3,'en',{key:'tanuki', ear:'round', tail:'bushy', mark:'belly'}],
   ['quad','アライグマ',['#98a0ac','#eef0f4','#4a5060'],3,'en',{key:'raccoon',ear:'point', tail:'bushy', mark:'spot'}],
   ['quad','コアラ',   ['#a8b0bc','#eef0f4','#7a8290'], 3,'ch',{key:'koala',  dx:-0.042, ear:'big', earIn:'rgba(255,255,255,.45)', head:'wide', nose:true, noseC:'#4a4450', tail:'short', stout:1.15, mark:'belly', markC:'rgba(245,248,252,.7)'}],
   ['quad','ヒツジ',   ['#fdf6e8','#fff9f0','#e7d3a8'], 3,'ch',{key:'sheep',  ear:'droop', horn:'cow', tail:'puff', stout:1.2}],
@@ -6300,37 +6291,28 @@ const CREATURES = [
   ['quad','パンダ',   ['#fdfaff','#2f3346','#2f3346'], 4,'ch',{key:'panda',  ear:'round', earC:'#2f3346', tail:'short', snout:'pale', stout:1.2, mark:'panda'}],
   ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'ch',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
   ['quad','ウシ',     ['#fdfaff','#2f3346','#e7d3a8'], 4,'ch',{key:'cow',    hoof:'#4a4450', ear:'droop', head:'boxy', horn:'cow', hornC:'#c9b18a', tail:'tuft', tuftC:'#2f3346', snout:'pig', snoutC:'#ffc2c8', mark:'spot', markC:'#3a3f52', stout:1.3}],
-  ['quad','カバ',     ['#b09ab8','#e4d8ea','#8a7a94'], 5,'en',{key:'hippo',  ear:'round', earK:0.6, earC:'#c9a2c9', head:'big', tail:'short', snout:'hippo', snoutC:'rgba(255,255,255,.34)', stout:1.15, flat:0.95, headOut:0.52, shortLeg:true}],
   ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'ch',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
   ['quad','クマ',     ['#8a6a4a','#e8d4bc','#5b4430'], 5,'en',{key:'bear',   ear:'round', head:'big', tail:'short', snout:'pale', snoutC:'#e8d4bc', stout:1.3, mark:'belly', markC:'rgba(232,212,188,.5)'}],
   ['quad','トラ',     ['#f0993f','#fff0d8','#2f2f3a'], 5,'en',{key:'tiger',  ear:'round', tail:'long', mark:'stripe', dark:'rgba(50,40,50,.6)'}],
   ['quad','ライオン', ['#e8b06a','#ffe0b0','#b9773a'], 6,'en',{key:'lion',   ear:'round', tail:'tuft', mane:'lion', maneC:'#c98a44', tuftC:'#c98a44'}],
   ['quad','ゾウ',     ['#9aa4b0','#e4e8ee','#7a8290'], 6,'ch',{key:'elephant',dx:-0.042, ear:'big', trunk:true, tail:'short', stout:1.35}],
 
-  ['quad','イタチ',   ['#c9a06a','#fff0d8','#8a6440'], 2,'en',{key:'weasel', ear:'round', tail:'long', snout:'long', stout:0.8, mark:'belly'}],
   ['quad','レッサーパンダ',['#d8703f','#fdfaff','#5b3420'],3,'ch',{key:'redpanda',ear:'round', tail:'bushy', snout:'pale', mark:'belly'}],
   ['quad','カワウソ', ['#a07a5e','#f0e0cc','#6b4f3a'], 3,'ch',{key:'otter',  ear:'round', head:'small', whisker:true, whiskerC:'rgba(255,255,255,.9)', tail:'long', snout:'long', stout:0.78, mark:'belly'}],
   ['quad','ナマケモノ',['#b0a48e','#e8e0d0','#7a705e'],3,'ch',{key:'sloth',  ear:'round', head:'flat', faceRing:'#e8e0d0', claw:true, clawC:'#6b5a48', tail:'short', stout:1.0}],
   ['quad','ヤギ',     ['#f0e8dc','#fff8f0','#c9b18a'], 3,'ch',{key:'goat',   ear:'droop', horn:'goat', tail:'puff', beardC:'#e0d4c0'}],
   ['quad','シマウマ', ['#fdfaff','#2f3346','#2f3346'], 4,'ch',{key:'zebra',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#2f3346', tuftC:'#2f3346', mark:'stripe', dark:'rgba(40,35,50,.75)'}],
-  ['quad','サイ',     ['#9a94a4','#e0dce6','#c9b18a'], 5,'en',{key:'rhino',  ear:'round', earC:'#c4bcd0', head:'big', horn:'rhino', hornC:'#f2e8d4', tail:'short', snout:'long', stout:1.15, flat:0.95, headOut:0.42, earK:0.65, shortLeg:true}],
   ['quad','キリン',   ['#f0c060','#fff0c8','#8a6440'], 5,'ch',{key:'giraffe',ear:'horse', head:'long', horn:'ossicone', tail:'tuft', neck:0.8, stout:0.9, mark:'spot', markC:'rgba(150,100,40,.55)', tuftC:'#8a6440'}],
   // --- そら（追加） ---
   ['fowl','アヒル',    ['#fdfaff','#f0f4f8','#ffb43f'], 1,'ch',{key:'duck',   beak:'long', mark:'belly'}],
   ['fowl','カラス',    ['#2f3346','#4a5060','#5b6180'], 2,'en',{key:'crow',   beak:'hook', tail:'fan'}],
-  ['fowl','カワセミ',  ['#3f9ed8','#ff9a4a','#2f2f3a'], 3,'ch',{key:'kingfisher',beak:'long', slim:true, mark:'belly', markC:'rgba(255,154,74,.85)'}],
-  ['fowl','キツツキ',  ['#2f3346','#fdfaff','#e8503f'], 3,'ch',{key:'woodpecker',beak:'long', crest:'comb', crestC:'#e8503f', mark:'belly'}],
-  ['fowl','ダチョウ',  ['#5b4a3e','#f0e4d8','#ffb43f'], 4,'en',{key:'ostrich',dy:-0.14, neck:0.95, longLeg:true, tail:'fan'}],
-  ['fowl','オウム',    ['#fdfaff','#ffd76e','#3f4a6b'], 4,'ch',{key:'cockatoo',crest:'spike', crestC:'#ffd76e', beak:'hook', tail:'long'}],
 
   // --- 人のキャラ。ぼうし・マント・ドレスまで つくって その役らしくする ---
   ['slime',    'スライム',   ['#8fe3c4','#d8fff0','#5fc4a0'], 1,'en'],
   ['ghost',    'おばけ',     ['#e8e4f0','#fdfaff','#b0a8c0'], 2,'en'],
-  ['hero','にんじゃ',  ['#3f4458','#6b7288','#2f3346'], 3,'en',{key:'ninja',  mask:true, maskC:'#3f4458', legC:'#3f4458', sash:'#c85a5a', shoeC:'#2f3346'}],
   ['hero','てんし',    ['#fdfaff','#ffe27a','#f0c46a'], 4,'ch',{key:'angel',  robe:true, wing:'angel', halo:true, hair:'#f0c46a', longHair:true, legC:'#fdfaff', shoeC:'#e8d4a8'}],
   ['hero','あくま',    ['#8a3a5e','#c9506a','#6b3a5a'], 4,'en',{key:'devil',  wing:'bat', horns:true, hair:'#3a2430', legC:'#8a3a5e', shoeC:'#4a1f34'}],
   ['hero','にんぎょ',  ['#ff9ec9','#8fd8f0','#f0c46a'], 4,'ch',{key:'mermaid',tail:'fish', hair:'#f0c46a', longHair:true}],
-  ['robot',    'ロボット',   ['#a8b0c0','#8fe3c4','#ffd76e'], 5,'en'],
   ['golem',    'ゴーレム',   ['#8a8296','#c0b8cc','#6b6478'], 6,'en'],
   ['hero','まほうつかい',['#3f5a8a','#5f7ab0','#e8e4f0'],6,'ch',{key:'wizard', dy:0.018, robe:true, hat:'wizard', hatC:'#3f5a8a', beard:'#e8e4f0', staff:true, staffC:'#8a6440', gemC:'#8fe3c4', legC:'#3f5a8a'}],
   ['hero','ゆきのじょおう',['#cfeaff','#fdfaff','#8fd8f0'],6,'en',{key:'snowqueen',robe:true, hat:'ice', hair:'#dff0ff', longHair:true, legC:'#cfeaff', shoeC:'#a8d4ea'}],
@@ -6343,18 +6325,19 @@ const CREATURES = [
    ここだけ 実際の色の きまりから 外れて、7色に かがやく */
 /* にじいろ版を もつ子。ここだけ 実際の色の きまりから 外れて、
    7色に かがやく とくべつな すがたになる。
-   あわせて ちょうど200体に なるように えらんである */
+   キャラを けずったら ここも 見なおすこと（消えた子の キーが のこっていても
+   buildRoster が 読みとばすので、気づかないまま になりやすい）*/
 const RAINBOW_OF = [
   // ゆめの子（にじいろが いちばん似あう）
-  'unicorn','pegasus','fairy','butterfly','dragon','phoenix','griffin',
+  'unicorn','fairy','butterfly','dragon',
   'witch','princess','prince','angel','devil','mermaid','wizard','snowqueen',
-  'ninja','ghost','slime','golem','robot',
+  'ghost','slime','golem',
   // うみ
   'orca','dolphin','whale','manta','jelly','starfish','seahorse','clownfish',
   'penguin','octopus','seal','shark','crab','turtle',
   // りく・そら
   'lion','elephant','tiger','panda','giraffe','zebra','rabbit','cat',
-  'peacock','swan','flamingo','owl','hummingbird','bird',
+  'swan','owl','hummingbird',
   'ladybug','bee',
   // お菓子
   'watame','wedding','tower','macaron','cake','parfait','star','kakigori',
@@ -6410,12 +6393,11 @@ function buildRoster(){
                // からだが こい子は かおまわりを 明るくする
                // からだが こい子は かおまわりを 明るくする（でないと 目が しずむ）
                fbg: ['orca','dragon','butterfly','penguin','manta','clownfish',
-                     'ohagi','kintsuba','youkan','ghost','golem'].includes(body)
-                    || (opt && ['ladybug','beetle','swallow','peacock','tiger','panda','wolf',
-                                'raccoon','bear','tanuki','owl','eagle','chicken',
-                                'crow','zebra','ostrich','woodpecker','weasel',
-                                'ninja','devil','wizard','griffin'].includes(opt.key))
-                    || ['golem','robot'].includes(body),
+                     'ohagi','youkan','ghost','golem'].includes(body)
+                    || (opt && ['ladybug','tiger','panda','wolf',
+                                'raccoon','bear','owl','eagle','chicken',
+                                'crow','zebra','devil','wizard'].includes(opt.key))
+                    || ['golem'].includes(body),
                mood: side === 'en' ? 'naughty' : 'smile',
                cells: lv >= 7 ? 4 : lv >= 5 ? 2 : 1 });
   }
@@ -7363,7 +7345,7 @@ function dexList(){
     })),
   ];
 }
-/* 200体は つくるのに 少し時間がかかるので、1回だけ 作って ためておく */
+/* ぜんぶ つくるのに 少し時間がかかるので、1回だけ 作って ためておく */
 const GEN_LIST = buildRoster();
 const GEN_BY_ID = Object.fromEntries(GEN_LIST.map(o => [o.id, o]));
 
@@ -7387,7 +7369,7 @@ function genSprite(o, px){
 }
 
 /* なかま（コレクションの味方）を おかしと おなじ「タワー」に する。
-   152体ぶんの つよさを 手で 書くと 調整できなくなるので、
+   130体ぶんの つよさを 手で 書くと 調整できなくなるので、
    ★の高さから 計算し、attack の くせだけ 4つの型から えらぶ。
    こうすると 置く・つよくする・売る・たまを とばす しくみは そのまま つかえる */
 const ALLY_ARCH = ['candy','ice','choco','star'];
@@ -7453,7 +7435,7 @@ function genThumb(o, size){
   g.setTransform(dpr,0,0,dpr,0,0); drawGenFx(g, size, o);
   return c;
 }
-/* 200体ぶんを いちどに えがくと 開くたびに かたまるので、
+/* ぜんぶを いちどに えがくと 開くたびに かたまるので、
    スクロールで 見えたものから えがく */
 let colIo = null;
 function lazyThumb(o, size){
@@ -9165,7 +9147,7 @@ let pendingComplete = false;
 function checkComplete(){
   try{ if (localStorage.getItem('sweetTD.done')) return; }catch(e){ return; }
   // 「おかしの国 かんせい」は もとからの カードを ぜんぶ そろえたとき。
-  // 200体の コレクションまで 入れると 一生 出なくなるので、そちらは 別あつかいにする
+  // コレクションまで 入れると 一生 出なくなるので、そちらは 別あつかいにする
   if (!dexList().every(o => o.gen || dex[o.id])) return;
   try{ localStorage.setItem('sweetTD.done', dateStr()); }catch(e){}
   pendingComplete = true;   // 実際の表示は、ウェーブや他の画面が落ちついてから
