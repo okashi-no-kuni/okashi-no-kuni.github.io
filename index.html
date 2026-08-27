@@ -4127,30 +4127,35 @@ const GBODY = {
     const o = (rc && rc.opt) || {};
     const limb = o.limbC || c;
     const hy = y - r*0.52, hr = r*0.74;           // あたま：大きめ（正面の かわいさは 頭の大きさで 決まる）
+    /* 白い子は うすい背景に とけて、かたちが 見えなくなる。
+       細い線で ふちどる。線は かさなった ところにも 引かれるが、
+       手足が こい色なら 見えないので そのままで よい */
+    const line = o.line;
+    const edge = () => { if (line){ g.strokeStyle = line; g.lineWidth = r*0.035; g.stroke(); } };
     g.fillStyle = limb;                           // あし
     for (const s2 of [-1,1]){
-      g.beginPath(); g.ellipse(x+s2*r*0.3, y+r*1.06, r*0.27, r*0.19, 0, 0, GTAU); g.fill();
+      g.beginPath(); g.ellipse(x+s2*r*0.3, y+r*1.06, r*0.27, r*0.19, 0, 0, GTAU); g.fill(); edge();
     }
     g.fillStyle = limb;                           // うで：からだの ふちより 外に 出して 見えるように
     for (const s2 of [-1,1]){
-      g.beginPath(); g.ellipse(x+s2*r*0.62, y+r*0.62, r*0.18, r*0.32, s2*0.55, 0, GTAU); g.fill();
+      g.beginPath(); g.ellipse(x+s2*r*0.62, y+r*0.62, r*0.18, r*0.32, s2*0.55, 0, GTAU); g.fill(); edge();
     }
     g.fillStyle = c;                              // からだ：頭より 小さく
-    g.beginPath(); g.ellipse(x, y+r*0.6, r*0.5, r*0.5, 0, 0, GTAU); g.fill();
+    g.beginPath(); g.ellipse(x, y+r*0.6, r*0.5, r*0.5, 0, 0, GTAU); g.fill(); edge();
     if (o.belly){
       g.fillStyle = o.belly;
       g.beginPath(); g.ellipse(x, y+r*0.66, r*0.3, r*0.34, 0, 0, GTAU); g.fill();
     }
     g.fillStyle = o.earOut || c;                  // みみ
     for (const s2 of [-1,1]){
-      g.beginPath(); g.arc(x+s2*r*0.56, hy-r*0.52, r*0.27, 0, GTAU); g.fill();
+      g.beginPath(); g.arc(x+s2*r*0.56, hy-r*0.52, r*0.27, 0, GTAU); g.fill(); edge();
     }
     g.fillStyle = o.earC || '#ffc2d4';
     for (const s2 of [-1,1]){
       g.beginPath(); g.ellipse(x+s2*r*0.59, hy-r*0.52, r*0.14, r*0.17, s2*0.4, 0, GTAU); g.fill();
     }
     g.fillStyle = c;                              // あたま
-    g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
+    g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill(); edge();
     if (o.patch){                                 // パンダの 目のまわり
       g.fillStyle = o.patchC || c2;
       for (const s2 of [-1,1]){
@@ -6388,7 +6393,7 @@ const CREATURES = [
   ['quad','サル',     ['#c98f66','#ffe0c8','#8a6440'], 3,'en',{key:'monkey', ear:'round', head:'round', tail:'long', faceRing:'#ffe0c8', stout:0.9}],
   ['quad','シカ',     ['#c9955e','#fff0d8','#8a6440'], 4,'en',{key:'deer',   ear:'horse', head:'long', horn:'antler', tail:'puff', mark:'spot'}],
   ['quad','オオカミ', ['#8a92a4','#eef2f8','#4a5060'], 4,'en',{key:'wolf',   ear:'point', head:'long', ruff:true, ruffC:'#b0b8c8', tail:'bushy', snout:'long', stout:0.92, mark:'belly'}],
-  ['teddy','パンダ',  ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'panda',  earOut:'#2f3346', earC:'#5b6072', limbC:'#2f3346', patch:true, patchC:'#2f3346', snoutC:'#fdfaff', noseC:'#2f3346'}],
+  ['teddy','パンダ',  ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'panda',  earOut:'#2f3346', earC:'#5b6072', limbC:'#2f3346', patch:true, patchC:'#2f3346', snoutC:'#fdfaff', noseC:'#2f3346', line:'#2f3346'}],
   ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'en',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
   ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'en',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
   ['teddy','クマ',    ['#b99372','#f0e2c8','#8a6a4a'], 5,'en',{key:'bear',   earC:'#ffc2d4', snoutC:'#f6e8b8', noseC:'#3a2c38', belly:'rgba(240,226,200,.45)'}],
