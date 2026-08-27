@@ -4127,6 +4127,17 @@ const GBODY = {
     const o = (rc && rc.opt) || {};
     const limb = o.limbC || c;
     const hy = y - r*0.52, hr = r*0.74;           // あたま：大きめ（正面の かわいさは 頭の大きさで 決まる）
+    const ear = o.ear || 'round';
+    /* もこもこ。まるを ふちに ならべて シルエットそのものを ぎざぎざに する。
+       上から もようを のせる やりかたでは、小さくしたとき ただの まるに 見える */
+    const fluff = (cx, cy, rad, n, br) => {
+      g.beginPath();
+      for (let i=0;i<n;i++){
+        const a = GTAU*i/n, px = cx+Math.cos(a)*rad, py = cy+Math.sin(a)*rad;
+        g.moveTo(px+br, py); g.arc(px, py, br, 0, GTAU);
+      }
+      g.fill();
+    };
     g.fillStyle = limb;                           // あし
     for (const s2 of [-1,1]){
       g.beginPath(); g.ellipse(x+s2*r*0.3, y+r*1.06, r*0.27, r*0.19, 0, 0, GTAU); g.fill();
@@ -4137,25 +4148,68 @@ const GBODY = {
     }
     g.fillStyle = c;                              // からだ：頭より 小さく
     g.beginPath(); g.ellipse(x, y+r*0.6, r*0.5, r*0.5, 0, 0, GTAU); g.fill();
+    if (o.wool){ g.fillStyle = o.wool; fluff(x, y+r*0.6, r*0.42, 9, r*0.19); }
     if (o.belly){
       g.fillStyle = o.belly;
       g.beginPath(); g.ellipse(x, y+r*0.66, r*0.3, r*0.34, 0, 0, GTAU); g.fill();
     }
-    g.fillStyle = o.earOut || c;                  // みみ
-    for (const s2 of [-1,1]){
-      g.beginPath(); g.arc(x+s2*r*0.56, hy-r*0.52, r*0.27, 0, GTAU); g.fill();
-    }
-    g.fillStyle = o.earC || '#ffc2d4';
-    for (const s2 of [-1,1]){
-      g.beginPath(); g.ellipse(x+s2*r*0.59, hy-r*0.52, r*0.14, r*0.17, s2*0.4, 0, GTAU); g.fill();
+    // みみ。かたちだけで どの子か わかるように、まる／ながい／たれる を 分ける
+    if (ear === 'long'){                          // ウサギ
+      for (const s2 of [-1,1]){
+        g.save(); g.translate(x+s2*r*0.3, hy-r*0.66); g.rotate(s2*0.15);
+        g.fillStyle = o.earOut || c;
+        g.beginPath(); g.ellipse(0, 0, r*0.16, r*0.5, 0, 0, GTAU); g.fill();
+        g.fillStyle = o.earC || '#ffc2d4';
+        g.beginPath(); g.ellipse(0, r*0.03, r*0.085, r*0.38, 0, 0, GTAU); g.fill();
+        g.restore();
+      }
+    } else if (ear === 'droop'){                  // ヒツジ：よこに たれる
+      for (const s2 of [-1,1]){
+        g.save(); g.translate(x+s2*r*0.8, hy+r*0.22); g.rotate(s2*0.42);
+        g.fillStyle = o.earOut || c;
+        g.beginPath(); g.ellipse(0, 0, r*0.27, r*0.13, 0, 0, GTAU); g.fill();
+        g.fillStyle = o.earC || '#ffc2d4';
+        g.beginPath(); g.ellipse(s2*r*0.03, 0, r*0.17, r*0.07, 0, 0, GTAU); g.fill();
+        g.restore();
+      }
+    } else {
+      g.fillStyle = o.earOut || c;
+      for (const s2 of [-1,1]){
+        g.beginPath(); g.arc(x+s2*r*0.56, hy-r*0.52, r*0.27, 0, GTAU); g.fill();
+      }
+      g.fillStyle = o.earC || '#ffc2d4';
+      for (const s2 of [-1,1]){
+        g.beginPath(); g.ellipse(x+s2*r*0.59, hy-r*0.52, r*0.14, r*0.17, s2*0.4, 0, GTAU); g.fill();
+      }
     }
     g.fillStyle = c;                              // あたま
     g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
+    if (o.wool){ g.fillStyle = o.wool; fluff(x, hy, hr*0.86, 11, r*0.2); }
+    if (o.horn === 'spiral'){                     // ヒツジの まきづの
+      // **もこもこの あとに** えがく。うしろへ まわすと まきの 内がわが 毛に かくれて、
+      // ただの かぎ に 見えてしまう
+      g.strokeStyle = o.hornC || '#f0c351'; g.lineWidth = r*0.12; g.lineCap = 'round';
+      for (const s2 of [-1,1]){
+        g.beginPath();
+        for (let i=0;i<=28;i++){
+          // 左右は **横だけ** うつす。角度ごと 反転すると 上下が ひっくり返って、
+          // 片がわだけ 下むきの つのに なってしまう
+          const t2 = i/28, a = -1.6 + t2*6.0, rad = r*(0.32 - t2*0.19);
+          const px = x + s2*(r*0.7 + Math.cos(a)*rad), py = hy - r*0.3 + Math.sin(a)*rad;
+          i ? g.lineTo(px, py) : g.moveTo(px, py);
+        }
+        g.stroke();
+      }
+    }
     if (o.patch){                                 // パンダの 目のまわり
       g.fillStyle = o.patchC || c2;
       for (const s2 of [-1,1]){
         g.beginPath(); g.ellipse(x+s2*r*0.25, y-r*0.585, r*0.2, r*0.19, s2*0.3, 0, GTAU); g.fill();
       }
+    }
+    if (o.face){                                  // ヒツジ：もこもこの 中の すべすべの かお
+      g.fillStyle = o.face;
+      g.beginPath(); g.ellipse(x, y-r*0.47, r*0.46, r*0.42, 0, 0, GTAU); g.fill();
     }
     // 口もとの まるは おかない。この かおは 目と口の あいだが せまいので、
     // まるを おくと 目まで のみこんで しまう。はなだけ 入れる
@@ -5075,7 +5129,13 @@ const GBODY = {
     }
   },
 
-  ghost: (g,S,x,y,r,c,m,c2) => {                      // おばけ
+  ghost: (g,S,x,y,r,c,m,c2,rc) => {                   // おばけ
+    g.fillStyle = c;
+    // ちいさな て。まるい 胴だけだと ただの ふきだしに 見えるので、
+    // 左右に 出して 「おばけ」の かたちに する
+    for (const s2 of [-1,1]){
+      g.beginPath(); g.ellipse(x+s2*r*0.96, y-r*0.08, r*0.2, r*0.16, s2*0.35, 0, GTAU); g.fill();
+    }
     g.fillStyle = c;
     g.beginPath();
     g.moveTo(x-r*0.86,y+r*0.9);
@@ -6401,12 +6461,12 @@ const CREATURES = [
   ['bug','ミツバチ',   ['#ffd05e','#2f2f3a','#ffd05e'], 2,'en',{key:'bee',    wing:'clear', stripe:true, bodyC:'#ffd05e'}],
 
   // --- もり／りく（4本あしの けもの）。みみ・しっぽ・はなさき・もようで 見わける ---
-  ['quad','ウサギ',   ['#fdfaff','#ffe4ee','#ffc2d4'], 1,'en',{key:'rabbit', ear:'long', tail:'puff', stout:0.92, mark:'belly', line:'#e0a0bc'}],
+  ['teddy','ウサギ',  ['#ffc9dd','#ffe4ee','#ff9dc0'], 1,'en',{key:'rabbit', ear:'long', earC:'#ef7ba6', noseC:'#8f5563', belly:'rgba(255,246,250,.5)', sc:0.94, line:'#e07fa8'}],
   ['quad','ネズミ',   ['#b8bcc8','#eef0f4','#ffc2d4'], 1,'en',{key:'mouse',  ear:'round', tail:'long', stout:0.85, mark:'belly'}],
   ['quad','リス',     ['#e0975a','#ffe8c8','#8a5a30'], 2,'en',{key:'squirrel',ear:'tuftear', tail:'bushy', stout:0.9, mark:'belly'}],
   ['quad','ハリネズミ',['#d8b98a','#fff0d8','#8a6a58'],2,'en',{key:'hedgehog',ear:'round', head:'small', snout:'long', stout:1.0, mark:'quill', markC:'#7a6350'}],
   ['quad','コアラ',   ['#a8b0bc','#eef0f4','#7a8290'], 3,'en',{key:'koala',  dx:-0.042, ear:'big', earIn:'rgba(255,255,255,.45)', head:'wide', nose:true, noseC:'#4a4450', tail:'short', stout:1.15, mark:'belly', markC:'rgba(245,248,252,.7)'}],
-  ['quad','ヒツジ',   ['#fdf6e8','#fff9f0','#e7d3a8'], 3,'en',{key:'sheep',  ear:'droop', horn:'cow', tail:'puff', stout:1.2, line:'#c9ac78'}],
+  ['teddy','ヒツジ',  ['#fdf6e8','#fff9f0','#e7d3a8'], 3,'en',{key:'sheep', ear:'droop', earOut:'#e8cfa4', earC:'#c9a97e', wool:'#fffaf0', face:'#f0dcb8', horn:'spiral', hornC:'#f0c351', limbC:'#e8cfa4', noseC:'#7a5a44', line:'#9a7448'}],
   ['quad','ブタ',     ['#ffb3c8','#ffd8e4','#e88aa0'], 3,'en',{key:'pig',    ear:'pigflop', head:'wide', tail:'curl', snout:'pig', stout:1.1, flat:1.05, headOut:0.34, shortLeg:true, hoof:'#c9708f'}],
   ['quad','サル',     ['#c98f66','#ffe0c8','#8a6440'], 3,'en',{key:'monkey', ear:'round', head:'round', tail:'long', faceRing:'#ffe0c8', stout:0.9}],
   ['quad','シカ',     ['#c9955e','#fff0d8','#8a6440'], 4,'en',{key:'deer',   ear:'horse', head:'long', horn:'antler', tail:'puff', mark:'spot'}],
@@ -6426,7 +6486,7 @@ const CREATURES = [
 
   // --- 人のキャラ。ぼうし・マント・ドレスまで つくって その役らしくする ---
   ['slime',    'スライム',   ['#8fe3c4','#d8fff0','#5fc4a0'], 1,'en'],
-  ['ghost',    'おばけ',     ['#e8e4f0','#fdfaff','#b0a8c0'], 2,'en'],
+  ['ghost',    'おばけ',     ['#fdfaff','#f6f1fc','#efe8f8'], 2,'en',{key:'ghost', line:'#a396c2'}],
   ['hero','てんし',    ['#fdfaff','#ffe27a','#f0c46a'], 4,'ch',{key:'angel',  robe:true, wing:'angel', halo:true, hair:'#f0c46a', longHair:true, legC:'#fdfaff', shoeC:'#e8d4a8'}],
   ['hero','あくま',    ['#8a3a5e','#c9506a','#6b3a5a'], 4,'en',{key:'devil',  wing:'bat', horns:true, hair:'#3a2430', legC:'#8a3a5e', shoeC:'#4a1f34'}],
   ['hero','にんぎょ',  ['#ff9ec9','#8fd8f0','#f0c46a'], 4,'ch',{key:'mermaid',tail:'fish', hair:'#f0c46a', longHair:true}],
@@ -6498,7 +6558,7 @@ function buildRoster(){
                // からだが こい子は かおまわりを 明るくする
                // からだが こい子は かおまわりを 明るくする（でないと 目が しずむ）
                fbg: ['orca','butterfly','penguin','manta','clownfish',
-                     'ohagi','youkan','ghost','golem'].includes(body)
+                     'ohagi','youkan','golem'].includes(body)
                     || (opt && ['ladybug','tiger','wolf',
                                 'owl','eagle','zebra','devil','wizard'].includes(opt.key))
                     || ['golem'].includes(body),
