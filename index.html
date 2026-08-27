@@ -5132,44 +5132,38 @@ const GBODY = {
   ghost: (g,S,x,y,r,c,m,c2,rc) => {                   // おばけ
     const o = (rc && rc.opt) || {};
     // 左右対称の すそだと「ふきだし」に 見える。
-    // からだは たまご型、下は **右がわ だけ** ひらひらと ながれる 形に する。
-    // しっぽは 太い線で 引く。ふちを 上下 2本 引くと 太さが そろわない
+    // からだは まめ型、下は **右がわ だけ** ひらひらと ながれる 形に する。
+    // しっぽは 胴と ひとつづきの 線で 描く。太い線で 引くと ずんぐりして、
+    // 胴に くっつけた べつの ものに 見えてしまう
+    const P = (px,py) => [x+r*px, y+r*py];
+    const bz = (c1x,c1y,c2x,c2y,ex,ey) =>
+      g.bezierCurveTo(x+r*c1x, y+r*c1y, x+r*c2x, y+r*c2y, x+r*ex, y+r*ey);
     g.fillStyle = c;
-    g.save(); g.translate(x-r*0.82, y+r*0.1); g.rotate(0.35);   // 左の て
-    g.beginPath(); gRR(g, -r*0.18, -r*0.16, r*0.32, r*0.36, r*0.14); g.fill();
+    g.save(); g.translate(x-r*0.86, y+r*0.06); g.rotate(0.3);   // 左の て
+    g.beginPath(); gRR(g, -r*0.2, -r*0.16, r*0.34, r*0.36, r*0.14); g.fill();
     g.restore();
-    // しっぽは 太い線で 引く。ふちを 上下 2本 引くと 太さが そろわない。
-    // つけねは 胴と おなじ太さ、先へ ゆくほど 細く する。細さを 段で 変えると
-    // 肩が 出るので、細かく 切って 1本ずつ 太さを 変えながら つなぐ。
-    // 波の 高さは 太さの 1.5倍 いる。おなじだと 太さに のまれて ただの ぼうに 見える
-    const TAIL = [[0.06,0.46, 0.50,0.50, 0.50,0.82, 0.84,0.80],
-                  [0.84,0.80, 1.08,0.78, 0.94,0.32, 1.16,0.34],
-                  [1.16,0.34, 1.34,0.36, 1.40,0.62, 1.30,0.78]];
-    const bpt = (a,t) => { const u = 1-t; return [
-      u*u*u*a[0] + 3*u*u*t*a[2] + 3*u*t*t*a[4] + t*t*t*a[6],
-      u*u*u*a[1] + 3*u*u*t*a[3] + 3*u*t*t*a[5] + t*t*t*a[7]]; };
-    g.strokeStyle = c; g.lineCap = 'round';
-    let pv = bpt(TAIL[0], 0);
-    for (let i=1;i<=36;i++){
-      const f = i/36, k = f*TAIL.length, si = Math.min(TAIL.length-1, Math.floor(k));
-      const pn = bpt(TAIL[si], k-si);
-      g.lineWidth = r*(0.58 + (0.2-0.58)*f);
-      g.beginPath();
-      g.moveTo(x+r*pv[0], y+r*pv[1]); g.lineTo(x+r*pn[0], y+r*pn[1]); g.stroke();
-      pv = pn;
-    }
-    g.beginPath();                                     // からだ：すこし かたむけた たまご
-    g.ellipse(x-r*0.06, y-r*0.12, r*0.74, r*1.0, -0.06, 0, GTAU);
-    g.fill();
+    g.beginPath();
+    g.moveTo(...P(-0.12, -1.15));
+    bz( 0.62,-1.12,  0.86,-0.6,   0.8, -0.05);      // 右がわ
+    bz( 0.78, 0.26,  0.72, 0.4,   0.62, 0.52);
+    bz( 0.86, 0.28,  1.12, 0.3,   1.18, 0.56);      // しっぽ：うわがわ
+    bz( 1.24, 0.76,  1.32, 0.78,  1.4,  0.62);      // 先の くるん
+    bz( 1.5,  0.88,  1.3,  1.02,  1.14, 0.86);
+    bz( 1.04, 0.74,  1.0,  0.72,  0.94, 0.82);      // しっぽ：したがわ
+    bz( 0.86, 0.96,  0.7,  1.0,   0.5,  0.96);
+    bz( 0.2,  1.14, -0.28, 1.14, -0.5,  0.9);       // したの まるみ
+    bz(-0.78, 0.66, -0.86, 0.3,  -0.84,-0.1);       // 左がわ
+    bz(-0.82,-0.62, -0.6, -1.12, -0.12,-1.15);
+    g.closePath(); g.fill();
     // 手前の うで。ふちどりは シルエットにしか つかないので、ここだけ 線で 描く
     g.strokeStyle = o.line || 'rgba(120,100,140,.5)';
     g.lineWidth = r*0.07; g.lineCap = 'round';
     g.beginPath();
-    g.moveTo(x+r*0.3, y-r*0.12);
-    g.bezierCurveTo(x-r*0.04, y+r*0.08, x-r*0.06, y+r*0.44, x+r*0.2, y+r*0.36);
+    g.moveTo(...P(0.28,-0.2));
+    g.bezierCurveTo(x-r*0.1, y+r*0.0, x-r*0.12, y+r*0.34, x+r*0.16, y+r*0.28);
     g.stroke();
     g.fillStyle = c2 || 'rgba(255,255,255,.5)';
-    g.beginPath(); g.ellipse(x-r*0.4,y-r*0.72,r*0.24,r*0.14,-0.4,0,GTAU); g.fill();
+    g.beginPath(); g.ellipse(x-r*0.42,y-r*0.66,r*0.24,r*0.14,-0.4,0,GTAU); g.fill();
   },
 
   slime: (g,S,x,y,r,c,m,c2) => {                      // スライム
@@ -6251,7 +6245,7 @@ const GFR = { orca:0.42, dolphin:0.38, turtle:0.4, bird:0.56, dragon:0.38,
               jelly:0.5, starfish:0.5, clownfish:0.34, hermit:0.3, seahorse:0.24, crab:0.5,
               penguin:0.4, octopus:0.56, seal:0.4, shark:0.34, manta:0.36, whale:0.4,
               quad:0.36, fowl:0.3, bug:0.26, kanga:0.3, teddy:0.6,
-              hero:0.32, ghost:0.5, slime:0.48, golem:0.5, robot:0.36,
+              hero:0.32, ghost:0.42, slime:0.48, golem:0.5, robot:0.36,
               cupcake:0.34, tart:0.34, eclair:0.34, cream:0.4, roll:0.34, baum:0.3,
               mont:0.34, mille:0.32, waffle:0.42, pancake:0.34, pretzel:0.3, churro:0.3,
               popcorn:0.3, marshmallow:0.44, gummy:0.28, jelly2:0.36, monaka:0.36,
@@ -6511,7 +6505,7 @@ const CREATURES = [
 
   // --- 人のキャラ。ぼうし・マント・ドレスまで つくって その役らしくする ---
   ['slime',    'スライム',   ['#8fe3c4','#d8fff0','#5fc4a0'], 1,'en'],
-  ['ghost',    'おばけ',     ['#fdfaff','#f6f1fc','#efe8f8'], 2,'en',{key:'ghost', line:'#a396c2', dx:-0.05}],
+  ['ghost',    'おばけ',     ['#fdfaff','#f6f1fc','#efe8f8'], 2,'en',{key:'ghost', line:'#a396c2'}],
   ['hero','てんし',    ['#fdfaff','#ffe27a','#f0c46a'], 4,'ch',{key:'angel',  robe:true, wing:'angel', halo:true, hair:'#f0c46a', longHair:true, legC:'#fdfaff', shoeC:'#e8d4a8'}],
   ['hero','あくま',    ['#8a3a5e','#c9506a','#6b3a5a'], 4,'en',{key:'devil',  wing:'bat', horns:true, hair:'#3a2430', legC:'#8a3a5e', shoeC:'#4a1f34'}],
   ['hero','にんぎょ',  ['#ff9ec9','#8fd8f0','#f0c46a'], 4,'ch',{key:'mermaid',tail:'fish', hair:'#f0c46a', longHair:true}],
