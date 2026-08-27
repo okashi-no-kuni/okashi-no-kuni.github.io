@@ -1707,7 +1707,7 @@ function buildShop(){
     };
     shopEl.append(d);
   }
-  // 5つめは なかまえらびの 入り口。118体を バーに ならべるのは むりなので 別画面にする
+  // 5つめは なかまえらびの 入り口。77体を バーに ならべるのは むりなので 別画面にする
   const pk = document.createElement('div');
   pk.className = 'tw';
   pk.dataset.k = '__pick';
@@ -2274,7 +2274,7 @@ function avFromLink(){
 }
 
 /* ---------- なかまえらび ----------
-   なかまは 118体いるので 買いものバーには のらない。★べつの 別画面から えらぶ。
+   なかまは 77体いるので 買いものバーには のらない。★べつの 別画面から えらぶ。
    えらぶと ふつうの おかしと おなじように ばんめんに おける */
 const pickOv = $('pickOv'), pickGrid = $('pickGrid'), pickTabs = $('pickTabs'), pickHint = $('pickHint');
 let pickLv = 1, pickIo = null;
@@ -6191,29 +6191,33 @@ function drawGenFx(g, S, rc){
    色は その生きもの じたいの色を 基調にする（シャチなら 黒と白）。
    にじいろ版だけは 例外で、7色に かがやく とくべつな すがた。
    ========================================================== */
+/* side は 'ch'（なかま）か 'en'（てき）。
+   なかまに するのは お菓子・人・ユニコーン・天使・人魚・魔法使い・妖精と、
+   シャチ・イルカ・クジラ。それ以外の いきものは ぜんぶ てき。
+   ここを 変えると かおつき（mood）も いっしょに 変わる */
 const CREATURES = [
   // [部品, 名まえ, [おもな色, そえ色, かざり色], レベル, てき/なかま, こまかい指定]
   // --- うみ（レベルの低い子から） ---
-  ['jelly',    'クラゲ',     ['#ffd6ec','#ffc2e0','#ffe8f4'], 1, 'ch'],
-  ['starfish', 'ヒトデ',     ['#ff9a6b','#ffd0b8','#e87a4a'], 1, 'ch'],
-  ['clownfish','カクレクマノミ',['#ff8c3a','#ffffff','#2f2f3a'], 2, 'ch'],
-  ['hermit',   'ヤドカリ',   ['#d8b98a','#ff8a6b','#b99a6a'], 2, 'ch'],
-  ['seahorse', 'タツノオトシゴ',['#ffc46b','#ffb43f','#e8a02a'], 3, 'ch'],
+  ['jelly',    'クラゲ',     ['#ffd6ec','#ffc2e0','#ffe8f4'], 1, 'en'],
+  ['starfish', 'ヒトデ',     ['#ff9a6b','#ffd0b8','#e87a4a'], 1, 'en'],
+  ['clownfish','カクレクマノミ',['#ff8c3a','#ffffff','#2f2f3a'], 2, 'en'],
+  ['hermit',   'ヤドカリ',   ['#d8b98a','#ff8a6b','#b99a6a'], 2, 'en'],
+  ['seahorse', 'タツノオトシゴ',['#ffc46b','#ffb43f','#e8a02a'], 3, 'en'],
   ['crab',     'カニ',       ['#e8603f','#ffb3a0','#c44a2e'], 3, 'en'],
-  ['penguin',  'ペンギン',   ['#2f3346','#ffffff','#ffb43f'], 4, 'ch'],
+  ['penguin',  'ペンギン',   ['#2f3346','#ffffff','#ffb43f'], 4, 'en'],
   ['octopus',  'タコ',       ['#d4657f','#f0b0c0','#b34a64'], 4, 'en'],
   ['dolphin',  'イルカ',     ['#8fa8c2','#eef4f8','#6d87a3'], 4, 'ch'],
   ['orca',     'シャチ',     ['#2f3346','#ffffff','#5b6180'], 5, 'ch'],
-  ['seal',     'アザラシ',   ['#b8c4cf','#eef4f8','#94a2b0'], 5, 'ch'],
+  ['seal',     'アザラシ',   ['#b8c4cf','#eef4f8','#94a2b0'], 5, 'en'],
   ['shark',    'サメ',       ['#7f97ad','#eef4f8','#5f7488'], 5, 'en'],
-  ['manta',    'マンタ',     ['#4a5f7a','#eef4f8','#33465e'], 6, 'ch'],
+  ['manta',    'マンタ',     ['#4a5f7a','#eef4f8','#33465e'], 6, 'en'],
   ['whale',    'クジラ',     ['#6b87a8','#cfe6ff','#4f6a88'], 6, 'ch'],
   // --- りくの生きもの ---
-  ['turtle',   'カメ',       ['#7aa864','#cdbb8e','#5e8a4c'], 3, 'ch'],
+  ['turtle',   'カメ',       ['#7aa864','#cdbb8e','#5e8a4c'], 3, 'en'],
   // --- ゆめの生きもの ---
   ['unicorn',  'ユニコーン', ['#fdfaff','#c9a7ff','#ffd76e'], 6, 'ch',{dy:0.065}],
   ['fairy',    'ようせい',   ['#ffb3d4','#ffd9ea','#d8a860'], 5, 'ch'],
-  ['butterfly','ちょうちょ', ['#a88060','#c9a07a','#8a6448'], 3, 'ch'],
+  ['butterfly','ちょうちょ', ['#a88060','#c9a07a','#8a6448'], 3, 'en'],
   // --- 和菓子。あんこ色・もち色など、その和菓子の 実際の色で ---
   ['dango',    'だんご',     ['#f0e4d0','#c9e8a8','#ffc2d4'], 1,'ch'],
   ['daifuku',  'だいふく',   ['#fdfaff','#e8c2d4','#8a5a6a'], 1,'ch'],
@@ -6229,7 +6233,7 @@ const CREATURES = [
   ['icecream', 'アイス',     ['#8fd8f0','#e8b979','#5fb4d8'], 3,'ch'],
   ['soft',     'ソフトクリーム',['#fff0d8','#e8b979','#ffd9a8'],3,'ch'],
   ['kakigori', 'かきごおり', ['#7fd4f0','#eef8ff','#4fb0d8'], 3,'ch'],
-  ['choco',    'チョコ',     ['#8f5730','#c98a54','#6b3d20'], 3,'en'],
+  ['choco',    'チョコ',     ['#8f5730','#c98a54','#6b3d20'], 3,'ch'],
   ['cake',     'ショートケーキ',['#fff4ee','#ff8fa8','#ffd0d8'],4,'ch'],
   ['parfait',  'パフェ',     ['#ffb3c8','#fff0f4','#8fd8c4'], 4,'ch'],
   ['tower',    'マカロンタワー',['#ffc2dd','#c9a7ff','#8fe3c4'],5,'ch'],
@@ -6262,36 +6266,36 @@ const CREATURES = [
   ['mont',     'モンブラン', ['#e8b060','#e0b878','#c98a44'], 5,'ch'],
 
   // --- そら（鳥）。くちばし・とさか・尾・首の長さで 見わける ---
-  ['fowl','カモメ',    ['#fdfaff','#c8d4e0','#ffb43f'], 3,'ch',{key:'gull',   mark:'belly', markC:'rgba(200,212,224,.6)'}],
-  ['fowl','ハクチョウ',['#fdfaff','#f4f7fb','#e6ecf4'], 4,'ch',{key:'swan',   neck:0.9, sneck:true, beakC:'#ff8f4a', knob:'#4a3f4a', wing:true, tail:'fan'}],
+  ['fowl','カモメ',    ['#fdfaff','#c8d4e0','#ffb43f'], 3,'en',{key:'gull',   mark:'belly', markC:'rgba(200,212,224,.6)'}],
+  ['fowl','ハクチョウ',['#fdfaff','#f4f7fb','#e6ecf4'], 4,'en',{key:'swan',   neck:0.9, sneck:true, beakC:'#ff8f4a', knob:'#4a3f4a', wing:true, tail:'fan'}],
   ['fowl','フクロウ',  ['#a8845e','#e8d4bc','#ffd76e'], 4,'en',{key:'owl',    crest:'tuft', beak:'hook', mark:'belly', markC:'rgba(240,225,200,.75)'}],
   ['fowl','ワシ',      ['#5b4030','#fdfaff','#4a3426'], 5,'en',{key:'eagle',  beak:'hook', beakC:'#ffc23f', headC:'#fdfaff', neck:0.1, legC:'#ffc23f', tail:'fan', slim:true}],
   // --- そら（むし） ---
-  ['bug','テントウムシ',['#e8503f','#2f2f3a','#2f2f3a'], 1,'ch',{key:'ladybug',wing:'shell', mark:'dots', bodyC:'#2f2f3a'}],
-  ['bug','ミツバチ',   ['#ffd05e','#2f2f3a','#ffd05e'], 2,'ch',{key:'bee',    wing:'clear', stripe:true, bodyC:'#ffd05e'}],
+  ['bug','テントウムシ',['#e8503f','#2f2f3a','#2f2f3a'], 1,'en',{key:'ladybug',wing:'shell', mark:'dots', bodyC:'#2f2f3a'}],
+  ['bug','ミツバチ',   ['#ffd05e','#2f2f3a','#ffd05e'], 2,'en',{key:'bee',    wing:'clear', stripe:true, bodyC:'#ffd05e'}],
 
   // --- もり／りく（4本あしの けもの）。みみ・しっぽ・はなさき・もようで 見わける ---
-  ['quad','ウサギ',   ['#fdfaff','#ffe4ee','#ffc2d4'], 1,'ch',{key:'rabbit', ear:'long', tail:'puff', stout:0.92, mark:'belly'}],
+  ['quad','ウサギ',   ['#fdfaff','#ffe4ee','#ffc2d4'], 1,'en',{key:'rabbit', ear:'long', tail:'puff', stout:0.92, mark:'belly'}],
   ['quad','ネズミ',   ['#b8bcc8','#eef0f4','#ffc2d4'], 1,'en',{key:'mouse',  ear:'round', tail:'long', stout:0.85, mark:'belly'}],
-  ['quad','リス',     ['#e0975a','#ffe8c8','#8a5a30'], 2,'ch',{key:'squirrel',ear:'tuftear', tail:'bushy', stout:0.9, mark:'belly'}],
-  ['quad','ハリネズミ',['#d8b98a','#fff0d8','#8a6a58'],2,'ch',{key:'hedgehog',ear:'round', head:'small', snout:'long', stout:1.0, mark:'quill', markC:'#7a6350'}],
-  ['quad','コアラ',   ['#a8b0bc','#eef0f4','#7a8290'], 3,'ch',{key:'koala',  dx:-0.042, ear:'big', earIn:'rgba(255,255,255,.45)', head:'wide', nose:true, noseC:'#4a4450', tail:'short', stout:1.15, mark:'belly', markC:'rgba(245,248,252,.7)'}],
-  ['quad','ヒツジ',   ['#fdf6e8','#fff9f0','#e7d3a8'], 3,'ch',{key:'sheep',  ear:'droop', horn:'cow', tail:'puff', stout:1.2}],
-  ['quad','ブタ',     ['#ffb3c8','#ffd8e4','#e88aa0'], 3,'ch',{key:'pig',    ear:'pigflop', head:'wide', tail:'curl', snout:'pig', stout:1.1, flat:1.05, headOut:0.34, shortLeg:true, hoof:'#c9708f'}],
+  ['quad','リス',     ['#e0975a','#ffe8c8','#8a5a30'], 2,'en',{key:'squirrel',ear:'tuftear', tail:'bushy', stout:0.9, mark:'belly'}],
+  ['quad','ハリネズミ',['#d8b98a','#fff0d8','#8a6a58'],2,'en',{key:'hedgehog',ear:'round', head:'small', snout:'long', stout:1.0, mark:'quill', markC:'#7a6350'}],
+  ['quad','コアラ',   ['#a8b0bc','#eef0f4','#7a8290'], 3,'en',{key:'koala',  dx:-0.042, ear:'big', earIn:'rgba(255,255,255,.45)', head:'wide', nose:true, noseC:'#4a4450', tail:'short', stout:1.15, mark:'belly', markC:'rgba(245,248,252,.7)'}],
+  ['quad','ヒツジ',   ['#fdf6e8','#fff9f0','#e7d3a8'], 3,'en',{key:'sheep',  ear:'droop', horn:'cow', tail:'puff', stout:1.2}],
+  ['quad','ブタ',     ['#ffb3c8','#ffd8e4','#e88aa0'], 3,'en',{key:'pig',    ear:'pigflop', head:'wide', tail:'curl', snout:'pig', stout:1.1, flat:1.05, headOut:0.34, shortLeg:true, hoof:'#c9708f'}],
   ['quad','サル',     ['#c98f66','#ffe0c8','#8a6440'], 3,'en',{key:'monkey', ear:'round', head:'round', tail:'long', faceRing:'#ffe0c8', stout:0.9}],
-  ['quad','シカ',     ['#c9955e','#fff0d8','#8a6440'], 4,'ch',{key:'deer',   ear:'horse', head:'long', horn:'antler', tail:'puff', mark:'spot'}],
+  ['quad','シカ',     ['#c9955e','#fff0d8','#8a6440'], 4,'en',{key:'deer',   ear:'horse', head:'long', horn:'antler', tail:'puff', mark:'spot'}],
   ['quad','オオカミ', ['#8a92a4','#eef2f8','#4a5060'], 4,'en',{key:'wolf',   ear:'point', head:'long', ruff:true, ruffC:'#b0b8c8', tail:'bushy', snout:'long', stout:0.92, mark:'belly'}],
-  ['quad','パンダ',   ['#fdfaff','#2f3346','#2f3346'], 4,'ch',{key:'panda',  ear:'round', earC:'#2f3346', tail:'short', snout:'pale', stout:1.2, mark:'panda'}],
-  ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'ch',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
-  ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'ch',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
+  ['quad','パンダ',   ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'panda',  ear:'round', earC:'#2f3346', tail:'short', snout:'pale', stout:1.2, mark:'panda'}],
+  ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'en',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
+  ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'en',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
   ['quad','クマ',     ['#8a6a4a','#e8d4bc','#5b4430'], 5,'en',{key:'bear',   ear:'round', head:'big', tail:'short', snout:'pale', snoutC:'#e8d4bc', stout:1.3, mark:'belly', markC:'rgba(232,212,188,.5)'}],
   ['quad','トラ',     ['#f0993f','#fff0d8','#2f2f3a'], 5,'en',{key:'tiger',  ear:'round', tail:'long', mark:'stripe', dark:'rgba(50,40,50,.6)'}],
   ['quad','ライオン', ['#e8b06a','#ffe0b0','#b9773a'], 6,'en',{key:'lion',   ear:'round', tail:'tuft', mane:'lion', maneC:'#c98a44', tuftC:'#c98a44'}],
 
-  ['quad','レッサーパンダ',['#d8703f','#fdfaff','#5b3420'],3,'ch',{key:'redpanda',ear:'round', tail:'bushy', snout:'pale', mark:'belly'}],
-  ['quad','ナマケモノ',['#b0a48e','#e8e0d0','#7a705e'],3,'ch',{key:'sloth',  ear:'round', head:'flat', faceRing:'#e8e0d0', claw:true, clawC:'#6b5a48', tail:'short', stout:1.0}],
-  ['quad','シマウマ', ['#fdfaff','#2f3346','#2f3346'], 4,'ch',{key:'zebra',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#2f3346', tuftC:'#2f3346', mark:'stripe', dark:'rgba(40,35,50,.75)'}],
-  ['quad','キリン',   ['#f0c060','#fff0c8','#8a6440'], 5,'ch',{key:'giraffe',ear:'horse', head:'long', horn:'ossicone', tail:'tuft', neck:0.8, stout:0.9, mark:'spot', markC:'rgba(150,100,40,.55)', tuftC:'#8a6440'}],
+  ['quad','レッサーパンダ',['#d8703f','#fdfaff','#5b3420'],3,'en',{key:'redpanda',ear:'round', tail:'bushy', snout:'pale', mark:'belly'}],
+  ['quad','ナマケモノ',['#b0a48e','#e8e0d0','#7a705e'],3,'en',{key:'sloth',  ear:'round', head:'flat', faceRing:'#e8e0d0', claw:true, clawC:'#6b5a48', tail:'short', stout:1.0}],
+  ['quad','シマウマ', ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'zebra',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#2f3346', tuftC:'#2f3346', mark:'stripe', dark:'rgba(40,35,50,.75)'}],
+  ['quad','キリン',   ['#f0c060','#fff0c8','#8a6440'], 5,'en',{key:'giraffe',ear:'horse', head:'long', horn:'ossicone', tail:'tuft', neck:0.8, stout:0.9, mark:'spot', markC:'rgba(150,100,40,.55)', tuftC:'#8a6440'}],
   // --- そら（追加） ---
 
   // --- 人のキャラ。ぼうし・マント・ドレスまで つくって その役らしくする ---
@@ -6303,7 +6307,7 @@ const CREATURES = [
   ['golem',    'ゴーレム',   ['#8a8296','#c0b8cc','#6b6478'], 6,'en'],
   ['hero','まほうつかい',['#3f5a8a','#5f7ab0','#e8e4f0'],6,'ch',{key:'wizard', dy:0.018, robe:true, hat:'wizard', hatC:'#3f5a8a', beard:'#e8e4f0', staff:true, staffC:'#8a6440', gemC:'#8fe3c4', legC:'#3f5a8a'}],
   ['hero','ゆきのじょおう',['#cfeaff','#fdfaff','#8fd8f0'],6,'en',{key:'snowqueen',robe:true, hat:'ice', hair:'#dff0ff', longHair:true, legC:'#cfeaff', shoeC:'#a8d4ea'}],
-  ['witch',    'まじょ',     ['#5b4278','#6b4f8a','#6b4a3a'], 5,'en',{dy:0.018}],
+  ['witch',    'まじょ',     ['#5b4278','#6b4f8a','#6b4a3a'], 5,'ch',{dy:0.018}],
   ['princess', 'おひめさま', ['#ffb3d4','#ffffff','#f0c46a'], 4, 'ch'],
   ['prince',   'おうじさま', ['#7b9ed8','#c85a7a','#8a6a4a'], 4, 'ch'],
 ];
@@ -7355,7 +7359,7 @@ function genSprite(o, px){
 }
 
 /* なかま（コレクションの味方）を おかしと おなじ「タワー」に する。
-   118体ぶんの つよさを 手で 書くと 調整できなくなるので、
+   77体ぶんの つよさを 手で 書くと 調整できなくなるので、
    ★の高さから 計算し、attack の くせだけ 4つの型から えらぶ。
    こうすると 置く・つよくする・売る・たまを とばす しくみは そのまま つかえる */
 const ALLY_ARCH = ['candy','ice','choco','star'];
