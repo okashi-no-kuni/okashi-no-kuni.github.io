@@ -7515,7 +7515,15 @@ function buildColGrid(){
       colIo.unobserve(e.target); f();
     }
   }, { root: colOv, rootMargin: '240px' });
-  const list = colTab === 'all' ? all : all.filter(o => o.cat === colTab);
+  /* 「敵」「仲間」の タブは、ウェーブに 出てくる7体・ステージクリアの子だけでなく
+     コレクションの子も その分けかた（gen.side）で いっしょに 出す。
+     ここを 分けたままだと、なかまと敵を 分けなおしても タブの中身が
+     変わらず、直っていないように 見える */
+  const inTab = o =>
+    colTab === 'en' ? (o.cat === 'en' || (o.gen && o.gen.side === 'en')) :
+    colTab === 'ch' ? (o.cat === 'ch' || (o.gen && o.gen.side === 'ch')) :
+    o.cat === colTab;
+  const list = colTab === 'all' ? all : all.filter(inTab);
   colCount.textContent = list.filter(o => dex[o.id]).length + ' / ' + list.length;
   colHint.style.display = (colTab === 'ch') ? '' : 'none';
   colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>いっぱいのときは いちばん左と交代';
