@@ -5971,13 +5971,61 @@ const GHOLD = {
   },
 };
 
-/* かお。図鑑のカードは小さいので 点の目とまるいほっぺ */
-function gface(g,S,x,y,r,mood){
+/* よこを むいている子。よこから 見て 目が2つ 見えることは ないので、
+   目は 1つだけに する。むきは かおの ずらし（GFX）と おなじ向き。
+   +1 は 右むき、-1 は 左むき */
+const GSIDE = { quad:1, fowl:1, kanga:1, unicorn:1,
+                clownfish:1, hermit:1, seal:1, shark:1,
+                whale:1, dolphin:1, orca:1, turtle:1,
+                seahorse:-1 };
+/* からだが こい子は 黒い目が しずんで 見えない。
+   目を おく ところの 色を **実際に 見て** 決める。
+   からだの色（pal[0]）だけで 決めると、ワシのように あたまだけ 白い子や、
+   パンダのように 場所で 色が ちがう子を まちがえる。
+   一覧を 手で もつのも キャラを 足すたびに 入れわすれるので しない */
+function eyeInkAt(g, x, y){
+  try{
+    const m = g.getTransform();                    // ずらし・拡大を かけた ほんとうの いち
+    const px = Math.round(m.a*x + m.c*y + m.e), py = Math.round(m.b*x + m.d*y + m.f);
+    const d = g.getImageData(px, py, 1, 1).data;
+    if (d[3] < 40) return '#4a3348';               // なにも 塗られていない
+    return (0.299*d[0] + 0.587*d[1] + 0.114*d[2]) < 118 ? '#fdfaff' : '#4a3348';
+  }catch(e){ return '#4a3348'; }
+}
+
+/* かお。図鑑のカードは小さいので 点の目とまるいほっぺ。
+   side に 向き（±1）が 入っていたら よこ顔（目は1つ）*/
+function gface(g,S,x,y,r,mood,side,ink){
+  const dk = ink || '#4a3348';
+  if (side){
+    const s2 = side;
+    g.fillStyle = 'rgba(255,120,165,.4)';                     // ほっぺ
+    g.beginPath(); g.arc(x + s2*r*0.5, y + r*0.24, r*0.16, 0, GTAU); g.fill();
+    if (mood === 'angry' || mood === 'naughty'){              // まゆ
+      const k = mood === 'angry' ? 1 : 0.6;
+      g.strokeStyle = dk; g.lineWidth = r*0.09; g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(x + s2*r*0.4, y - r*(0.36+0.06*k));
+      g.lineTo(x + s2*r*0.06, y - r*(0.34-0.05*k));
+      g.stroke();
+    }
+    const ex = x + s2*r*0.22, ey = y - r*0.06;
+    g.fillStyle = dk;                                          // 目（1つ）
+    g.beginPath(); g.arc(ex, ey, r*0.13, 0, GTAU); g.fill();
+    if (dk === '#4a3348'){                                     // こい目：白いひかり
+      g.fillStyle = '#fff';
+      g.beginPath(); g.arc(ex - s2*r*0.05, ey - r*0.05, r*0.05, 0, GTAU); g.fill();
+    } else {                                                   // 白い目：ひとみを 入れる。
+      g.fillStyle = '#4a3348';                                 // でないと まっ白の 板に 見える
+      g.beginPath(); g.arc(ex + s2*r*0.02, ey + r*0.01, r*0.07, 0, GTAU); g.fill();
+    }
+    return;
+  }
   g.fillStyle = 'rgba(255,120,165,.4)';
   for (const s of [-1,1]){ g.beginPath(); g.arc(x+s*r*0.52, y+r*0.2, r*0.17, 0, GTAU); g.fill(); }
   if (mood === 'angry' || mood === 'naughty'){
     const k = mood === 'angry' ? 1 : 0.6;
-    g.strokeStyle = '#4a3348'; g.lineWidth = r*0.09; g.lineCap='round';
+    g.strokeStyle = dk; g.lineWidth = r*0.09; g.lineCap='round';
     for (const s of [-1,1]){
       g.beginPath();
       g.moveTo(x+s*r*0.46, y-r*(0.36+0.06*k));
@@ -5985,11 +6033,11 @@ function gface(g,S,x,y,r,mood){
       g.stroke();
     }
   }
-  g.fillStyle = '#4a3348';
+  g.fillStyle = dk;
   for (const s of [-1,1]){ g.beginPath(); g.arc(x+s*r*0.3, y-r*0.08, r*0.11, 0, GTAU); g.fill(); }
-  g.fillStyle = '#fff';
+  g.fillStyle = dk === '#4a3348' ? '#fff' : 'rgba(90,70,95,.7)';
   for (const s of [-1,1]){ g.beginPath(); g.arc(x+s*r*0.3-r*0.04, y-r*0.12, r*0.045, 0, GTAU); g.fill(); }
-  g.strokeStyle = '#4a3348'; g.lineWidth = r*0.075; g.lineCap='round';
+  g.strokeStyle = dk; g.lineWidth = r*0.075; g.lineCap='round';
   g.beginPath();
   if (mood === 'angry') { g.moveTo(x-r*0.14,y+r*0.28); g.lineTo(x+r*0.14,y+r*0.28); }
   else g.arc(x, y+r*0.14, r*0.16, 0.25, Math.PI-0.25);
@@ -6090,7 +6138,12 @@ function drawGen(g, S, rc){
   const fr = R*(GFR[rc.body] || 0.74) * hk;
   // からだが こい子は、かおまわりを 明るくしてから えがく。
   // でないと こい目が こい体に しずんで、顔が 見えなくなる
-  if (rc.fbg){
+  const gs = GSIDE[rc.body] || 0;                 // よこ向きか（0なら 前むき）
+  // 目を おく ところが こければ 白い目に する（前むきは かこいで 明るくするので そのまま）
+  const ink = gs ? eyeInkAt(g, fx, fy) : '#4a3348';
+  // よこ顔は 目が1つだけなので、まわりを 明るくしなくても 白い目で 見える。
+  // かこいを 出すと そこだけ 色が ぬけて 見えるので、前むきの子だけに する
+  if (rc.fbg && !gs){
     // かおの まわりだけ 明るくする。ひろげすぎると 体の色まで 白くとんで、
     // チョコが 灰色の板に 見えてしまう
     const fg = g.createRadialGradient(fx, fy, 0, fx, fy, fr*1.05);
@@ -6100,7 +6153,7 @@ function drawGen(g, S, rc){
     g.fillStyle = fg;
     g.beginPath(); g.ellipse(fx, fy, fr*1.05, fr*0.95, 0, 0, GTAU); g.fill();
   }
-  gface(g, S, fx, fy, fr, rc.mood);
+  gface(g, S, fx, fy, fr, rc.mood, gs, ink);
   (GHOLD[rc.hold] || GHOLD.none)(g, S, M, yy, R, c1, L.metal, c2);
   g.restore();
 }
