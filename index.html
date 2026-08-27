@@ -4120,6 +4120,49 @@ const GBODY = {
     g.beginPath(); g.ellipse(x,y+r*0.2,r*0.62,r*0.24,0,0,GTAU); g.fill();
   },
 
+  /* 正面をむいて 二本足で 立つ けもの（クマ・パンダ）。
+     よこ向きの 四つ足だと 顔が よく見えないので、この2体だけ 正面にする。
+     opt: earC 耳の中 / snoutC 口もと / limbC 手足 / patch 目のまわりの もよう */
+  teddy: (g,S,x,y,r,c,m,c2,rc) => {
+    const o = (rc && rc.opt) || {};
+    const limb = o.limbC || c;
+    const hy = y - r*0.52, hr = r*0.74;           // あたま：大きめ（正面の かわいさは 頭の大きさで 決まる）
+    g.fillStyle = limb;                           // あし
+    for (const s2 of [-1,1]){
+      g.beginPath(); g.ellipse(x+s2*r*0.3, y+r*1.06, r*0.27, r*0.19, 0, 0, GTAU); g.fill();
+    }
+    g.fillStyle = limb;                           // うで：からだの ふちより 外に 出して 見えるように
+    for (const s2 of [-1,1]){
+      g.beginPath(); g.ellipse(x+s2*r*0.62, y+r*0.62, r*0.18, r*0.32, s2*0.55, 0, GTAU); g.fill();
+    }
+    g.fillStyle = c;                              // からだ：頭より 小さく
+    g.beginPath(); g.ellipse(x, y+r*0.6, r*0.5, r*0.5, 0, 0, GTAU); g.fill();
+    if (o.belly){
+      g.fillStyle = o.belly;
+      g.beginPath(); g.ellipse(x, y+r*0.66, r*0.3, r*0.34, 0, 0, GTAU); g.fill();
+    }
+    g.fillStyle = o.earOut || c;                  // みみ
+    for (const s2 of [-1,1]){
+      g.beginPath(); g.arc(x+s2*r*0.56, hy-r*0.52, r*0.27, 0, GTAU); g.fill();
+    }
+    g.fillStyle = o.earC || '#ffc2d4';
+    for (const s2 of [-1,1]){
+      g.beginPath(); g.ellipse(x+s2*r*0.59, hy-r*0.52, r*0.14, r*0.17, s2*0.4, 0, GTAU); g.fill();
+    }
+    g.fillStyle = c;                              // あたま
+    g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
+    if (o.patch){                                 // パンダの 目のまわり
+      g.fillStyle = o.patchC || c2;
+      for (const s2 of [-1,1]){
+        g.beginPath(); g.ellipse(x+s2*r*0.25, y-r*0.585, r*0.2, r*0.19, s2*0.3, 0, GTAU); g.fill();
+      }
+    }
+    // 口もとの まるは おかない。この かおは 目と口の あいだが せまいので、
+    // まるを おくと 目まで のみこんで しまう。はなだけ 入れる
+    g.fillStyle = o.noseC || '#4a3348';
+    g.beginPath(); g.ellipse(x, y - r*0.485, r*0.085, r*0.065, 0, 0, GTAU); g.fill();
+  },
+
   penguin: (g,S,x,y,r,c,m,c2) => {                // ペンギン
     g.fillStyle = '#ffb43f';
     for (const s2 of [-1,1]){                     // あし
@@ -6064,7 +6107,7 @@ const GFY = { wedding:-0.5, tower:-0.42, parfait:-0.34, dango:-0.34, soft:-0.28,
   witch:-0.5, princess:-0.54, prince:-0.54,
   jelly:-0.2, starfish:0, clownfish:0, hermit:0.24, seahorse:-0.86, crab:0,
   penguin:-0.46, octopus:-0.24, seal:-0.34, shark:-0.1, manta:-0.16, whale:-0.16,
-  quad:-0.42, fowl:-0.52, bug:-0.62, kanga:-0.61,
+  quad:-0.42, fowl:-0.52, bug:-0.62, kanga:-0.61, teddy:-0.5,
   hero:-0.54, ghost:-0.5, slime:-0.28, golem:-0.1, robot:-0.6,
   cupcake:-0.34, tart:0.16, eclair:0, cream:-0.16, roll:0, baum:0, mont:0.1,
   mille:0, waffle:0, pancake:0.16, pretzel:0.1, churro:0, popcorn:0.5,
@@ -6078,7 +6121,7 @@ const GFX = { orca:0.5, dolphin:0.62, turtle:1.06, bird:0.22, dragon:0.72,
               // うみの子。あたま（または かおのある ところ）へ ずらす
               jelly:0, starfish:0, clownfish:0.42, hermit:0.78, seahorse:-0.08, crab:0,
               penguin:0, octopus:0, seal:0.66, shark:0.62, manta:0, whale:0.52,
-              quad:0.72, fowl:0.24, bug:0, hero:0, robot:0, kanga:0.22 };
+              quad:0.72, fowl:0.24, bug:0, hero:0, robot:0, kanga:0.22, teddy:0 };
 /* ぼうし・かんむりも あたまの上に のせる。
    胴のまん中に置くと、くびの長い子で 宙に うかんで見えてしまう。
    ぼうしは かおより 上にくるので、Yは かおより さらに 上へ */
@@ -6086,12 +6129,13 @@ const GHX = { orca:0.5, dolphin:0.5, turtle:1.02, bird:0.16, dragon:0.72,
               fairy:0, butterfly:0, unicorn:0.86,
               witch:0, princess:0, prince:0,
               hermit:0.78, seal:0.62, shark:0.6, whale:0.5, clownfish:0.4, seahorse:-0.06,
-              quad:0.72, kanga:0.2 };
+              quad:0.72, kanga:0.2, teddy:0 };
 const GHY = { orca:-0.42, dolphin:-0.34, turtle:-0.34, bird:-0.24, dragon:-1.3,
               fairy:-0.9, butterfly:-0.8, unicorn:-1.4,
               jelly:-0.9, penguin:-1.0, seal:-0.86, shark:-0.6, whale:-0.6,
               hermit:-0.2, octopus:-1.0, manta:-0.9, crab:-0.6,
               starfish:-0.7, clownfish:-0.6, seahorse:-1.4, quad:-0.94, fowl:-0.94, bug:-1.0, kanga:-1.15,
+              teddy:-1.25,
               hero:-1.0, ghost:-1.0, slime:-0.9, golem:-0.8, robot:-1.5,
               witch:-1.0, princess:-1.0, prince:-1.0 };
 /* あたまが 小さい子は かおも かざりも 小さくする */
@@ -6100,7 +6144,7 @@ const GFR = { orca:0.42, dolphin:0.38, turtle:0.4, bird:0.56, dragon:0.38,
               witch:0.32, princess:0.32, prince:0.32,
               jelly:0.5, starfish:0.5, clownfish:0.34, hermit:0.3, seahorse:0.24, crab:0.5,
               penguin:0.4, octopus:0.56, seal:0.4, shark:0.34, manta:0.36, whale:0.4,
-              quad:0.36, fowl:0.3, bug:0.26, kanga:0.3,
+              quad:0.36, fowl:0.3, bug:0.26, kanga:0.3, teddy:0.6,
               hero:0.32, ghost:0.42, slime:0.48, golem:0.5, robot:0.36,
               cupcake:0.34, tart:0.34, eclair:0.34, cream:0.4, roll:0.34, baum:0.3,
               mont:0.34, mille:0.32, waffle:0.42, pancake:0.34, pretzel:0.3, churro:0.3,
@@ -6139,8 +6183,14 @@ function drawGen(g, S, rc){
   // からだが こい子は、かおまわりを 明るくしてから えがく。
   // でないと こい目が こい体に しずんで、顔が 見えなくなる
   const gs = GSIDE[rc.body] || 0;                 // よこ向きか（0なら 前むき）
-  // 目を おく ところが こければ 白い目に する（前むきは かこいで 明るくするので そのまま）
-  const ink = gs ? eyeInkAt(g, fx, fy) : '#4a3348';
+  /* 目を おく ところが こければ 白い目に する。
+     前むきの子は かこい（fbg）で 明るくするので ふつうは そのままで よいが、
+     パンダのように こい もようの 上に 目が のる子は 読まないと 目が 消える。
+     **かおの まん中ではなく、目そのものの いちを 読む**こと。
+     まん中を 読むと、クマのように はなが こい子で まちがえる */
+  const ink = (gs || rc.body === 'teddy')
+    ? eyeInkAt(g, fx + (gs ? gs*0.22 : -0.3) * fr, fy - fr*0.07)
+    : '#4a3348';
   // よこ顔は 目が1つだけなので、まわりを 明るくしなくても 白い目で 見える。
   // かこいを 出すと そこだけ 色が ぬけて 見えるので、前むきの子だけに する
   if (rc.fbg && !gs){
@@ -6338,10 +6388,10 @@ const CREATURES = [
   ['quad','サル',     ['#c98f66','#ffe0c8','#8a6440'], 3,'en',{key:'monkey', ear:'round', head:'round', tail:'long', faceRing:'#ffe0c8', stout:0.9}],
   ['quad','シカ',     ['#c9955e','#fff0d8','#8a6440'], 4,'en',{key:'deer',   ear:'horse', head:'long', horn:'antler', tail:'puff', mark:'spot'}],
   ['quad','オオカミ', ['#8a92a4','#eef2f8','#4a5060'], 4,'en',{key:'wolf',   ear:'point', head:'long', ruff:true, ruffC:'#b0b8c8', tail:'bushy', snout:'long', stout:0.92, mark:'belly'}],
-  ['quad','パンダ',   ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'panda',  ear:'round', earC:'#2f3346', tail:'short', snout:'pale', stout:1.2, mark:'panda'}],
+  ['teddy','パンダ',  ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'panda',  earOut:'#2f3346', earC:'#5b6072', limbC:'#2f3346', patch:true, patchC:'#2f3346', snoutC:'#fdfaff', noseC:'#2f3346'}],
   ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'en',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
   ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'en',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
-  ['quad','クマ',     ['#8a6a4a','#e8d4bc','#5b4430'], 5,'en',{key:'bear',   ear:'round', head:'big', tail:'short', snout:'pale', snoutC:'#e8d4bc', stout:1.3, mark:'belly', markC:'rgba(232,212,188,.5)'}],
+  ['teddy','クマ',    ['#b99372','#f0e2c8','#8a6a4a'], 5,'en',{key:'bear',   earC:'#ffc2d4', snoutC:'#f6e8b8', noseC:'#3a2c38', belly:'rgba(240,226,200,.45)'}],
   ['quad','トラ',     ['#f0993f','#fff0d8','#2f2f3a'], 5,'en',{key:'tiger',  ear:'round', tail:'long', mark:'stripe', dark:'rgba(50,40,50,.6)'}],
   ['quad','ライオン', ['#e8b06a','#ffe0b0','#b9773a'], 6,'en',{key:'lion',   ear:'round', tail:'tuft', mane:'lion', maneC:'#c98a44', tuftC:'#c98a44'}],
 
@@ -6426,8 +6476,8 @@ function buildRoster(){
                // からだが こい子は かおまわりを 明るくする（でないと 目が しずむ）
                fbg: ['orca','butterfly','penguin','manta','clownfish',
                      'ohagi','youkan','ghost','golem'].includes(body)
-                    || (opt && ['ladybug','tiger','panda','wolf',
-                                'bear','owl','eagle','zebra','devil','wizard'].includes(opt.key))
+                    || (opt && ['ladybug','tiger','wolf',
+                                'owl','eagle','zebra','devil','wizard'].includes(opt.key))
                     || ['golem'].includes(body),
                mood: side === 'en' ? 'naughty' : 'smile',
                cells: lv >= 7 ? 4 : lv >= 5 ? 2 : 1 });
