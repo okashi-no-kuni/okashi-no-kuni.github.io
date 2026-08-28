@@ -209,6 +209,10 @@ async function cutout(page, buf, size){
    色は CREATURES の パレットに そろえる。ちがう色で 出すと
    ゲームの 中の その子と 別人に 見える。
 
+   人の キャラ（てんし・まじょ・おひめさま など）も まえ向き。
+   服・ぼうし・つえまで 書かないと ただの 人形に なる。
+   むらさきの こさは あくま・まじょの しるしなので 持ちあげない。
+
    おかしは ぜんぶ まえ向き（GSIDE に のっていない）。
    焼きがしの こげ茶（プレッツェル・チュロス・ワッフル・バウム・
    カステラ・シュークリーム）と、あんこの こい色（おはぎ・もなか・
@@ -300,6 +304,17 @@ const ART = {
   ミルフィーユ: { key:'mille', p:'A mille feuille, layers of pale flaky pastry with pink cream between them and a strawberry on top.' },
   タルト: { key:'tart', p:'A round fruit tart, a golden pastry shell filled with bright pink strawberries.' },
   モンブラン: { key:'mont', p:'A mont blanc cake piled with fine golden tan chestnut cream strands, with a small chestnut on top.' },
+  キリン: { key:'giraffe', p:'A giraffe facing right, seen from the side, one visible eye and no mouth, golden yellow coat with soft brown spots, a long neck, two small ossicone horns, a tuft tail.' },
+  スライム: { key:'slime', p:'A round mint green slime blob, translucent and jelly like, with a soft wobbly bottom edge.' },
+  てんし: { key:'angel', p:'A small chibi angel girl standing, white robe, long golden hair, a gold halo floating above her head, small white feathered wings.' },
+  あくま: { key:'devil', p:'A small chibi devil girl standing, plum purple outfit, small bat wings, two little horns, dark hair, a thin pointed tail.' },
+  にんぎょ: { key:'mermaid', p:'A small chibi mermaid girl, long golden hair, a pink top, and a sky blue fish tail instead of legs.' },
+  ゴーレム: { key:'golem', p:'A chunky golem built from rounded lavender grey stone blocks, thick short arms, a small head, standing on two stubby legs.' },
+  まほうつかい: { key:'wizard', p:'A small chibi wizard standing, deep blue robe and a tall pointed blue hat, a long soft white beard, holding a wooden staff topped with a mint green gem.' },
+  ゆきのじょおう: { key:'snowqueen', p:'A small chibi snow queen standing, pale ice blue gown, long white blue hair, a crown of pale ice crystals.' },
+  まじょ: { key:'witch', p:'A small chibi witch girl standing, purple dress and a wide pointed purple hat, holding a wooden broom.' },
+  おひめさま: { key:'princess', p:'A small chibi princess girl standing, pink ball gown, long hair, a small pale gold crown.' },
+  おうじさま: { key:'prince', p:'A small chibi prince boy standing, blue coat with a rose pink sash, light brown hair, a small pale gold crown.' },
   ブタ:    { key:'pig',    p:'A pale pink piggy seen from the side standing on four short legs, one visible eye, flat snout, floppy ear, curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
