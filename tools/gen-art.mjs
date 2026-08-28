@@ -44,6 +44,10 @@ const EXT = { 'image/png':'png', 'image/jpeg':'jpg', 'image/webp':'webp' };
    ちがう 埋めかたを するので、並べたとき そこが そのまま バラつきになる。
    だから ふちどり・かざり・彩度は 禁止の形で 書ききる。
 
+   ただし 彩度は 「ぜんぶ うすく」では だめだった。パンダが むらさきに
+   なった。白黒で ないと パンダに 見えないので、その子を その子と
+   わからせる もようだけは こい ままに する。まっ黒では なく すみ色で。
+
    目の 大きさは **わざと 書いていない**。おばけに そろえようと
    「頭の はばの 1/6」と 数で 書いてみたが、出しなおすと 6.7〜24.2% と
    かえって 広がった。1回ごとの ばらつきが 指示より 大きいため。
@@ -52,12 +56,16 @@ const EXT = { 'image/png':'png', 'image/jpeg':'jpg', 'image/webp':'webp' };
    細かい ところは 出てきた 絵を 見て その つど 直す ほうが 早い。
 
    大きさだけは プロンプトに たよらず、出したあとに 機械で そろえる
-   （fit）。ここが ばらつくと 並べたとき いちばん 目立つため */
+   （fit）。ここが ばらつくと 並べたとき いちばん 目立つため。
+
+   絵がらを そろえるのは REF_KEYS の 手本。文だけでは そろわない */
 const STYLE = [
   'A cute kawaii mascot character for a pastel tower-defense mobile game.',
   'Soft pastel palette: pink #ff8fc4, lavender #c9a7ff, mint #8fe3c4, cream #fff6e9.',
-  'Every colour must be a pale pastel mixed with white. No dark, deep or saturated',
-  'colours anywhere, including the fur, the horns and the outline.',
+  'Keep the palette soft and pastel: colours are mixed with white, never neon.',
+  'The one exception is the marking an animal is known by: the patches of a panda,',
+  'the back of a penguin, the black of an orca. Keep those clearly dark so the',
+  'animal stays recognisable, but use a soft charcoal, never pure black.',
   'Rounded shapes only, no sharp corners. Simple flat vector sticker style with',
   'soft gradient shading and a glossy highlight.',
   'Outline the character with one thin line in a darker shade of its own colour.',
@@ -108,6 +116,19 @@ async function fit(page, buf, mime){
     return c1.toDataURL('image/png').split(',')[1];
   }, { src: 'data:' + mime + ';base64,' + buf.toString('base64'), F: FIT }), 'base64');
 }
+
+/* 絵がらの 手本。**これが 98体を そろえる かなめ。**
+   おなじ プロンプトでも 1回ごとに 絵が 変わり、seed も 効かないので、
+   文だけで そろえるのは むり（3体で ためして だめだった）。
+   気に入った 絵を 入力に 入れて「この 絵がらの まま」と 頼む。
+   出す子 じしんは 手本から のぞく（自分を 見せると 寄せすぎる）*/
+const REF_KEYS = ['bear', 'ghost', 'sheep'];
+const REF_LINE = [
+  'The attached images show the exact art style to follow: the same outline weight,',
+  'the same pastel shading, the same eye and cheek treatment, the same proportions.',
+  'Draw the new character as if it came from the same set, but do NOT copy their',
+  'body shapes - only the style.',
+].join(' ');
 
 /* ゲームに はる ぶんの 大きさ。ばんめんでは せいぜい 128px なので、
    dpr 2 を 見ても 256 で 足りる。1024 の まま はると Web版が 重くなる */
@@ -166,6 +187,8 @@ const ART = {
   ウサギ:  { key:'rabbit', p:'A pink bunny standing on two legs, long upright ears with darker pink inner ears, small brown nose.' },
   ヒツジ:  { key:'sheep',  p:'A cream sheep standing upright on two short legs like a plush toy, fluffy scalloped wool, floppy ears, pale gold curled spiral horns drawn on top of the wool.' },
   おばけ:  { key:'ghost',  p:'A white round ghost with a flowing wavy tail streaming to one side, tiny stubby arms.' },
+  ブタ:    { key:'pig',    p:'A pale pink piggy seen from the side standing on four short legs, one visible eye, flat snout, floppy ear, curly tail.' },
+  ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
   パンダ:  { key:'panda',  p:'A panda standing on two legs, black ears and black eye patches, white face and belly.' },
 };
@@ -215,9 +238,16 @@ async function listModels(){
 
 /* 画像を 1枚 もらう。返事の どこに 画像が 入るかは モデルで ちがうので、
    inlineData を もつ part を さがす形にしてある */
-async function generate(model, prompt){
+async function generate(model, prompt, refs = []){
+  /* 手本を さきに 置いて、そのあと 文。あとに 置くと 文の ほうが 弱まる */
+  const reqParts = [];
+  for (const k of refs){
+    reqParts.push({ inlineData: { mimeType:'image/png',
+      data: readFileSync(resolve(root, `art/${k}.png`)).toString('base64') } });
+  }
+  reqParts.push({ text: STYLE + (refs.length ? '\n\n' + REF_LINE : '') + '\n\n' + prompt });
   const body = {
-    contents: [{ role:'user', parts: [{ text: STYLE + '\n\n' + prompt }] }],
+    contents: [{ role:'user', parts: reqParts }],
     generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } },
   };
   const j = await call(`models/${model}:generateContent`, {
@@ -225,6 +255,8 @@ async function generate(model, prompt){
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+  const u = j?.usageMetadata;
+  if (u) process.stdout.write(`[in ${u.promptTokenCount||0} / out ${u.candidatesTokenCount||0}] `);
   const parts = j?.candidates?.[0]?.content?.parts || [];
   const img = parts.find(p => p.inlineData?.data);
   if (!img){
@@ -297,7 +329,8 @@ await withPage(async page => {
     const a = ART[n];
     if (!a){ console.error(`✗ ${n} は ART に ありません`); continue; }
     process.stdout.write(`${n} … `);
-    const { buf, mime } = await generate(GEN_MODEL, a.p);
+    const refs = REF_KEYS.filter(k => k !== a.key);
+    const { buf, mime } = await generate(GEN_MODEL, a.p, refs);
     if (!EXT[mime]) die(`知らない 形式 ${mime}。EXT に 足してください`);
     /* そろえたあとは かならず PNG。名前と 中みが 合う */
     const png = await fit(page, buf, mime);
