@@ -262,7 +262,7 @@ const ART = {
   テントウムシ: { key:'ladybug', p:'A ladybug seen from the front, round domed shell in a warm strawberry red with soft charcoal spots, small charcoal head, tiny legs.' },
   ミツバチ: { key:'bee', p:'A round honeybee seen from the front, golden yellow body with soft charcoal stripes, small translucent wings.' },
   ネズミ: { key:'mouse', p:'A soft lavender-grey mouse sitting up and facing the viewer, very big round ears with pink inner ears, cream muzzle and belly, a small pink nose, fine whiskers, and a long thin tail curving out to one side.' },
-  リス: { key:'squirrel', p:'An orange-brown squirrel sitting and facing the viewer, tufted ears, cream muzzle and belly, front paws resting together in front of it and holding nothing, and a big bushy tail curving up behind it.' },
+  リス: { key:'squirrel', p:'An orange-brown squirrel sitting and facing the viewer, tufted ears, cream muzzle and belly, holding a brown acorn in both front paws, and a big bushy tail curving up behind it. The squirrel is on its own, with no branch, log or ground under it.' },
   ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog facing right, seen from the side, one visible eye and no mouth, long pointed snout, cream belly, a back covered in soft rounded quills.' },
   コアラ: { key:'koala', p:'A soft lavender-grey koala facing right, seen from the side, one visible eye and no mouth, very big round fluffy ears with pink inside, wide head, dark rounded nose.' },
   サル: { key:'monkey', p:'A tan brown monkey facing right, seen from the side, one visible eye and no mouth, round ears, a pale cream ring around the face, long curling tail.' },
