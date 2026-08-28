@@ -219,6 +219,8 @@ async function cutout(page, buf, size){
    四つ足で 立ち、すわる子（ライオン・ネズミ・リス・コアラ・サル・
    ナマケモノ・レッサーパンダ・シカ）は すわる。
    カンガルーだけ うしろ足で 立つ。
+   **リスだけ すわって 正面**（どんぐりは 持たない）。ここは 見くらべて
+   えらんだ もので、そろえるより この絵の ほうが よかった。
 
    よこ顔の きまり（GSIDE）は drawGen の 中の 話で、絵に さしかえた子は
    そこを とおらないので かからない。
@@ -275,7 +277,7 @@ const ART = {
   テントウムシ: { key:'ladybug', p:'A ladybug seen from the front, round domed shell in a warm strawberry red with soft charcoal spots, small charcoal head, tiny legs.' },
   ミツバチ: { key:'bee', p:'A round honeybee seen from the front, golden yellow body with soft charcoal stripes, small translucent wings.' },
   ネズミ: { key:'mouse', p:'A soft lavender-grey mouse sitting up, its body turned to the side and its head turned to face the viewer, very big round ears with pink inner ears, cream muzzle and belly, a small pink nose, fine whiskers, and a long thin tail curving out behind.' },
-  リス: { key:'squirrel', p:'An orange-brown squirrel sitting, its body turned to the side and its head turned to face the viewer, tufted ears, cream muzzle and belly, holding a brown acorn in both front paws, and a big bushy tail curving up behind. No branch, log or ground under it.' },
+  リス: { key:'squirrel', p:'An orange-brown squirrel sitting and facing the viewer, tufted ears, cream muzzle and belly, front paws resting together in front of it and holding nothing, and a big bushy tail curving up behind it. No branch, log or ground under it.' },
   ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog standing on all four short legs, its body turned to the side and its head turned to face the viewer, a long pointed snout, cream muzzle and belly, and a back covered in soft rounded quills.' },
   コアラ: { key:'koala', p:'A soft lavender-grey koala sitting, its body turned to the side and its head turned to face the viewer, very big round fluffy ears with pink inside, a wide head, a large dark rounded nose, and cream chest.' },
   サル: { key:'monkey', p:'A tan brown monkey sitting, its body turned to the side and its head turned to face the viewer, round ears, a pale cream ring around the face, cream chest, and a long tail curling behind it.' },
