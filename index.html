@@ -6575,6 +6575,8 @@ const CREATURES = [
   ['witch',    'まじょ',     ['#5b4278','#6b4f8a','#6b4a3a'], 5,'ch',{dy:0.018}],
   ['princess', 'おひめさま', ['#ffb3d4','#ffffff','#f0c46a'], 4, 'ch'],
   ['prince',   'おうじさま', ['#7b9ed8','#c85a7a','#8a6a4a'], 4, 'ch'],
+  ['prince',   '王さま',     ['#9a7ecc','#ffd76e','#7a5ba8'], 5, 'ch',{key:'king'}],
+  ['princess', '王妃さま',   ['#e8a0d0','#ffd76e','#c47ab0'], 5, 'ch',{key:'queen'}],
 ];
 
 /* にじいろ版。上の子のうち、とくべつな すがたを もつ子に つける。
@@ -7598,7 +7600,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'baum', 'bear', 'bee', 'bigparfait', 'butterfly', 'cake', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hedgehog', 'hermit', 'horse', 'icecream', 'jelly', 'jelly2', 'kakigori', 'kangaroo', 'koala', 'konpeito', 'ladybug', 'lion', 'macaron', 'manju', 'manta', 'marshmallow', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'octopus', 'ohagi', 'orca', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'rabbit', 'redpanda', 'roll', 'sakuramochi', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'slime', 'sloth', 'snowqueen', 'soft', 'squirrel', 'star', 'starfish', 'swan', 'tart', 'tiger', 'tower', 'turtle', 'unicorn', 'waffle', 'warabi', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'youkan', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'baum', 'bear', 'bee', 'bigparfait', 'butterfly', 'cake', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hedgehog', 'hermit', 'horse', 'icecream', 'jelly', 'jelly2', 'kakigori', 'kangaroo', 'king', 'koala', 'konpeito', 'ladybug', 'lion', 'macaron', 'manju', 'manta', 'marshmallow', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'octopus', 'ohagi', 'orca', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'sakuramochi', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'slime', 'sloth', 'snowqueen', 'soft', 'squirrel', 'star', 'starfish', 'swan', 'tart', 'tiger', 'tower', 'turtle', 'unicorn', 'waffle', 'warabi', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'youkan', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
