@@ -210,6 +210,9 @@ async function cutout(page, buf, size){
    ゲームの 中の その子と 別人に 見える。
 
    おかしは ぜんぶ まえ向き（GSIDE に のっていない）。
+   焼きがしの こげ茶（プレッツェル・チュロス・ワッフル・バウム・
+   カステラ・シュークリーム）と、あんこの こい色（おはぎ・もなか・
+   あんみつ）も 持ちあげない。焼き色と あんこは その 食べものの しるし。
    チョコ・せんべい・クッキーの こげ茶は 持ちあげない。
    パステルに すると チョコに 見えなく なるので、パンダと おなじ あつかい
    （そろえておくと、あとで 絵と キャラを つきあわせるのが 1行ですむ）*/
@@ -277,6 +280,26 @@ const ART = {
   グミ: { key:'gummy', p:'A bright pink gummy bear, translucent and glossy like jelly.' },
   せんべい: { key:'senbei', p:'A round toasted rice cracker, golden, with a strip of dark seaweed wrapped across it.' },
   わらびもち: { key:'warabi', p:'A cube of warabimochi jelly, pale translucent grey, dusted with soft brown kinako powder.' },
+  まんじゅう: { key:'manju', p:'A round steamed manju bun, pale cream dough, with a small red stamp on top.' },
+  ゼリー: { key:'jelly2', p:'A cube of pale blue jelly, translucent and glossy, slightly wobbly.' },
+  さくらもち: { key:'sakuramochi', p:'A pink sakuramochi rice cake wrapped in a green salted cherry leaf.' },
+  もなか: { key:'monaka', p:'A monaka wafer sandwich, two pale cream crisp shells with dark red bean paste between them, keep the bean paste dark.' },
+  おはぎ: { key:'ohagi', p:'A round ohagi rice cake fully coated in chunky sweet red bean paste. The paste is a deep plum red-brown #7A4A5E, dark but clearly reddish, never black and never grey. Its surface is grainy with visible whole beans, not smooth and not glossy.' },
+  カステラ: { key:'castella', p:'A slice of castella sponge cake, golden yellow with a browned bottom crust, keep the baked brown.' },
+  あんみつ: { key:'anmitsu', p:'A small bowl of anmitsu, mint green agar cubes with a scoop of dark red bean paste, keep the bean paste dark.' },
+  ポップコーン: { key:'popcorn', p:'A red and white striped carton overflowing with fluffy cream popcorn.' },
+  プレッツェル: { key:'pretzel', p:'A twisted pretzel, baked golden brown with a scatter of salt, keep the baked brown.' },
+  チュロス: { key:'churro', p:'A ridged churro stick dusted with cinnamon sugar, baked golden brown, keep the baked brown.' },
+  ワッフル: { key:'waffle', p:'A square waffle with deep grid pockets, baked golden brown, keep the baked brown.' },
+  パンケーキ: { key:'pancake', p:'A stack of two round pancakes with a pat of butter on top and honey running down the side, baked golden.' },
+  カップケーキ: { key:'cupcake', p:'A cupcake in a paper case with a tall swirl of pink frosting on top.' },
+  シュークリーム: { key:'cream', p:'A round choux cream puff, pale baked golden shell split open with cream showing.' },
+  エクレア: { key:'eclair', p:'A long eclair, pale choux pastry topped with a dark chocolate glaze, keep the chocolate dark.' },
+  ロールケーキ: { key:'roll', p:'A slice of rolled cake seen end on, showing a pink cream spiral inside a pale sponge.' },
+  バウムクーヘン: { key:'baum', p:'A ring of baumkuchen with visible tree rings, baked golden brown, keep the baked brown.' },
+  ミルフィーユ: { key:'mille', p:'A mille feuille, layers of pale flaky pastry with pink cream between them and a strawberry on top.' },
+  タルト: { key:'tart', p:'A round fruit tart, a golden pastry shell filled with bright pink strawberries.' },
+  モンブラン: { key:'mont', p:'A mont blanc cake piled with fine golden tan chestnut cream strands, with a small chestnut on top.' },
   ブタ:    { key:'pig',    p:'A pale pink piggy seen from the side standing on four short legs, one visible eye, flat snout, floppy ear, curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
