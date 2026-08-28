@@ -6254,8 +6254,20 @@ const GFR = { orca:0.42, dolphin:0.38, turtle:0.4, bird:0.56, dragon:0.38,
               kintsuba:0.4, ohagi:0.42, warabi:0.34, sakuramochi:0.36, manju:0.34,
               senbei:0.42, castella:0.4, konpeito:0.42, anmitsu:0.3 };
 
+/* Gemini に えがいてもらった 絵を ためしに はる（tools/gen-art.mjs）。
+   いまは クマ・おばけ・ヒツジ の3体だけ。読めた子から さしかわり、
+   読めなければ これまでどおり コードで えがく。
+
+   にじいろ版は のぞく。7色に かがやく とくべつな すがたなので、
+   1枚の 絵に すると 色が 変わらなくなる */
+const ART_SPRITE = {};
+
 /* ---------- ① 立体感をつける前に えがく（からだと かお） ---------- */
 function drawGen(g, S, rc){
+  /* 絵が ある子は はって おしまい。かげ（portraitShade）と
+     にじいろ（drawGenFx）は この あとも これまでどおり かかる */
+  const art = !rc.rainbow && rc.opt && rc.opt.key ? ART_SPRITE[rc.opt.key] : null;
+  if (art){ g.drawImage(art, 0, 0, S, S); return; }
   const M = S/2, R = S*0.285, L = LV[rc.lv];   // からだで見わけるので 大きめに
   // 色は その子じたいの色（シャチなら 黒と白）。レベルでは 変えない。
   // 生きものが ほんとうの色をしていないと、ただの色ちがいに 見えてしまうから
@@ -7537,6 +7549,15 @@ const GEN_BY_ID = Object.fromEntries(GEN_LIST.map(o => [o.id, o]));
 /* ばんめんに 出す用の 絵。まいフレーム drawGen を よぶと 重いので、
    1回えがいて とっておき、あとは はりつけるだけにする（じめんの 焼きこみと 同じ考え） */
 const genSpriteCache = new Map();
+
+/* 絵を よみこむ。読めた時点で ためた 絵を すてる。
+   すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
+   いつまでも さしかわらない */
+for (const k of ['bear','ghost','sheep']){
+  const im = new Image();
+  im.onload = () => { ART_SPRITE[k] = im; genSpriteCache.clear(); };
+  im.src = 'art/sprites/' + k + '.png';
+}
 function genSprite(o, px){
   px = Math.max(24, Math.round(px / 8) * 8);        // 8ピクセルきざみに まるめて 数をへらす
   const k = o.id + '@' + px;
@@ -11130,6 +11151,9 @@ window.__chk = {
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。
    ふつうに あそぶときに ウェーブを とばせてしまうと 自己ベストの いみが なくなる */
 if (location.search.includes('dbg=1')) window.__dbg = {
+  /* ぜんぶ IIFE の 中なので、外から 見るには ここに 出すしか ない。
+     画像に さしかわった子が どれか（＝ 絵が 読めたか）を たしかめる */
+  art: () => Object.keys(ART_SPRITE),
   setWave: w => { wave = w; syncHUD(); },
   setStars: n => { stars = n; syncHUD(); syncShop(); },
   setTool: k => { selTool = k; },

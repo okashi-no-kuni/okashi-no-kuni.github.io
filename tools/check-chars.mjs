@@ -29,13 +29,18 @@ const MIN_BIG = 0.55;   // わくに たいして これより 小さいと ぽ�
 const MAX_OFF = 0.10;   // まん中からの ずれの ゆるせる はば
 
 const target = resolve(process.argv[2] || 'index.html');
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+/* file:// で ひらくと、file:// の 画像を canvas に のせた とたん
+   canvas が よごれて getImageData が SecurityError に なる。
+   キャラを 画像に さしかえた 子が いるので この 旗が いる。
+   本番（GitHub Pages）は http なので おきない。ここだけの 話 */
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium',
+  args: ['--allow-file-access-from-files'] });
 const pg = await b.newPage();
 const errs = [];
 pg.on('pageerror', e => errs.push(e.message));
 pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 await pg.goto('file://' + target);
-await pg.waitForTimeout(600);
+await pg.waitForTimeout(1200);   // 画像に さしかえた子の よみこみを 待つ
 
 const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
   // ゲーム本体は IIFE の中なので、window.__chk から とりだす

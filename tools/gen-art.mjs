@@ -10,6 +10,7 @@
  *   node tools/gen-art.mjs ウサギ           1体 出す（art/rabbit.png）
  *   node tools/gen-art.mjs --all           ART に ある子を ぜんぶ
  *   node tools/gen-art.mjs --fit           art/ に ある絵の 大きさを そろえなおす
+ *   node tools/gen-art.mjs --sprites       ゲームに はる 透過PNGを 作る
  *
  * モデルが かえすのは 白い 背景の JPEG。それを 大きさを そろえながら
  * 描きなおして PNG で 出す（fit）。**それでも 透過は ない。**背景は 白のまま。
@@ -108,6 +109,57 @@ async function fit(page, buf, mime){
   }, { src: 'data:' + mime + ';base64,' + buf.toString('base64'), F: FIT }), 'base64');
 }
 
+/* ゲームに はる ぶんの 大きさ。ばんめんでは せいぜい 128px なので、
+   dpr 2 を 見ても 256 で 足りる。1024 の まま はると Web版が 重くなる */
+const SPRITE = 256;
+
+/* 白い 背景を ぬいて 透過に する。
+   **ただ 白を ぬいては だめ。**おばけも ヒツジも 中みが 白〜クリームなので、
+   白さだけで 消すと からだに 穴が あく（実際 おばけは ほとんど 消える）。
+   だから ふちから つながっている ところだけを 背景と みなして ぬる。
+   中の 白は どこにも つながっていないので のこる */
+async function cutout(page, buf, size){
+  return Buffer.from(await page.evaluate(async ({ src, S }) => {
+    const img = new Image(); img.src = src; await img.decode();
+    const c = document.createElement('canvas'); c.width = S; c.height = S;
+    const x = c.getContext('2d');
+    x.imageSmoothingQuality = 'high';
+    x.drawImage(img, 0, 0, S, S);
+    const im = x.getImageData(0, 0, S, S), d = im.data;
+    const lum = k => .299*d[k*4] + .587*d[k*4+1] + .114*d[k*4+2];
+
+    /* ふちから ぬりつぶしで つながりを たどる。しきい値は JPEG の
+       にじみを 食べる ぶん すこし 低め */
+    const TH = 236;
+    const bg = new Uint8Array(S*S), st = [];
+    for (let i=0;i<S;i++){
+      for (const k of [i, (S-1)*S+i, i*S, i*S+S-1])
+        if (!bg[k] && lum(k) >= TH){ bg[k] = 1; st.push(k); }
+    }
+    while (st.length){
+      const k = st.pop(), i = k % S, j = (k - i) / S;
+      for (const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const ni = i+di, nj = j+dj;
+        if (ni<0||ni>=S||nj<0||nj>=S) continue;
+        const t = nj*S + ni;
+        if (!bg[t] && lum(t) >= TH){ bg[t] = 1; st.push(t); }
+      }
+    }
+    /* 背景は すきとおらせる。のこった ふちは JPEG の にじみで
+       うすく 白いので、背景に せっする ところだけ half に して なじませる */
+    for (let k=0;k<S*S;k++) if (bg[k]) d[k*4+3] = 0;
+    for (let j=0;j<S;j++) for (let i=0;i<S;i++){
+      const k = j*S+i; if (bg[k] || lum(k) < 246) continue;
+      let touch = false;
+      for (const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]])
+        if (bg[(j+dj)*S + (i+di)]) touch = true;
+      if (touch) d[k*4+3] = 110;
+    }
+    x.putImageData(im, 0, 0);
+    return c.toDataURL('image/png').split(',')[1];
+  }, { src: 'data:image/png;base64,' + buf.toString('base64'), S: size }), 'base64');
+}
+
 /* 出す子。キーは index.html の CREATURES の opt.key と そろえる
    （そろえておくと、あとで 絵と キャラを つきあわせるのが 1行ですむ）*/
 const ART = {
@@ -200,6 +252,24 @@ const args = process.argv.slice(2);
 if (!args.length || args[0] === '--models'){ await listModels(); process.exit(0); }
 /* すでに 出した 絵を そろえなおす。気に入った 絵を そのまま つかいたいので、
    大きさを 直すために 出しなおしたく ない（出しなおすと 別の絵に なる）*/
+/* ゲームに はる ぶんを 出す。art/ の 絵から 作るので、出しなおさない。
+   もとの 絵（art/*.png）は 白い 背景の まま のこす。モデルが かえした
+   ものに 近い ほうが、あとで 別の 抜きかたを 試せるため */
+if (args[0] === '--sprites'){
+  const dir = resolve(root, 'art'), out = resolve(root, 'art/sprites');
+  mkdirSync(out, { recursive: true });
+  const files = readdirSync(dir).filter(n => /\.png$/i.test(n));
+  if (!files.length) die('art/ に 絵が ありません');
+  await withPage(async page => {
+    for (const n of files){
+      const png = await cutout(page, readFileSync(resolve(dir, n)), SPRITE);
+      writeFileSync(resolve(out, n), png);
+      console.log(`art/sprites/${n} (${(png.length/1024).toFixed(0)}KB) ✅`);
+    }
+  });
+  process.exit(0);
+}
+
 if (args[0] === '--fit'){
   const dir = resolve(root, 'art');
   const files = readdirSync(dir).filter(n => /\.(jpe?g|png)$/i.test(n));
