@@ -270,7 +270,7 @@ const ART = {
   チョコ: { key:'choco', p:'A bar of milk chocolate with square segments, one corner broken off, keep the warm cocoa brown.' },
   ショートケーキ: { key:'cake', p:'A slice of strawberry shortcake, white cream layers with a strawberry on top.' },
   パフェ: { key:'parfait', p:'A parfait in a tall glass, pink cream and mint green layers with a cherry on top.' },
-  マカロンタワー: { key:'tower', p:'A pyramid of macarons built in four rows: four macarons side by side along the bottom row, three on the row above, then two, then one single macaron at the very top. Ten macarons in total, all the same size, in pink, lavender and mint. Every one is a proper macaron with two round shells and a filling between them. The face is on the single macaron at the top.' },
+  マカロンタワー: { key:'tower', p:'A pyramid of macarons in exactly four rows, counted from the top: row 1 is a single macaron, row 2 has exactly two macarons, row 3 has exactly three, row 4 at the bottom has exactly four. Exactly ten macarons in total. Do not add any further row and do not repeat a row count. All the same size, in pink, lavender and mint, each a proper macaron with two round shells and a filling. The face is on the single macaron at the top.' },
   ウエディングケーキ: { key:'wedding', p:'A three tier white wedding cake with pink piping and a small pale gold topper.' },
   こんぺいとう: { key:'konpeito', p:'A single konpeito sugar candy, a small round ball covered in tiny blunt bumps, pale pink.' },
   マシュマロ: { key:'marshmallow', p:'A soft white marshmallow cylinder, plump and rounded.' },
