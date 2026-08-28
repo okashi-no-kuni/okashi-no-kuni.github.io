@@ -181,12 +181,40 @@ async function cutout(page, buf, size){
   }, { src: 'data:image/png;base64,' + buf.toString('base64'), S: size }), 'base64');
 }
 
-/* 出す子。キーは index.html の CREATURES の opt.key と そろえる
+/* 出す子。キーは index.html の CREATURES の opt.key と そろえる。
+
+   **よこ向きの子は「目は1つ・口なし」と 書くこと。**index.html の
+   GSIDE に のっている子（さかな・けもの・カメ・ユニコーンなど）は
+   よこ顔で えがく きまりで、よこから 見て 目が2つ 見えることは ない。
+   STYLE は「目は2つ」と 書いてあるので、その子の 文で うわがきする。
+
+   色は CREATURES の パレットに そろえる。ちがう色で 出すと
+   ゲームの 中の その子と 別人に 見える
    （そろえておくと、あとで 絵と キャラを つきあわせるのが 1行ですむ）*/
 const ART = {
   ウサギ:  { key:'rabbit', p:'A pink bunny standing on two legs, long upright ears with darker pink inner ears, small brown nose.' },
   ヒツジ:  { key:'sheep',  p:'A cream sheep standing upright on two short legs like a plush toy, fluffy scalloped wool, floppy ears, pale gold curled spiral horns drawn on top of the wool.' },
   おばけ:  { key:'ghost',  p:'A white round ghost with a flowing wavy tail streaming to one side, tiny stubby arms.' },
+  クラゲ:        { key:'jelly', p:'A round pink jellyfish with a translucent dome and short frilly tentacles hanging below.' },
+  ヒトデ:        { key:'starfish', p:'A chubby coral orange starfish with five rounded arms, seen from the front.' },
+  カクレクマノミ:    { key:'clownfish', p:'An orange clownfish seen from the side, one visible eye and no mouth, white bands edged with soft charcoal, small rounded fins.' },
+  ヤドカリ:       { key:'hermit', p:'A hermit crab seen from the side, one visible eye and no mouth, sandy beige spiral shell, small coral pink claws.' },
+  タツノオトシゴ:    { key:'seahorse', p:'A golden yellow seahorse seen from the side, one visible eye and no mouth, curled tail, small dorsal fin.' },
+  カニ:         { key:'crab', p:'A red-orange crab seen from the front, wide flat shell, two rounded claws held up, small legs.' },
+  タコ:         { key:'octopus', p:'A rose pink octopus seen from the front, round head, eight short curling arms.' },
+  イルカ:        { key:'dolphin', p:'A soft blue-grey dolphin seen from the side, one visible eye and no mouth, pale belly, curved dorsal fin.' },
+  シャチ:        { key:'orca', p:'An orca seen from the side, one visible eye and no mouth, soft charcoal back and white belly, tall rounded dorsal fin.' },
+  アザラシ:       { key:'seal', p:'A pale grey seal seen from the side, one visible eye and no mouth, plump body, small front flippers.' },
+  サメ:         { key:'shark', p:'A blue-grey shark seen from the side, one visible eye and no mouth, pale belly, rounded friendly snout, tall dorsal fin.' },
+  マンタ:        { key:'manta', p:'A deep blue-grey manta ray seen from the front, wide triangular wings, pale belly, two small head fins.' },
+  クジラ:        { key:'whale', p:'A blue whale seen from the side, one visible eye and no mouth, very pale blue belly, a small spout of water above the head.' },
+  カメ:         { key:'turtle', p:'A green turtle seen from the side, one visible eye and no mouth, tan domed shell, four short legs.' },
+  ユニコーン:      { key:'unicorn', p:'A white unicorn seen from the side, one visible eye and no mouth, lavender mane and tail, a small pale gold spiral horn.' },
+  ようせい:       { key:'fairy', p:'A tiny fairy girl standing on two legs, pink dress, translucent rounded wings, small pale gold wand.' },
+  ちょうちょ:      { key:'butterfly', p:'A butterfly seen from the front, two large rounded wings in soft tan and cream, thin antennae, small body.' },
+  だんご:        { key:'dango', p:'Three round dumplings on a wooden stick, cream, pale green and pink, stacked in a vertical row, the face on the middle one.' },
+  だいふく:       { key:'daifuku', p:'A round white mochi daifuku dusted with pale pink, sitting, soft and plump.' },
+  ようかん:       { key:'youkan', p:'A block of youkan jelly with rounded corners, deep plum colour, glossy top.' },
   ブタ:    { key:'pig',    p:'A pale pink piggy seen from the side standing on four short legs, one visible eye, flat snout, floppy ear, curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
