@@ -4140,6 +4140,57 @@ const GBODY = {
       }
       g.fill();
     };
+    /* しっぽ。正面むきなので 右がわから のぞかせる。
+       あしより 先に えがいて うしろに まわす */
+    const tc = o.tailC || c;
+    if (o.tail === 'bushy'){                      // リス・レッサーパンダ・オオカミ
+      const tailPath = () => {
+        g.beginPath();
+        g.moveTo(x+r*0.36, y+r*0.96);
+        g.bezierCurveTo(x+r*1.22, y+r*1.0,  x+r*1.24, y-r*0.04, x+r*0.8,  y-r*0.24);
+        g.bezierCurveTo(x+r*1.0,  y+r*0.24, x+r*0.9,  y+r*0.64, x+r*0.32, y+r*0.66);
+        g.closePath();
+      };
+      g.fillStyle = tc; tailPath(); g.fill();
+      if (o.tailBand){                            // レッサーパンダの しま
+        g.save(); tailPath(); g.clip();
+        g.strokeStyle = o.tailBand; g.lineWidth = r*0.15; g.lineCap = 'butt';
+        for (let i=0;i<4;i++){
+          g.beginPath();
+          g.moveTo(x+r*(0.4+i*0.24), y+r*1.2);
+          g.lineTo(x+r*(0.78+i*0.24), y+r*0.0);
+          g.stroke();
+        }
+        g.restore();
+      }
+    } else if (o.tail === 'curl'){                // リス：せなかへ 立ちあがる 大きな しっぽ
+      g.fillStyle = tc;
+      g.beginPath();
+      g.moveTo(x+r*0.44, y+r*1.06);
+      g.bezierCurveTo(x+r*1.5,  y+r*0.94, x+r*1.46, y-r*0.6,  x+r*0.6,  y-r*0.82);
+      g.bezierCurveTo(x+r*1.16, y-r*0.24, x+r*1.08, y+r*0.56, x+r*0.44, y+r*0.66);
+      g.closePath(); g.fill();
+      g.fillStyle = o.tailIn || c2;               // まきの 内がわを うすく して 立体に
+      g.beginPath();
+      g.moveTo(x+r*0.56, y+r*0.92);
+      g.bezierCurveTo(x+r*1.26, y+r*0.78, x+r*1.2,  y-r*0.34, x+r*0.66, y-r*0.56);
+      g.bezierCurveTo(x+r*1.04, y-r*0.12, x+r*0.96, y+r*0.5,  x+r*0.56, y+r*0.58);
+      g.closePath(); g.fill();
+    } else if (o.tail === 'thin'){                // ネズミ
+      g.strokeStyle = tc; g.lineWidth = r*0.085; g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(x+r*0.4,  y+r*0.92);
+      g.bezierCurveTo(x+r*1.12, y+r*0.98, x+r*1.16, y+r*0.22, x+r*0.82, y+r*0.12);
+      g.stroke();
+    } else if (o.tail === 'tuft'){                // ライオン
+      g.strokeStyle = tc; g.lineWidth = r*0.1; g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(x+r*0.4,  y+r*0.92);
+      g.bezierCurveTo(x+r*1.06, y+r*0.94, x+r*1.1,  y+r*0.34, x+r*0.86, y+r*0.22);
+      g.stroke();
+      g.fillStyle = o.tuftC || c2;
+      g.beginPath(); g.ellipse(x+r*0.84, y+r*0.14, r*0.15, r*0.19, 0.3, 0, GTAU); g.fill();
+    }
     g.fillStyle = limb;                           // あし
     for (const s2 of [-1,1]){
       g.beginPath(); g.ellipse(x+s2*r*0.3, y+r*1.06, r*0.27, r*0.19, 0, 0, GTAU); g.fill();
@@ -4154,6 +4205,20 @@ const GBODY = {
     if (o.belly){
       g.fillStyle = o.belly;
       g.beginPath(); g.ellipse(x, y+r*0.66, r*0.3, r*0.34, 0, 0, GTAU); g.fill();
+    }
+    if (o.mark === 'stripe'){                     // トラ：どうたいの しま
+      g.strokeStyle = o.markC || c2; g.lineWidth = r*0.07; g.lineCap = 'round';
+      for (const s2 of [-1,1]) for (const ay of [0.42, 0.66]){
+        g.beginPath();
+        g.moveTo(x+s2*r*0.26, y+r*ay);
+        g.lineTo(x+s2*r*0.48, y+r*(ay+0.06));
+        g.stroke();
+      }
+    } else if (o.mark === 'spot'){                // シカ：せなかの 白い ぶち
+      g.fillStyle = o.markC || 'rgba(255,255,255,.75)';
+      for (const [sx,sy] of [[-0.4,0.5],[0.4,0.5],[-0.36,0.72],[0.36,0.72],[-0.44,0.62],[0.44,0.62]]){
+        g.beginPath(); g.ellipse(x+r*sx, y+r*sy, r*0.07, r*0.055, 0, 0, GTAU); g.fill();
+      }
     }
     // みみ。かたちだけで どの子か わかるように、まる／ながい／たれる を 分ける
     if (ear === 'long'){                          // ウサギ
@@ -4174,6 +4239,47 @@ const GBODY = {
         g.beginPath(); g.ellipse(s2*r*0.03, 0, r*0.17, r*0.07, 0, 0, GTAU); g.fill();
         g.restore();
       }
+    } else if (ear === 'point'){                  // オオカミ：とがった 三角
+      for (const s2 of [-1,1]){
+        g.fillStyle = o.earOut || c;
+        g.beginPath();
+        g.moveTo(x+s2*r*0.26, hy-r*0.48);
+        g.lineTo(x+s2*r*0.58, hy-r*1.06);
+        g.lineTo(x+s2*r*0.84, hy-r*0.3);
+        g.closePath(); g.fill();
+        g.fillStyle = o.earC || '#ffc2d4';
+        g.beginPath();
+        g.moveTo(x+s2*r*0.42, hy-r*0.5);
+        g.lineTo(x+s2*r*0.58, hy-r*0.88);
+        g.lineTo(x+s2*r*0.72, hy-r*0.4);
+        g.closePath(); g.fill();
+      }
+    } else if (ear === 'big'){                    // ネズミ：かおより 目立つ 大きな まる
+      g.fillStyle = o.earOut || c;
+      for (const s2 of [-1,1]){
+        g.beginPath(); g.arc(x+s2*r*0.68, hy-r*0.44, r*0.38, 0, GTAU); g.fill();
+      }
+      g.fillStyle = o.earC || '#ffc2d4';
+      for (const s2 of [-1,1]){
+        g.beginPath(); g.arc(x+s2*r*0.7, hy-r*0.42, r*0.22, 0, GTAU); g.fill();
+      }
+    } else if (ear === 'tuft'){                   // リス：先に 毛の ふさ
+      for (const s2 of [-1,1]){
+        g.fillStyle = o.earOut || c;
+        g.beginPath(); g.ellipse(x+s2*r*0.48, hy-r*0.6, r*0.17, r*0.29, s2*0.2, 0, GTAU); g.fill();
+        g.beginPath(); g.ellipse(x+s2*r*0.56, hy-r*0.9, r*0.07, r*0.15, s2*0.35, 0, GTAU); g.fill();
+        g.fillStyle = o.earC || '#ffc2d4';
+        g.beginPath(); g.ellipse(x+s2*r*0.48, hy-r*0.58, r*0.09, r*0.17, s2*0.2, 0, GTAU); g.fill();
+      }
+    } else if (ear === 'leaf'){                   // シカ：よこに ひらいた 葉の形
+      for (const s2 of [-1,1]){
+        g.save(); g.translate(x+s2*r*0.72, hy-r*0.36); g.rotate(s2*0.85);
+        g.fillStyle = o.earOut || c;
+        g.beginPath(); g.ellipse(0, 0, r*0.31, r*0.15, 0, 0, GTAU); g.fill();
+        g.fillStyle = o.earC || '#ffc2d4';
+        g.beginPath(); g.ellipse(0, 0, r*0.2, r*0.08, 0, 0, GTAU); g.fill();
+        g.restore();
+      }
     } else {
       g.fillStyle = o.earOut || c;
       for (const s2 of [-1,1]){
@@ -4184,8 +4290,50 @@ const GBODY = {
         g.beginPath(); g.ellipse(x+s2*r*0.59, hy-r*0.52, r*0.14, r*0.17, s2*0.4, 0, GTAU); g.fill();
       }
     }
+    if (o.horn === 'antler'){                     // シカ：えだわかれした つの
+      g.strokeStyle = o.hornC || '#9a6b45';
+      g.lineWidth = r*0.1; g.lineCap = 'round'; g.lineJoin = 'round';
+      for (const s2 of [-1,1]){
+        g.beginPath();
+        g.moveTo(x+s2*r*0.2,  hy-r*0.52);
+        g.quadraticCurveTo(x+s2*r*0.4, hy-r*0.9, x+s2*r*0.32, hy-r*1.2);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(x+s2*r*0.31, hy-r*0.82);
+        g.quadraticCurveTo(x+s2*r*0.66, hy-r*0.96, x+s2*r*0.7, hy-r*1.14);
+        g.stroke();
+      }
+    }
     g.fillStyle = c;                              // あたま
     g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
+    if (o.mane){                                  // ライオン：あたまの まわりの たてがみ
+      g.fillStyle = o.maneC || c2;
+      for (let i=0;i<12;i++){
+        const a = GTAU*i/12;
+        g.beginPath();
+        g.arc(x+Math.cos(a)*hr*0.96, hy+Math.sin(a)*hr*0.96, r*0.2, 0, GTAU); g.fill();
+      }
+      g.fillStyle = c;                            // 顔の ぶんを 塗りなおして たてがみを 外がわだけに
+      g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
+    }
+    if (o.mask){                                  // オオカミ・レッサーパンダ：目のまわりの 白
+      // **口もとの まるは おかない**。目と口の あいだが せまく、のみこんでしまう
+      g.fillStyle = o.mask;
+      for (const s2 of [-1,1]){
+        g.beginPath(); g.ellipse(x+s2*r*0.33, hy-r*0.04, r*0.2, r*0.28, s2*0.25, 0, GTAU); g.fill();
+      }
+    }
+    if (o.mark === 'stripe'){                     // トラ：あたまの しま
+      g.strokeStyle = o.markC || c2; g.lineWidth = r*0.07; g.lineCap = 'round';
+      for (const s2 of [-1,1]) for (const ay of [-0.36, -0.16]){
+        g.beginPath();
+        g.moveTo(x+s2*r*0.34, hy+r*ay);
+        g.lineTo(x+s2*r*0.6,  hy+r*(ay+0.07));
+        g.stroke();
+      }
+      g.beginPath();                              // おでこの すじ
+      g.moveTo(x, hy-r*0.66); g.lineTo(x, hy-r*0.44); g.stroke();
+    }
     if (o.wool){ g.fillStyle = o.wool; fluff(x, hy, hr*0.86, 11, r*0.2); }
     if (o.horn === 'spiral'){                     // ヒツジの まきづの
       // **もこもこの あとに** えがく。うしろへ まわすと まきの 内がわが 毛に かくれて、
@@ -6483,23 +6631,23 @@ const CREATURES = [
 
   // --- もり／りく（4本あしの けもの）。みみ・しっぽ・はなさき・もようで 見わける ---
   ['teddy','ウサギ',  ['#ffc9dd','#ffe4ee','#ff9dc0'], 1,'en',{key:'rabbit', ear:'long', earC:'#ef7ba6', noseC:'#8f5563', belly:'rgba(255,246,250,.5)', sc:0.94, line:'#e07fa8'}],
-  ['quad','ネズミ',   ['#b8bcc8','#eef0f4','#ffc2d4'], 1,'en',{key:'mouse',  ear:'round', tail:'long', stout:0.85, mark:'belly'}],
-  ['quad','リス',     ['#e0975a','#ffe8c8','#8a5a30'], 2,'en',{key:'squirrel',ear:'tuftear', tail:'bushy', stout:0.9, mark:'belly'}],
+  ['teddy','ネズミ',  ['#9aa0ae','#eef0f4','#ffc2d4'], 1,'en',{key:'mouse', ear:'big', earC:'#f4948f', tail:'thin', tailC:'#c98a7a', belly:'#fdf6ec', limbC:'#c98a7a', noseC:'#f4948f'}],
+  ['teddy','リス',    ['#e0975a','#ffe8c8','#8a5a30'], 2,'en',{key:'squirrel', ear:'tuft', earC:'#f0bd8c', tail:'curl', tailC:'#c97f45', tailIn:'#f2c48e', belly:'#fff0d8', noseC:'#7a4a2a'}],
   ['quad','ハリネズミ',['#d8b98a','#fff0d8','#8a6a58'],2,'en',{key:'hedgehog',ear:'round', head:'small', snout:'long', stout:1.0, mark:'quill', markC:'#7a6350'}],
   ['quad','コアラ',   ['#a8b0bc','#eef0f4','#7a8290'], 3,'en',{key:'koala',  dx:-0.042, ear:'big', earIn:'rgba(255,255,255,.45)', head:'wide', nose:true, noseC:'#4a4450', tail:'short', stout:1.15, mark:'belly', markC:'rgba(245,248,252,.7)'}],
   ['teddy','ヒツジ',  ['#fdf6e8','#fff9f0','#e7d3a8'], 3,'en',{key:'sheep', ear:'droop', earOut:'#e8cfa4', earC:'#c9a97e', wool:'#fffaf0', face:'#f0dcb8', horn:'spiral', hornC:'#f0c351', limbC:'#e8cfa4', noseC:'#7a5a44', line:'#9a7448'}],
   ['quad','ブタ',     ['#ffb3c8','#ffd8e4','#e88aa0'], 3,'en',{key:'pig',    ear:'pigflop', head:'wide', tail:'curl', snout:'pig', stout:1.1, flat:1.05, headOut:0.34, shortLeg:true, hoof:'#c9708f'}],
   ['quad','サル',     ['#c98f66','#ffe0c8','#8a6440'], 3,'en',{key:'monkey', ear:'round', head:'round', tail:'long', faceRing:'#ffe0c8', stout:0.9}],
-  ['quad','シカ',     ['#c9955e','#fff0d8','#8a6440'], 4,'en',{key:'deer',   ear:'horse', head:'long', horn:'antler', tail:'puff', mark:'spot'}],
-  ['quad','オオカミ', ['#8a92a4','#eef2f8','#4a5060'], 4,'en',{key:'wolf',   ear:'point', head:'long', ruff:true, ruffC:'#b0b8c8', tail:'bushy', snout:'long', stout:0.92, mark:'belly'}],
+  ['teddy','シカ',    ['#d3a878','#fff0d8','#8a6440'], 4,'en',{key:'deer', ear:'leaf', earC:'#f7dcbe', horn:'antler', hornC:'#9a6b45', mark:'spot', belly:'#fff2df', limbC:'#a87c52', noseC:'#4a3348'}],
+  ['teddy','オオカミ',['#8a92a4','#eef2f8','#4a5060'], 4,'en',{key:'wolf', ear:'point', earC:'#c9b0bc', tail:'bushy', tailC:'#7b8497', mask:'#eef2f8', belly:'#eef2f8', limbC:'#6e7788', noseC:'#3a3f4c'}],
   ['teddy','パンダ',  ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'panda',  earOut:'#2f3346', earC:'#5b6072', limbC:'#2f3346', patch:true, patchC:'#2f3346', snoutC:'#fdfaff', noseC:'#2f3346', line:'#2f3346'}],
   ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'en',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
   ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'en',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
   ['teddy','クマ',    ['#b99372','#f0e2c8','#8a6a4a'], 5,'en',{key:'bear',   earC:'#ffc2d4', snoutC:'#f6e8b8', noseC:'#3a2c38', belly:'rgba(240,226,200,.45)'}],
-  ['quad','トラ',     ['#f0993f','#fff0d8','#2f2f3a'], 5,'en',{key:'tiger',  ear:'round', tail:'long', mark:'stripe', dark:'rgba(50,40,50,.6)'}],
-  ['quad','ライオン', ['#e8b06a','#ffe0b0','#b9773a'], 6,'en',{key:'lion',   ear:'round', tail:'tuft', mane:'lion', maneC:'#c98a44', tuftC:'#c98a44'}],
+  ['teddy','トラ',    ['#f5c451','#fff0d8','#8a5a2a'], 5,'en',{key:'tiger', ear:'round', earC:'#fdefd8', mark:'stripe', markC:'#8a5a2a', belly:'#fdefd8', noseC:'#6b4326'}],
+  ['teddy','ライオン',['#f0c489','#ffe0b0','#c98a44'], 6,'en',{key:'lion', ear:'round', earC:'#ffe8c4', mane:true, maneC:'#d99a4e', tail:'tuft', tailC:'#d9a86e', tuftC:'#d99a4e', belly:'#ffeeda', noseC:'#7a4a2a'}],
 
-  ['quad','レッサーパンダ',['#d8703f','#fdfaff','#5b3420'],3,'en',{key:'redpanda',ear:'round', tail:'bushy', snout:'pale', mark:'belly'}],
+  ['teddy','レッサーパンダ',['#d8703f','#fdfaff','#5b3420'],3,'en',{key:'redpanda', ear:'round', earOut:'#fdfaff', earC:'#f0c0a8', tail:'bushy', tailC:'#e08a52', tailBand:'#fdf2ea', mask:'#fdfaff', belly:'#fdf6ee', limbC:'#5b3420', noseC:'#3a2418'}],
   ['quad','ナマケモノ',['#b0a48e','#e8e0d0','#7a705e'],3,'en',{key:'sloth',  ear:'round', head:'flat', faceRing:'#e8e0d0', claw:true, clawC:'#6b5a48', tail:'short', stout:1.0}],
   ['quad','シマウマ', ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'zebra',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#2f3346', tuftC:'#2f3346', mark:'stripe', dark:'rgba(40,35,50,.75)', line:'#2f3346'}],
   ['quad','キリン',   ['#f0c060','#fff0c8','#8a6440'], 5,'en',{key:'giraffe',ear:'horse', head:'long', horn:'ossicone', tail:'tuft', neck:0.8, stout:0.9, mark:'spot', markC:'rgba(150,100,40,.55)', tuftC:'#8a6440'}],
