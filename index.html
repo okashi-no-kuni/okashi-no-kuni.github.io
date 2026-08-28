@@ -6258,15 +6258,38 @@ const GFR = { orca:0.42, dolphin:0.38, turtle:0.4, bird:0.56, dragon:0.38,
    いまは クマ・おばけ・ヒツジ の3体だけ。読めた子から さしかわり、
    読めなければ これまでどおり コードで えがく。
 
-   にじいろ版は のぞく。7色に かがやく とくべつな すがたなので、
-   1枚の 絵に すると 色が 変わらなくなる */
+   にじいろ版も 同じ 絵を つかう。色は drawGenFx が あとから
+   合成で 変えるので、絵は 1枚で 足りる */
 const ART_SPRITE = {};
+
+/* どの 絵を つかうかを 決める キー。
+   **buildRoster が id を 作るのと 同じ 規則**（opt.key、なければ body）。
+   2か所に 書くと ずれる。実際 drawGen が opt.key だけを 見ていた あいだ、
+   opt.key を もたない 66体が 絵を もったまま コードで えがかれて いた。
+   だから 式は ここ 1つに して、検査（__chk.artKeyOf）にも これを わたす */
+const artKeyOf = rc => (rc.opt && rc.opt.key ? rc.opt.key : rc.body);
 
 /* ---------- ① 立体感をつける前に えがく（からだと かお） ---------- */
 function drawGen(g, S, rc){
   /* 絵が ある子は はって おしまい。かげ（portraitShade）と
-     にじいろ（drawGenFx）は この あとも これまでどおり かかる */
-  const art = !rc.rainbow && rc.opt && rc.opt.key ? ART_SPRITE[rc.opt.key] : null;
+     にじいろ（drawGenFx）は この あとも これまでどおり かかる。
+
+     **にじいろ版も 絵を つかう。**drawGenFx の にじいろは
+     globalCompositeOperation:'color' で 「キャンバスの 中みの 色相だけ」を
+     ぬりかえる 作りなので、中みが 絵でも そのまま かかる。
+     切りぬきも かける前の 中みを mask に して destination-in するので、
+     PNG の すきとおりが のこる。
+     はじめは 「1枚の絵に すると 色が 変わらなくなる」と 思って よけていたが、
+     色を 変えているのは 絵では なく この あとの 合成の ほうだった */
+  /* キーは **buildRoster が id を 作るのと 同じ 式**で 出す。
+     opt.key が ない子は body が キーに なる。
+     opt.key だけを 見ていた あいだ、opt.key を もたない 66体
+     （クラゲ・おかしの ほとんど・スライムなど）は 絵が あるのに
+     つかわれず、コードで えがかれた ままだった。
+     check-chars は わくの はみ出しを 見るので、どちらで えがいても とおる。
+     __dbg.art() も「読めた 絵」しか 数えないので 気づけない。
+     だから __dbg.artAudit() で「絵が あるのに つかわれない子」を 数える */
+  const art = ART_SPRITE[artKeyOf(rc)] || null;
   if (art){ g.drawImage(art, 0, 0, S, S); return; }
   const M = S/2, R = S*0.285, L = LV[rc.lv];   // からだで見わけるので 大きめに
   // 色は その子じたいの色（シャチなら 黒と白）。レベルでは 変えない。
@@ -11135,6 +11158,10 @@ game = new Phaser.Game({
    ゲーム本体は 外から さわられたくないので、検査に いる2つだけ 出す */
 window.__chk = {
   buildRoster, drawGen,
+  /* 絵に さしかえた子の キー。検査で 「絵が あるのに つかわれない子」を
+     数える ために 出す。drawGen と おなじ 式で キーを 作る こと */
+  artKeyOf,                                   // drawGen が つかう ものと 同じ 関数
+  artHas: k => !!ART_SPRITE[k],
   // アバターも キャラなので おなじ検査に かける。
   // ぜんぶの くみあわせは 何万とおりも あるので、各こうもくを もれなく 1回は とおす数だけ 作る
   avatarSamples: () => {
@@ -11161,6 +11188,23 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   /* ぜんぶ IIFE の 中なので、外から 見るには ここに 出すしか ない。
      画像に さしかわった子が どれか（＝ 絵が 読めたか）を たしかめる */
   art: () => Object.keys(ART_SPRITE),
+  /* 絵が あるのに つかわれていない子を さがす。
+     drawGen が 見る キーと、id を 作る キーが ちがうと そうなる */
+  artAudit: () => GEN_LIST.filter(o => !o.rainbow).map(o => {
+    const k = o.opt && o.opt.key ? o.opt.key : o.body;   // drawGen と 同じ 式
+    return { n:o.name, body:o.body, key:k, has:!!ART_SPRITE[k], used:!!ART_SPRITE[k] };
+  }),
+  /* 1体を えがいて 画像で かえす。ぜんぶ IIFE の 中なので、
+     外から 見た目を たしかめるには ここを とおすしか ない。
+     にじいろが 絵に かかっているかを 見るのに つかった */
+  draw: (id, S) => {
+    const o = GEN_BY_ID[id]; if (!o) return null;
+    S = S || 130;
+    const c = document.createElement('canvas'); c.width = S; c.height = S;
+    const g = c.getContext('2d');
+    drawGen(g, S, o); portraitShade(g, S); drawGenFx(g, S, o);
+    return c.toDataURL('image/png');
+  },
   setWave: w => { wave = w; syncHUD(); },
   setStars: n => { stars = n; syncHUD(); syncShop(); },
   setTool: k => { selTool = k; },
