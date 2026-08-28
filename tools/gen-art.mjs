@@ -50,8 +50,16 @@ if (!KEY) die('環境変数 GEMINI_API_KEY が ありません。\n'
   + '  そのあと あたらしい セッションを ひらいてください\n'
   + '  （環境変数は コンテナが 起動するときに 読まれるため）');
 
-async function call(path, init){
-  const r = await fetch(`${API}/${path}${path.includes('?') ? '&' : '?'}key=${KEY}`, init);
+/* キーは URL では なく ヘッダで おくる。2026年から AI Studio が 出すのは
+   `AQ.` で はじまる あたらしい形式（認証キー）で、こちらは ヘッダを 前提に
+   している。`?key=` の 書きかたは 古い `AIza` キー むけで、新しい キーだと
+   401 に なる ことが ある。ヘッダなら どちらの 形式でも とおる。
+   ついでに URL に キーが のらないので、ログにも のこらない */
+async function call(path, init = {}){
+  const r = await fetch(`${API}/${path}`, {
+    ...init,
+    headers: { ...(init.headers || {}), 'x-goog-api-key': KEY },
+  });
   const t = await r.text();
   let j = null;
   try { j = JSON.parse(t); } catch (e) { /* JSON でないときは 生のまま 見せる */ }
