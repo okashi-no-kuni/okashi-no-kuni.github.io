@@ -207,7 +207,11 @@ async function cutout(page, buf, size){
    タツノオトシゴだけ GFX が -0.08 なので 左むき。
 
    色は CREATURES の パレットに そろえる。ちがう色で 出すと
-   ゲームの 中の その子と 別人に 見える
+   ゲームの 中の その子と 別人に 見える。
+
+   おかしは ぜんぶ まえ向き（GSIDE に のっていない）。
+   チョコ・せんべい・クッキーの こげ茶は 持ちあげない。
+   パステルに すると チョコに 見えなく なるので、パンダと おなじ あつかい
    （そろえておくと、あとで 絵と キャラを つきあわせるのが 1行ですむ）*/
 const ART = {
   ウサギ:  { key:'rabbit', p:'A pink bunny standing on two legs, long upright ears with darker pink inner ears, small brown nose.' },
@@ -253,6 +257,26 @@ const ART = {
   レッサーパンダ: { key:'redpanda', p:'A rust orange red panda facing right, seen from the side, one visible eye and no mouth, white muzzle and eyebrows, round ears, thick ringed bushy tail.' },
   ナマケモノ: { key:'sloth', p:'A greyish beige sloth facing right, seen from the side, one visible eye and no mouth, flat round face with a pale ring, long curved claws, slow sleepy look.' },
   シマウマ: { key:'zebra', p:'A white zebra facing right, seen from the side, one visible eye and no mouth, soft charcoal stripes, long head, upright charcoal mane, tuft tail.' },
+  キャンディ: { key:'candy', p:'A round pink hard candy inside a twisted clear wrapper, glossy.' },
+  クッキー: { key:'cookie', p:'A round golden butter cookie with dark chocolate chips, keep the cocoa brown of the chips.' },
+  ドーナツ: { key:'donut', p:'A ring doughnut with pink strawberry icing and tiny colourful sprinkles.' },
+  プリン: { key:'purin', p:'A custard pudding with caramel sauce running down the sides, wobbly and glossy.' },
+  マカロン: { key:'macaron', p:'A pink macaron, two round shells with a pale cream filling between them.' },
+  わたあめ: { key:'watame', p:'A fluffy cloud of cotton candy in pink and lavender on a thin paper stick.' },
+  ほしクッキー: { key:'star', p:'A golden star shaped cookie with a lightly sugared surface.' },
+  アイス: { key:'icecream', p:'A scoop of pale blue soda ice cream sitting in a golden waffle cone.' },
+  ソフトクリーム: { key:'soft', p:'A tall swirl of cream coloured soft serve in a golden cone.' },
+  かきごおり: { key:'kakigori', p:'A bowl of shaved ice piled into a fluffy dome with pale blue syrup poured over it.' },
+  チョコ: { key:'choco', p:'A bar of milk chocolate with square segments, one corner broken off, keep the warm cocoa brown.' },
+  ショートケーキ: { key:'cake', p:'A slice of strawberry shortcake, white cream layers with a strawberry on top.' },
+  パフェ: { key:'parfait', p:'A parfait in a tall glass, pink cream and mint green layers with a cherry on top.' },
+  マカロンタワー: { key:'tower', p:'A tower of stacked macarons in pink, lavender and mint, tapering towards the top.' },
+  ウエディングケーキ: { key:'wedding', p:'A three tier white wedding cake with pink piping and a small pale gold topper.' },
+  こんぺいとう: { key:'konpeito', p:'A single konpeito sugar candy, a small round ball covered in tiny blunt bumps, pale pink.' },
+  マシュマロ: { key:'marshmallow', p:'A soft white marshmallow cylinder, plump and rounded.' },
+  グミ: { key:'gummy', p:'A bright pink gummy bear, translucent and glossy like jelly.' },
+  せんべい: { key:'senbei', p:'A round toasted rice cracker, golden, with a strip of dark seaweed wrapped across it.' },
+  わらびもち: { key:'warabi', p:'A cube of warabimochi jelly, pale translucent grey, dusted with soft brown kinako powder.' },
   ブタ:    { key:'pig',    p:'A pale pink piggy seen from the side standing on four short legs, one visible eye, flat snout, floppy ear, curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
