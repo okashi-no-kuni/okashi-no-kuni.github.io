@@ -48,6 +48,17 @@ const EXT = { 'image/png':'png', 'image/jpeg':'jpg', 'image/webp':'webp' };
    なった。白黒で ないと パンダに 見えないので、その子を その子と
    わからせる もようだけは こい ままに する。まっ黒では なく すみ色で。
 
+   ぎゃくに、ほんものが じみな 色（ねずみ色・茶色・こん色）の子は
+   そのまま 出すと 並べたとき そこだけ 沈む。47体の 彩度と 明るさを
+   測ったら、シャチ 0.65 / ネズミ 0.79 / ようかん 0.79 / マンタ 0.92 と
+   下に かたまった（上は ヒツジ 1.67）。だから じみな 色は パステルに
+   持ちあげる。**ただし パンダ・シマウマ・ペンギン・シャチは
+   こさが その子の しるしなので さわらない。**
+
+   ナマケモノは 持ちあげようと して かえって じみに なった
+   （1.11 → 1.02）。写実に よって 丸みが へったため。もとに もどした。
+   **持ちあげたら かならず 測りなおして、下がっていたら もどすこと。**
+
    目の 大きさは **わざと 書いていない**。おばけに そろえようと
    「頭の はばの 1/6」と 数で 書いてみたが、出しなおすと 6.7〜24.2% と
    かえって 広がった。1回ごとの ばらつきが 指示より 大きいため。
@@ -66,6 +77,8 @@ const STYLE = [
   'The one exception is the marking an animal is known by: the patches of a panda,',
   'the back of a penguin, the black of an orca. Keep those clearly dark so the',
   'animal stays recognisable, but use a soft charcoal, never pure black.',
+  'When the real animal is a dull grey or brown, do not copy that literally.',
+  'Lift it into a soft pastel version of the same hue so it stays cute.',
   'Rounded shapes only, no sharp corners. Simple flat vector sticker style with',
   'soft gradient shading and a glossy highlight.',
   'Outline the character with one thin line in a darker shade of its own colour.',
@@ -207,11 +220,11 @@ const ART = {
   タツノオトシゴ:    { key:'seahorse', p:'A golden yellow seahorse seen from the side, one visible eye and no mouth, curled tail, small dorsal fin.' },
   カニ:         { key:'crab', p:'A red-orange crab seen from the front, wide flat shell, two rounded claws held up, small legs.' },
   タコ:         { key:'octopus', p:'A rose pink octopus seen from the front, round head, eight short curling arms.' },
-  イルカ:        { key:'dolphin', p:'A soft blue-grey dolphin facing right, seen from the side, one visible eye and no mouth, pale belly, curved dorsal fin.' },
+  イルカ:        { key:'dolphin', p:'A soft periwinkle blue dolphin facing right, seen from the side, one visible eye and no mouth, cream belly, curved dorsal fin.' },
   シャチ:        { key:'orca', p:'An orca facing right, seen from the side, one visible eye and no mouth, soft charcoal back and white belly, tall rounded dorsal fin.' },
-  アザラシ:       { key:'seal', p:'A pale grey seal facing right, seen from the side, one visible eye and no mouth, plump body, small front flippers.' },
+  アザラシ:       { key:'seal', p:'A soft pale blue seal facing right, seen from the side, one visible eye and no mouth, plump body, cream belly, small front flippers.' },
   サメ:         { key:'shark', p:'A blue-grey shark facing right, seen from the side, one visible eye and no mouth, pale belly, rounded friendly snout, tall dorsal fin.' },
-  マンタ:        { key:'manta', p:'A deep blue-grey manta ray seen from the front, wide triangular wings, pale belly, two small head fins.' },
+  マンタ:        { key:'manta', p:'A manta ray seen from the front, wide triangular wings in soft periwinkle blue with a cream belly, two small head fins, gentle face.' },
   クジラ:        { key:'whale', p:'A blue whale facing right, seen from the side, one visible eye and no mouth, very pale blue belly, a small spout of water above the head.' },
   カメ:         { key:'turtle', p:'A green turtle facing right, seen from the side, one visible eye and no mouth, tan domed shell, four short legs.' },
   ユニコーン:      { key:'unicorn', p:'A white unicorn facing right, seen from the side, one visible eye and no mouth, lavender mane and tail, a small pale gold spiral horn.' },
@@ -219,22 +232,22 @@ const ART = {
   ちょうちょ:      { key:'butterfly', p:'A butterfly seen from the front, two large rounded wings in soft tan and cream, thin antennae, small body.' },
   だんご:        { key:'dango', p:'Three round dumplings on a wooden stick, cream, pale green and pink, stacked in a vertical row, the face on the middle one.' },
   だいふく:       { key:'daifuku', p:'A round white mochi daifuku dusted with pale pink, sitting, soft and plump.' },
-  ようかん:       { key:'youkan', p:'A block of youkan jelly with rounded corners, deep plum colour, glossy top.' },
+  ようかん:       { key:'youkan', p:'A block of youkan jelly with rounded corners, soft plum purple, glossy top.' },
   カモメ: { key:'gull', p:'A white seagull facing right, seen from the side, one visible eye and no mouth, pale blue-grey wing, small orange beak and feet.' },
   ハクチョウ: { key:'swan', p:'A white swan facing right, seen from the side, one visible eye and no mouth, long curved neck, orange beak with a small dark knob, folded wing, fanned tail.' },
   フクロウ: { key:'owl', p:'A tawny brown owl facing right, seen from the side, one visible eye and no mouth, cream belly, small ear tufts, short hooked beak.' },
-  ワシ: { key:'eagle', p:'A brown eagle facing right, seen from the side, one visible eye and no mouth, white head, golden hooked beak and golden feet, fanned tail.' },
-  テントウムシ: { key:'ladybug', p:'A red ladybug seen from the front, round domed shell with soft charcoal spots, small charcoal head, tiny legs.' },
+  ワシ: { key:'eagle', p:'A soft cocoa brown eagle facing right, seen from the side, one visible eye and no mouth, cream white head, pale gold hooked beak and pale gold feet, fanned tail.' },
+  テントウムシ: { key:'ladybug', p:'A ladybug seen from the front, round domed shell in a warm strawberry red with soft charcoal spots, small charcoal head, tiny legs.' },
   ミツバチ: { key:'bee', p:'A round honeybee seen from the front, golden yellow body with soft charcoal stripes, small translucent wings.' },
-  ネズミ: { key:'mouse', p:'A grey mouse facing right, seen from the side, one visible eye and no mouth, round ears, pale belly, long thin tail, pink inner ears.' },
+  ネズミ: { key:'mouse', p:'A soft lavender-grey mouse facing right, seen from the side, one visible eye and no mouth, round ears with pink inner ears, cream belly, long thin tail.' },
   リス: { key:'squirrel', p:'An orange-brown squirrel facing right, seen from the side, one visible eye and no mouth, tufted ears, cream belly, big bushy tail.' },
   ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog facing right, seen from the side, one visible eye and no mouth, long pointed snout, cream belly, a back covered in soft rounded quills.' },
-  コアラ: { key:'koala', p:'A blue-grey koala facing right, seen from the side, one visible eye and no mouth, very big round fluffy ears, wide head, dark rounded nose.' },
+  コアラ: { key:'koala', p:'A soft lavender-grey koala facing right, seen from the side, one visible eye and no mouth, very big round fluffy ears with pink inside, wide head, dark rounded nose.' },
   サル: { key:'monkey', p:'A tan brown monkey facing right, seen from the side, one visible eye and no mouth, round ears, a pale cream ring around the face, long curling tail.' },
   シカ: { key:'deer', p:'A warm brown deer facing right, seen from the side, one visible eye and no mouth, cream belly with soft spots, small antlers, a little puff tail.' },
   オオカミ: { key:'wolf', p:'A blue-grey wolf facing right, seen from the side, one visible eye and no mouth, pointed ears, long snout, pale ruff around the neck, bushy tail.' },
   カンガルー: { key:'kangaroo', p:'A tan brown kangaroo facing right, seen from the side, one visible eye and no mouth, standing on big hind feet, thick tail, cream belly pouch.' },
-  ウマ: { key:'horse', p:'A brown horse facing right, seen from the side, one visible eye and no mouth, long head, dark brown mane and tuft tail, cream muzzle.' },
+  ウマ: { key:'horse', p:'A caramel brown horse facing right, seen from the side, one visible eye and no mouth, long head, soft cocoa mane and tuft tail, cream muzzle.' },
   トラ: { key:'tiger', p:'An orange tiger facing right, seen from the side, one visible eye and no mouth, soft charcoal stripes, cream belly, round ears, long tail.' },
   ライオン: { key:'lion', p:'A golden lion facing right, seen from the side, one visible eye and no mouth, a full amber mane around the head, tuft at the end of the tail.' },
   レッサーパンダ: { key:'redpanda', p:'A rust orange red panda facing right, seen from the side, one visible eye and no mouth, white muzzle and eyebrows, round ears, thick ringed bushy tail.' },
