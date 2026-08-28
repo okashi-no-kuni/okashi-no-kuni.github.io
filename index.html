@@ -6272,6 +6272,21 @@ const ART_SPRITE = {};
    2か所に 書くと ずれる。実際 drawGen が opt.key だけを 見ていた あいだ、
    opt.key を もたない 66体が 絵を もったまま コードで えがかれて いた。
    だから 式は ここ 1つに して、検査（__chk.artKeyOf）にも これを わたす */
+/* タワーに はる 絵の 大きさ（R の 何ばいか）。
+   ばんめん・バー・図鑑の ぜんぶが これを つかう。
+   ちらばらせると 「基本4つだけ 大きい」のような ずれが 起きる。
+
+   絵は わくの 8わりを つかう（fit の きまり）ので、1マスに 対しては
+   だいたい こう なる。
+
+     2.7  Lv1 0.67マス / Lv5 0.86マス   はねが あった ころの 大きさ
+     3.2  Lv1 0.79マス / Lv5 1.02マス   ← いま。はねを はずした ぶん 上げた
+     3.6  Lv1 0.89マス / Lv5 1.15マス   Lv5 が となりに かかりはじめる
+
+   はねと 台座を はずすと まわりが すくので、その ぶんを 絵に まわす。
+   3.2 より 上げると 育てた タワーが となりの マスに はみ出す */
+const TOWER_PX = 3.2;
+
 const artKeyOf = rc => (rc.opt && rc.opt.key ? rc.opt.key : rc.body);
 
 /* ---------- ① 立体感をつける前に えがく（からだと かお） ---------- */
@@ -9622,7 +9637,9 @@ function drawPortrait(g, id, S){
   if (id.slice(0,3) === 'tw_'){
     /* ---- おかし（タワー）のようせい ---- */
     const key = id.slice(3), T = TOWERS[key];
-    // はね（カードの白地でも見えるようにうすいラベンダー）
+    // はね（カードの白地でも見えるようにうすいラベンダー）。
+    // 絵が ある子は じぶんの すがたが あるので つけない
+    if (!(T.art && ART_SPRITE[T.art])){
     g.fillStyle = 'rgba(201,167,255,.4)';
     for (const s of [-1,1]){
       g.beginPath(); g.ellipse(M+s*R*0.95, M-R*0.15, R*0.5, R*0.28, s*0.6, 0, TAU); g.fill();
@@ -9634,9 +9651,10 @@ function drawPortrait(g, id, S){
     rrect(M-R*0.95, M+R*0.82, R*1.9, R*0.28, R*0.14); g.fill();
     g.strokeStyle = 'rgba(160,120,160,.35)'; g.lineWidth = 1.2;
     rrect(M-R*0.95, M+R*0.6, R*1.9, R*0.5, R*0.25); g.stroke();
+    }
     // ばんめんと 同じ 絵を つかう。絵が なければ これまでどおり sweetBody
     if (T.art && ART_SPRITE[T.art]){
-      const px = R*2.7;
+      const px = R*TOWER_PX;
       g.drawImage(ART_SPRITE[T.art], M-px/2, M-px/2, px, px);
     } else {
       // 図鑑は あとから portraitShade が光をのせるので flat でぬる
@@ -10628,7 +10646,7 @@ function drawTower(t){
 
   // ようせいのはねと マカロンの台座。
   // なかまと アバターは じぶんの すがたが あって 絵が こみあうので つけない
-  if (!T.gen && !T.avatar){
+  if (!T.gen && !T.avatar && !(T.art && ART_SPRITE[T.art])){
     const flap = Math.sin(time*7 + t.ph);
     const wk = 1 + (t.lv-1)*0.18;
     for (const s of [-1,1]){
@@ -10663,16 +10681,16 @@ function drawTower(t){
 
   // 体と顔
   if (T.avatar && avMe){
-    const px = R*2.7;
+    const px = R*TOWER_PX;
     ctx.drawImage(avSprite(avMe, px), -px/2, -px/2, px, px);
   } else if (T.gen){
     // なかまは コレクションの絵を そのまま つかう
-    const px = R*2.7;
+    const px = R*TOWER_PX;
     ctx.drawImage(genSprite(T.gen, px), -px/2, -px/2, px, px);
   } else if (T.art && ART_SPRITE[T.art]){
     // コレクションと 同じ 絵。はね・だい・リボンは この あとも つくので
     // 「タワーの すがた」で あることは 見わけられる
-    const px = R*2.7;
+    const px = R*TOWER_PX;
     ctx.drawImage(ART_SPRITE[T.art], -px/2, -px/2, px, px);
   } else {
     sweetBody(ctx, t.k, R, T.color, T.dark, false);
@@ -10683,7 +10701,7 @@ function drawTower(t){
   ctx.restore();
 
   // むねのリボン（Lv4からきんいろ）。コレクションの子は もう かざりが 多いので つけない
-  if (!T.gen && !T.avatar)
+  if (!T.gen && !T.avatar && !(T.art && ART_SPRITE[T.art]))
     drawBow(-R*0.6, -R*0.74, R*(0.3 + (t.lv-1)*0.05), t.lv >= 4 ? '#e8b12e' : T.dark);
 
   // Lv3からまわりを星がくるくるまわる（レベルで数がふえる）
