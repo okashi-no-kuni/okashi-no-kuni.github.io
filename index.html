@@ -687,14 +687,19 @@ let WAY = FIRST_WAY;
 /* ==========================================================
    おかし（タワー）の設定
    ========================================================== */
+/* art は コレクションの どの 絵を つかうか。
+   TOWERS と CREATURES は 別の しくみで、名前は 同じでも 中みは 別もの。
+   絵まで 別だと おなじ「キャンディ」が ゲームの中で 2しゅるいの
+   見た目に なるので、コレクションの 絵を つかいまわす。
+   キー名は そろっていない（タワーの ice ＝ コレクションの icecream）*/
 const TOWERS = {
-  candy: { name:'キャンディ', ic:'🍬', cost:50,  dmg:9,  rate:0.45, range:2.3, color:'#ff8fc4', dark:'#e05f9e',
+  candy: { name:'キャンディ', ic:'🍬', art:'candy', cost:50,  dmg:9,  rate:0.45, range:2.3, color:'#ff8fc4', dark:'#e05f9e',
            desc:'すばやく1体を狙う' },
-  ice:   { name:'アイス',     ic:'🍧', cost:70,  dmg:5,  rate:0.70, range:2.0, color:'#8fd8ff', dark:'#4aa8dd',
+  ice:   { name:'アイス',     ic:'🍧', art:'icecream', cost:70,  dmg:5,  rate:0.70, range:2.0, color:'#8fd8ff', dark:'#4aa8dd',
            slow:0.45, slowT:1.4, desc:'当てた敵を遅くする' },
-  choco: { name:'チョコ',     ic:'🍫', cost:110, dmg:16, rate:1.10, range:1.9, color:'#d09a6a', dark:'#a06a3c',
+  choco: { name:'チョコ',     ic:'🍫', art:'choco', cost:110, dmg:16, rate:1.10, range:1.9, color:'#d09a6a', dark:'#a06a3c',
            splash:0.95, desc:'まわりの敵もまとめて攻撃' },
-  star:  { name:'スター',     ic:'⭐', cost:160, dmg:34, rate:1.50, range:3.6, color:'#ffd76e', dark:'#e0a52e',
+  star:  { name:'スター',     ic:'⭐', art:'star', cost:160, dmg:34, rate:1.50, range:3.6, color:'#ffd76e', dark:'#e0a52e',
            desc:'遠くまで届く強力な一撃' },
 };
 const ORDER = ['candy','ice','choco','star'];
@@ -7585,7 +7590,13 @@ const ART_KEYS = ['angel', 'anmitsu', 'baum', 'bear', 'bee', 'bigparfait', 'butt
    いつまでも さしかわらない */
 for (const k of ART_KEYS){
   const im = new Image();
-  im.onload = () => { ART_SPRITE[k] = im; genSpriteCache.clear(); };
+  im.onload = () => {
+    ART_SPRITE[k] = im;
+    genSpriteCache.clear();
+    // ショップの バーは 起動時に 1回だけ 作られるので、
+    // 読めた時点で 作りなおす。でないと 読みおわる前の 絵が のこる
+    if (typeof buildShop === 'function' && shopEl) { buildShop(); syncShop(); }
+  };
   im.src = 'art/sprites/' + k + '.png';
 }
 function genSprite(o, px){
@@ -9623,12 +9634,17 @@ function drawPortrait(g, id, S){
     rrect(M-R*0.95, M+R*0.82, R*1.9, R*0.28, R*0.14); g.fill();
     g.strokeStyle = 'rgba(160,120,160,.35)'; g.lineWidth = 1.2;
     rrect(M-R*0.95, M+R*0.6, R*1.9, R*0.5, R*0.25); g.stroke();
-    // 盤面とおなじ おかしの形（sweetBody）をつかう。
-    // 図鑑は あとから portraitShade が光をのせるので flat でぬる
-    g.save(); g.translate(M, M);
-    sweetBody(g, key, R, T.color, T.dark, true);
-    g.restore();
-    face(M, M, R*SWEET_FACE[key]);
+    // ばんめんと 同じ 絵を つかう。絵が なければ これまでどおり sweetBody
+    if (T.art && ART_SPRITE[T.art]){
+      const px = R*2.7;
+      g.drawImage(ART_SPRITE[T.art], M-px/2, M-px/2, px, px);
+    } else {
+      // 図鑑は あとから portraitShade が光をのせるので flat でぬる
+      g.save(); g.translate(M, M);
+      sweetBody(g, key, R, T.color, T.dark, true);
+      g.restore();
+      face(M, M, R*SWEET_FACE[key]);
+    }
   } else if (id.slice(0,3) === 'en_'){
     /* ---- てき ---- */
     const key = id.slice(3), E = ENEMIES[key];
@@ -10653,6 +10669,11 @@ function drawTower(t){
     // なかまは コレクションの絵を そのまま つかう
     const px = R*2.7;
     ctx.drawImage(genSprite(T.gen, px), -px/2, -px/2, px, px);
+  } else if (T.art && ART_SPRITE[T.art]){
+    // コレクションと 同じ 絵。はね・だい・リボンは この あとも つくので
+    // 「タワーの すがた」で あることは 見わけられる
+    const px = R*2.7;
+    ctx.drawImage(ART_SPRITE[T.art], -px/2, -px/2, px, px);
   } else {
     sweetBody(ctx, t.k, R, T.color, T.dark, false);
     drawFace(R*SWEET_FACE[t.k], t.ph, 'smile');
