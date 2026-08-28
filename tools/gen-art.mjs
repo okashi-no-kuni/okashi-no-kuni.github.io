@@ -212,7 +212,20 @@ async function cutout(page, buf, size){
    まっすぐ 正面より 動きが あって けものらしい。
    トラと オオカミは 四つ足で 立ち、シカは すわる。
 
-   **よこ向きの子は 右を むかせる。**index.html の GFX が 正の 数
+   **けものは ぜんぶ「からだは よこ（ななめ）、顔だけ こちら」で そろえる。**
+   はじめは よこ顔（目1つ・口なし）だったが、見本を もらって この形に した。
+   まっすぐ 正面より 動きが あって、顔も よく 見える。
+   歩く子（ウマ・シマウマ・キリン・ブタ・ハリネズミ・トラ・オオカミ）は
+   四つ足で 立ち、すわる子（ライオン・ネズミ・リス・コアラ・サル・
+   ナマケモノ・レッサーパンダ・シカ）は すわる。
+   カンガルーだけ うしろ足で 立つ。
+
+   よこ顔の きまり（GSIDE）は drawGen の 中の 話で、絵に さしかえた子は
+   そこを とおらないので かからない。
+
+   **さかな・鳥は よこ向きの まま**（目1つ・口なし）。
+   よこから 見て 目が2つ 見える 生きものでは ないため。
+   その子たちは 右を むかせる。index.html の GFX が 正の 数
    （＝かおを 右へ ずらす）なので、ゲームの よこ向きは みんな 右むき。
    書かないと 左むきで 出る（1バッチ目で 6体 そうなった）。
    タツノオトシゴだけ GFX が -0.08 なので 左むき。
@@ -261,20 +274,20 @@ const ART = {
   ワシ: { key:'eagle', p:'A soft cocoa brown eagle facing right, seen from the side, one visible eye and no mouth, cream white head, pale gold hooked beak and pale gold feet, fanned tail.' },
   テントウムシ: { key:'ladybug', p:'A ladybug seen from the front, round domed shell in a warm strawberry red with soft charcoal spots, small charcoal head, tiny legs.' },
   ミツバチ: { key:'bee', p:'A round honeybee seen from the front, golden yellow body with soft charcoal stripes, small translucent wings.' },
-  ネズミ: { key:'mouse', p:'A soft lavender-grey mouse sitting up and facing the viewer, very big round ears with pink inner ears, cream muzzle and belly, a small pink nose, fine whiskers, and a long thin tail curving out to one side.' },
-  リス: { key:'squirrel', p:'An orange-brown squirrel sitting and facing the viewer, tufted ears, cream muzzle and belly, holding a brown acorn in both front paws, and a big bushy tail curving up behind it. The squirrel is on its own, with no branch, log or ground under it.' },
-  ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog facing right, seen from the side, one visible eye and no mouth, long pointed snout, cream belly, a back covered in soft rounded quills.' },
-  コアラ: { key:'koala', p:'A soft lavender-grey koala facing right, seen from the side, one visible eye and no mouth, very big round fluffy ears with pink inside, wide head, dark rounded nose.' },
-  サル: { key:'monkey', p:'A tan brown monkey facing right, seen from the side, one visible eye and no mouth, round ears, a pale cream ring around the face, long curling tail.' },
+  ネズミ: { key:'mouse', p:'A soft lavender-grey mouse sitting up, its body turned to the side and its head turned to face the viewer, very big round ears with pink inner ears, cream muzzle and belly, a small pink nose, fine whiskers, and a long thin tail curving out behind.' },
+  リス: { key:'squirrel', p:'An orange-brown squirrel sitting, its body turned to the side and its head turned to face the viewer, tufted ears, cream muzzle and belly, holding a brown acorn in both front paws, and a big bushy tail curving up behind. No branch, log or ground under it.' },
+  ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog standing on all four short legs, its body turned to the side and its head turned to face the viewer, a long pointed snout, cream muzzle and belly, and a back covered in soft rounded quills.' },
+  コアラ: { key:'koala', p:'A soft lavender-grey koala sitting, its body turned to the side and its head turned to face the viewer, very big round fluffy ears with pink inside, a wide head, a large dark rounded nose, and cream chest.' },
+  サル: { key:'monkey', p:'A tan brown monkey sitting, its body turned to the side and its head turned to face the viewer, round ears, a pale cream ring around the face, cream chest, and a long tail curling behind it.' },
   シカ: { key:'deer', p:'A tan fawn sitting with its body turned to the side and its head turned to face the viewer, big round head, large soft ears, two slender antlers, cream muzzle and chest, white spots over its back, slender legs folded under it, a small puff tail.' },
   オオカミ: { key:'wolf', p:'A fluffy wolf cub standing on all four legs, its body turned to the side and its head turned to face the viewer. Its back, head and the outside of its ears are a deep charcoal grey, while its muzzle, cheeks, chest ruff, belly, legs and the tip of its big bushy tail are cream; the boundary between the two is clear and easy to read even when small. Big round dark eyes with white highlights, round pink cheeks, a small closed smiling mouth with one tiny white fang peeking out, and soft rounded ears.' },
-  カンガルー: { key:'kangaroo', p:'A tan brown kangaroo facing right, seen from the side, one visible eye and no mouth, standing on big hind feet, thick tail, cream belly pouch.' },
-  ウマ: { key:'horse', p:'A caramel brown horse facing right, seen from the side, one visible eye and no mouth, long head, soft cocoa mane and tuft tail, cream muzzle.' },
+  カンガルー: { key:'kangaroo', p:'A tan brown kangaroo standing on its big hind feet, its body turned to the side and its head turned to face the viewer, small rounded ears, a cream belly pouch, short front paws held in front, and a thick tail resting behind.' },
+  ウマ: { key:'horse', p:'A caramel brown horse standing on all four legs, its body turned to the side and its head turned to face the viewer, a long head, cream muzzle, a soft cocoa mane, and a tuft tail.' },
   トラ: { key:'tiger', p:'An orange-yellow tiger cub standing on all four legs, its body turned to the side and its head turned to face the viewer, big round head, small rounded ears with cream inner ears, soft brown stripes over the head, back and tail, cream muzzle, chest, belly and paws, tail curving up behind.' },
-  ライオン: { key:'lion', p:'A golden lion cub sitting and facing the viewer, big round head framed by a full amber mane, small rounded ears with orange inner ears, cream muzzle, long tail with an amber tuft at the end curling round beside it.' },
-  レッサーパンダ: { key:'redpanda', p:'A rust orange red panda sitting and facing the viewer, big round head, white eyebrows, white muzzle and cheeks, round ears edged with white, and a thick tail with pale rings curling round beside it.' },
-  ナマケモノ: { key:'sloth', p:'A greyish beige sloth facing right, seen from the side, one visible eye and no mouth, flat round face with a pale ring, long curved claws, slow sleepy look.' },
-  シマウマ: { key:'zebra', p:'A white zebra facing right, seen from the side, one visible eye and no mouth, soft charcoal stripes, long head, upright charcoal mane, tuft tail.' },
+  ライオン: { key:'lion', p:'A golden lion cub sitting, its body turned to the side and its head turned to face the viewer, big round head framed by a full amber mane, small rounded ears, cream muzzle, and a long tail with an amber tuft at the end curving round beside it.' },
+  レッサーパンダ: { key:'redpanda', p:'A rust orange red panda sitting, its body turned to the side and its head turned to face the viewer, white eyebrows, white muzzle and cheeks, round ears edged with white, and a thick tail with pale rings curving round beside it.' },
+  ナマケモノ: { key:'sloth', p:'A warm greige sloth sitting, its body turned to the side and its head turned to face the viewer, a flat round face with a cream ring around the eyes, long curved claws resting in front, and a sleepy look.' },
+  シマウマ: { key:'zebra', p:'A white zebra standing on all four legs, its body turned to the side and its head turned to face the viewer, soft charcoal stripes over the body and legs, a long head, an upright charcoal mane, and a tuft tail.' },
   キャンディ: { key:'candy', p:'A round pink hard candy inside a twisted clear wrapper, glossy.' },
   クッキー: { key:'cookie', p:'A round golden butter cookie with dark chocolate chips, keep the cocoa brown of the chips.' },
   ドーナツ: { key:'donut', p:'A ring doughnut with pink strawberry icing and tiny colourful sprinkles.' },
@@ -315,7 +328,7 @@ const ART = {
   ミルフィーユ: { key:'mille', p:'A mille feuille, layers of pale flaky pastry with pink cream between them and a strawberry on top.' },
   タルト: { key:'tart', p:'A round fruit tart, a golden pastry shell filled with bright pink strawberries.' },
   モンブラン: { key:'mont', p:'A mont blanc cake piled with fine golden tan chestnut cream strands, with a small chestnut on top.' },
-  キリン: { key:'giraffe', p:'A giraffe facing right, seen from the side, one visible eye and no mouth, golden yellow coat with soft brown spots, a long neck, two small ossicone horns, a tuft tail.' },
+  キリン: { key:'giraffe', p:'A golden yellow giraffe standing on all four long legs, its body turned to the side and its head turned to face the viewer, a long neck, two small ossicone horns, soft brown patches over the body, cream muzzle, and a tuft tail.' },
   スライム: { key:'slime', p:'A round mint green slime blob, translucent and jelly like, with a soft wobbly bottom edge.' },
   てんし: { key:'angel', p:'A small chibi angel girl standing, white robe, long golden hair, a gold halo floating above her head, small white feathered wings.' },
   あくま: { key:'devil', p:'A small chibi devil girl standing, plum purple outfit, small bat wings, two little horns, dark hair, a thin pointed tail.' },
@@ -329,7 +342,7 @@ const ART = {
   プリンアラモード: { key:'purinala', p:'A pudding a la mode on an oval plate, arranged the way a real one is: a custard pudding with caramel sauce running down it in the middle, a scoop of vanilla ice cream beside it, a swirl of whipped cream, two orange segments, a strawberry and a cherry arranged around the pudding. The face is on the custard pudding itself.' },
   よくばりパフェ: { key:'bigparfait', p:'A tall parfait in a footed sundae glass with a fluted scalloped rim. Through the glass you can clearly see stacked horizontal layers, from the bottom up: golden peach jelly, pink strawberry sauce, white cream, cornflakes, and a band of chocolate sauce. Heaped high above the rim and spilling generously over both sides is a big pile of fruit and cream: a scoop of vanilla ice cream, a tall swirl of whipped cream, a whole strawberry on the very top, a slice of kiwi, an orange segment, two banana slices, a wedge of green melon and a red cherry. Two thin wafer sticks poke out at angles from the pile. The pile above the rim is at least as tall as the glass itself. The face is on the glass, below the rim.' },
   プリンパフェ: { key:'purinpafe', p:'A deluxe pudding parfait in a wide footed glass bowl. A ring of soft whipped cream fills the bowl, and standing in it are a custard pudding with caramel sauce, a scoop of vanilla ice cream drizzled with chocolate and coloured sprinkles, and a second scoop of pink strawberry ice cream with sprinkles. Arranged around them are an orange slice, a whole strawberry, three blueberries, a slice of kiwi, a wedge of yellow melon and a slice of banana. Two thin wafer sticks stand up at angles at the back and a red cherry sits on the very top. The face is on the custard pudding.' },
-  ブタ:    { key:'pig',    p:'A pale pink piggy seen from the side standing on four short legs, one visible eye, flat snout, floppy ear, curly tail.' },
+  ブタ:    { key:'pig',    p:'A pale pink piggy standing on all four short legs, its body turned to the side and its head turned to face the viewer, a flat round snout, floppy ears, cream belly, and a small curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
   パンダ:  { key:'panda',  p:'A panda standing on two legs, black ears and black eye patches, white face and belly.' },
