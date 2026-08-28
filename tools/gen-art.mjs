@@ -201,6 +201,12 @@ async function cutout(page, buf, size){
    よこ顔で えがく きまりで、よこから 見て 目が2つ 見えることは ない。
    STYLE は「目は2つ」と 書いてあるので、その子の 文で うわがきする。
 
+   **見本を もらった 7体（オオカミ・シカ・トラ・ライオン・ネズミ・
+   レッサーパンダ・リス）は すわった 正面むきに した。**
+   よこ向きの きまり（GSIDE）は drawGen の 中の 話で、絵に さしかえた子は
+   そこを とおらないので かからない。顔が よく 見えるぶん かわいい。
+   のこりの よこ向きの子は そのままなので、いまは 2しゅるいが まざっている。
+
    **よこ向きの子は 右を むかせる。**index.html の GFX が 正の 数
    （＝かおを 右へ ずらす）なので、ゲームの よこ向きは みんな 右むき。
    書かないと 左むきで 出る（1バッチ目で 6体 そうなった）。
@@ -250,18 +256,18 @@ const ART = {
   ワシ: { key:'eagle', p:'A soft cocoa brown eagle facing right, seen from the side, one visible eye and no mouth, cream white head, pale gold hooked beak and pale gold feet, fanned tail.' },
   テントウムシ: { key:'ladybug', p:'A ladybug seen from the front, round domed shell in a warm strawberry red with soft charcoal spots, small charcoal head, tiny legs.' },
   ミツバチ: { key:'bee', p:'A round honeybee seen from the front, golden yellow body with soft charcoal stripes, small translucent wings.' },
-  ネズミ: { key:'mouse', p:'A soft lavender-grey mouse facing right, seen from the side, one visible eye and no mouth, round ears with pink inner ears, cream belly, long thin tail.' },
-  リス: { key:'squirrel', p:'An orange-brown squirrel facing right, seen from the side, one visible eye and no mouth, tufted ears, cream belly, big bushy tail.' },
+  ネズミ: { key:'mouse', p:'A soft lavender-grey mouse sitting up and facing the viewer, very big round ears with pink inner ears, cream muzzle and belly, a small pink nose, fine whiskers, and a long thin tail curving out to one side.' },
+  リス: { key:'squirrel', p:'An orange-brown squirrel sitting and facing the viewer, tufted ears, cream muzzle and belly, holding a brown acorn in both front paws, and a big bushy tail curving up behind it.' },
   ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog facing right, seen from the side, one visible eye and no mouth, long pointed snout, cream belly, a back covered in soft rounded quills.' },
   コアラ: { key:'koala', p:'A soft lavender-grey koala facing right, seen from the side, one visible eye and no mouth, very big round fluffy ears with pink inside, wide head, dark rounded nose.' },
   サル: { key:'monkey', p:'A tan brown monkey facing right, seen from the side, one visible eye and no mouth, round ears, a pale cream ring around the face, long curling tail.' },
-  シカ: { key:'deer', p:'A warm brown deer facing right, seen from the side, one visible eye and no mouth, cream belly with soft spots, small antlers, a little puff tail.' },
-  オオカミ: { key:'wolf', p:'A blue-grey wolf facing right, seen from the side, one visible eye and no mouth, pointed ears, long snout, pale ruff around the neck, bushy tail.' },
+  シカ: { key:'deer', p:'A warm brown fawn sitting and facing the viewer, big round head, tall upright ears, two small antlers, cream muzzle, cream belly and soft white spots on its back, a little puff tail.' },
+  オオカミ: { key:'wolf', p:'A blue-grey wolf cub sitting and facing the viewer, big round head, pointed ears with pale pink inner ears, a pale ruff around the neck, cream muzzle and belly, bushy tail curling round beside it.' },
   カンガルー: { key:'kangaroo', p:'A tan brown kangaroo facing right, seen from the side, one visible eye and no mouth, standing on big hind feet, thick tail, cream belly pouch.' },
   ウマ: { key:'horse', p:'A caramel brown horse facing right, seen from the side, one visible eye and no mouth, long head, soft cocoa mane and tuft tail, cream muzzle.' },
-  トラ: { key:'tiger', p:'An orange tiger facing right, seen from the side, one visible eye and no mouth, soft charcoal stripes, cream belly, round ears, long tail.' },
-  ライオン: { key:'lion', p:'A golden lion facing right, seen from the side, one visible eye and no mouth, a full amber mane around the head, tuft at the end of the tail.' },
-  レッサーパンダ: { key:'redpanda', p:'A rust orange red panda facing right, seen from the side, one visible eye and no mouth, white muzzle and eyebrows, round ears, thick ringed bushy tail.' },
+  トラ: { key:'tiger', p:'An orange tiger cub sitting and facing the viewer, big round head, small rounded ears, soft charcoal stripes over the head, back and tail, white muzzle, chest and paws, long striped tail curling round beside it.' },
+  ライオン: { key:'lion', p:'A golden lion cub sitting and facing the viewer, big round head framed by a full amber mane, small rounded ears with orange inner ears, cream muzzle, long tail with an amber tuft at the end curling round beside it.' },
+  レッサーパンダ: { key:'redpanda', p:'A rust orange red panda sitting and facing the viewer, big round head, white eyebrows, white muzzle and cheeks, round ears edged with white, and a thick tail with pale rings curling round beside it.' },
   ナマケモノ: { key:'sloth', p:'A greyish beige sloth facing right, seen from the side, one visible eye and no mouth, flat round face with a pale ring, long curved claws, slow sleepy look.' },
   シマウマ: { key:'zebra', p:'A white zebra facing right, seen from the side, one visible eye and no mouth, soft charcoal stripes, long head, upright charcoal mane, tuft tail.' },
   キャンディ: { key:'candy', p:'A round pink hard candy inside a twisted clear wrapper, glossy.' },
