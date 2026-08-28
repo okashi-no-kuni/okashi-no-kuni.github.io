@@ -207,6 +207,11 @@ async function cutout(page, buf, size){
    そこを とおらないので かからない。顔が よく 見えるぶん かわいい。
    のこりの よこ向きの子は そのままなので、いまは 2しゅるいが まざっている。
 
+   さらに トラ・シカ・オオカミは 2回目の 見本を もらって、
+   **からだは よこ（ななめ）で 顔だけ こちらを むく**形に した。
+   まっすぐ 正面より 動きが あって けものらしい。
+   トラと オオカミは 四つ足で 立ち、シカは すわる。
+
    **よこ向きの子は 右を むかせる。**index.html の GFX が 正の 数
    （＝かおを 右へ ずらす）なので、ゲームの よこ向きは みんな 右むき。
    書かないと 左むきで 出る（1バッチ目で 6体 そうなった）。
@@ -261,11 +266,11 @@ const ART = {
   ハリネズミ: { key:'hedgehog', p:'A sandy beige hedgehog facing right, seen from the side, one visible eye and no mouth, long pointed snout, cream belly, a back covered in soft rounded quills.' },
   コアラ: { key:'koala', p:'A soft lavender-grey koala facing right, seen from the side, one visible eye and no mouth, very big round fluffy ears with pink inside, wide head, dark rounded nose.' },
   サル: { key:'monkey', p:'A tan brown monkey facing right, seen from the side, one visible eye and no mouth, round ears, a pale cream ring around the face, long curling tail.' },
-  シカ: { key:'deer', p:'A warm brown fawn sitting and facing the viewer, big round head, tall upright ears, two small antlers, cream muzzle, cream belly and soft white spots on its back, a little puff tail.' },
-  オオカミ: { key:'wolf', p:'A blue-grey wolf cub sitting and facing the viewer, big round head, pointed ears with pale pink inner ears, a pale ruff around the neck, cream muzzle and belly, bushy tail curling round beside it.' },
+  シカ: { key:'deer', p:'A tan fawn sitting with its body turned to the side and its head turned to face the viewer, big round head, large soft ears, two slender antlers, cream muzzle and chest, white spots over its back, slender legs folded under it, a small puff tail.' },
+  オオカミ: { key:'wolf', p:'A grey wolf cub standing on all four legs, its body turned to the side and its head turned to face the viewer, big round head, tall pointed ears, pale grey markings around the eyes and a pale ruff at the chest, warm amber eyes, an open smiling mouth showing two small fangs, cream paws, a bushy tail curving up behind.' },
   カンガルー: { key:'kangaroo', p:'A tan brown kangaroo facing right, seen from the side, one visible eye and no mouth, standing on big hind feet, thick tail, cream belly pouch.' },
   ウマ: { key:'horse', p:'A caramel brown horse facing right, seen from the side, one visible eye and no mouth, long head, soft cocoa mane and tuft tail, cream muzzle.' },
-  トラ: { key:'tiger', p:'An orange tiger cub sitting and facing the viewer, big round head, small rounded ears, soft charcoal stripes over the head, back and tail, white muzzle, chest and paws, long striped tail curling round beside it.' },
+  トラ: { key:'tiger', p:'An orange-yellow tiger cub standing on all four legs, its body turned to the side and its head turned to face the viewer, big round head, small rounded ears with cream inner ears, soft brown stripes over the head, back and tail, cream muzzle, chest, belly and paws, tail curving up behind.' },
   ライオン: { key:'lion', p:'A golden lion cub sitting and facing the viewer, big round head framed by a full amber mane, small rounded ears with orange inner ears, cream muzzle, long tail with an amber tuft at the end curling round beside it.' },
   レッサーパンダ: { key:'redpanda', p:'A rust orange red panda sitting and facing the viewer, big round head, white eyebrows, white muzzle and cheeks, round ears edged with white, and a thick tail with pale rings curling round beside it.' },
   ナマケモノ: { key:'sloth', p:'A greyish beige sloth facing right, seen from the side, one visible eye and no mouth, flat round face with a pale ring, long curved claws, slow sleepy look.' },
