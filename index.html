@@ -415,7 +415,7 @@
   </div>
 
   <div id="wrap">
-    <canvas id="cv"></canvas>
+    <div id="cv"></div>
     <div id="ov">
       <div id="ovT"></div>
       <div id="ovB"></div>
@@ -570,6 +570,7 @@
 
 <div id="confetti"></div>
 
+<script src="vendor/phaser.min.js"></script>
 <script>
 (() => {
 "use strict";
@@ -1070,9 +1071,10 @@ function applyRegen(){
 /* ==========================================================
    DOM
    ========================================================== */
-/* えがく先。じめんを 焼くときだけ 別の ctx にさしかえるので const にしない */
-const cv = document.getElementById('cv');
-let ctx = cv.getContext('2d'), DPR = 1;
+/* えがく先。ばんめんの canvas は Phaser が つくるので、ここでは 入れものだけ もつ。
+   ctx は Phaser が えがきに来たときに 入る（じめんを 焼くときも さしかえる）*/
+const cvHost = document.getElementById('cv');
+let ctx = null, DPR = 1;
 const $ = id => document.getElementById(id);
 const vHp = $('vHp'), vSt = $('vSt'), vWv = $('vWv'), vBw = $('vBw'), hpBox = $('hpBox');
 const shopEl = $('shop'), infoEl = $('info'), infoIc = $('infoIc'), infoTx = $('infoTx');
@@ -10999,9 +11001,12 @@ function resize(){
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
-    cv.width = W*DPR; cv.height = H*DPR;
-    cv.style.width = W+'px'; cv.style.height = H+'px';
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+    if (game){
+      // 中みは こまかく（DPR倍）、見た目は CSSピクセルで
+      game.scale.resize(W*DPR, H*DPR);
+      game.canvas.style.width = W + 'px';
+      game.canvas.style.height = H + 'px';
+    }
   };
   /* ばんめんの 大きさは innerHeight から そのまま 決める。
      はみ出しを はかって 自動で ちぢめる やりかたも ためしたが、
@@ -11029,27 +11034,51 @@ window.addEventListener('resize', resize);
    もどってきたら 焼いてある じめんも 消えているので、焼きなおす */
 document.addEventListener('visibilitychange', () => { if (!document.hidden) bakeGround(); });
 
-/* 盤面のタップ。タッチもマウスも Pointer Events で 同じようにあつかえる */
-cv.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  const b = cv.getBoundingClientRect();
-  boardTap((e.clientX-b.left) * (COLS*CELL/b.width),
-           (e.clientY-b.top)  * (ROWS*CELL/b.height));
-});
-
 /* ==========================================================
-   メインループ
+   Phaser（ゲームの土台）
+
+   絵は いまのところ Canvas 2D のまま。Phaser の描画APIには
+   グラデーションも 合成モードもなく、いまの立体感や つやが出せないため、
+   レンダラは CANVAS を えらんでいる。
+   キャラを 画像素材に かえたら AUTO（WebGL）に かえられる。
+   Phaser 3 は どちらの レンダラも もっているので、のせかえは 1行ですむ。
+
+   Phaser には ループ・入力・画面サイズを まかせる。
    ========================================================== */
-let last = 0;
-function loop(ts){
-  let dt = Math.min(0.05, (ts-last)/1000 || 0);
-  last = ts;
-  if (!over) for (let i=0;i<speed;i++) update(dt);
-  if (!over) bonusUpdate(dt);   // ボーナスは実時間（速度倍率のえいきょうなし）
-  if (groundKey() !== groundKeyNow) bakeGround();   // ステージが かわった
-  render();
-  requestAnimationFrame(loop);
+let game = null;
+
+/* Phaser の中で、これまでの Canvas 2D の描画を そのまま動かすための入れもの。
+   カメラの変換は かからないので、じぶんで CSSピクセル系に そろえる */
+class Painter extends Phaser.GameObjects.GameObject {
+  constructor(sc, fn){
+    super(sc, 'Painter');
+    this.fn = fn;
+    this.setActive(true);
+    this.renderFlags = 0xF;      // これを立てないと Phaser が えがきに来ない
+  }
+  renderCanvas(renderer){
+    const c = renderer.currentContext || renderer.gameContext;
+    const prev = ctx;
+    c.save(); c.setTransform(DPR, 0, 0, DPR, 0, 0); ctx = c;
+    try{ this.fn(); } finally { ctx = prev; c.restore(); }
+  }
 }
+
+const BoardScene = {
+  key: 'board',
+  create(){
+    this.add.existing(new Painter(this, render));
+    // Phaser が タッチとマウスを 同じように あつかってくれる。
+    // 座標は デバイスピクセルで来るので CSSピクセルに もどす
+    this.input.on('pointerdown', p => boardTap(p.x/DPR, p.y/DPR));
+  },
+  update(_t, dtMs){
+    const dt = Math.min(0.05, dtMs/1000);
+    if (!over) for (let i=0;i<speed;i++) update(dt);
+    if (!over) bonusUpdate(dt);   // ボーナスは実時間（速度倍率のえいきょうなし）
+    if (groundKey() !== groundKeyNow) bakeGround();   // ステージが かわった
+  },
+};
 
 /* ==========================================================
    ゲーム開始
@@ -11062,7 +11091,17 @@ avFromLink();     // ともだちの リンクで ひらいたなら、その人
 tryResume();      // とちゅうのセーブがあれば、そのウェーブから再開
 checkLogin();     // きょうはじめての起動ならプレゼントを渡す
 checkLife();      // 💗の回復まちの途中なら、その画面にもどす
-requestAnimationFrame(loop);
+
+game = new Phaser.Game({
+  type: Phaser.CANVAS,        // 絵は Canvas 2D で描くので いまは WebGL にしない
+  parent: 'cv',
+  width: COLS*CELL*DPR, height: ROWS*CELL*DPR,
+  transparent: true,          // 角まるの 外がわを すかすため
+  scene: BoardScene,
+  scale: { mode: Phaser.Scale.NONE, zoom: 1/DPR },
+  banner: false,
+  audio: { noAudio: true },   // 音は じぶんの WebAudio でならす
+});
 
 /* 検査ツール（tools/check-chars.mjs）から えがく関数を よべるようにする。
    ゲーム本体は 外から さわられたくないので、検査に いる2つだけ 出す */
