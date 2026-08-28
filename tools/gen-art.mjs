@@ -39,7 +39,25 @@ const EXT = { 'image/png':'png', 'image/jpeg':'jpg', 'image/webp':'webp' };
    モデルが 埋める**ということ。クマにだけ 太い 白ふちと リボンと ハートが
    ついて、彩度も 1体だけ パステルの 外に 出た。指示が ないと 1体ごとに
    ちがう 埋めかたを するので、並べたとき そこが そのまま バラつきになる。
-   だから ふちどり・かざり・彩度は 禁止の形で 書ききる */
+   だから ふちどり・かざり・彩度は 禁止の形で 書ききる。
+
+   目の 大きさも 書いてあるが、**これは まだ 効いていない**。
+   3体を 測ったら 頭の はばに対して おばけ 16.7% / クマ 13.9% /
+   ヒツジ 9.4% と ばらけたので いちばん 大きい おばけに そろえようと
+   1/6 と 書いた。ところが 出しなおすと 6.7〜24.2% と かえって 広がった。
+
+   原因は 指示の 書きかたでは なく、**1回ごとの ばらつきが 指示より
+   大きい**こと。目の 1行しか 変えていないのに、おばけが 白から
+   クリーム色に なり、クマの 体型まで 変わった。
+   generationConfig.seed は 400 に ならず 受けとられるが、同じ seed で
+   2回 投げても ちがう 絵が かえる（ハッシュが 合わない）。つまり
+   **出しなおしの 再現性は ない**。
+
+   だから 細かい ところを プロンプトで つめるのは 割に 合わない。
+   そろえたいなら 気に入った 絵を 手本として 入力に 入れる
+   （image-to-image）か、何枚か 出して えらぶ ことになる。
+   この 1/6 の 行は 方向としては 正しいので のこしてあるが、
+   効いていると 思わないこと */
 const STYLE = [
   'A cute kawaii mascot character for a pastel tower-defense mobile game.',
   'Soft pastel palette: pink #ff8fc4, lavender #c9a7ff, mint #8fe3c4, cream #fff6e9.',
@@ -51,6 +69,8 @@ const STYLE = [
   'Do NOT draw a thick white die-cut sticker border around it.',
   'The face must have two eyes with a white highlight, round pink translucent cheeks,',
   'and a small simple mouth.',
+  'Both eyes are perfect circles, each one sixth as wide as the head, and the eyes',
+  'are exactly this size on every character - never smaller.',
   'Draw exactly the body described and nothing else: no bows, ribbons, collars,',
   'hearts, stars, patterns, badges or any other accessory unless it is described.',
   'Front facing, whole body visible, centered, generous margin on all sides.',
