@@ -4163,25 +4163,48 @@ const GBODY = {
         }
         g.restore();
       }
-    } else if (o.tail === 'curl'){                // リス：せなかへ 立ちあがる 大きな しっぽ
-      g.fillStyle = tc;
-      g.beginPath();
-      g.moveTo(x+r*0.44, y+r*1.06);
-      g.bezierCurveTo(x+r*1.5,  y+r*0.94, x+r*1.46, y-r*0.6,  x+r*0.6,  y-r*0.82);
-      g.bezierCurveTo(x+r*1.16, y-r*0.24, x+r*1.08, y+r*0.56, x+r*0.44, y+r*0.66);
-      g.closePath(); g.fill();
-      g.fillStyle = o.tailIn || c2;               // まきの 内がわを うすく して 立体に
-      g.beginPath();
-      g.moveTo(x+r*0.56, y+r*0.92);
-      g.bezierCurveTo(x+r*1.26, y+r*0.78, x+r*1.2,  y-r*0.34, x+r*0.66, y-r*0.56);
-      g.bezierCurveTo(x+r*1.04, y-r*0.12, x+r*0.96, y+r*0.5,  x+r*0.56, y+r*0.58);
-      g.closePath(); g.fill();
+    } else if (o.tail === 'curl'){                // リス：せなかへ 立ちあがって 先が まく
+      /* 三日月では「まいている」ように 見えない。おばけの しっぽと おなじく、
+         細かく 切って 太さを 変えながら うずへ つなぐ。つけねが 太く、先が 細い */
+      // まきの 先は **あたまより 右**に のこすこと。左へ 回すと あたまの
+      // うしろに 入って、せっかくの うずが 見えなくなる
+      const CT = [[0.46,1.0,  1.0,0.96,  1.16,0.46, 1.12,0.06],
+                  [1.12,0.06, 1.08,-0.34, 0.9,-0.58, 0.72,-0.5],
+                  [0.72,-0.5, 0.56,-0.42, 0.62,-0.22, 0.82,-0.24]];
+      const cpt = (a,t2) => { const u = 1-t2; return [
+        u*u*u*a[0] + 3*u*u*t2*a[2] + 3*u*t2*t2*a[4] + t2*t2*t2*a[6],
+        u*u*u*a[1] + 3*u*u*t2*a[3] + 3*u*t2*t2*a[5] + t2*t2*t2*a[7]]; };
+      g.strokeStyle = tc; g.lineCap = 'round';
+      let cv = cpt(CT[0], 0);
+      for (let i=1;i<=36;i++){
+        const f = i/36, k = f*CT.length, si = Math.min(CT.length-1, Math.floor(k));
+        const cn = cpt(CT[si], k-si);
+        g.lineWidth = r*(0.52 + (0.14-0.52)*f);
+        g.beginPath();
+        g.moveTo(x+r*cv[0], y+r*cv[1]); g.lineTo(x+r*cn[0], y+r*cn[1]); g.stroke();
+        cv = cn;
+      }
     } else if (o.tail === 'thin'){                // ネズミ
       g.strokeStyle = tc; g.lineWidth = r*0.085; g.lineCap = 'round';
       g.beginPath();
       g.moveTo(x+r*0.4,  y+r*0.92);
       g.bezierCurveTo(x+r*1.12, y+r*0.98, x+r*1.16, y+r*0.22, x+r*0.82, y+r*0.12);
       g.stroke();
+    } else if (o.tail === 'banded'){              // トラ：しま しっぽ
+      // 1本の線に しまを 引くのは むずかしいので、短い線を 色ちがいで つなぐ
+      const pt = t2 => {
+        const u = 1-t2;
+        return [x + r*(u*u*u*0.4 + 3*u*u*t2*1.12 + 3*u*t2*t2*1.16 + t2*t2*t2*0.86),
+                y + r*(u*u*u*0.92 + 3*u*u*t2*0.98 + 3*u*t2*t2*0.18 + t2*t2*t2*0.02)];
+      };
+      g.lineWidth = r*0.1; g.lineCap = 'round';
+      let pv = pt(0);
+      for (let i=1;i<=10;i++){
+        const pn = pt(i/10);
+        g.strokeStyle = (i % 2) ? tc : (o.tailBand || c2);
+        g.beginPath(); g.moveTo(pv[0], pv[1]); g.lineTo(pn[0], pn[1]); g.stroke();
+        pv = pn;
+      }
     } else if (o.tail === 'tuft'){                // ライオン
       g.strokeStyle = tc; g.lineWidth = r*0.1; g.lineCap = 'round';
       g.beginPath();
@@ -4220,7 +4243,9 @@ const GBODY = {
         g.beginPath(); g.ellipse(x+r*sx, y+r*sy, r*0.07, r*0.055, 0, 0, GTAU); g.fill();
       }
     }
-    // みみ。かたちだけで どの子か わかるように、まる／ながい／たれる を 分ける
+    // みみ。かたちだけで どの子か わかるように 分ける。
+    // ライオンだけは たてがみの あとに 出す（先に描くと 毛に うもれる）
+    const drawEar = () => {
     if (ear === 'long'){                          // ウサギ
       for (const s2 of [-1,1]){
         g.save(); g.translate(x+s2*r*0.3, hy-r*0.66); g.rotate(s2*0.15);
@@ -4290,6 +4315,8 @@ const GBODY = {
         g.beginPath(); g.ellipse(x+s2*r*0.59, hy-r*0.52, r*0.14, r*0.17, s2*0.4, 0, GTAU); g.fill();
       }
     }
+    };
+    if (!o.mane) drawEar();
     if (o.horn === 'antler'){                     // シカ：えだわかれした つの
       g.strokeStyle = o.hornC || '#9a6b45';
       g.lineWidth = r*0.1; g.lineCap = 'round'; g.lineJoin = 'round';
@@ -4308,13 +4335,14 @@ const GBODY = {
     g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
     if (o.mane){                                  // ライオン：あたまの まわりの たてがみ
       g.fillStyle = o.maneC || c2;
-      for (let i=0;i<12;i++){
-        const a = GTAU*i/12;
+      for (let i=0;i<14;i++){
+        const a = GTAU*i/14;
         g.beginPath();
-        g.arc(x+Math.cos(a)*hr*0.96, hy+Math.sin(a)*hr*0.96, r*0.2, 0, GTAU); g.fill();
+        g.arc(x+Math.cos(a)*hr*1.02, hy+Math.sin(a)*hr*1.02, r*0.3, 0, GTAU); g.fill();
       }
       g.fillStyle = c;                            // 顔の ぶんを 塗りなおして たてがみを 外がわだけに
       g.beginPath(); g.arc(x, hy, hr, 0, GTAU); g.fill();
+      drawEar();                                  // みみは たてがみより 上に
     }
     if (o.mask){                                  // オオカミ・レッサーパンダ：目のまわりの 白
       // **口もとの まるは おかない**。目と口の あいだが せまく、のみこんでしまう
@@ -6644,8 +6672,8 @@ const CREATURES = [
   ['kanga','カンガルー',['#c98a5e','#ffe0c8','#b07548'],4,'en',{key:'kangaroo',dy:0.015, bellyC:'rgba(255,238,220,.75)'}],
   ['quad','ウマ',     ['#a8764a','#ffe0c8','#5b3e28'], 5,'en',{key:'horse',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#5b3e28', tuftC:'#5b3e28'}],
   ['teddy','クマ',    ['#b99372','#f0e2c8','#8a6a4a'], 5,'en',{key:'bear',   earC:'#ffc2d4', snoutC:'#f6e8b8', noseC:'#3a2c38', belly:'rgba(240,226,200,.45)'}],
-  ['teddy','トラ',    ['#f5c451','#fff0d8','#8a5a2a'], 5,'en',{key:'tiger', ear:'round', earC:'#fdefd8', mark:'stripe', markC:'#8a5a2a', belly:'#fdefd8', noseC:'#6b4326'}],
-  ['teddy','ライオン',['#f0c489','#ffe0b0','#c98a44'], 6,'en',{key:'lion', ear:'round', earC:'#ffe8c4', mane:true, maneC:'#d99a4e', tail:'tuft', tailC:'#d9a86e', tuftC:'#d99a4e', belly:'#ffeeda', noseC:'#7a4a2a'}],
+  ['teddy','トラ',    ['#f5b942','#fff0d8','#5b3a1e'], 5,'en',{key:'tiger', ear:'round', earC:'#e8b8b0', mark:'stripe', markC:'#5b3a1e', tail:'banded', tailC:'#f5b942', tailBand:'#5b3a1e', belly:'#fdf6ec', limbC:'#fdf6ec', noseC:'#e08a90'}],
+  ['teddy','ライオン',['#f2bb5c','#ffe0b0','#a8632c'], 6,'en',{key:'lion', ear:'round', earC:'#f08a4a', mane:true, maneC:'#a8632c', tail:'tuft', tailC:'#e0a860', tuftC:'#a8632c', belly:'#ffeeda', noseC:'#7a4a2a'}],
 
   ['teddy','レッサーパンダ',['#d8703f','#fdfaff','#5b3420'],3,'en',{key:'redpanda', ear:'round', earOut:'#fdfaff', earC:'#f0c0a8', tail:'bushy', tailC:'#e08a52', tailBand:'#fdf2ea', mask:'#fdfaff', belly:'#fdf6ee', limbC:'#5b3420', noseC:'#3a2418'}],
   ['quad','ナマケモノ',['#b0a48e','#e8e0d0','#7a705e'],3,'en',{key:'sloth',  ear:'round', head:'flat', faceRing:'#e8e0d0', claw:true, clawC:'#6b5a48', tail:'short', stout:1.0}],
