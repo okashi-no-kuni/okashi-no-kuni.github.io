@@ -9595,11 +9595,13 @@ function showDiag(){
   const el = $('hDiag'); if (!el) return;
   const c = $('ctrl').getBoundingClientRect();
   const vv = window.visualViewport;
+  const sb = safeBottom();
+  const gap = Math.round((vv ? vv.height : window.innerHeight) - c.bottom);
   el.innerHTML = 'はいしん: ' + document.lastModified +
     '<br>まど ' + window.innerHeight +
     ' ／ 見えてる ' + (vv ? Math.round(vv.height) : '-') +
-    ' ／ ホームバー ' + safeBottom() +
-    ' ／ 下のすき間 ' + Math.round((vv ? vv.height : window.innerHeight) - c.bottom);
+    ' ／ ホームバー ' + sb +
+    ' ／ 下のすき間 ' + gap + (gap >= sb + 8 ? ' ✅' : ' ⚠はみ出し');
 }
 
 /* 図鑑の 2行（見出し・タブ）は、中みを **みんな おなじ大きさ**で ならべる。
@@ -12179,7 +12181,8 @@ function resize(){
   /* ここは innerHeight の まま。visualViewport に かえると iOS の
      バーの 出入りで ばんめんが ちぢみつづける（上の コメントの 失敗）。
      下が 足りない ときは 余白（#app の padding-bottom）で 取ること */
-  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 298);
+  // 起動直後（レイアウト前）は 決めうち。ホームバーの ぶんは 足しておく
+  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 298 + safeBottom());
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
@@ -12219,6 +12222,17 @@ function resize(){
   bakeGround();
 }
 window.addEventListener('resize', resize);
+/* **起動直後に 1回 はかるだけでは 足りない。**
+   iOS は セーフエリア（ホームバーの ぶん＝env(safe-area-inset-bottom)）を
+   すぐには 返さない。0の まま はかると 34px ぶん 見のがして、そのぶん
+   下が 画面の 外に 出る（実機の 報告：ホームバー34なのに
+   下のすき間が 31しか なかった＝ボタンが ホームバーの 帯の 中）。
+   落ちついてから はかりなおす。何回 よんでも 同じ 結果に なる関数なので
+   ただしくなったら それ以上 動かない */
+window.addEventListener('load', resize);
+setTimeout(resize, 300);
+setTimeout(resize, 1200);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize).catch(()=>{});
 /* iOS は うらに まわると canvas の中みを すてることがある。
    もどってきたら 焼いてある じめんも 消えているので、焼きなおす */
 document.addEventListener('visibilitychange', () => { if (!document.hidden) bakeGround(); });
