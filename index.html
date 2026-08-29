@@ -7864,7 +7864,23 @@ const DEX_GOLD = new Set([
   'cleopatra', 'pharaoh', 'shark',                       // ★5
   'lavagolem', 'devil',                                  // ★4（★では なく めずらしさで えらぶ）
 ]);
+/* 銀の わくは ふだん ★5〜6 で 決まるが、そこから はずれる子を ここに書く。
+   銀と ピンクは **手に入りかたが おなじ**（たまごは 均等・たおせば 図鑑に入る）
+   ので、この2つの あいだの 引っこしは 見た目だけで すむ。
+   金・にじへ うつすときは 出かたも しぶくすること（DEX_GOLD の ところに 書いた） */
+const DEX_SILVER = new Set(['cake', 'princess', 'prince']);   // ★4だが 銀
+const DEX_PINK   = new Set(['baum', 'mille']);                // ★5だが ピンク
 const __lookKey = o => o.gen ? artKeyOf(o.gen) : '';
+/* わくの 4段階を 1か所で。ならび（rank）も 見た目（tierOf）も ここを 見る */
+const dexTier = o => {
+  if (!o.gen) return o.item ? 'gold' : 'none';
+  const k = artKeyOf(o.gen);
+  if (o.legend || DEX_LEGEND.has(k)) return 'rain';
+  if (DEX_GOLD.has(k))   return 'gold';
+  if (DEX_PINK.has(k))   return 'pink';
+  if (DEX_SILVER.has(k)) return 'silv';
+  return o.gen.lv >= 5 ? 'silv' : 'pink';
+};
 function dexList(){
   return [
     ...DEX_TOWERS.map(o => ({ ...o, cat:'tw', pid:o.id, hint:'置くと図鑑に登録' })),
@@ -8161,8 +8177,8 @@ function buildColGrid(){
      レベルで、めずらしさでは ない）ので いちばん下に まとめる。
      むかしは 先頭に 置いていたが、17枚も 先に あって 金の子まで
      6行 スクロールしないと 見えなかった */
-  const rank = o => !o.gen ? 0 : isLeg(o) ? 4
-                  : DEX_GOLD.has(__lookKey(o)) ? 3 : o.gen.lv >= 5 ? 2 : 1;
+  const RANK = { rain:4, gold:3, silv:2, pink:1, none:0 };
+  const rank = o => o.gen ? RANK[dexTier(o)] : 0;
   list.sort((a, b) => rank(b) - rank(a)
                    || (b.gen ? b.gen.lv : 0) - (a.gen ? a.gen.lv : 0));
   colCount.textContent = list.filter(o => dex[o.id]).length + ' / ' + list.length;
@@ -8173,10 +8189,8 @@ function buildColGrid(){
   colGrid.innerHTML = '';
   /* わくの 3段階。レアアイテム＝金・つよい子（★5〜6）＝銀・ふつう＝いまのまま。
      でんせつは にじいろ。もっていない子にも つけて、めあてが 見えるように */
-  const tierOf = o => o.item ? ' tGold'
-                    : (o.legend || isLeg(o)) ? ' tRain'
-                    : (o.gen && DEX_GOLD.has(__lookKey(o))) ? ' tGold'
-                    : (o.gen && o.gen.lv >= 5) ? ' tSilv' : '';
+  const TIER = { rain:' tRain', gold:' tGold', silv:' tSilv', pink:'', none:'' };
+  const tierOf = o => TIER[o.legend ? 'rain' : dexTier(o)];
   for (const o of list){
     const rec = dex[o.id];
     const d = document.createElement('div');
