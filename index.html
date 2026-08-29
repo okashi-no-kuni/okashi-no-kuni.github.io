@@ -464,7 +464,6 @@
         <button class="ctab" data-t="g4">★4</button>
         <button class="ctab" data-t="g5">★5</button>
         <button class="ctab" data-t="g6">★6</button>
-        <button class="ctab" data-t="g7">🌈7</button>
       </div>
       <div id="colStats"></div>
       <div id="colHint" style="display:none">📌 集めた仲間をタップすると ワザバーに貼ったり はがしたりできます（7こまで）</div>
@@ -530,7 +529,6 @@
       <button class="ctab" data-p="4">★4</button>
       <button class="ctab" data-p="5">★5</button>
       <button class="ctab" data-p="6">★6</button>
-      <button class="ctab" data-p="7">🌈7</button>
     </div>
     <div id="pickHint"></div>
     <div id="pickGrid"></div>
@@ -1771,11 +1769,10 @@ const EGGS = [
   { id:'e13', name:'ふつうの たまご',   lv:[1,2,3], cost:400,  gem:5,  c1:'#fff0f7', c2:'#ff8fc4' },
   { id:'e45', name:'きらきら たまご',   lv:[4,5],   cost:1200, gem:12, c1:'#eef7ff', c2:'#9ed8ff' },
   { id:'e6',  name:'伝説の たまご', lv:[6],     cost:3000, gem:25, c1:'#fff8e4', c2:'#ffd76e' },
-  { id:'e7',  name:'にじいろの たまご', lv:[7],     cost:8000, gem:50, c1:'#fdf0ff', c2:'#c9a7ff' },
 ];
 /* ダブりが 出たときに もらえる かけら と、かけらで 交換するのに いる数 */
-const SHARD_GET  = { 1:1, 2:1, 3:1, 4:2, 5:2, 6:4, 7:6 };
-const SHARD_COST = { 1:5, 2:5, 3:5, 4:12, 5:12, 6:30, 7:60 };
+const SHARD_GET  = { 1:1, 2:1, 3:1, 4:2, 5:2, 6:4 };
+const SHARD_COST = { 1:5, 2:5, 3:5, 4:12, 5:12, 6:30 };
 
 let shards = 0;
 try{ shards = +localStorage.getItem('sweetTD.shards') || 0; }catch(e){}
@@ -1993,13 +1990,13 @@ function buildShardBox(){
     '欲しい★を選ぶと、まだいない子から1人もらえます</div>';
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;justify-content:center';
-  for (const lv of [1,2,3,4,5,6,7]){
+  for (const lv of [1,2,3,4,5,6]){
     const need = SHARD_COST[lv];
     const left = GEN_LIST.filter(o => o.side === 'ch' && o.lv === lv && !hasGen(o)).length;
     const b = document.createElement('button');
     b.className = 'mini' + (shards < need || !left ? ' gray' : '');
     b.style.cssText = 'font-size:calc(10.5px * var(--fs));padding:6px 8px';
-    b.textContent = (lv === 7 ? '🌈7' : '★' + lv) + '・🩷' + need;
+    b.textContent = '★' + lv + '・🩷' + need;
     b.disabled = shards < need || !left;
     b.onclick = () => {
       const pool = GEN_LIST.filter(o => o.side === 'ch' && o.lv === lv && !hasGen(o));
@@ -2323,7 +2320,7 @@ function buildPick(){
   const all  = GEN_LIST.filter(o => o.side === 'ch' && o.lv === pickLv);
   const list = all.filter(o => dex[o.id]);
   pickHint.innerHTML = '★' + pickLv + 'の仲間 ' + list.length + ' / ' + all.length + '人　' +
-    '⭐' + ALLY_COST[pickLv] + 'で設置' + (pickLv >= 7 ? '（2×2の場所が必要）' : '') +
+    '⭐' + ALLY_COST[pickLv] + 'で設置' +
     '<br>いない子は 🥚たまご か 敵を倒して仲間にしよう';
   if (pickIo) pickIo.disconnect();
   pickIo = new IntersectionObserver(es => {
@@ -6646,29 +6643,6 @@ const CREATURES = [
   ['princess', '王妃さま',   ['#e8a0d0','#ffd76e','#c47ab0'], 5, 'ch',{key:'queen'}],
 ];
 
-/* にじいろ版。上の子のうち、とくべつな すがたを もつ子に つける。
-   ここだけ 実際の色の きまりから 外れて、7色に かがやく */
-/* にじいろ版を もつ子。ここだけ 実際の色の きまりから 外れて、
-   7色に かがやく とくべつな すがたになる。
-   キャラを けずったら ここも 見なおすこと（消えた子の キーが のこっていても
-   buildRoster が 読みとばすので、気づかないまま になりやすい）*/
-const RAINBOW_OF = [
-  // ゆめの子（にじいろが いちばん似あう）
-  'unicorn','fairy','butterfly',
-  'witch','princess','prince','angel','devil','mermaid','wizard','snowqueen',
-  'ghost','slime','golem',
-  // うみ
-  'orca','dolphin','whale','manta','jelly','starfish','seahorse','clownfish',
-  'penguin','octopus','seal','shark','crab','turtle',
-  // りく・そら
-  'lion','tiger','panda','giraffe','zebra','rabbit',
-  'swan','owl',
-  'ladybug','bee',
-  // お菓子
-  'watame','wedding','tower','macaron','cake','parfait','star','kakigori',
-  'cupcake','tart','mont','mille',
-];
-
 /* わくへの おさまりを 直す表。
    からだの形を いじると おなじ型を つかう別の子まで くずれるので、
    ここでは 1体ずつ ずらし（dx/dy）と 大きさ（sc）だけを 上書きする。
@@ -6711,13 +6685,7 @@ function buildRoster(){
                                 'owl','eagle','zebra','devil','wizard'].includes(opt.key))
                     || ['golem'].includes(body),
                mood: side === 'en' ? 'naughty' : 'smile',
-               cells: lv >= 7 ? 4 : lv >= 5 ? 2 : 1 });
-  }
-  for (const key of RAINBOW_OF){
-    const b = out.find(o => (o.opt && o.opt.key ? o.opt.key : o.body) === key);
-    if (!b) continue;
-    out.push({ ...b, id:'c_'+key+'_rb', name:'にじいろ'+b.name,
-               rainbow:true, lv:7, cells:4 });
+               cells: lv >= 5 ? 2 : 1 });
   }
   return out;
 }
@@ -7540,7 +7508,7 @@ function stageClear(){
     }
   }
   // ステージが すすむほど いい たまごが もらえる
-  const eggIdx = stageNo >= 8 ? 3 : stageNo >= 5 ? 2 : stageNo >= 3 ? 1 : 0;
+  const eggIdx = stageNo >= 6 ? 2 : stageNo >= 3 ? 1 : 0;
   const gift = eggDraw(EGGS[eggIdx]);
   const got = CHARS.filter(c => dex['ch_'+c.id]).length;
   const done = got >= CHARS.length;
@@ -7715,7 +7683,7 @@ const ALLY_ARCH = ['candy','ice','choco','star'];
 /* おなじ ねだんでも 型で こうげきの 数字が だいぶ ちがう（アイスは 弱いかわりに おそくする）。
    数字だけ ならべると 損に 見えるので、なにが とくいな子かも 出す */
 const ALLY_ROLE = { candy:'連射', ice:'減速', choco:'範囲', star:'遠距離' };
-const ALLY_COST = { 1:60, 2:100, 3:150, 4:230, 5:340, 6:500, 7:720 };
+const ALLY_COST = { 1:60, 2:100, 3:150, 4:230, 5:340, 6:500 };
 function allyArchOf(id){                              // id から いつも おなじ型を えらぶ
   let h = 0;
   for (let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) & 0x7fffffff;
