@@ -25,6 +25,7 @@
  */
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { resolve } from 'path';
+import { readdirSync, existsSync } from 'fs';
 
 const MIN_BIG = 0.55;   // わくに たいして これより 小さいと ぽつんと 見える
 const MAX_OFF = 0.10;   // まん中からの ずれの ゆるせる はば
@@ -57,6 +58,7 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
      id を 作る 規則（opt.key、なければ body）と、drawGen が 絵を ひく 規則が
      ずれると、絵を もったまま コードで えがかれる。じっさい 66体が そうだった。
      はみ出し検査は どちらで えがいても とおるので、ここで 見るしか ない */
+  const artKeys = api.artKeys ? api.artKeys() : null;
   if (api.artKeyOf && api.artHas)
     for (const o of R){
       if (o.rainbow) continue;
@@ -141,11 +143,22 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     if (Math.abs(cx) > MAX_OFF || Math.abs(cy) > MAX_OFF)
       off.push(o.name + '(' + cx.toFixed(2) + ',' + cy.toFixed(2) + ')');
   }
-  return { artLost, enGhost, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
+  return { artLost, enGhost, artKeys, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
 }, { MIN_BIG, MAX_OFF });
 await b.close();
 
 if (rep.err) { console.error('✗', rep.err); process.exit(1); }
+
+/* art/sprites/ に 絵が あるのに ART_KEYS に 書きわすれると、
+   だまって コードの絵の ままに なる。目では 気づけないので ここで しらべる */
+const spriteDir = resolve(target, '..', 'art/sprites');
+let keyMiss = [];
+if (rep.artKeys && existsSync(spriteDir)){
+  const have = new Set(rep.artKeys);
+  keyMiss = readdirSync(spriteDir)
+    .filter(n => /\.png$/i.test(n)).map(n => n.replace(/\.png$/i, ''))
+    .filter(k => !have.has(k));
+}
 
 const line = (label, arr) =>
   console.log(('  ' + label).padEnd(16),
@@ -158,11 +171,11 @@ line('小さすぎ',   rep.small);
 line('中心ずれ',   rep.off);
 line('名前かぶり', rep.dupName);
 line('IDかぶり',   rep.dupId);
-line('絵の とりこぼし', rep.artLost || []);
+line('絵の とりこぼし', [...(rep.artLost || []), ...keyMiss.map(k => k + '(ART_KEYSに無い)')]);
 line('出ない てき', rep.enGhost || []);
 
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
-         + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length;
+         + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length + keyMiss.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

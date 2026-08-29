@@ -6615,10 +6615,10 @@ const CREATURES = [
   // --- ひのくに。赤ではなく さんごいろで、パステルから 浮かないように ---
   ['ball','ひのたま',    ['#ffb07a','#ffe0c0','#ff8f5e'], 1,'en',{key:'hinotama'}],
   ['bird','コウモリ',    ['#a88ab0','#d8c8e0','#7a5f8a'], 2,'en',{key:'bat'}],
-  ['ghost','おにび',     ['#ffd9b8','#fff0e0','#ffb07a'], 2,'en',{key:'onibi',    line:'#d9914e'}],
+  ['ghost','おにび',     ['#b8c8f0','#e8f0ff','#8fa8e0'], 2,'en',{key:'onibi',    line:'#8fa8e0'}],
   ['quad','サラマンダー',['#ff9f7a','#ffd0b8','#d9714e'], 3,'en',{key:'salamander',ear:'round', head:'long', snout:'long', tail:'long', shortLeg:true, stout:0.95}],
-  ['bug','カブトムシ',   ['#c96a4a','#e8a88a','#8a3f2e'], 3,'en',{key:'beetle',   wing:'shell', bodyC:'#8a3f2e'}],
-  ['turtle','マグマガメ',['#d98a6a','#ffc9a8','#a85a3f'], 4,'en',{key:'lavaturtle'}],
+  ['bug','カブトムシ',   ['#e8705e','#ffb0a0','#ffd76e'], 3,'en',{key:'beetle',   wing:'shell', bodyC:'#8a5a4a'}],
+  ['turtle','マグマガメ',['#e8a87a','#ffd0b0','#6b6070'], 4,'en',{key:'lavaturtle'}],
   ['golem','ようがんゴーレム',['#a87a72','#d9a898','#7a4f4a'],4,'en',{key:'lavagolem'}],
   ['fowl','ひのとり',    ['#ffb08a','#ffe0c0','#ffd76e'], 5,'en',{key:'firebird', dx:0.11, crest:'tuft', tail:'fan', wing:true}],
   ['dragon','ドラゴン',  ['#e8907a','#ffc9b0','#c96a4a'], 6,'en',{key:'dragon', sc:0.96}],
@@ -7668,7 +7668,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'baum', 'bear', 'bee', 'bigparfait', 'butterfly', 'cake', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'horse', 'icecream', 'jelly', 'jelly2', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lion', 'macaron', 'manju', 'manta', 'marshmallow', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'nagareboshi', 'octopus', 'ohagi', 'orca', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'dragon', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavaturtle', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monitor', 'monkey', 'mont', 'mouse', 'nagareboshi', 'octopus', 'ohagi', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -11333,6 +11333,7 @@ window.__chk = {
   /* てきの 顔ぶれ。国ごとに しぼっているので、どの国にも 入れ わすれた子は
      一生 出てこない。それを 検査で 見つける ために 出す */
   enemyLook, enemyKinds: () => Object.keys(ENEMIES), LAP_WAVES,
+  artKeys: () => ART_KEYS,
   themeOfStage, chars: () => CHARS.map(c => c.name),
   // アバターも キャラなので おなじ検査に かける。
   // ぜんぶの くみあわせは 何万とおりも あるので、各こうもくを もれなく 1回は とおす数だけ 作る
@@ -11389,6 +11390,11 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   setWave: w => { wave = w; syncHUD(); },
   /* クリア画面の 見た目を たしかめる。ステージNまで あそばずに 出せる */
   stageClear: n => { wave = n * STAGE_WAVES; stageClear(); },
+  /* ワザを 1つ ためす。バーは 7こまでなので、はっていない子は 押せない */
+  skill: ch => { const s = SKILLS.find(x => x.ch === ch);
+                 if (!s) return 'そのワザは ない';
+                 items[ch] = Math.max(items[ch], 1); skCd[ch] = 0; useSkill(s); return 'つかった'; },
+  enemyD: () => enemies.map(e => Math.round(e.d)),
   setStars: n => { stars = n; syncHUD(); syncShop(); },
   setTool: k => { selTool = k; },
   towers: () => towers.map(t => ({ k:t.k, c:t.c, r:t.r, sp:tSpan(t), lv:t.lv })),

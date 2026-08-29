@@ -372,6 +372,30 @@ const ART = {
   ぎんがのくじゃく: { key:'kujaku', p:'A grand and special peacock facing the viewer with its tail fanned wide behind it. The tail feathers are patterned like a starry night sky in deep periwinkle and lavender with small gold stars scattered over them. Soft pastel body, calm noble expression. More elaborate and impressive than an ordinary character.' },
   ようがんのりゅう: { key:'ryu', p:'A grand and special small dragon facing the viewer, a rounded soft coral and warm orange body with small wings and a row of pale gold spines, gentle flames curling around it. More elaborate and impressive than an ordinary character.' },
   えいえんのスフィンクス: { key:'sphinx', p:'A grand and special small sphinx facing the viewer, a rounded pale sand coloured body with a soft blue striped headdress, small folded wings and pale gold ornaments, a calm timeless expression. More elaborate and impressive than an ordinary character.' },
+  // --- さばくのくに。キャラメルのさばくの サバンナの子と かぶらないように、
+  //     砂の中の 小さい子と は虫るいで そろえる ---
+  サボテン: { key:'cactus', p:'A small cactus character standing upright facing the viewer, a rounded mint green barrel-shaped body with two short rounded arms, soft blunt pale spines, and one small pink flower on top of its head.' },
+  スナネコ: { key:'sandcat', p:'A sand cat sitting upright on its haunches facing the viewer, its tail curled around its front paws. A pale sand beige coat with a cream chest, a round flat cat face with small low triangular ears, short whiskers and a small pink nose. It is a small round sitting cat - it must not have large upright ears and must not stand on all four legs.' },
+  トカゲ: { key:'lizard', p:'A small lizard standing on four short legs, its body turned to the side and its head turned to face the viewer, a soft mint green back, a pale cream belly, a long curling tail and rounded toes.' },
+  ミーアキャット: { key:'meerkat', p:'A meerkat standing upright on two hind legs facing the viewer, a sandy beige body with a cream front, small round ears on the sides of its head, a small dark nose and a long thin tail behind it.' },
+  サソリ: { key:'scorpion', p:'A small scorpion seen from the front, a rounded apricot orange body, two small rounded pincers held up, short legs, and a tail curling up over its back with a soft blunt rounded tip.' },
+  フェネック: { key:'fennec', p:'A fennec fox standing on all four short legs, its body turned to the side and its head turned to face the viewer, a pale cream sand coat, very large rounded ears, a cream belly and a fluffy tail.' },
+  ダチョウ: { key:'ostrich', p:'An ostrich standing on two long legs facing the viewer, a rounded tan body with a fluffy cream tail, a long slender neck, a small head with a short rounded beak, and big round eyes.' },
+  オオトカゲ: { key:'monitor', p:'A monitor lizard standing on four short legs, its body turned to the side and its head turned to face the viewer, a soft olive green back with pale cream speckles, a long thick tail and a long rounded snout.' },
+  ラクダ: { key:'camel', p:'A camel standing on four legs, its body turned to the side and its head turned to face the viewer, a warm sandy tan coat, one rounded hump on its back, a long neck and a small tufted tail.' },
+  コブラ: { key:'cobra', p:'A cobra rising upright facing the viewer, a soft golden sand body coiled below it, a wide rounded hood spread behind its head, a pale cream belly and a gentle friendly face with no fangs.' },
+  // --- ひのくに。赤ではなく さんごいろで、パステルから 浮かないように ---
+  ひのたま: { key:'hinotama', p:'A small fireball spirit facing the viewer, its body a rounded teardrop of soft coral and apricot flame with a few soft rounded flame tips at the top, glowing gently, with tiny arms.' },
+  コウモリ: { key:'bat', p:'A small bat facing the viewer, a rounded soft lavender body, two large rounded wings spread open at its sides, big rounded ears and small feet.' },
+  おにび: { key:'onibi', p:'A small will-o-the-wisp spirit facing the viewer. Its body is a cool ghostly flame in pale periwinkle blue and lavender with a white glowing core, wide and round at the bottom and narrowing to two or three soft rounded tips at the top, with a few small blue sparks floating around it. It is a cold blue flame - it must not be orange, coral or warm, and must not look like a ghost with a flowing tail.' },
+  サラマンダー: { key:'salamander', p:'A salamander standing on four short legs, its body turned to the side and its head turned to face the viewer, a soft coral orange back with pale cream spots, a long curling tail, and a row of small soft flame-shaped tips along its spine.' },
+  カブトムシ: { key:'beetle', p:'A rhinoceros beetle seen from the front, a rounded glossy coral red shell, one single smooth pale gold horn curving up from its head, and six short warm brown legs. Keep every part in warm pastel coral, gold and soft brown - no charcoal, no dark maroon, nothing muddy.' },
+  マグマガメ: { key:'lavaturtle', p:'A turtle standing on four short legs, its body turned to the side and its head turned to face the viewer. Its shell is dark warm slate grey like cooled lava rock, cracked into plates with soft glowing coral orange seams between them. Its head, legs and tail are warm apricot. No green anywhere - it must not look like an ordinary green turtle.' },
+  ようがんゴーレム: { key:'lavagolem', p:'A small golem standing on two thick legs facing the viewer, its body built from rounded dusty rose stone blocks with soft glowing warm orange seams between them, and blocky rounded arms.' },
+  ひのとり: { key:'firebird', p:'A firebird standing on two legs facing the viewer, a rounded soft coral and apricot body, small rounded wings, and a long fanned tail of soft flame-shaped feathers in coral, apricot and pale gold.' },
+  ドラゴン: { key:'dragon', p:'A small dragon standing on two legs facing the viewer, a rounded soft coral body with a pale cream belly, small rounded wings, a row of small pale gold spines along its back, and a short rounded tail.' },
+  // --- さばくのくにの なかま ---
+  かげろう: { key:'kagero', p:'A small heat-haze spirit facing the viewer. Its body is a soft rounded column of shimmering hot air rising from the sand: wide at the bottom and narrowing as it rises, its edges rippling in gentle wavy curves, very pale apricot and cream and clearly translucent so the background shows faintly through it. A small face in the lower half, tiny arms at its sides, a few loose wavy shimmer lines rising above it and a small scatter of sand grains at its base. It must read as see-through rippling air, not as a solid object, not a flame, and not something made of stacked ribbons or food.' },
   ブタ:    { key:'pig',    p:'A pale pink piggy standing on all four short legs, its body turned to the side and its head turned to face the viewer, a flat round snout, floppy ears, cream belly, and a small curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },
@@ -475,7 +499,12 @@ if (!args.length || args[0] === '--models'){ await listModels(); process.exit(0)
 if (args[0] === '--sprites'){
   const dir = resolve(root, 'art'), out = resolve(root, 'art/sprites');
   mkdirSync(out, { recursive: true });
-  const files = readdirSync(dir).filter(n => /\.png$/i.test(n));
+  /* 名前を わたすと その子だけ。ぜんぶ 切りなおすと 時間が かかるので、
+     足した子だけを 切りたいときに つかう */
+  const only = args.slice(1).map(n => (ART[n] ? ART[n].key : n) + '.png');
+  const files = readdirSync(dir)
+    .filter(n => /\.png$/i.test(n))
+    .filter(n => !only.length || only.includes(n));
   if (!files.length) die('art/ に 絵が ありません');
   await withPage(async page => {
     for (const n of files){
