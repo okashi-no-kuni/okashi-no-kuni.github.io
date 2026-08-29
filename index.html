@@ -301,6 +301,12 @@
     background:rgba(255,244,251,.96);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:2}
   #colOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
   #colHead{display:flex;align-items:center;gap:6px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
+  /* 見出しは スクロールしても のこす。ずかんも ガイドも たてに 長いので、
+     下まで スクロールすると 「閉じる」が 見えなくなっていた（実機の 報告）。
+     うわに 12px の padding があるので、top を -12px にして ぴたりと はりつける */
+  #colHead, #colHeadH{position:sticky;top:-12px;z-index:4;
+    background:rgba(255,244,251,.98);padding:12px 6px 8px;margin:-12px -6px 0;
+    border-radius:0 0 12px 12px}
   /* 見出しは 1行に おさめる。おさまらないときは 文字を ちぢめる（おりかえさない）*/
   #colTtl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #colCount{font-size:calc(12px * var(--fs));opacity:.8}
@@ -473,6 +479,7 @@
     <div id="helpOv">
       <div id="colHeadH" style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
         <div style="flex:1"><span class="bookIc"></span> 遊びかたガイド</div>
+        <button class="mini gray" id="helpClose" aria-label="閉じる">✕ 閉じる</button>
       </div>
       <div id="helpBody"></div>
     </div>
@@ -482,6 +489,7 @@
         <button class="mini" id="colKing">🏰</button>
         <button class="mini" id="colAv">🎀</button>
         <button class="mini" id="colShare">📤</button>
+        <button class="mini gray" id="colClose" aria-label="閉じる">✕</button>
       </div>
       <div id="colTabs">
         <button class="ctab sel" data-t="ch">仲間</button>
@@ -819,8 +827,19 @@ function waveList(n){
 /* 1周（LAP_WAVES）ごとの 段差。複利の 坂だけだと「スターを ならべておけば
    自動で すすむ」時間が ながく つづくので、周の かわりめで がくんと 上げる。
    この数字を さわったら かならず node tools/sim.mjs を かけ直すこと */
-const LAP_HP = 1.6;
+const LAP_HP = 1.35;
+/* 中盤（ウェーブ20〜100）だけ 坂を きつくする。
+   ここは タワーの レベル上限が 10ウェーブごとに 上がる 区間で、
+   1レベルで こうげきが ×1.78 のびる。敵は ×1.02 しか のびないので、
+   ほうっておくと **よゆうが 2倍 → 6倍 に ふくらんで**、
+   てきが 入口で ぜんぶ たおれる（実機の 報告）。80ウェーブかけて ×2.5 上のせして
+   よゆうを 2.5倍あたりに ならす。
+   100をこえたら 上のせは 止める ——そこから先は レベル上限では なく
+   ⭐が 足りなくなるので、止めないと かべが 手前に 来すぎる */
+const MID_FROM = 20, MID_SPAN = 80, MID_MAX = 2.5;
+const MID_STEP = Math.pow(MID_MAX, 1 / MID_SPAN);
 const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.020, Math.max(0, n-25))
+                   * Math.pow(MID_STEP, Math.min(Math.max(0, n - MID_FROM), MID_SPAN))
                    * Math.pow(LAP_HP, lapOf(n));
 const goldWave = n => Math.pow(1.004, Math.max(0, n-30));
 // （ベリーおうじが なかまだと さらに +10%）
@@ -2595,15 +2614,25 @@ function openInfo(t){
   if (T.avatar && avMe) infoIc.append(avThumb(avMe, 46));
   else if (T.gen) infoIc.append(genThumb(T.gen, 46));
   else infoIc.textContent = T.ic;
-  const cap = maxLv();
-  const up = t.lv < cap ? Math.round(T.cost * upMul(t.lv)) : null;
+  syncInfo();
+}
+/* カードの 数字は ウェーブや ⭐で 毎回 変わるので、絵とは 分けて 出しなおす。
+   むかしは openInfo でしか 書かず、**タップしたときの まま 固まって**いた。
+   レベル上限（maxLv）は ウェーブで 上がるのに ボタンは「最大レベル」の まま
+   おせなくなり、⭐だけ たまっていく（実機の 報告。ウェーブ85・Lv9で
+   上限は 11 だった）。だから syncHUD から 毎回 よぶ */
+function syncInfo(){
+  const t = selTower; if (!t || !infoEl.classList.contains('on')) return;
+  const T = TOWERS[t.k];
+  const up = t.lv < maxLv() ? Math.round(T.cost * upMul(t.lv)) : null;
   infoTx.innerHTML =
     `<b>${T.name} Lv.${t.lv}</b>　攻撃 ${fmtN(dmgOf(t))}　範囲 ${rangeOf(t).toFixed(1)}<br>` +
     `<span style="opacity:.65">${T.desc}</span>`;
   btnUp.disabled = !up || stars < up;
-  btnUp.textContent = up ? `強化 ⭐${fmtN(up)}`
-    : t.lv < 5 ? `Lv${t.lv+1}はベストW${t.lv === 3 ? 60 : 100}で解放`
-    : '最大レベル';
+  /* レベルに 上限は ない（上限は ウェーブで のびつづける）ので、
+     「最大レベル」とは 書かない ——うそに なるうえ、そこで 手が 止まる。
+     つぎの レベルが 開く ウェーブを 出す。Lv L は ウェーブ (L-3)*10 から */
+  btnUp.textContent = up ? `強化 ⭐${fmtN(up)}` : `W${(t.lv-2)*10}でLv${t.lv+1}`;
   btnSell.textContent = `売る ⭐${fmtN(sellOf(t))}`;
 }
 function closeInfo(){
@@ -2663,6 +2692,7 @@ btnSell.onclick = () => {
    HUD
    ========================================================== */
 function syncHUD(){
+  syncInfo();                     // カードの ⭐・レベル上限も いっしょに 最新にする
   vHp.textContent = Math.max(0, hearts);
   vSt.textContent = fmtN(stars);
   vWv.textContent = wave;
@@ -7832,6 +7862,10 @@ function legendArrival(L, preview){
 let colTab = 'ch';   // ひらいたときは 仲間タブ
 let buyWait = null;   // ×0のなかまを2回タップで買うときの1回目おぼえ
 btnCol.onclick = () => togglePanel('colOv', buildColGrid);
+/* 下の 👑／📕 を もう一度 おしても とじられるが、
+   下まで スクロールしていると そこまで 目が いかない。見出しにも 置く */
+$('colClose').onclick  = () => { $('colOv').classList.remove('on');  syncNav(); beep(520,.07,'triangle',.03); };
+$('helpClose').onclick = () => { $('helpOv').classList.remove('on'); syncNav(); beep(520,.07,'triangle',.03); };
 $('colAv').onclick = () => openAvatar('colOv');
 for (const b of colTabsEl.children){
   b.onclick = () => {
