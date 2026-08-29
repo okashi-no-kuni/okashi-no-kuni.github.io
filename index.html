@@ -11571,10 +11571,35 @@ function bakeGround(){
    ========================================================== */
 function resize(){
   const prevLen = pathLen;
-  const w = Math.min(document.getElementById('app').clientWidth - 20, 460);
-  // 文字を 1.10倍に した ぶん、下の バーが 22px ほど 高くなったので
-  // とっておく ぶんも 同じだけ ふやす（384 = 362 + 22）
-  const h = window.innerHeight - 384;   // なかまワザのバーと🔑ボタンのぶんも確保する
+  const appEl = document.getElementById('app');
+  const wrapEl = document.getElementById('wrap');
+  const hudEl = document.getElementById('hud');
+  const w = Math.min(appEl.clientWidth - 20, 460);
+  /* 盤面いがいが つかう 高さを **実際に はかる**。
+     決めうちの 384 だと、UIを 足したり 文字の 大きさを 変えるたびに
+     ここも 手で 直さないと ずれる（実際 --fs を 1.10に したとき 362→384 にした）。
+     はかるのは「下の ブロックの 高さ」で、window.innerHeight では ない。
+     ブロックの 高さは アドレスバーの 出入りで 変わらないので 安定している。
+     （むかし ためして だめだったのは「はみ出し量」を はかる やりかた。
+       あれは innerHeight が ゆれると いっしょに ゆれて、盤面が 縮み続けた）
+     まだ レイアウトが できていない 起動直後は 0 に なるので、
+     そのときだけ これまでの 384 を つかう */
+  let used = 0, shown = 0;
+  for (const el of appEl.children){
+    const st = getComputedStyle(el);
+    // display:none の 画面は 場所も すきまも つくらないので 数えない
+    if (st.display === 'none') continue;
+    /* たまご・ショップ・おだいなどは position:absolute で 画面ぜんぶを 覆う。
+       ながれの 外なので 場所を とらない。数えると、ひらいた とたんに
+       盤面が つぶれる（そして 閉じても もどらない） */
+    if (st.position === 'absolute' || st.position === 'fixed') continue;
+    shown++;
+    if (el !== wrapEl) used += el.getBoundingClientRect().height;
+  }
+  const cs = getComputedStyle(appEl);
+  used += parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0)
+        + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, shown - 1);
+  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 384);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
