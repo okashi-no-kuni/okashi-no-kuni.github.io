@@ -352,6 +352,26 @@ const ART = {
   プリンパフェ: { key:'purinpafe', p:'A deluxe pudding parfait in a wide footed glass bowl. A ring of soft whipped cream fills the bowl, and standing in it are a custard pudding with caramel sauce, a scoop of vanilla ice cream drizzled with chocolate and coloured sprinkles, and a second scoop of pink strawberry ice cream with sprinkles. Arranged around them are an orange slice, a whole strawberry, three blueberries, a slice of kiwi, a wedge of yellow melon and a slice of banana. Two thin wafer sticks stand up at angles at the back and a red cherry sits on the very top. The face is on the custard pudding.' },
   王さま: { key:'king', p:'A small chibi king standing and facing the viewer, a deep lavender purple robe trimmed with white fur, a soft red sash across the chest, a pale gold crown, a short white beard, and a small pale gold sceptre held in one hand.' },
   王妃さま: { key:'queen', p:'A small chibi queen standing and facing the viewer, a soft orchid pink gown with white fur trim at the shoulders, a pale gold crown, long wavy hair, and a small pale gold necklace.' },
+  /* ==== ワザを もつ なかま（12）と でんせつ（3）====
+     もとは お菓子の キャラだったが、コレクションの おかしと かぶるので
+     しぜんと そらの 精霊に 置きかえた。
+     **絵の キーは 新しく とる。**でんせつの whale は コレクションの
+     クジラと キーが かぶるため（ART_SPRITE['whale'] は クジラの 絵）*/
+  こおりのつぶ: { key:'koori', p:'A small ice crystal spirit facing the viewer, a rounded pale ice-blue crystal body with soft facets and a glossy sheen, tiny arms and legs, a little frost crown on its head, and small snowflakes floating around it.' },
+  かみなりのこ: { key:'kaminari', p:'A small thunder spirit facing the viewer, a rounded soft grey storm cloud for a body, holding a pale gold lightning bolt in both arms, with small gold sparks flickering around it.' },
+  わたぐも: { key:'watagumo', p:'A small cloud spirit facing the viewer, a soft fluffy white cloud body with rounded lobes, tiny arms and legs, and a faint pale blue mist trailing softly beneath it.' },
+  いずみのしずく: { key:'shizuku', p:'A small spring water spirit facing the viewer, a rounded translucent pale blue water droplet for a body with a bright glossy highlight, tiny arms, and small droplets floating around it.' },
+  つむじかぜ: { key:'tsumuji', p:'A small whirlwind spirit facing the viewer, a rounded pale mint body with a swirling spiral of wind curling up behind it, tiny arms, and soft curved wind lines around it.' },
+  はなびのこ: { key:'hanabi', p:'A small firework spirit facing the viewer, a rounded deep periwinkle body, with bright pastel sparks bursting outward all around it like a firework.' },
+  ひかりのわ: { key:'hikari', p:'A small light spirit facing the viewer, a rounded pale cream body glowing softly, holding up a shining pale gold ring, with a gentle halo of light behind it.' },
+  よつばのこ: { key:'yotsuba', p:'A small clover spirit facing the viewer, its body made of four soft mint green heart-shaped leaves, tiny arms and legs, with small pale gold sparkles around it.' },
+  ふたばのこ: { key:'futaba', p:'A small sprout spirit facing the viewer, a rounded cream body with two soft green sprout leaves growing from its head, tiny arms and legs.' },
+  すなどけい: { key:'sunadokei', p:'A small hourglass spirit facing the viewer, a rounded glass hourglass for a body with pale gold sand inside and soft pale wooden frames top and bottom, tiny arms and legs.' },
+  たいようのこ: { key:'taiyou', p:'A small sun spirit facing the viewer, a rounded warm golden body with soft rounded rays all around it, glowing gently.' },
+  ながれぼし: { key:'nagareboshi', p:'A small shooting star spirit facing the viewer, a rounded pale gold star for a body with a soft pastel tail streaming out behind it, and small sparkles around.' },
+  ぎんがのくじゃく: { key:'kujaku', p:'A grand and special peacock facing the viewer with its tail fanned wide behind it. The tail feathers are patterned like a starry night sky in deep periwinkle and lavender with small gold stars scattered over them. Soft pastel body, calm noble expression. More elaborate and impressive than an ordinary character.' },
+  ようがんのりゅう: { key:'ryu', p:'A grand and special small dragon facing the viewer, a rounded soft coral and warm orange body with small wings and a row of pale gold spines, gentle flames curling around it. More elaborate and impressive than an ordinary character.' },
+  えいえんのスフィンクス: { key:'sphinx', p:'A grand and special small sphinx facing the viewer, a rounded pale sand coloured body with a soft blue striped headdress, small folded wings and pale gold ornaments, a calm timeless expression. More elaborate and impressive than an ordinary character.' },
   ブタ:    { key:'pig',    p:'A pale pink piggy standing on all four short legs, its body turned to the side and its head turned to face the viewer, a flat round snout, floppy ears, cream belly, and a small curly tail.' },
   ペンギン: { key:'penguin', p:'A small penguin standing on two webbed feet, dark blue-grey back, white front, small orange beak.' },
   クマ:    { key:'bear',   p:'A light brown teddy bear standing on two legs, round ears with pink inner ears, cream muzzle.' },

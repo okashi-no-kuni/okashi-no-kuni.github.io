@@ -1001,17 +1001,17 @@ const themeOf = w => themeOverride ? themeOverride.th
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
    ========================================================== */
 const CHARS = [
-  { id:'purin',  name:'プリン',         title:'プリンの騎士',       fx:'ワザ「まもりのたて」が使える' },
-  { id:'choco',  name:'チョコ',         title:'勇敢なトリュフ', fx:'ワザ「チョコばくだん」が使える' },
-  { id:'gumgum', name:'グミグミ',       title:'ぷるぷるグミ',       fx:'ワザ「ぷるぷるスロー」が使える' },
-  { id:'donut',  name:'ドーナツ',       title:'癒しのパン屋さん', fx:'ワザ「ハートかいふく」が使える' },
-  { id:'taffy',  name:'タフィー',       title:'笛ふきキャンディ', fx:'ワザ「ふえのマーチ」＋速度UP' },
-  { id:'cake',   name:'ケーキちゃん',   title:'小さなケーキ',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
-  { id:'fairy',  name:'ベリーようせい', title:'マカロンの妖精', fx:'ワザ「ようせいのこな」＋範囲+5%' },
-  { id:'prince', name:'ベリーおうじ',   title:'マカロンの王子',   fx:'ワザ「いちごのはた」＋おほしさま+10%' },
-  { id:'apple',  name:'アップルひめ',   title:'甘い姫さま',     fx:'ワザ「りんごのいやし」＋回復+3' },
-  { id:'queen',  name:'おうひさま',     title:'王さまのお妃', fx:'ワザ「おうひのいのり」＋値段-20%' },
-  { id:'king',   name:'おうさま',       title:'ケーキの王さま',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
+  { id:'purin',  name:'こおりのつぶ',         title:'氷のかけら',       fx:'ワザ「まもりのたて」が使える' },
+  { id:'choco',  name:'かみなりのこ',         title:'雷雲の子', fx:'ワザ「チョコばくだん」が使える' },
+  { id:'gumgum', name:'わたぐも',       title:'ちぎれ雲',       fx:'ワザ「ぷるぷるスロー」が使える' },
+  { id:'donut',  name:'いずみのしずく',       title:'泉の雫', fx:'ワザ「ハートかいふく」が使える' },
+  { id:'taffy',  name:'つむじかぜ',       title:'小さな旋風', fx:'ワザ「ふえのマーチ」＋速度UP' },
+  { id:'cake',   name:'はなびのこ',   title:'花火の玉',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
+  { id:'fairy',  name:'ひかりのわ', title:'光の輪', fx:'ワザ「ようせいのこな」＋範囲+5%' },
+  { id:'prince', name:'よつばのこ',   title:'幸運の四つ葉',   fx:'ワザ「いちごのはた」＋おほしさま+10%' },
+  { id:'apple',  name:'ふたばのこ',   title:'双葉の芽',     fx:'ワザ「りんごのいやし」＋回復+3' },
+  { id:'queen',  name:'すなどけい',     title:'時をはこぶ砂', fx:'ワザ「おうひのいのり」＋値段-20%' },
+  { id:'king',   name:'たいようのこ',       title:'小さな太陽',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
 ];
 
 /* ずかん用のよみもの。おかし（タワー）は置くと、てきはたおすと登録される */
@@ -1029,11 +1029,11 @@ const DEX_ENEMIES = Object.keys(ENEMIES).filter(k => !DEX_HIDE_EN.includes(k))
    でんせつのなかま：とうたつウェーブで出会えて、永続の「しゅくふく」をくれる
    ========================================================== */
 const LEGENDS = [
-  { id:'whale',   name:'ほしのクジラ',       title:'星空の伝説', wave:60,
+  { id:'whale',   name:'ぎんがのくじゃく',   title:'星空の伝説', wave:60,
     fx:'祝福：はじまりのハート+2',                 tease:'ウェーブ60で なにかが おきる…' },
-  { id:'phoenix', name:'ふしちょう',         title:'炎の伝説',   wave:120,
+  { id:'phoenix', name:'ようがんのりゅう',   title:'炎の伝説',   wave:120,
     fx:'祝福：1プレイに1回 ハート0でふみとどまる', tease:'ウェーブ120で なにかが おきる…' },
-  { id:'chronos', name:'クロノスちょうろう', title:'時の伝説',     wave:200,
+  { id:'chronos', name:'えいえんのスフィンクス', title:'時の伝説', wave:200,
     fx:'祝福：早よびの待ち時間+3秒',         tease:'ウェーブ200で なにかが おきる…' },
 ];
 const hasLg = id => !!dex['lg_' + id];
@@ -6269,6 +6269,18 @@ const GFR = { orca:0.42, dolphin:0.38, turtle:0.4, bird:0.56, dragon:0.38,
    合成で 変えるので、絵は 1枚で 足りる */
 const ART_SPRITE = {};
 
+/* ワザを もつ なかま（12）と でんせつ（3）が つかう 絵。
+   pid は もとの キャラの id の まま（SKILLS と セーブが これで つながって
+   いるので 変えられない）。絵の キーだけ 新しい キャラの ものに 向ける。
+   **whale を そのまま つかうと コレクションの クジラの 絵が 出る。**
+   ART_SPRITE['whale'] は クジラなので、ここで kujaku へ 向けなおす */
+const DEX_ART = {
+  purin:'koori',   choco:'kaminari', gumgum:'watagumo', donut:'shizuku',
+  taffy:'tsumuji', cake:'hanabi',    fairy:'hikari',    prince:'yotsuba',
+  apple:'futaba',  queen:'sunadokei', king:'taiyou',    rpurin:'nagareboshi',
+  whale:'kujaku',  phoenix:'ryu',    chronos:'sphinx',
+};
+
 /* どの 絵を つかうかを 決める キー。
    **buildRoster が id を 作るのと 同じ 規則**（opt.key、なければ body）。
    2か所に 書くと ずれる。実際 drawGen が opt.key だけを 見ていた あいだ、
@@ -7581,7 +7593,7 @@ function dexList(){
     ...DEX_ENEMIES.map(o => ({ ...o, cat:'en', pid:o.id, hint:'倒すと図鑑に登録' })),
     ...CHARS.map((c,i) => ({ id:'ch_'+c.id, pid:c.id, name:c.name, title:c.title, cat:'ch', fx:c.fx,
                              hint:'ステージ' + (i+1) + 'クリアで仲間に' })),
-    { id:'sp_rpurin', pid:'rpurin', name:'にじいろプリン', title:'伝説のプリン', cat:'ch',
+    { id:'sp_rpurin', pid:'rpurin', name:'ながれぼし', title:'贈りものを運ぶ星', cat:'ch',
       fx:'ワザ「にじのおくりもの」＋ドロップUP', hint:'ログインボーナス7日目で仲間に' },
     ...LEGENDS.map(l => ({ id:'lg_'+l.id, pid:l.id, name:l.name, title:l.title, cat:'lg', fx:l.fx,
                            hint:l.tease, legend:true })),
@@ -7602,7 +7614,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'baum', 'bear', 'bee', 'bigparfait', 'butterfly', 'cake', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hedgehog', 'hermit', 'horse', 'icecream', 'jelly', 'jelly2', 'kakigori', 'kangaroo', 'king', 'koala', 'konpeito', 'ladybug', 'lion', 'macaron', 'manju', 'manta', 'marshmallow', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'octopus', 'ohagi', 'orca', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'sakuramochi', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'slime', 'sloth', 'snowqueen', 'soft', 'squirrel', 'star', 'starfish', 'swan', 'tart', 'tiger', 'tower', 'turtle', 'unicorn', 'waffle', 'warabi', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'youkan', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'baum', 'bear', 'bee', 'bigparfait', 'butterfly', 'cake', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'horse', 'icecream', 'jelly', 'jelly2', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lion', 'macaron', 'manju', 'manta', 'marshmallow', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'nagareboshi', 'octopus', 'ohagi', 'orca', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -7865,7 +7877,7 @@ function buildColGrid(){
           if (r2 === 'off'){
             colHint.textContent = o.name + 'を図鑑に戻しました';
           } else if (r2 && r2.swap){
-            const sw = r2.swap === 'rpurin' ? 'にじいろプリン' : (CHARS.find(c => c.id === r2.swap) || {}).name;
+            const sw = r2.swap === 'rpurin' ? 'ながれぼし' : (CHARS.find(c => c.id === r2.swap) || {}).name;
             colHint.innerHTML = o.name + 'を貼りました！<br>（' + sw + 'は図鑑に戻りました）';
           }
         };
@@ -7960,7 +7972,7 @@ function togglePin(ch){
 }
 
 /* たおした敵がプレゼントを落とす確率。大物ほど落としやすい。
-   にじいろプリン（ログインボーナス7日目のなかま）がいると1.5倍 */
+   ながれぼし（ログインボーナス7日目のなかま）がいると1.5倍 */
 const DROP_RATE = { golem:0.35, boss:0.6 };
 const dropRate = k => (DROP_RATE[k] || 0.07) * (dex['sp_rpurin'] ? 1.5 : 1);
 
@@ -8094,7 +8106,7 @@ function buildSkillBar(){
       lpFired = false;
       lpTimer = setTimeout(() => {
         lpFired = true;
-        const nm = ch === 'rpurin' ? 'にじいろプリン' : (CHARS.find(c => c.id === ch) || {}).name;
+        const nm = ch === 'rpurin' ? 'ながれぼし' : (CHARS.find(c => c.id === ch) || {}).name;
         togglePin(ch);
         floatTx(COLS*CELL/2, ROWS*CELL - CELL*0.6, nm + 'を図鑑に戻した', '#b98ae0');
         beep(480,.1,'triangle',.04);
@@ -8297,7 +8309,7 @@ function applyLoginReward(day){
       if (!dex['sp_rpurin']){
         unlock('sp_rpurin');
         if (pins.length < PIN_MAX && !pins.includes('rpurin')){ pins.push('rpurin'); savePins(); }
-        return '伝説の仲間 <b>にじいろプリン</b> が仲間に！！<br>✨ プレゼントが おちやすくなる ✨';
+        return '伝説の仲間 <b>ながれぼし</b> が仲間に！！<br>✨ プレゼントが おちやすくなる ✨';
       }
       return addStart(500);
   }
@@ -8567,7 +8579,7 @@ function buildHelp(){
     '敵のプレゼント🎁・ログインボーナス・⭐で買い足して補充してください。</p><ul style="margin-top:5px">' +
     SKILLS.map(s => {
       const c = CHARS.find(x => x.id === s.ch);
-      const nm = c ? c.name : 'にじいろプリン';
+      const nm = c ? c.name : 'ながれぼし';
       return '<li><b>' + s.name + '</b>（' + nm + '）：' + s.desc + '</li>';
     }).join('') + '</ul></div>';
   h += '<div class="hSec"><h3>🏆 強くなるコツ</h3><ul>' +
@@ -9563,6 +9575,15 @@ function silhouetteThumb(pid, size){
 
 function drawPortrait(g, id, S){
   const TAU = 6.2832, M = S/2, R = S*0.27;
+  /* 絵が ある子は はって おしまい。tw_ や 手がきの 分岐より 先に 見る */
+  {
+    const ak = DEX_ART[id];
+    if (ak && ART_SPRITE[ak]){
+      const px = R*TOWER_PX;
+      g.drawImage(ART_SPRITE[ak], M-px/2, M-px/2, px, px);
+      return;
+    }
+  }
   const rrect = (x,y,w,h,r) => {
     const k = Math.min(r, w/2, h/2);
     g.beginPath();
@@ -9786,7 +9807,7 @@ function drawPortrait(g, id, S){
     face(M, y + R*0.05, R*0.85);
   } else if (id === 'rpurin'){
     const y = M + S*0.06;
-    // にじいろプリン：しましまボディをプリン型でクリップ
+    // ながれぼし（もとは にじいろプリン）：しましまボディをプリン型でクリップ
     const pud = () => {
       g.beginPath();
       g.moveTo(M - R*1.05, y + R*0.75);
@@ -11231,6 +11252,15 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   /* ぜんぶ IIFE の 中なので、外から 見るには ここに 出すしか ない。
      画像に さしかわった子が どれか（＝ 絵が 読めたか）を たしかめる */
   art: () => Object.keys(ART_SPRITE),
+  /* 似顔絵（drawPortrait）を 1つ えがいて 画像で かえす。
+     __dbg.draw は コレクション（drawGen）用なので べつに いる */
+  portrait: (id, S) => {
+    S = S || 130;
+    const c = document.createElement('canvas'); c.width = S; c.height = S;
+    const g = c.getContext('2d');
+    drawPortrait(g, id, S); portraitShade(g, S);
+    return c.toDataURL('image/png');
+  },
   /* 絵が あるのに つかわれていない子を さがす。
      drawGen が 見る キーと、id を 作る キーが ちがうと そうなる */
   artAudit: () => GEN_LIST.filter(o => !o.rainbow).map(o => {
