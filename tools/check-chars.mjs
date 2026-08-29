@@ -153,7 +153,24 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     if (Math.abs(cx) > MAX_OFF || Math.abs(cy) > MAX_OFF)
       off.push(o.name + '(' + cx.toFixed(2) + ',' + cy.toFixed(2) + ')');
   }
-  return { artLost, enGhost, chGhost, artKeys, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
+  /* たまごの わくの ならび。ふつう > 金 > にじ の 順に めずらしく なって
+     いないと、遊ぶ人には わくの色が うそに なる。金の 人数を ふやすと
+     GOLD_RATE が 足りなくなって ひっくり返るので、毎回 たしかめる
+     （実際に にじ2人・金6人の きらきら たまごで 起きた） */
+  const eggBad = [];
+  for (const e of api.eggs()){
+    const od = api.eggOdds(api.eggPool(e));
+    const per = (a, p) => a.length ? p / a.length : null;   // 1人あたり
+    const pN = per(od.norm, od.pN), pG = per(od.gold, od.pG), pL = per(od.leg, od.pL);
+    const pc = x => (x * 100).toFixed(2) + '%';
+    if (pN !== null && pG !== null && pG >= pN)
+      eggBad.push(e.name + '[金' + pc(pG) + '≧ふつう' + pc(pN) + ']');
+    if (pG !== null && pL !== null && pL >= pG)
+      eggBad.push(e.name + '[にじ' + pc(pL) + '≧金' + pc(pG) + ']');
+    if (pN !== null && pL !== null && pL >= pN)
+      eggBad.push(e.name + '[にじ' + pc(pL) + '≧ふつう' + pc(pN) + ']');
+  }
+  return { artLost, enGhost, chGhost, artKeys, n: R.length, nav: AV.length, over, small, off, dupName, dupId, eggBad };
 }, { MIN_BIG, MAX_OFF });
 await b.close();
 
@@ -184,10 +201,11 @@ line('IDかぶり',   rep.dupId);
 line('絵の とりこぼし', [...(rep.artLost || []), ...keyMiss.map(k => k + '(ART_KEYSに無い)')]);
 line('出ない てき', rep.enGhost || []);
 line('出ない なかま', rep.chGhost || []);
+line('たまごの ならび', rep.eggBad || []);
 
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
-         + (rep.chGhost || []).length + keyMiss.length;
+         + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

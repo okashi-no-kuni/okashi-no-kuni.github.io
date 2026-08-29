@@ -1957,8 +1957,12 @@ const hasGen  = o => !!dex[o.id];
    たまごの 中で あわせて 5% しか 出ない。かくりつ表示（eggRates）と
    ここの 数字は かならず そろえること（Apple 3.1.1／景品表示法） */
 const LEG_RATE  = 0.05;
-/* 金の わく（DEX_GOLD）は にじの 下、銀の 上。にじを のぞいた のこりの 15% */
-const GOLD_RATE = 0.15;
+/* 金の わく（DEX_GOLD）は にじの 下、銀の 上。にじを のぞいた のこりの 20%。
+   **この数字は 金の 人数で 変わる。**きらきら たまごは にじ2人・金6人なので、
+   15% だと 金ひとりが 2.4%、にじ ひとりが 2.5% で **金の ほうが めずらしく**
+   なって ならびが ひっくり返った。tools/check-chars.mjs の
+   「たまごの ならび」が ふつう > 金 > にじ を 毎回 たしかめる */
+const GOLD_RATE = 0.20;
 /* たおしたとき 図鑑に 入る かくりつ。ふつうは 1（かならず 入る）。
    わくの色と 手に入りにくさを そろえる ための 数字 */
 const LEG_KEEP  = 0.25;
@@ -7852,8 +7856,13 @@ const DEX_LEGEND = new Set(['unicorn', 'snowqueen', 'mermaid', 'angel', 'firebir
    そろえる】ので、たまごの 出かた（GOLD_RATE）と たおしたときの
    図鑑入り（GOLD_KEEP）も いっしょに しぶくして ある */
 const DEX_GOLD = new Set([
-  'whale', 'wedding', 'wizard',              // 仲間：★6の 3体
-  'tutankhamun', 'oni', 'golem',             // 敵：さばく・ひ・チョコの おくの ボス
+  // 仲間（9）
+  'whale', 'wedding', 'wizard',                          // ★6
+  'fairy', 'bigparfait', 'purinpafe', 'tower', 'king', 'queen',   // ★5
+  // 敵（9）
+  'golem', 'lion', 'tutankhamun', 'oni',                 // ★6
+  'cleopatra', 'pharaoh', 'shark',                       // ★5
+  'lavagolem', 'devil',                                  // ★4（★では なく めずらしさで えらぶ）
 ]);
 const __lookKey = o => o.gen ? artKeyOf(o.gen) : '';
 function dexList(){
@@ -12038,7 +12047,8 @@ window.__chk = {
      一生 出てこない。それを 検査で 見つける ために 出す */
   enemyLook, enemyKinds: () => Object.keys(ENEMIES), LAP_WAVES,
   eggs: () => EGGS,
-  eggPick, eggPool, artKeyOf2: artKeyOf, isLegKey: k => DEX_LEGEND.has(k),
+  eggPick, eggPool, eggOdds, artKeyOf2: artKeyOf, isLegKey: k => DEX_LEGEND.has(k),
+  isGoldKey: k => DEX_GOLD.has(k),
   openEgg: () => openEggScreen(''),
   artKeys: () => ART_KEYS,
   themeOfStage, chars: () => CHARS.map(c => c.name),
