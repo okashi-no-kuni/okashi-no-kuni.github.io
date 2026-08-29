@@ -11597,6 +11597,13 @@ function resize(){
        あれは innerHeight が ゆれると いっしょに ゆれて、盤面が 縮み続けた）
      まだ レイアウトが できていない 起動直後は 0 に なるので、
      そのときだけ これまでの 384 を つかう */
+  /* はかる あいだだけ パネルを ふだんの すがた（ショップバー）に もどす。
+     タワーを えらぶと ショップが 情報カードに 入れかわって パネルが 高くなる。
+     その 高さで はかると、タワーを 置いた とたんに 盤面が 縮む
+     （実機で これが おきた。えらぶ・とじるで 盤面が びくびく 動くのも 防ぐ）。
+     同期のうちに もどすので、画面が ちらつくことは ない */
+  const infoWasOn = infoEl && infoEl.classList.contains('on');
+  if (infoWasOn){ infoEl.classList.remove('on'); shopEl.style.display = ''; }
   let used = 0, shown = 0;
   for (const el of appEl.children){
     const st = getComputedStyle(el);
@@ -11612,6 +11619,7 @@ function resize(){
   const cs = getComputedStyle(appEl);
   used += parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0)
         + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, shown - 1);
+  if (infoWasOn){ infoEl.classList.add('on'); shopEl.style.display = 'none'; }
   const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 384);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
