@@ -7868,12 +7868,16 @@ const DEX_GOLD = new Set([
    銀と ピンクは **手に入りかたが おなじ**（たまごは 均等・たおせば 図鑑に入る）
    ので、この2つの あいだの 引っこしは 見た目だけで すむ。
    金・にじへ うつすときは 出かたも しぶくすること（DEX_GOLD の ところに 書いた） */
-const DEX_SILVER = new Set(['cake', 'princess', 'prince']);   // ★4だが 銀
+const DEX_SILVER = new Set(['cake', 'princess', 'prince', 'dolphin']);   // ★4だが 銀
 const DEX_PINK   = new Set(['baum', 'tart']);                 // ★5だが ピンク
 const __lookKey = o => o.gen ? artKeyOf(o.gen) : '';
 /* わくの 4段階を 1か所で。ならび（rank）も 見た目（tierOf）も ここを 見る */
 const dexTier = o => {
-  if (!o.gen) return o.item ? 'gold' : 'none';
+  /* 精霊（ステージクリアの子・ながれぼし）は 銀。★は 強化のレベルなので
+     ものさしに ならないが、12国を 1つずつ クリアしないと そろわないので
+     たまごから 均等に 出る子より 手に入りにくい。
+     お菓子タワーは 毎回 ⭐で 買えるので わくを つけない */
+  if (!o.gen) return o.item ? 'gold' : o.cat === 'ch' ? 'silv' : 'none';
   const k = artKeyOf(o.gen);
   if (o.legend || DEX_LEGEND.has(k)) return 'rain';
   if (DEX_GOLD.has(k))   return 'gold';
@@ -8178,13 +8182,14 @@ function buildColGrid(){
      むかしは 先頭に 置いていたが、17枚も 先に あって 金の子まで
      6行 スクロールしないと 見えなかった */
   const RANK = { rain:4, gold:3, silv:2, pink:1, none:0 };
-  const rank = o => o.gen ? RANK[dexTier(o)] : 0;
+  const rank = o => RANK[dexTier(o)];
   list.sort((a, b) => rank(b) - rank(a)
                    || (b.gen ? b.gen.lv : 0) - (a.gen ? a.gen.lv : 0));
   colCount.textContent = list.filter(o => dex[o.id]).length + ' / ' + list.length;
   colHint.style.display = (colTab === 'ch') ? '' : 'none';
-  // ワザを もつ子（お菓子タワー・精霊）は ならびの いちばん下なので、そう書く
-  colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>ワザをもつ子は <b>いちばん下</b>にいます';
+  /* ワザを もつ子は ならびの 中に ちらばる（精霊は 銀、お菓子タワーは わくなし）
+     ので、ばしょでは なく 見た目（✨の行）で さがしてもらう */
+  colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>ワザをもつ子には <b>✨</b> がついています';
   colDone.style.display = CHARS.every(c => dex['ch_'+c.id]) ? '' : 'none';
   colGrid.innerHTML = '';
   /* わくの 3段階。レアアイテム＝金・つよい子（★5〜6）＝銀・ふつう＝いまのまま。
