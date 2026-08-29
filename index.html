@@ -9004,6 +9004,12 @@ function buildHelp(){
     '<li>うわさでは、<b>ウェーブ60</b>で 伝説の仲間に会えるらしい…✨</li></ul></div>';
   h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、メイン画面の<b>「🔑合言葉・着せかえ」</b>ボタンから入れてください。限定テーマが届きます🎁</p></div>';
+  /* 配信の日づけ。document.lastModified は サーバーが かえす
+     Last-Modified なので、手で 書きかえなくても デプロイごとに かわる。
+     「直したはずが 直っていない」ときに、まず ここを 見てもらえば
+     古いキャッシュか 本物のバグかを 1発で 切りわけられる */
+  h += '<div style="text-align:center;opacity:.45;font-size:calc(10px * var(--fs));padding:6px 0">' +
+       'はいしん: ' + document.lastModified + '</div>';
   helpBody.innerHTML = h;
   const vb = $('vibBtn');
   if (vb){
