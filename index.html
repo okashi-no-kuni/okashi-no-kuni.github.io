@@ -7868,7 +7868,11 @@ const DEX_GOLD = new Set([
    銀と ピンクは **手に入りかたが おなじ**（たまごは 均等・たおせば 図鑑に入る）
    ので、この2つの あいだの 引っこしは 見た目だけで すむ。
    金・にじへ うつすときは 出かたも しぶくすること（DEX_GOLD の ところに 書いた） */
-const DEX_SILVER = new Set(['cake', 'princess', 'prince', 'dolphin']);   // ★4だが 銀
+const DEX_SILVER = new Set([
+  'cake', 'princess', 'prince', 'dolphin',                  // 仲間（★4だが 銀）
+  'panda', 'lavasnail', 'koala', 'scorpion', 'salamander',  // 敵（★4〜3）
+  'onibi', 'ghost', 'hinotama',                             // 敵（★2〜1）
+]);
 const DEX_PINK   = new Set(['baum', 'tart']);                 // ★5だが ピンク
 const __lookKey = o => o.gen ? artKeyOf(o.gen) : '';
 /* わくの 4段階を 1か所で。ならび（rank）も 見た目（tierOf）も ここを 見る */
