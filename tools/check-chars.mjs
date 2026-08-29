@@ -83,6 +83,16 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     for (const o of R)
       if (o.side === 'en' && !o.rainbow && !seen.has(o.id)) enGhost.push(o.name);
   }
+  /* 出ない なかま。たまごの子は EGGS の ★の 範囲からしか 出ない。
+     どの たまごにも 入らない ★の子を 作ると、ずかんに いるのに
+     一生 手に 入らない。てきの「出ない てき」と 同じ 話 */
+  const chGhost = [];
+  if (api.eggs){
+    const eggLv = new Set();
+    for (const e of api.eggs()) for (const l of e.lv) eggLv.add(l);
+    for (const o of R)
+      if (o.side === 'ch' && !o.rainbow && !eggLv.has(o.lv)) chGhost.push(o.name + '★' + o.lv);
+  }
   // アバターも おなじ ものさしで しらべる（IDは ないので 名前だけ 見る）
   const AV = api.avatarSamples ? api.avatarSamples() : [];
   const drawAv = api.drawAvatar;
@@ -143,7 +153,7 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     if (Math.abs(cx) > MAX_OFF || Math.abs(cy) > MAX_OFF)
       off.push(o.name + '(' + cx.toFixed(2) + ',' + cy.toFixed(2) + ')');
   }
-  return { artLost, enGhost, artKeys, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
+  return { artLost, enGhost, chGhost, artKeys, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
 }, { MIN_BIG, MAX_OFF });
 await b.close();
 
@@ -173,9 +183,11 @@ line('名前かぶり', rep.dupName);
 line('IDかぶり',   rep.dupId);
 line('絵の とりこぼし', [...(rep.artLost || []), ...keyMiss.map(k => k + '(ART_KEYSに無い)')]);
 line('出ない てき', rep.enGhost || []);
+line('出ない なかま', rep.chGhost || []);
 
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
-         + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length + keyMiss.length;
+         + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
+         + (rep.chGhost || []).length + keyMiss.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);
