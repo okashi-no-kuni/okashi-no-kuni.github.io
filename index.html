@@ -80,11 +80,11 @@
   /* ---------- bottom panel ---------- */
   /* 高さを 決めうちにするのは、タワーを えらぶと ショップが 情報カードに
      入れかわるため。かわるたびに 盤面が のびちぢみして びくびく 動く */
-  #panel{min-height:91px}
+  #panel{min-height:83px}
   /* おかし4つ＋なかまえらび で 5つ ならぶ */
-  #shop{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:5px}
+  #shop{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:3px 5px}
   .tw{
-    position:relative;border:2px solid transparent;border-radius:14px;padding:4px 2px 3px;
+    position:relative;border:2px solid transparent;border-radius:14px;padding:2px 2px 2px;
     background:rgba(255,255,255,.6);cursor:pointer;text-align:center;line-height:1.15;
     transition:transform .1s, border-color .1s;
   }
@@ -94,7 +94,7 @@
   .tw.poor{opacity:.42}
   /* 絵の枠は高さを決めうちにして、まんなかにおく。
      こうしておくと 中の絵の大きさを変えても、下の名前とねだんの位置がずれない */
-  .tw .ic{height:42px;display:flex;align-items:center;justify-content:center}
+  .tw .ic{height:40px;display:flex;align-items:center;justify-content:center}
   .tw .ic canvas{display:block}
   .tw .nm{font-size:calc(10.5px * var(--fsT))}
   /* 「⭐110 ×2」が おりかえすと 4つの 高さが そろわないので おらせない */
@@ -11959,8 +11959,8 @@ function resize(){
         + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, shown - 1);
   if (infoWasOn){ infoEl.classList.add('on'); shopEl.style.display = 'none'; }
   // 起動直後は レイアウトが まだ なくて 0 になるので、そのときだけ 決めうち。
-  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 312 になった）
-  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 312);
+  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 304 になった）
+  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 304);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
