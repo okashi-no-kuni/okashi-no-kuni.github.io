@@ -368,7 +368,11 @@
   #colTabs .mini, #colHead #colClose{flex:0 0 var(--icoW);width:var(--icoW);padding:0}
   .ctab{border:none;font:inherit;font-size:calc(11px * var(--fs) * var(--fsTab, 1));
     color:var(--ink);background:rgba(255,255,255,.65);cursor:pointer}
-  .ctab.sel{background:linear-gradient(180deg,#ffb3dc,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
+  /* えらんでいるタブは **うすいピンク**。ショップ・🎀📤 のような
+     「おすと 何かが おきる」ボタンと 見た目を 分けるため。
+     字は こいピンクに して、うすい 地でも 読めるようにする */
+  .ctab.sel{background:linear-gradient(180deg,#ffe3f1,#ffcbe4);color:var(--pink-d);
+    font-weight:700;box-shadow:0 2px 0 #f5b4d5}
   #colDone{background:linear-gradient(90deg,#ffe9b8,#ffd9ec);border-radius:12px;padding:8px;
     text-align:center;font-size:calc(12.5px * var(--fs))}
   #colGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
