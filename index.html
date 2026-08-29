@@ -312,14 +312,20 @@
   #colHead, #colHeadH{position:sticky;top:-12px;z-index:4;
     background:rgba(255,244,251,.98);padding:12px 6px 8px;margin:-12px -6px 0;
     border-radius:0 0 12px 12px}
-  /* 見出しは 1行に おさめる。おさまらないときは 文字を ちぢめる（おりかえさない）*/
-  #colTtl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 数は「そのタブの 中で いくつ 集めたか」なので、タブや 見出しの となりでは なく
+     **かぞえている ならびの 真上**に 置く。タブを かえると 数も かわるため */
+  /* たて方向の flex の中なので、ちぢませない（`flex:0 0 auto` が ないと
+     高さ0に つぶれて **文字が まるごと 消える**。#colTabs と 同じ わな） */
+  #colTtl{flex:0 0 auto;font-size:calc(13px * var(--fs));color:var(--pink-d);font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:2px}
+  /* 見出しは ボタンだけ。左の あきで 右に よせる */
+  #colHeadSp{flex:1;min-width:0}
   #colCount{font-size:calc(12px * var(--fs));opacity:.8}
   /* 見出しの まる ボタンは 幅を つめる（コレクションが おりかえさないように）*/
   #colHead .mini{padding:9px 8px;flex:0 0 auto}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
   @media (max-width:345px){
-    #colTtl{font-size:calc(12.5px * var(--fs))}
+    #colTtl{font-size:calc(12px * var(--fs))}
     #colHead .mini{padding:8px 6px;font-size:calc(11px * var(--fs))}
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
@@ -450,6 +456,12 @@
 <body>
 <div id="app">
 
+  <div id="pwRow">
+    <button class="mini" id="btnShop">🛍 ショップ</button>
+    <button class="mini" id="btnWk">🏅 今週のおだい</button>
+    <button class="mini" id="btnPw"><span style="font-size:calc(17px * var(--fs));line-height:.7">🔑</span> 合言葉</button>
+  </div>
+
   <div id="hud">
     <div class="card stat" id="hpBox"><div class="k">ハート</div><div class="v"><span>💗</span><span id="vHp">20</span></div></div>
     <div class="card stat"><div class="k">おほしさま</div><div class="v"><span>⭐</span><span id="vSt">250</span></div></div>
@@ -489,7 +501,7 @@
     </div>
     <div id="colOv">
       <div id="colHead">
-        <div id="colTtl">コレクション <span id="colCount"></span></div>
+        <div id="colHeadSp"></div>
         <button class="mini" id="colKing">🏰</button>
         <button class="mini" id="colAv">🎀</button>
         <button class="mini" id="colShare">📤</button>
@@ -505,6 +517,7 @@
       <div id="colStats"></div>
       <div id="colHint" style="display:none">📌 集めた仲間をタップすると ワザバーに貼ったり はがしたりできます（7こまで）</div>
       <div id="colDone" style="display:none">🏰 おかしの国が完成しました！ みんな集まった 🎉</div>
+      <div id="colTtl">コレクション <span id="colCount"></span></div>
       <div id="colGrid"></div>
       <div id="colTotal"></div>
     </div>
@@ -591,12 +604,6 @@
     <button class="btn sm" id="btnCol" aria-label="これくしょん"></button>
     <button class="btn sm" id="btnHelp" aria-label="遊びかたガイド"><span class="bookIc big"></span></button>
     <button class="btn sm" id="btnSnd" aria-label="おと"></button>
-  </div>
-
-  <div id="pwRow">
-    <button class="mini" id="btnShop">🛍 ショップ</button>
-    <button class="mini" id="btnWk">🏅 今週のおだい</button>
-    <button class="mini" id="btnPw"><span style="font-size:calc(17px * var(--fs));line-height:.7">🔑</span> 合言葉</button>
   </div>
 
 </div>
