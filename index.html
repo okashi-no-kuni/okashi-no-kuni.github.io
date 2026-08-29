@@ -1956,14 +1956,36 @@ const hasGen  = o => !!dex[o.id];
 /* にじの わく（DEX_LEGEND）の子は「運が よければ」の あつかい。
    たまごの 中で あわせて 5% しか 出ない。かくりつ表示（eggRates）と
    ここの 数字は かならず そろえること（Apple 3.1.1／景品表示法） */
-const LEG_RATE = 0.05;
+const LEG_RATE  = 0.05;
+/* 金の わく（DEX_GOLD）は にじの 下、銀の 上。にじを のぞいた のこりの 15% */
+const GOLD_RATE = 0.15;
+/* たおしたとき 図鑑に 入る かくりつ。ふつうは 1（かならず 入る）。
+   わくの色と 手に入りにくさを そろえる ための 数字 */
+const LEG_KEEP  = 0.25;
+const GOLD_KEEP = 0.60;
+
+/* たまごの 出かたは ここ 1か所。えらぶ側（eggPick）も かくりつ表示（eggRates）も
+   これを 見るので、数字が ずれようが ない（Apple 3.1.1／景品表示法で
+   表示が ずれるのは いちばん まずい）。
+   にじが まず 5% を とり、のこりを 金と ふつうで 分ける。
+   ふつうが 1人も いない たまご（伝説のたまご＝★6は 金3人＋にじ1人）では
+   金が のこり ぜんぶを とる ——にじを 増やして しまわない ため */
+function eggOdds(pool){
+  const leg  = pool.filter(o =>  DEX_LEGEND.has(artKeyOf(o)));
+  const gold = pool.filter(o => !DEX_LEGEND.has(artKeyOf(o)) &&  DEX_GOLD.has(artKeyOf(o)));
+  const norm = pool.filter(o => !DEX_LEGEND.has(artKeyOf(o)) && !DEX_GOLD.has(artKeyOf(o)));
+  const pL = leg.length ? (gold.length || norm.length ? LEG_RATE : 1) : 0;
+  const rest = 1 - pL;
+  const pG = !gold.length ? 0 : norm.length ? rest * GOLD_RATE : rest;
+  return { leg, gold, norm, pL, pG, pN: rest - pG };
+}
 function eggPick(list){
-  const leg  = list.filter(o => DEX_LEGEND.has(artKeyOf(o)));
-  const norm = list.filter(o => !DEX_LEGEND.has(artKeyOf(o)));
-  if (!norm.length) return leg[(Math.random() * leg.length) | 0];
-  if (!leg.length || Math.random() >= LEG_RATE)
-    return norm[(Math.random() * norm.length) | 0];
-  return leg[(Math.random() * leg.length) | 0];
+  const o = eggOdds(list);
+  const one = a => a[(Math.random() * a.length) | 0];
+  const r = Math.random();
+  if (r < o.pL) return one(o.leg);
+  if (r < o.pL + o.pG) return one(o.gold);
+  return one(o.norm.length ? o.norm : o.gold.length ? o.gold : o.leg);
 }
 function eggDraw(e){
   const pool = eggPool(e);
@@ -2069,15 +2091,18 @@ function buildEggScreen(){
   // かくりつ表示。Apple の 審査でも 日本の 法律でも 出すことに なっている
   eggRates.innerHTML = '<b>出てくる確率</b><br>' + EGGS.map(e => {
     const pool = eggPool(e);
-    const leg = pool.filter(o => DEX_LEGEND.has(artKeyOf(o))).length;
-    const norm = pool.length - leg;
-    if (!leg)
-      return '・' + e.name + '：★' + e.lv.join('と') + 'の ' + pool.length + '人から 1人。' +
-             'どの子も同じ確率（' + (100/pool.length).toFixed(1) + '%）';
-    return '・' + e.name + '：★' + e.lv.join('と') + 'の ' + pool.length + '人から 1人。' +
-           '🌈でんせつの子（' + leg + '人）は あわせて' + (LEG_RATE*100) + '%・1人あたり' +
-           (LEG_RATE*100/leg).toFixed(1) + '%、のこり' + norm + '人は 均等（1人あたり' +
-           ((1-LEG_RATE)*100/norm).toFixed(1) + '%）';
+    const od = eggOdds(pool);
+    const head = '・' + e.name + '：★' + e.lv.join('と') + 'の ' + pool.length + '人から 1人。';
+    // わくが 1しゅるいしか ない たまごは「どの子も同じ確率」で 言いきれる
+    if (!od.pL && !od.pG)
+      return head + 'どの子も同じ確率（' + (100/pool.length).toFixed(1) + '%）';
+    // わくごとに「あわせて何%・1人あたり何%」。eggPick と 同じ数字を つかう
+    const part = (ic, nm, a, p) => !a.length ? '' :
+      ic + nm + '（' + a.length + '人）あわせて' + (p*100).toFixed(1) + '%' +
+      '・1人あたり' + (p*100/a.length).toFixed(1) + '%';
+    return head + [part('🌈', 'でんせつ', od.leg, od.pL),
+                   part('🥇', 'レア',     od.gold, od.pG),
+                   part('',   'ふつう',   od.norm, od.pN)].filter(Boolean).join('、');
   }).join('<br>') +
   '<br>・すでにいる子が出たときは <b>かけら</b>になります' +
   '<br>・まだいない子が残っていれば、かならず その中から出ます' +
@@ -3292,11 +3317,12 @@ function killEnemy(e, px, py){
   if (unlock('en_' + e.k))
     floatTx(px, py - CELL*0.7, '図鑑に登録！', '#b98ae0');
   if (e.gi){
-    /* にじの わくの子（ゆきのじょおう・ひのとり・ゆきおんな）は
-       たおしても ときどきしか 図鑑に 入らない。「運が よければ」の 手ざわり。
+    /* にじ（25%）と 金（60%）の わくの子は たおしても ときどきしか
+       図鑑に 入らない。「運が よければ」の 手ざわり。
        おなじ ウェーブで 何度も「にげた」と 言うと うるさいので 1回だけ */
-    const isLg = DEX_LEGEND.has(artKeyOf(e.gi));
-    if (!isLg || dex[e.gi.id] || Math.random() < 0.25){
+    const gk = artKeyOf(e.gi);
+    const keep = DEX_LEGEND.has(gk) ? LEG_KEEP : DEX_GOLD.has(gk) ? GOLD_KEEP : 1;
+    if (dex[e.gi.id] || Math.random() < keep){
       if (unlock(e.gi.id))
         floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
     } else if (legMissWave !== wave){
@@ -7819,6 +7845,16 @@ const DEX_SIDE = { snowqueen: 'ch' };
 /* 図鑑で「伝説」タブに ならぶ子（見た目だけ。たまご・国のボスは そのまま）。
    ものさしは 神話・幻想の 存在か どうか。まほうつかい・まじょは 人間なので 仲間 */
 const DEX_LEGEND = new Set(['unicorn', 'snowqueen', 'mermaid', 'angel', 'firebird', 'yukionna']);
+/* 金の わくの子。にじ（でんせつ）の 下、銀（★5〜6）の 上。
+   ものさしは「その国の いちばん おく」。ならびの ★だけで 決めると
+   ★6が 9体も ならんで 金が ありがたく なくなる。
+   わくの色を 変えるだけでは いけない ——【手に入りにくさは わくの色と
+   そろえる】ので、たまごの 出かた（GOLD_RATE）と たおしたときの
+   図鑑入り（GOLD_KEEP）も いっしょに しぶくして ある */
+const DEX_GOLD = new Set([
+  'whale', 'wedding', 'wizard',              // 仲間：★6の 3体
+  'tutankhamun', 'oni', 'golem',             // 敵：さばく・ひ・チョコの おくの ボス
+]);
 const __lookKey = o => o.gen ? artKeyOf(o.gen) : '';
 function dexList(){
   return [
@@ -7835,9 +7871,12 @@ function dexList(){
     ...GEN_LIST.map(o => ({
       id:o.id, name:o.name, cat:'g'+o.lv, gen:o,
       title:(DEX_LEGEND.has(artKeyOf(o)) ? 'でんせつ'
+             : DEX_GOLD.has(artKeyOf(o)) ? 'レア'
              : (DEX_SIDE[artKeyOf(o)] || o.side) === 'en' ? 'てき' : '仲間') + '・★' + o.lv + (o.cells > 1 ? '・' + o.cells + 'マス' : ''),
       hint:DEX_LEGEND.has(artKeyOf(o))
         ? (o.side === 'en' ? '倒すと ときどき 仲間になる' : '🥚たまごから（でんせつは 出にくい）')
+        : DEX_GOLD.has(artKeyOf(o))
+        ? (o.side === 'en' ? '倒すと ときどき 仲間になる（レア）' : '🥚たまごから（レアは 出にくい）')
         : (o.side === 'en' ? '倒すと仲間になる' : '🥚たまごから'),
     })),
   ];
@@ -8107,18 +8146,27 @@ function buildColGrid(){
     colTab === 'lg' ? (o.cat === 'lg' || isLeg(o)) :
     o.cat === colTab;
   const list = all.filter(inTab);
-  /* ならびは よわい子 → つよい子。手前から 集まっていくのが 見えるように。
-     お菓子タワーと 精霊（ステージの子）は 先頭の まま */
-  list.sort((a, b) => (a.gen ? a.gen.lv : -1) - (b.gen ? b.gen.lv : -1));
+  /* ならびは わくの つよい順（にじ → 金 → 銀 → ピンク）、おなじ わくなら ★の
+     大きい順。ほしい子ほど 上に 来るので、スクロールせずに めあてが 見える。
+     お菓子タワー・精霊・アイテムは わくの ものさしに のらない（★は 強化の
+     レベルで、めずらしさでは ない）ので いちばん下に まとめる。
+     むかしは 先頭に 置いていたが、17枚も 先に あって 金の子まで
+     6行 スクロールしないと 見えなかった */
+  const rank = o => !o.gen ? 0 : isLeg(o) ? 4
+                  : DEX_GOLD.has(__lookKey(o)) ? 3 : o.gen.lv >= 5 ? 2 : 1;
+  list.sort((a, b) => rank(b) - rank(a)
+                   || (b.gen ? b.gen.lv : 0) - (a.gen ? a.gen.lv : 0));
   colCount.textContent = list.filter(o => dex[o.id]).length + ' / ' + list.length;
   colHint.style.display = (colTab === 'ch') ? '' : 'none';
-  colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>いっぱいのときは いちばん左と交代';
+  // ワザを もつ子（お菓子タワー・精霊）は ならびの いちばん下なので、そう書く
+  colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>ワザをもつ子は <b>いちばん下</b>にいます';
   colDone.style.display = CHARS.every(c => dex['ch_'+c.id]) ? '' : 'none';
   colGrid.innerHTML = '';
   /* わくの 3段階。レアアイテム＝金・つよい子（★5〜6）＝銀・ふつう＝いまのまま。
      でんせつは にじいろ。もっていない子にも つけて、めあてが 見えるように */
   const tierOf = o => o.item ? ' tGold'
                     : (o.legend || isLeg(o)) ? ' tRain'
+                    : (o.gen && DEX_GOLD.has(__lookKey(o))) ? ' tGold'
                     : (o.gen && o.gen.lv >= 5) ? ' tSilv' : '';
   for (const o of list){
     const rec = dex[o.id];
