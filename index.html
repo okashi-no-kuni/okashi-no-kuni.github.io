@@ -11085,6 +11085,8 @@ function drawTower(t){
   const T = TOWERS[t.k];
   const sp = tSpan(t);
   const x = tcx(t), y = tcy(t);
+  if (window.__dbg) window.__dbg._td = { cell:CELL, x:Math.round(x), y:Math.round(y),
+    a:+(ctx.getTransform ? ctx.getTransform().a : -1).toFixed(2), cw:ctx.canvas.width };
   const bob = Math.sin(time*2.4 + t.ph) * CELL*0.035;
   const pop = 1 + t.pulse*0.16;
   const R = CELL*(0.31 + (t.lv-1)*0.022) * sp;
@@ -11168,8 +11170,12 @@ function drawTower(t){
     drawFace(R*SWEET_FACE[t.k], t.ph, 'smile');
   }
 
-  // 体そのものが おかしの形なので、頭のかざりは置かない
-  ctx.restore();
+  /* 体そのものが おかしの形なので、頭のかざりは置かない。
+     むかし ここに かざりの ctx.save() つきブロックが あり、消したときに
+     対の restore() だけが 残っていた。タワーを 1体 えがくたびに 外がわの
+     保存を 1つ よぶんに 食い、2体目で Phaser の 保存まで 食って 変換が
+     等倍に もどり、**そのあとの 敵が ぜんぶ 小さく 左上に えがかれていた**。
+     save と restore は かならず 同じ ブロックの 中で 対に すること */
 
   // むねのリボン（Lv4からきんいろ）。コレクションの子は もう かざりが 多いので つけない
   if (!T.gen && !T.avatar && !(T.art && ART_SPRITE[T.art]))
@@ -11206,6 +11212,8 @@ function drawEnemy(e){
   const E = ENEMIES[e.k];
   const p = posAt(e.d);
   const R = E.r*CELL;
+  // ?dbg=1 のときだけ、えがいた瞬間の 実際の値を のこす（くいちがい しらべ用）
+  if (window.__dbg && window.__dbg._as) window.__dbg._as.push(e.k + ':' + ctx.getTransform().a);
   const sq = Math.sin(e.wob)*0.1;
 
   ctx.save(); ctx.translate(p.x, p.y);
@@ -11340,13 +11348,18 @@ function render(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (window.__dbg) window.__dbg._as = ['開始:' + ctx.getTransform().a];
   ctx.save();
   roundRect(0,0,W,H,20); ctx.clip();
 
   // 焼いておいた じめんを 貼る（角まるは 焼くときに入れてある）
   if (groundCv) ctx.drawImage(groundCv, 0, 0, W, H);
+  if (window.__dbg) window.__dbg._as.push('じめん後:' + ctx.getTransform().a);
   drawBoardOverlay();
-  for (const t of towers) drawTower(t);
+  if (window.__dbg) window.__dbg._as.push('ガイド後:' + ctx.getTransform().a);
+  for (const t of towers){ drawTower(t);
+    if (window.__dbg) window.__dbg._as.push(t.k + '後:' + ctx.getTransform().a); }
+  if (window.__dbg) window.__dbg._as.push('タワー後:' + ctx.getTransform().a);
   nameRects.length = 0;                    // なまえの かさなり しらべは 1フレームごとに やりなおす
   for (const e of enemies) drawEnemy(e);
   for (const s of shots) drawShot(s);
@@ -11857,6 +11870,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return c.width + 'x' + c.height; },
   canvasSize: () => game.canvas.width + 'x' + game.canvas.height,
   wantSize: () => Math.round(COLS*CELL*DPR) + 'x' + Math.round(ROWS*CELL*DPR),
+  camSize: () => { const sc = game.scene.scenes[0];
+    const c = sc && sc.cameras ? sc.cameras.main : null;
+    return c ? c.width + 'x' + c.height + ' zoom' + c.zoom + ' scroll' + c.scrollX + ',' + c.scrollY : 'なし'; },
   redLeft: () => { const c = game.canvas, g = c.getContext('2d');
     const d = g.getImageData(0,0,c.width,c.height).data; let n = 0;
     for (let i=0;i<d.length;i+=4) if (d[i]>200 && d[i+1]<60 && d[i+2]<60) n++;

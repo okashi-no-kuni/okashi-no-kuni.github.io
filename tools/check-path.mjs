@@ -22,6 +22,18 @@ await pg.waitForTimeout(1600);
 for (let i=0;i<4;i++){ const btn=await pg.$('#ovBtn'); if (btn && await btn.isVisible()){ await btn.click(); await pg.waitForTimeout(250);} else break; }
 await pg.evaluate(() => __dbg.setStars(99999999));
 console.log('はじめ:', JSON.stringify(await pg.evaluate(() => { const a=__dbg.groundAudit(); return { ずれ:a.ng.length, cell:a.CELL, 国:a.theme }; })));
+/* タワーを 3つ 置いてから しらべる。save/restore の 対が くずれる バグは
+   タワーを 2体 えがいた ときに はじめて 出る（1体では 見えない）。
+   置かずに しらべていて 1回 見のがした */
+await pg.evaluate(() => { __dbg.setStars(999999); __dbg.setTool('candy'); });
+{
+  const box = await (await pg.$('#cv')).boundingBox();
+  for (const [fx, fy] of [[0.5,0.4],[0.7,0.4],[0.3,0.6],[0.6,0.6],[0.4,0.8],[0.8,0.8]])
+    await pg.mouse.click(box.x + box.width*fx, box.y + box.height*fy);
+}
+const nTw = await pg.evaluate(() => __dbg.towers().length);
+console.log('タワー:', nTw);
+if (nTw < 2){ console.log('✗ タワーが 2体 置けていない（変換の 検査に ならない）'); process.exit(1); }
 let bad = null, n = 0;
 for (let i=0;i<700 && !bad;i++){
   const r = await pg.evaluate(() => {
@@ -32,6 +44,14 @@ for (let i=0;i<700 && !bad;i++){
     return a.ng && a.ng.length ? { ずれ数:a.ng.length, 例:a.ng.slice(0,3), cell:a.CELL, 国:a.theme, way:a.way, wave:__dbg.way().pathLen } : null;
   });
   if (r) { bad = r; break; }
+  /* えがくときの 変換が フレームの 中で 変わっていないか。
+     drawTower の save/restore の 対が くずれると、タワーの あとの
+     敵が ぜんぶ 等倍（DPRなし）で 小さく 左上に えがかれる */
+  const tr = await pg.evaluate(() => window.__dbg._as || null);
+  if (tr && tr.length){
+    const vals = tr.map(x => x.split(':')[1]);
+    if (new Set(vals).size > 1){ bad = { 変換がくずれた: tr }; break; }
+  }
   n++;
   await pg.waitForTimeout(50);
   if (i % 31 === 0) await pg.setViewportSize({ width:393, height: (i/31)%2 ? 660 : 852 });
