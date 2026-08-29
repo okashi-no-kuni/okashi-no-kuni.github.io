@@ -731,7 +731,7 @@
 <div id="titleOv">
   <canvas id="titleCv"></canvas>
   <div id="titleIn">
-    <div class="tSub">まほうの</div>
+    <div class="tSub">魔法の</div>
     <div class="tMain">おかしの国</div>
     <div class="tOrn"><i></i><b>&#10022;</b><i></i></div>
     <div class="tLat">OKASHI NO KUNI</div>
@@ -12411,15 +12411,13 @@ let titleRaf = 0, titleT0 = 0;
 const TITLE_CAST = [
   /* おく（小さく うすく）→ 手まえ（大きく）。おなじ大きさで 横に ならべると
      「キャラえらび」に 見えるので、大きさと こさで おくゆきを つける。
-     どうぶつと おかしを まぜる ——この国は おかしの国なので */
-  { k:'candy',   x:0.80, y:0.038, s:0.50, a:0.82, ph:1.7 },
-  { k:'macaron', x:0.13, y:0.050, s:0.54, a:0.85, ph:2.4 },
-  { k:'rabbit',  x:0.36, y:0.092, s:0.70, a:0.92, ph:0.0 },
-  { k:'donut',   x:0.885,y:0.098, s:0.72, a:0.94, ph:3.1 },
-  { k:'purin',   x:0.075,y:0.118, s:0.80, a:0.98, ph:1.9 },
-  { k:'unicorn', x:0.225,y:0.150, s:1.00, a:1.00, ph:1.1 },
-  { k:'bear',    x:0.735,y:0.152, s:1.02, a:1.00, ph:0.6 },
-  { k:'cupcake', x:0.895,y:0.178, s:0.92, a:1.00, ph:0.9 },
+     **人数を ふやしすぎない。**8人に したら ごちゃごちゃに 見えました */
+  { k:'macaron', x:0.145, y:0.048, s:0.54, a:0.85, ph:2.4 },
+  { k:'candy',   x:0.815, y:0.040, s:0.50, a:0.82, ph:1.7 },
+  { k:'rabbit',  x:0.335, y:0.092, s:0.70, a:0.92, ph:0.0 },
+  { k:'choco',   x:0.875, y:0.104, s:0.78, a:0.96, ph:3.1 },
+  { k:'unicorn', x:0.185, y:0.150, s:1.00, a:1.00, ph:1.1 },
+  { k:'bear',    x:0.735, y:0.156, s:1.02, a:1.00, ph:0.6 },
 ];
 
 /* おかしの城。cx=まん中・base=足もと・w=はば。
@@ -12726,13 +12724,13 @@ function paintTitle(t){
 
     /* --- おくの おか。おくほど うすく（空気えんきん法）--- */
     titleHill(g, hz - H*0.030, H, W, '#c3b7e0', 0.042, '#d2c8ea');
-    titleHill(g, hz + H*0.008, H, W, '#d2c4e6', 0.030, '#ded3ee');
+    titleHill(g, hz + H*0.008, H, W, '#dcc6e4', 0.030, '#e7d5ec');
 
     /* --- 城。まん中では なく 少し 右に。左下の 道と 対角に なる --- */
     titleCastle(g, W*0.600, hz + H*0.014, Math.min(W*0.50, H*0.240), t);
 
     /* --- 手まえの おか --- */
-    titleHill(g, hz + H*0.058, H, W, '#f5dcc8', 0.024, '#f0d0bc');
+    titleHill(g, hz + H*0.058, H, W, '#f0bdd4', 0.024, '#e9abc8');
     /* 草原は ユニコーンの 足もとから 下だけ。上まで みどりに すると
        絵の 半分が みどりに なって パステルの 空から 浮きます */
     titleHill(g, meadow, H, W, '#bfe3ce', 0.018, '#cbeada');
@@ -12782,7 +12780,7 @@ function paintTitle(t){
     const rdPts = []; for (let i=0;i<=22;i++) rdPts.push(bez(i/22));
     const onRoad = (x, y, m) => rdPts.some(p => Math.abs(p[0]-x) < m && Math.abs(p[1]-y) < m*0.8);
     const gcol = ['#96d9b6','#a8e2c4','#88cfa8'];
-    for (let i=0;i<44;i++){
+    for (let i=0;i<34;i++){
       const gx = tRnd(i)*W*1.04 - W*0.02;
       const u = tRnd(i+300);
       const gy = meadow + H*0.008 + u*H*0.24;
