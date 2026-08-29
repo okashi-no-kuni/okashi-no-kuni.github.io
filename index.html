@@ -7728,6 +7728,9 @@ for (const b of colTabsEl.children){
    ゆきのじょおうは 3つの国の ボスの ままだが、見た目は 仲間の ならびが
    にあう（おひめさま・まほうつかいの なかま）ので ここで うつす */
 const DEX_SIDE = { snowqueen: 'ch' };
+/* 図鑑で「伝説」タブに ならぶ子（見た目だけ。たまご・国のボスは そのまま）。
+   ものさしは 神話・幻想の 存在か どうか。まほうつかい・まじょは 人間なので 仲間 */
+const DEX_LEGEND = new Set(['unicorn', 'snowqueen', 'mermaid', 'angel']);
 const __lookKey = o => o.gen ? artKeyOf(o.gen) : '';
 function dexList(){
   return [
@@ -7743,7 +7746,8 @@ function dexList(){
                           fx:it.note, item:it, hint:'敵からのドロップ・ステージクリア・ショップ' })),
     ...GEN_LIST.map(o => ({
       id:o.id, name:o.name, cat:'g'+o.lv, gen:o,
-      title:((DEX_SIDE[artKeyOf(o)] || o.side) === 'en' ? 'てき' : '仲間') + '・★' + o.lv + (o.cells > 1 ? '・' + o.cells + 'マス' : ''),
+      title:(DEX_LEGEND.has(artKeyOf(o)) ? 'でんせつ'
+             : (DEX_SIDE[artKeyOf(o)] || o.side) === 'en' ? 'てき' : '仲間') + '・★' + o.lv + (o.cells > 1 ? '・' + o.cells + 'マス' : ''),
       hint:o.side === 'en' ? '倒すと仲間になる' : '🥚たまごから',
     })),
   ];
@@ -8006,9 +8010,11 @@ function buildColGrid(){
      ここを 分けたままだと、なかまと敵を 分けなおしても タブの中身が
      変わらず、直っていないように 見える */
   const sideOf = o => DEX_SIDE[__lookKey(o)] || o.gen.side;
+  const isLeg = o => o.gen && DEX_LEGEND.has(__lookKey(o));
   const inTab = o =>
-    colTab === 'en' ? (o.cat === 'en' || (o.gen && sideOf(o) === 'en')) :
-    colTab === 'ch' ? (o.cat === 'tw' || o.cat === 'ch' || (o.gen && sideOf(o) === 'ch')) :
+    colTab === 'en' ? (o.cat === 'en' || (o.gen && sideOf(o) === 'en' && !isLeg(o))) :
+    colTab === 'ch' ? (o.cat === 'tw' || o.cat === 'ch' || (o.gen && sideOf(o) === 'ch' && !isLeg(o))) :
+    colTab === 'lg' ? (o.cat === 'lg' || isLeg(o)) :
     o.cat === colTab;
   const list = all.filter(inTab);
   /* ならびは よわい子 → つよい子。手前から 集まっていくのが 見えるように。
@@ -8022,7 +8028,7 @@ function buildColGrid(){
   /* わくの 3段階。レアアイテム＝金・つよい子（★5〜6）＝銀・ふつう＝いまのまま。
      でんせつは にじいろ。もっていない子にも つけて、めあてが 見えるように */
   const tierOf = o => o.item ? ' tGold'
-                    : o.legend ? ' tRain'
+                    : (o.legend || isLeg(o)) ? ' tRain'
                     : (o.gen && o.gen.lv >= 5) ? ' tSilv' : '';
   for (const o of list){
     const rec = dex[o.id];
