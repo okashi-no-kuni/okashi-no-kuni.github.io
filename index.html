@@ -57,7 +57,13 @@
   /* たての すきまと 余白は 1つ けずるごとに 盤面が 12ぶんの1マス 大きくなる
      （盤面は たて12マスで、下のUIの高さを 引いた のこりを つかうため）。
      よこの 10px は へらさない ——盤面は たて長で、あまるのは 横なので 意味がない */
-  #app{width:100%;max-width:480px;padding:5px 10px calc(5px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:5px}
+  /* 下の 余白は 20px + セーフエリア。**5px では 足りなかった**（実機の 報告）。
+     ボタンの かげ（box-shadow 0 4px 0 と そのしたの 0 6px 16px の ぼかし）は
+     getBoundingClientRect() に 入らないので、resize() が 測る 高さより
+     20pxほど 下に はみ出す。iPhoneの ホームバーの ぶんも いる。
+     なお 実際の すき間は 「この余白 ＋ マスの 切り上げ ぶん（0〜11px）」。
+     ここを 14px に しても 切り上げが 吸って 見た目が 変わらなかった */
+  #app{width:100%;max-width:480px;padding:5px 10px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:5px}
 
   /* ---------- HUD ---------- */
   #hud{display:flex;gap:6px}
@@ -12075,8 +12081,8 @@ function resize(){
         + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, shown - 1);
   if (infoWasOn){ infoEl.classList.add('on'); shopEl.style.display = 'none'; }
   // 起動直後は レイアウトが まだ なくて 0 になるので、そのときだけ 決めうち。
-  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 283 になった）
-  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 283);
+  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 298 になった）
+  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 298);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
