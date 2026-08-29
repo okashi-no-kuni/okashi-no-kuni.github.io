@@ -11258,6 +11258,19 @@ function drawTower(t){
   }
 }
 
+/* よこ向きの 絵が 左右どちらを 向いているか。1=右・-1=左。
+   正面向きの子は のせない（うつしても 見た目が 変わらないため）。
+   絵を 足したり 出しなおしたら、その子の 向きを **目で 見て** ここに 足すこと。
+   機械の 推定（上3分の1の 重心）は 目安に しかならない——
+   カタツムリは 殻が 重心を 持っていって ほぼ 0 に なった */
+const EN_FACE = {
+  turtle:1, gull:1, swan:1, eagle:1, armadillo:1, camel:1, salamander:1,
+  clownfish:-1, hermit:-1, shark:-1,
+  pig:-1, deer:-1, wolf:-1, kangaroo:-1, horse:-1, tiger:-1, zebra:-1,
+  giraffe:-1, lizard:-1, fennec:-1, ostrich:-1, hedgehog:-1, scorpion:-1,
+  lavasnail:-1, ghost:-1, firebird:-1, beetle:-1,
+};
+
 function drawEnemy(e){
   const E = ENEMIES[e.k];
   const p = posAt(e.d);
@@ -11266,12 +11279,23 @@ function drawEnemy(e){
   if (window.__dbg && window.__dbg._as) window.__dbg._as.push(e.k + ':' + ctx.getTransform().a);
   const sq = Math.sin(e.wob)*0.1;
 
+  /* あるく向きに 体を むける。よこ向きの 絵の子だけ、進む向きと
+     絵の向きが 逆なら かがみ写しにする。上下は 絵が 1枚しか ないので
+     変えられない（正面の絵のまま）。たてに 進む あいだは、さいごに
+     よこへ 進んだ向きを おぼえておく（角で ぱたぱた しないように） */
+  const q2 = posAt(Math.min(pathLen, e.d + CELL*0.3));
+  const ddx = q2.x - p.x;
+  if (Math.abs(ddx) > Math.abs(q2.y - p.y) * 0.7 && Math.abs(ddx) > 0.5)
+    e.fdir = ddx > 0 ? 1 : -1;
+  const nat = e.gi ? (EN_FACE[artKeyOf(e.gi)] || 0) : 0;
+  const flip = nat !== 0 && e.fdir !== undefined && e.fdir !== nat;
+
   ctx.save(); ctx.translate(p.x, p.y);
 
   // 角丸のからだ（おもち・ゴーレム）だと、影が横にはみ出して見えるので ひかえめの幅に
   softShadow(0, R*0.97, R*0.62, .36);
 
-  ctx.scale(1+sq, 1-sq);
+  ctx.scale((flip ? -1 : 1) * (1+sq), 1-sq);
 
   if (e.av){
     const px = R*3.2;                              // ともだち本人は 大きめに 出す
