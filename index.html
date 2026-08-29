@@ -8467,20 +8467,37 @@ function buildColGrid(){
    なかまワザ（あつめたなかまが戦いを手伝ってくれる）
    スターの使い道でもある。ねだんはウェーブとともに上がる
    ========================================================== */
+/* 音（snd）と ふるえ（vib）は ITEMS と おなじく **ここ 1か所**。
+   むかしは 音が useSkill() の 13の えだに ちらばっていて、
+   ならべて 聞きくらべることが できなかった。ふるえは 1つも 無かった。
+   snd の 1行 = [高さ, ながさ, 波の形, 大きさ, すべり, 何びょう後] */
 const SKILLS = [
-  { ch:'purin',  name:'まもり',     base:70,  cd:12, needEnemy:true,  color:'#ffd98a', desc:'敵全員を3.5秒 足止め。突撃をしのぐときに' },
-  { ch:'choco',  name:'ばくだん',   base:110, cd:15, needEnemy:true,  color:'#a5713f', desc:'敵全体に大ダメージ（HPの割合）。ピンチの切り札' },
-  { ch:'gumgum', name:'スロー',     base:60,  cd:10, needEnemy:true,  color:'#9be89b', desc:'敵全員を6秒スロー。速い敵の群れに' },
-  { ch:'donut',  name:'かいふく',   base:120, cd:20, needEnemy:false, color:'#ff9ec9', desc:'ハート+4。守りが崩れたあとに' },
-  { ch:'taffy',  name:'マーチ',     base:90,  cd:25, needEnemy:false, color:'#9ed8ff', desc:'8秒 攻撃速度2倍。ボスが来たら' },
-  { ch:'cake',   name:'おいわい',   base:90,  cd:18, needEnemy:true,  color:'#fff0b8', desc:'敵全体に小ダメージ。雑魚掃除に' },
-  { ch:'fairy',  name:'こな',       base:80,  cd:25, needEnemy:false, color:'#ffd0df', desc:'8秒 範囲1.4倍。届かない敵に' },
-  { ch:'prince', name:'はた',       base:90,  cd:30, needEnemy:false, color:'#ff8f8f', desc:'10秒 ⭐2倍。稼ぎどきに' },
-  { ch:'apple',  name:'いやし',     base:60,  cd:12, needEnemy:false, color:'#ff5a5a', desc:'ハート+2。軽くて安い回復' },
-  { ch:'queen',  name:'いのり',     base:130, cd:45, needEnemy:false, color:'#dcebf8', desc:'ほかのワザの準備を完了させる' },
-  { ch:'king',   name:'ごうれい',   base:150, cd:30, needEnemy:false, color:'#ffe27a', desc:'8秒 攻撃2倍。ボスや どすんケーキに' },
-  { ch:'kagero', name:'かげろう',   base:100, cd:20, needEnemy:true,  color:'#ffd9b8', desc:'敵全員を2マス半 後ろへ もどす。ゴール直前をしのぐときに' },
-  { ch:'rpurin', name:'おくりもの', base:100, cd:35, needEnemy:false, color:'#c9a7ff', desc:'プレゼントを2こもらう' },
+  { ch:'purin',  name:'まもり',     base:70,  cd:12, needEnemy:true,  color:'#ffd98a', vib:[30], snd:[[500,.20,'triangle',.06,1.4,0],[660,.22,'triangle',.05,1.4,120]],
+    desc:'敵全員を3.5秒 足止め。突撃をしのぐときに' },
+  { ch:'choco',  name:'ばくだん',   base:110, cd:15, needEnemy:true,  color:'#a5713f', vib:[70,40,70], snd:[[180,.30,'sawtooth',.07,.5,0],[120,.34,'sawtooth',.06,.45,140]],
+    desc:'敵全体に大ダメージ（HPの割合）。ピンチの切り札' },
+  { ch:'gumgum', name:'スロー',     base:60,  cd:10, needEnemy:true,  color:'#9be89b', vib:[15,30,15,30,15], snd:[[420,.30,'sine',.05,.55,0],[300,.34,'sine',.05,.6,150]],
+    desc:'敵全員を6秒スロー。速い敵の群れに' },
+  { ch:'donut',  name:'かいふく',   base:120, cd:20, needEnemy:false, color:'#ff9ec9', vib:[20,60,20], snd:[[700,.14,'triangle',.06,1.4,0],[930,.16,'triangle',.06,1.4,130],[1170,.24,'triangle',.06,1.5,260]],
+    desc:'ハート+4。守りが崩れたあとに' },
+  { ch:'taffy',  name:'マーチ',     base:90,  cd:25, needEnemy:false, color:'#9ed8ff', vib:[15,40,15,40,15,40,15], snd:[[660,.09,'square',.04,1.2,0],[880,.09,'square',.04,1.2,110],[660,.09,'square',.04,1.2,220],[990,.18,'square',.05,1.3,330]],
+    desc:'8秒 攻撃速度2倍。ボスが来たら' },
+  { ch:'cake',   name:'おいわい',   base:90,  cd:18, needEnemy:true,  color:'#fff0b8', vib:[25,30,25], snd:[[760,.14,'triangle',.06,1.5,0],[1010,.20,'triangle',.06,1.6,110]],
+    desc:'敵全体に小ダメージ。雑魚掃除に' },
+  { ch:'fairy',  name:'こな',       base:80,  cd:25, needEnemy:false, color:'#ffd0df', vib:[10,30,10,30,10], snd:[[1180,.07,'sine',.04,1.6,0],[1480,.07,'sine',.04,1.6,70],[1760,.20,'sine',.05,1.7,140]],
+    desc:'8秒 範囲1.4倍。届かない敵に' },
+  { ch:'prince', name:'はた',       base:90,  cd:30, needEnemy:false, color:'#ff8f8f', vib:[20,40,20,40,50], snd:[[520,.12,'square',.05,1.3,0],[700,.12,'square',.05,1.3,120],[880,.26,'square',.06,1.4,240]],
+    desc:'10秒 ⭐2倍。稼ぎどきに' },
+  { ch:'apple',  name:'いやし',     base:60,  cd:12, needEnemy:false, color:'#ff5a5a', vib:[25], snd:[[700,.16,'sine',.05,1.4,0],[880,.22,'sine',.05,1.4,150]],
+    desc:'ハート+2。軽くて安い回復' },
+  { ch:'queen',  name:'いのり',     base:130, cd:45, needEnemy:false, color:'#dcebf8', vib:[15,50,15,50,40], snd:[[620,.14,'triangle',.05,1.5,0],[830,.14,'triangle',.05,1.5,140],[1050,.30,'triangle',.06,1.6,280]],
+    desc:'ほかのワザの準備を完了させる' },
+  { ch:'king',   name:'ごうれい',   base:150, cd:30, needEnemy:false, color:'#ffe27a', vib:[50,40,80], snd:[[440,.20,'sawtooth',.06,1.3,0],[660,.30,'sawtooth',.06,1.4,170]],
+    desc:'8秒 攻撃2倍。ボスや どすんケーキに' },
+  { ch:'kagero', name:'かげろう',   base:100, cd:20, needEnemy:true,  color:'#ffd9b8', vib:[40,30,40], snd:[[320,.24,'sine',.05,.6,0],[230,.30,'sine',.05,.6,150]],
+    desc:'敵全員を2マス半 後ろへ もどす。ゴール直前をしのぐときに' },
+  { ch:'rpurin', name:'おくりもの', base:100, cd:35, needEnemy:false, color:'#c9a7ff', vib:[12,30,12,30,12,30,30], snd:[[880,.08,'triangle',.05,1.5,0],[1100,.08,'triangle',.05,1.5,90],[1320,.08,'triangle',.05,1.5,180],[1560,.20,'triangle',.06,1.6,270]],
+    desc:'プレゼントを2こもらう' },
 ];
 let skCd = {}, skTick = -1;
 for (const s of SKILLS) skCd[s.ch] = 0;
@@ -8654,18 +8671,17 @@ function spawnGift(x, y){
 
 function useSkill(s){
   if (over || !hasCh(s.ch) || skCd[s.ch] > 0) return;
-  if (s.needEnemy && !enemies.length){ beep(160,.09,'square',.03,.7); return; }
-  if (skStock[s.ch] < 1){ beep(160,.09,'square',.03,.7); return; }
+  if (s.needEnemy && !enemies.length){ tapSel(false); return; }
+  if (skStock[s.ch] < 1){ tapSel(false); return; }
   skStock[s.ch]--; saveSkStock();          // 1回つかうと1こへる
   skCd[s.ch] = s.cd;
+  playSnd(s.snd); vib(s.vib);              // 音と ふるえは SKILLS の 1か所から
   const W = COLS*CELL, H = ROWS*CELL;
   if (s.ch === 'purin'){
     for (const e of enemies) e.stun = 3.5;
     ring(W/2, H/2, '#ffd98a', H*0.7);
     ring(W/2, H/2, '#ffffff', H*0.5);
     floatTx(W/2, H*0.4, 'まもりのたて！', '#e0a52e');
-    beep(500,.2,'triangle',.06);
-    setTimeout(()=>beep(660,.18,'triangle',.05),120);
   } else if (s.ch === 'choco'){
     for (const e of [...enemies]){
       const p = posAt(e.d);
@@ -8676,24 +8692,18 @@ function useSkill(s){
     ring(W/2, H/2, '#a5713f', H*0.8);
     ring(W/2, H/2, '#ffffff', H*0.55);
     floatTx(W/2, H*0.4, 'チョコばくだん！', '#a5713f');
-    beep(180,.35,'sawtooth',.07,.5);
   } else if (s.ch === 'gumgum'){
     for (const e of enemies){ e.slow = 6; e.slowAmt = 0.55; }
     ring(W/2, H/2, '#9be89b', H*0.7);
     floatTx(W/2, H*0.4, 'ぷるぷるスロー！', '#4faf5f');
-    beep(420,.25,'sine',.05,.7);
   } else if (s.ch === 'donut'){
     healHearts(4);
     floatTx(W/2, H*0.4, 'ハートかいふく💗', '#ff6f9c');
     for (let i=0;i<16;i++) mote(W/2 + (Math.random()-0.5)*W*0.5, H*0.55, '#ffb0cf');
-    beep(700,.15,'triangle',.06);
-    setTimeout(()=>beep(930,.2,'triangle',.06),140);
   } else if (s.ch === 'taffy'){
     buffs.spd = 8;                      // 8秒こうげきそくど2倍
     ring(W/2, H/2, '#9ed8ff', H*0.7);
     floatTx(W/2, H*0.4, 'ふえのマーチ♪ 速度2倍！', '#4aa8dd');
-    beep(660,.1,'triangle',.05); setTimeout(()=>beep(880,.1,'triangle',.05),110);
-    setTimeout(()=>beep(990,.14,'triangle',.05),220);
   } else if (s.ch === 'cake'){
     for (const e of [...enemies]){
       const p = posAt(e.d);
@@ -8703,33 +8713,26 @@ function useSkill(s){
     }
     ring(W/2, H/2, '#fff0b8', H*0.7);
     floatTx(W/2, H*0.4, 'おいわいシャワー！', '#e0a52e');
-    beep(760,.18,'triangle',.06);
   } else if (s.ch === 'fairy'){
     buffs.rng = 8;                      // 8秒はんい1.4倍
     ring(W/2, H/2, '#ffd0df', H*0.7);
     floatTx(W/2, H*0.4, 'ようせいのこな✨ 範囲UP！', '#e06f9c');
-    beep(880,.15,'triangle',.05);
   } else if (s.ch === 'prince'){
     buffs.gold = 10;                    // 10秒おほしさま2倍
     ring(W/2, H/2, '#ffd76e', H*0.7);
     floatTx(W/2, H*0.4, 'いちごのはた！ ⭐2倍！', '#e0a52e');
-    beep(700,.12,'triangle',.05); setTimeout(()=>beep(930,.16,'triangle',.05),120);
   } else if (s.ch === 'apple'){
     healHearts(2);
     floatTx(W/2, H*0.4, 'りんごのいやし💗+2', '#ff6f9c');
     for (let i=0;i<10;i++) mote(W/2 + (Math.random()-0.5)*W*0.4, H*0.55, '#ffb0cf');
-    beep(700,.14,'triangle',.05);
   } else if (s.ch === 'queen'){
     for (const k in skCd) if (k !== 'queen') skCd[k] = 0;   // ほかのワザをすぐ使えるように
     ring(W/2, H/2, '#dcebf8', H*0.8);
     floatTx(W/2, H*0.4, 'おうひのいのり✨ ワザ復活！', '#7d9fd0');
-    beep(620,.12,'triangle',.05); setTimeout(()=>beep(830,.12,'triangle',.05),110);
-    setTimeout(()=>beep(1050,.2,'triangle',.06),220);
   } else if (s.ch === 'king'){
     buffs.dmg = 8;                      // 8秒こうげき2倍
     ring(W/2, H/2, '#ffe27a', H*0.8);
     floatTx(W/2, H*0.4, 'おうのごうれい！ 攻撃2倍！', '#c9821e');
-    beep(440,.2,'triangle',.06); setTimeout(()=>beep(660,.25,'triangle',.06),160);
   } else if (s.ch === 'kagero'){
     // 道にそった きょりを へらして 後ろへ もどす。0より 前には 行かせない
     for (const e of enemies){
@@ -8739,12 +8742,10 @@ function useSkill(s){
     }
     ring(W/2, H/2, '#ffd9b8', H*0.7);
     floatTx(W/2, H*0.4, 'かげろうのまい！', '#d9914e');
-    beep(320,.22,'sine',.05,.6); setTimeout(()=>beep(260,.26,'sine',.05,.6),140);
   } else if (s.ch === 'rpurin'){
     spawnGift(W/2 - CELL, H*0.35);      // プレゼントを2こおとす
     spawnGift(W/2 + CELL, H*0.4);
     floatTx(W/2, H*0.3, 'にじのおくりもの🎁', '#b98ae0');
-    beep(880,.1,'triangle',.05); setTimeout(()=>beep(1100,.14,'triangle',.05),110);
   }
   // つかいきったら バーから自動ではがれる
   if (skStock[s.ch] <= 0){
