@@ -12411,11 +12411,12 @@ let titleRaf = 0, titleT0 = 0;
 const TITLE_CAST = [
   /* おく（小さく うすく）→ 手まえ（大きく）。おなじ大きさで 横に ならべると
      「キャラえらび」に 見えるので、大きさと こさで おくゆきを つける。
-     **人数を ふやしすぎない。**8人に したら ごちゃごちゃに 見えました */
-  { k:'macaron', x:0.145, y:0.048, s:0.54, a:0.85, ph:2.4 },
-  { k:'candy',   x:0.815, y:0.040, s:0.50, a:0.82, ph:1.7 },
+     **人数を ふやしすぎない。**8人に したら ごちゃごちゃに 見えました。
+     `k` が ない子は コードで えがく（`draw`）*/
+  { k:'macaron', x:0.815, y:0.040, s:0.50, a:0.82, ph:1.7 },
+  { k:'choco',   x:0.145, y:0.048, s:0.54, a:0.85, ph:2.4 },
   { k:'rabbit',  x:0.335, y:0.092, s:0.70, a:0.92, ph:0.0 },
-  { k:'choco',   x:0.875, y:0.104, s:0.78, a:0.96, ph:3.1 },
+  { draw:'lolly',x:0.870, y:0.108, s:0.90, a:0.96, ph:3.1 },
   { k:'unicorn', x:0.185, y:0.150, s:1.00, a:1.00, ph:1.1 },
   { k:'bear',    x:0.735, y:0.156, s:1.02, a:1.00, ph:0.6 },
 ];
@@ -12596,6 +12597,53 @@ function titleGrass(g, x, y, s, col){
     g.quadraticCurveTo(x + k*s*0.55, y - s*0.62, x + k*s*1.05, y - s*1.05);
     g.stroke();
   }
+}
+
+/* ぐるぐるキャンディ。この子だけ art/sprites/ に 絵が ないので コードで えがく。
+   顔は うずまきの **上に** のせる（うずまきごと まわすと 顔まで まわる）。
+   目・ほっぺ・口を かならず 入れるのは この シリーズの きまり */
+function titleLolly(g, cx, cy, s){
+  const TAU = 6.2832;
+  const gy = cy + s*0.46;                      // 足もと
+  const r  = s*0.30, hy = gy - s*0.34 - r;     // あめ玉の まん中
+  /* ぼう */
+  g.strokeStyle = '#fff6e6'; g.lineWidth = s*0.085; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(cx, gy); g.lineTo(cx, hy + r*0.70); g.stroke();
+  g.strokeStyle = 'rgba(190,146,120,.30)'; g.lineWidth = Math.max(1, s*0.011);
+  g.beginPath(); g.moveTo(cx, gy); g.lineTo(cx, hy + r*0.70); g.stroke();
+  /* あめ玉 */
+  const gr = g.createRadialGradient(cx - r*0.32, hy - r*0.36, r*0.08, cx, hy, r);
+  gr.addColorStop(0, '#fffdf8'); gr.addColorStop(1, '#ffeadc');
+  g.fillStyle = gr; g.beginPath(); g.arc(cx, hy, r, 0, TAU); g.fill();
+  /* うずまき。半けいは かならず 玉の 中に おさめる */
+  g.save(); g.beginPath(); g.arc(cx, hy, r*0.97, 0, TAU); g.clip();
+  g.strokeStyle = '#f58cb6'; g.lineWidth = r*0.24; g.lineCap = 'round';
+  g.beginPath();
+  const TURN = TAU*1.9;
+  for (let a=0; a<=TURN; a+=0.09){
+    const rr = r*0.12 + (a/TURN)*r*0.78;
+    g.lineTo(cx + Math.cos(a)*rr, hy + Math.sin(a)*rr);
+  }
+  g.stroke(); g.restore();
+  /* 顔の したじ。うずまきの 上に そのまま 顔を のせると 目が 読めない */
+  g.fillStyle = 'rgba(255,252,246,.48)';
+  g.beginPath(); g.ellipse(cx, hy + r*0.10, r*0.74, r*0.56, 0, 0, TAU); g.fill();
+  /* うすい ふちどり。白っぽいので 地に とけないように */
+  g.strokeStyle = 'rgba(214,138,170,.55)'; g.lineWidth = Math.max(1, s*0.018);
+  g.beginPath(); g.arc(cx, hy, r, 0, TAU); g.stroke();
+  /* つや */
+  g.fillStyle = 'rgba(255,255,255,.60)';
+  g.beginPath(); g.ellipse(cx - r*0.38, hy - r*0.44, r*0.26, r*0.15, -0.6, 0, TAU); g.fill();
+  /* 顔 */
+  const ey = hy + r*0.06, ex = r*0.30;
+  g.fillStyle = '#5a3a4a';
+  for (const d of [-1, 1]){ g.beginPath(); g.ellipse(cx + d*ex, ey, r*0.105, r*0.135, 0, 0, TAU); g.fill(); }
+  g.fillStyle = '#ffffff';
+  for (const d of [-1, 1]){ g.beginPath(); g.arc(cx + d*ex - r*0.038, ey - r*0.052, r*0.040, 0, TAU); g.fill(); }
+  g.fillStyle = 'rgba(255,148,190,.55)';
+  for (const d of [-1, 1]){ g.beginPath(); g.ellipse(cx + d*r*0.52, ey + r*0.20, r*0.135, r*0.085, 0, 0, TAU); g.fill(); }
+  g.strokeStyle = '#5a3a4a'; g.lineWidth = Math.max(1, r*0.055); g.lineCap = 'round';
+  g.beginPath(); g.arc(cx, ey + r*0.15, r*0.13, 0.34, Math.PI - 0.34); g.stroke();
 }
 
 function paintTitle(t){
@@ -12795,14 +12843,16 @@ function paintTitle(t){
        せの ひくい 画面（320x690）で 文字に かぶりました --- */
     const dy = dyC;
     for (const c of TITLE_CAST){
-      const im = ART_SPRITE[c.k]; if (!im) continue;
+      const im = c.k ? ART_SPRITE[c.k] : null;
+      if (c.k && !im) continue;                 // 絵が まだ 読めていない子は とばす
       const s = cs*c.s, x = W*c.x, y0 = hz + H*c.y + dy;
       const y = y0 + Math.sin(t*1.4 + c.ph)*s*0.055;
       g.save();
       g.globalAlpha = c.a;                      // おくの子ほど うすく＝かすんで 見える
       g.fillStyle = 'rgba(120,90,120,.16)';
       g.beginPath(); g.ellipse(x, y0 + s*0.46, s*0.30, s*0.075, 0, 0, TAU); g.fill();
-      g.drawImage(im, x - s/2, y - s/2, s, s);
+      if (im) g.drawImage(im, x - s/2, y - s/2, s, s);
+      else titleLolly(g, x, y, s);
       g.restore();
     }
 
