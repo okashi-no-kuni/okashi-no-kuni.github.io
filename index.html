@@ -118,6 +118,10 @@
   .sk:active{transform:scale(.95)}
   .sk:disabled{opacity:.45}
   .sk canvas{display:block;margin:0 auto}
+  .sk.it{background:linear-gradient(180deg,#fff6fb,#ffe9f4);box-shadow:0 3px 0 #f0c6dd}
+  .sk.it.aim{outline:3px solid #ffd76e;outline-offset:-3px}
+  .itIc{height:38px;display:flex;align-items:center;justify-content:center;font-size:26px;line-height:38px}
+  .itIc img{display:block;width:38px;height:38px}
   .skN{font-size:calc(9.5px * var(--fsT))}
   .skC{font-size:calc(9.5px * var(--fsT));color:var(--pink-d)}
   .skCd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -457,6 +461,7 @@
         <button class="ctab" data-t="en">敵</button>
         <button class="ctab" data-t="ch">仲間</button>
         <button class="ctab" data-t="lg">伝説</button>
+        <button class="ctab" data-t="it">アイテム</button>
         <button class="ctab" data-t="fr">👭 友だち</button>
         <button class="ctab" data-t="g1">★1</button>
         <button class="ctab" data-t="g2">★2</button>
@@ -1155,6 +1160,19 @@ let hearts, life, stars, wave, selTool, selTower, running, spawnQ, spawnT, over;
 let speed = 1, time = 0, flash = 0;
 let nextT = 0, wvTick = -1;   // つぎのウェーブまでのカウントダウン
 let celebT = 0, wflash = 0;   // お祝いの光芒と白フラッシュ
+/* アイテムの ひかり。色つきで、まん中から 外へ ひろがる わっかも 出す。
+   白フラッシュ（wflash）とは べつ。かさねると 白く とんで 色が 消える */
+let iflash = 0, iflashCol = '255,255,255', iSweep = 0;
+/* バイブ。音と おなじで かならず オンオフ できるように する。
+   iPhone の Safari は navigator.vibrate を もっていないので、
+   無い ときは なにも しない（例外に しない） */
+let vibOn = true;
+try{ vibOn = localStorage.getItem('sweetTD.vib') !== 'off'; }catch(e){}
+function setVib(on){ vibOn = on; try{ localStorage.setItem('sweetTD.vib', on ? 'on' : 'off'); }catch(e){} }
+function vib(pat){
+  if (!vibOn || !navigator.vibrate) return;
+  try{ navigator.vibrate(pat); }catch(e){}
+}
 let paraders = [];            // 応援パレード中のなかま
 let phoenixUsed = false;      // ふしちょうのごかご（1プレイ1回）
 let continueUsed = false;     // このプレイで「つづきから」を使ったか（2回目からはライフ制）
@@ -2482,7 +2500,8 @@ function closeInfo(){
    まいびょうの ダメージは これまでと おなじ（1レベルで ×1.78） */
 const RATE_LV = 8;
 const spdLv   = t => Math.min(t.lv - 1, RATE_LV - 1);
-const dmgOf   = t => TOWERS[t.k].dmg   * Math.pow(1.6, t.lv-1) * Math.pow(1/0.9, (t.lv-1) - spdLv(t)) * (hasCh('king')  ? 1.1  : 1) * (buffs.dmg > 0 ? 2   : 1);
+/* t.rb は にじいろの秘薬をのんだ しるし。そのプレイの あいだ こうげき2倍 */
+const dmgOf   = t => TOWERS[t.k].dmg   * (t.rb ? 2 : 1) * Math.pow(1.6, t.lv-1) * Math.pow(1/0.9, (t.lv-1) - spdLv(t)) * (hasCh('king')  ? 1.1  : 1) * (buffs.dmg > 0 ? 2   : 1);
 const rangeOf = t => TOWERS[t.k].range * Math.pow(1.12, t.lv-1) * (hasCh('fairy') ? 1.05 : 1) * (buffs.rng > 0 ? 1.4 : 1);
 const rateOf  = t => TOWERS[t.k].rate  * Math.pow(0.9, spdLv(t))  * (hasCh('taffy') ? 0.93 : 1) * (buffs.spd > 0 ? 0.5 : 1);
 const sellOf  = t => {
@@ -2562,6 +2581,14 @@ function boardTap(px, py){
   }
 
   const hit = towerAt(c, r);
+  // にじいろの秘薬を えらんでいる あいだは、仲間を タップ＝かける
+  if (aimItem === 'elixir'){
+    if (hit && !hit.rb){ applyElixir(hit); return; }
+    if (hit){ floatTx(tcx(hit), tcy(hit) - CELL, 'もう にじいろです', '#b98ae0'); return; }
+    aimItem = null; syncSkills();
+    floatTx(px, py, 'やめました', '#b98ae0');
+    return;
+  }
   if (hit){ selTool = null; selTower = hit; syncShop(); openInfo(hit); return; }
 
   if (!selTool){ closeInfo(); return; }
@@ -2844,6 +2871,8 @@ function update(dt){
   time += dt;
   if (flash > 0) flash = Math.max(0, flash - dt*2.2);
   if (wflash > 0) wflash = Math.max(0, wflash - dt*1.8);
+  if (iflash > 0) iflash = Math.max(0, iflash - dt*1.6);
+  if (iSweep > 0) iSweep = Math.max(0, iSweep - dt*1.1);
   if (celebT > 0) celebT = Math.max(0, celebT - dt);
 
   // 全キャラコンプリートのお披露目は、たたかいと他の画面が落ちついてから
@@ -3033,11 +3062,20 @@ function update(dt){
     gf.rot += dt*6;
     if (k >= 1){
       gifts.splice(i,1);
-      items[gf.ch] = Math.min(ITEM_MAX, items[gf.ch]+1);
-      saveItems();
-      floatTx(gf.tx, ROWS*CELL - CELL*0.6, '+1 ' + SKILLS.find(s=>s.ch===gf.ch).name, '#b98ae0');
-      beep(880,.08,'triangle',.04);
-      syncSkills();
+      if (gf.it){
+        const it = ITEM_BY_ID[gf.it];
+        giveItem(it.id, 1);
+        floatTx(gf.tx, ROWS*CELL - CELL*0.6, it.ic + ' ' + it.name + ' +1', '#b98ae0');
+        beep(660,.08,'triangle',.05); setTimeout(()=>beep(990,.12,'triangle',.05),90);
+        vib([15]);
+        buildSkillBar();   // はじめて 手に 入れたときは ボタンごと ふえる
+      } else {
+        skStock[gf.ch] = Math.min(ITEM_MAX, skStock[gf.ch]+1);
+        saveSkStock();
+        floatTx(gf.tx, ROWS*CELL - CELL*0.6, '+1 ' + SKILLS.find(s=>s.ch===gf.ch).name, '#b98ae0');
+        beep(880,.08,'triangle',.04);
+        syncSkills();
+      }
     }
   }
 
@@ -7502,8 +7540,8 @@ function stageClear(){
     unlock('ch_' + ch.id);
     // おためし用にストックを1つプレゼントし、あきがあればタスクバーにも自動ではる
     if (SKILLS.some(s => s.ch === ch.id)){
-      items[ch.id] = Math.min(ITEM_MAX, items[ch.id] + 1);
-      saveItems();
+      skStock[ch.id] = Math.min(ITEM_MAX, skStock[ch.id] + 1);
+      saveSkStock();
       if (pins.length < PIN_MAX && !pins.includes(ch.id)){ pins.push(ch.id); savePins(); }
     }
   }
@@ -7526,6 +7564,18 @@ function stageClear(){
     const th = charThumb(ch, 96);
     th.style.display = 'block'; th.style.margin = '0 auto 4px';
     ovB.append(th);
+  }
+  /* アイテムも 1こ。はじめての人が つかいかたを おぼえられるように、
+     たまごと ちがって かならず もらえる形に する */
+  {
+    const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP);
+    if (pool.length){
+      const it = pool[(Math.random()*pool.length)|0];
+      giveItem(it.id, 1);
+      ovB.insertAdjacentHTML('beforeend',
+        '<div style="font-size:calc(12.5px * var(--fs));color:var(--pink-d)">' +
+        it.ic + ' アイテム「' + it.name + '」+1</div>');
+    }
   }
   // ステージクリアの ごほうびの たまご
   if (gift){
@@ -7626,6 +7676,8 @@ function dexList(){
       fx:'ワザ「にじのおくりもの」＋ドロップUP', hint:'ログインボーナス7日目で仲間に' },
     ...LEGENDS.map(l => ({ id:'lg_'+l.id, pid:l.id, name:l.name, title:l.title, cat:'lg', fx:l.fx,
                            hint:l.tease, legend:true })),
+    ...ITEMS.map(it => ({ id:'it_'+it.id, pid:it.id, name:it.name, title:it.desc, cat:'it',
+                          fx:it.note, item:it, hint:'敵からのドロップ・ステージクリア・ショップ' })),
     ...GEN_LIST.map(o => ({
       id:o.id, name:o.name, cat:'g'+o.lv, gen:o,
       title:(o.side === 'en' ? 'てき' : '仲間') + '・★' + o.lv + (o.cells > 1 ? '・' + o.cells + 'マス' : ''),
@@ -7901,12 +7953,31 @@ function buildColGrid(){
     const rec = dex[o.id];
     const d = document.createElement('div');
     d.className = 'cCard' + (rec ? '' : ' no');
+    if (rec && o.item){
+      // アイテムは キャラでは ないので、絵（または 絵文字）と のこり数を 出す
+      const box = document.createElement('div');
+      box.style.cssText = 'height:64px;display:flex;align-items:center;justify-content:center;font-size:40px';
+      if (ART_SPRITE[o.item.art]){
+        const im = document.createElement('img');
+        im.src = ART_SPRITE[o.item.art].src;
+        im.style.cssText = 'width:64px;height:64px;display:block';
+        box.append(im);
+      } else box.textContent = o.item.ic;
+      d.append(box);
+      d.insertAdjacentHTML('beforeend',
+        '<div class="cNm">' + o.name + '</div>' +
+        '<div class="cLv" style="color:var(--pink-d)">×' + gear[o.pid] + ' 所持</div>' +
+        '<div class="cTt">' + o.title + '</div>' +
+        '<div class="cTt" style="color:#b98ae0">✨' + o.fx + '</div>');
+      colGrid.append(d);
+      continue;
+    }
     if (rec){
       d.append(lazyThumb(o, 64));
       let html = '<div class="cNm">' + o.name + '</div>';
       if (o.cat === 'tw' && rec.lv) html += '<div class="cLv">' + '★'.repeat(rec.lv) + '</div>';
       const isSk = o.cat === 'ch' && SKILLS.some(s => s.ch === o.pid);
-      if (isSk) html += '<div class="cLv" style="color:var(--pink-d)">×' + (items[o.pid] || 0) + ' 所持</div>';
+      if (isSk) html += '<div class="cLv" style="color:var(--pink-d)">×' + (skStock[o.pid] || 0) + ' 所持</div>';
       html += '<div class="cTt">' + o.title + '</div>';
       if (o.fx) html += '<div class="cTt" style="color:#b98ae0">✨' + o.fx + '</div>';
       if (rec.d) html += '<div class="cGet">' + (rec.w ? 'ウェーブ' + rec.w + '・' : '') + rec.d + '</div>';
@@ -7917,7 +7988,7 @@ function buildColGrid(){
         d.style.cursor = 'pointer';
         d.onclick = () => {
           const sDef = SKILLS.find(s => s.ch === o.pid);
-          if (!pins.includes(o.pid) && (items[o.pid] || 0) < 1){
+          if (!pins.includes(o.pid) && (skStock[o.pid] || 0) < 1){
             // 2回タップで1こ購入（スターの使い道）
             const cost = skillCost(sDef);
             if (buyWait === o.pid){
@@ -7927,7 +7998,7 @@ function buildColGrid(){
                 beep(160,.09,'square',.03,.7);
               } else {
                 stars -= cost;
-                items[o.pid] = Math.min(ITEM_MAX, (items[o.pid]||0) + 1); saveItems();
+                skStock[o.pid] = Math.min(ITEM_MAX, (skStock[o.pid]||0) + 1); saveSkStock();
                 beep(760,.1,'triangle',.05); syncHUD(); buildColGrid();
                 colHint.innerHTML = o.name + 'を1こ買いました！<br>もう一度タップで貼れます';
               }
@@ -7960,7 +8031,12 @@ function buildColGrid(){
       // どの たまごを ひらくか・何を すれば いいかが わかる。
       // 「？」だけだと 何が あるのかも わからない
       d.classList.add('yet');
-      d.append(lazyThumb(o, 64));
+      if (o.item){
+        const box = document.createElement('div');
+        box.style.cssText = 'height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:.45';
+        box.textContent = o.item.ic;
+        d.append(box);
+      } else d.append(lazyThumb(o, 64));
       d.insertAdjacentHTML('beforeend',
         '<div class="cNm">' + o.name + '</div>' +
         '<div class="cTt">' + o.title + '</div>' +
@@ -7998,21 +8074,68 @@ let buffs = { spd:0, dmg:0, rng:0, gold:0 };
 function hasCh(id){ return id === 'rpurin' ? !!dex['sp_rpurin'] : !!dex['ch_' + id]; }
 const skillCost = s => Math.round(s.base * (1 + wave*0.03) * (hasCh('queen') ? 0.8 : 1));
 
+/* ==========================================================
+   アイテム：1プレイに 数回の 切りふだ。
+   ワザ（なかまの わざ）より 強くて 数が すくない、という 役わり分け。
+   ワザは「HPをけずる」、アイテムは「たおす」で 効きめの しゅるいも 変えてある。
+   買いものは payGems() の 1か所を とおすので、ここに 足すだけで 課金にも つながる
+   ========================================================== */
+const ITEMS = [
+  { id:'ball',   name:'にじいろボール', sn:'ボール',   ic:'🌈', col:'#c9a7ff', need:true,
+    art:'it_ball',   vib:[40,30,90],
+    desc:'画面の敵を ぜんぶ たおす',        note:'いちばん強い切りふだ' },
+  { id:'bolt',   name:'いなずま',       sn:'いなずま', ic:'⚡', col:'#ffd76e', need:true,
+    art:'it_bolt',   vib:[25,20,25],
+    desc:'横1れつの敵を たおす',            note:'かたまって来たときに' },
+  { id:'hammer', name:'ハンマー',       sn:'ハンマー', ic:'🔨', col:'#ff9ec9', need:true,
+    art:'it_hammer', vib:[60],
+    desc:'いちばんHPの多い敵を 1体たおす',  note:'ボス1体だけを 落とす' },
+  { id:'elixir', name:'にじいろの秘薬', sn:'ひやく',   ic:'🧪', col:'#8fe3c4', need:false,
+    art:'it_elixir', vib:[20,40,20,40,60],
+    desc:'仲間を1人 にじいろに して 攻撃2倍', note:'そのプレイの おわりまで つづく' },
+  { id:'freeze', name:'こおりのつぼ',   sn:'こおり',   ic:'🧊', col:'#9ed8ff', need:true,
+    art:'it_freeze', vib:[80],
+    desc:'敵ぜんぶを 8秒 とめる',           note:'ゴール直前を しのぐときに' },
+  { id:'rain',   name:'おほしさまの雨', sn:'⭐の雨',   ic:'⭐', col:'#ffe08a', need:false,
+    art:'it_rain',   vib:[20,20,20],
+    desc:'おほしさまが たくさん ふる',      note:'つよい仲間を すぐ 置きたいときに' },
+];
+const ITEM_BY_ID = {};
+for (const it of ITEMS) ITEM_BY_ID[it.id] = it;
+const ITEM_CAP = 99;
+/* 持ち数。ワザの skStock とは 別の 入れもの。
+   混ぜると「ワザが へった／アイテムが へった」が わからなくなる */
+let gear = {};
+for (const it of ITEMS) gear[it.id] = 0;
+try{
+  const g0 = JSON.parse(localStorage.getItem('sweetTD.gear') || '{}');
+  for (const k in gear) if (typeof g0[k] === 'number') gear[k] = Math.max(0, Math.min(ITEM_CAP, g0[k]|0));
+}catch(e){}
+function saveGear(){ try{ localStorage.setItem('sweetTD.gear', JSON.stringify(gear)); }catch(e){} }
+/* 1こ わたす。はじめて 手に 入れたら ずかんにも のこす */
+function giveItem(id, n){
+  if (!ITEM_BY_ID[id]) return 0;
+  const before = gear[id];
+  gear[id] = Math.min(ITEM_CAP, before + (n || 1));
+  saveGear(); unlock('it_' + id);
+  return gear[id] - before;
+}
+
 /* ---------- なかまの所持数（つかうと1こへる。ドロップでふえて、ブラウザに残る） ---------- */
 const ITEM_MAX = 99;
-let items = {};
-for (const s of SKILLS) items[s.ch] = 0;
+let skStock = {};
+for (const s of SKILLS) skStock[s.ch] = 0;
 try{
   const it = JSON.parse(localStorage.getItem('sweetTD.items') || '{}');
-  for (const k in items) if (typeof it[k] === 'number') items[k] = Math.max(0, Math.min(ITEM_MAX, it[k]|0));
+  for (const k in skStock) if (typeof it[k] === 'number') skStock[k] = Math.max(0, Math.min(ITEM_MAX, it[k]|0));
 }catch(e){}
-function saveItems(){ try{ localStorage.setItem('sweetTD.items', JSON.stringify(items)); }catch(e){} }
+function saveSkStock(){ try{ localStorage.setItem('sweetTD.items', JSON.stringify(skStock)); }catch(e){} }
 // 消耗式に変わる前のセーブへの引っこし：もっているなかまに1こずつ保証する（1回だけ）
 try{
   if (!localStorage.getItem('sweetTD.itemsV2')){
-    for (const s of SKILLS) if (hasCh(s.ch) && items[s.ch] < 1) items[s.ch] = 1;
+    for (const s of SKILLS) if (hasCh(s.ch) && skStock[s.ch] < 1) skStock[s.ch] = 1;
     localStorage.setItem('sweetTD.itemsV2', '1');
-    saveItems();
+    saveSkStock();
   }
 }catch(e){}
 
@@ -8033,7 +8156,7 @@ function savePins(){ try{ localStorage.setItem('sweetTD.pins', JSON.stringify(pi
 function togglePin(ch){
   const i = pins.indexOf(ch);
   if (i >= 0){ pins.splice(i, 1); savePins(); buildSkillBar(); return 'off'; }
-  if (items[ch] < 1) return 'none';
+  if (skStock[ch] < 1) return 'none';
   let swapped = null;
   if (pins.length >= PIN_MAX) swapped = pins.shift();
   pins.push(ch); savePins(); buildSkillBar();
@@ -8047,8 +8170,23 @@ const dropRate = k => (DROP_RATE[k] || 0.07) * (dex['sp_rpurin'] ? 1.5 : 1);
 
 /* プレゼントキャンディがワザバーへ飛んでいく演出 */
 let gifts = [];
+/* アイテムが 落ちる わりあい。ワザより ずっと めずらしい。
+   これが 主な 入手ルート＝あそんでいれば ためられる。
+   「待てば無料」を くずさないために、ここを 0 に しないこと */
+const ITEM_DROP = 0.12;
 function spawnGift(x, y){
-  const opts = SKILLS.filter(s => hasCh(s.ch) && items[s.ch] < ITEM_MAX);   // 99こでカンスト
+  // ときどき ワザでは なく アイテムが 落ちる
+  if (Math.random() < ITEM_DROP){
+    const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP);
+    if (pool.length){
+      const it = pool[(Math.random()*pool.length)|0];
+      gifts.push({ sx:x, sy:y, x, y,
+                   tx: COLS*CELL*0.08, ty:ROWS*CELL - CELL*0.15,
+                   t:0, life:0.8, it:it.id, rot:Math.random()*6.3 });
+      return;
+    }
+  }
+  const opts = SKILLS.filter(s => hasCh(s.ch) && skStock[s.ch] < ITEM_MAX);   // 99こでカンスト
   if (!opts.length) return;
   const s = opts[(Math.random()*opts.length)|0];
   // はってあるスロットの位置へ飛ばす（はっていないワザは中央へ）
@@ -8062,8 +8200,8 @@ function spawnGift(x, y){
 function useSkill(s){
   if (over || !hasCh(s.ch) || skCd[s.ch] > 0) return;
   if (s.needEnemy && !enemies.length){ beep(160,.09,'square',.03,.7); return; }
-  if (items[s.ch] < 1){ beep(160,.09,'square',.03,.7); return; }
-  items[s.ch]--; saveItems();          // 1回つかうと1こへる
+  if (skStock[s.ch] < 1){ beep(160,.09,'square',.03,.7); return; }
+  skStock[s.ch]--; saveSkStock();          // 1回つかうと1こへる
   skCd[s.ch] = s.cd;
   const W = COLS*CELL, H = ROWS*CELL;
   if (s.ch === 'purin'){
@@ -8154,7 +8292,7 @@ function useSkill(s){
     beep(880,.1,'triangle',.05); setTimeout(()=>beep(1100,.14,'triangle',.05),110);
   }
   // つかいきったら バーから自動ではがれる
-  if (items[s.ch] <= 0){
+  if (skStock[s.ch] <= 0){
     const i = pins.indexOf(s.ch);
     if (i >= 0){ pins.splice(i, 1); savePins(); }
     floatTx(COLS*CELL/2, ROWS*CELL - CELL*1.1, s.name + 'を使いきりました！', '#b98ae0');
@@ -8163,11 +8301,169 @@ function useSkill(s){
   syncHUD(); syncSkills();
 }
 
+/* えらんでいる アイテム（にじいろの秘薬）。
+   盤面の 仲間を タップして かける。ボーナス中の キャッチと おなじ しくみ */
+let aimItem = null;
+
+/* にじいろに した 絵を 焼いておく。毎フレーム 合成すると おもい。
+   色相だけ かける やりかたは drawGenFx と 同じ（明るさを 変えると 顔が 消える） */
+const rbCache = new Map();
+function rbSprite(src, px, tag){
+  px = Math.max(24, Math.round(px/8)*8);
+  const k = tag + '@' + px;
+  const hit = rbCache.get(k); if (hit) return hit;
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  const c = document.createElement('canvas');
+  c.width = px*d; c.height = px*d;
+  const g = c.getContext('2d');
+  g.setTransform(d,0,0,d,0,0);
+  g.drawImage(src, 0, 0, px, px);
+  // 色相の 合成は すきとおった 外がわまで ぬるので、形を とっておいて あとで 切りぬく
+  const mask = document.createElement('canvas');
+  mask.width = c.width; mask.height = c.height;
+  mask.getContext('2d').drawImage(c, 0, 0);
+  g.globalCompositeOperation = 'color';
+  const r = g.createLinearGradient(px*0.22, px*0.76, px*0.78, px*0.24);
+  const st = ['#ff9ec9','#ffbe8f','#ffd76e','#8fe3c4','#9ed8ff','#c9a7ff','#ff9ec9'];
+  for (let i=0;i<st.length;i++) r.addColorStop(i/(st.length-1), st[i]);
+  g.fillStyle = r; g.fillRect(0, 0, px, px);
+  g.globalCompositeOperation = 'destination-in';
+  g.setTransform(1,0,0,1,0,0);
+  g.drawImage(mask, 0, 0);
+  rbCache.set(k, c);
+  return c;
+}
+
+/* アイテムを つかう。ワザ（useSkill）と 分けてあるのは、
+   ワザは「HPをけずる」、アイテムは「たおす」で 効きめの しゅるいが ちがうため */
+function useItem(it){
+  if (over || gear[it.id] < 1) return;
+  if (it.need && !enemies.length){ beep(160,.09,'square',.03,.7); return; }
+  const W = COLS*CELL, H = ROWS*CELL;
+
+  // 秘薬だけは「だれに かけるか」を えらんでから へらす
+  if (it.id === 'elixir'){
+    const able = towers.filter(t => !t.rb);
+    if (!able.length){
+      floatTx(W/2, H*0.45, 'にじいろに できる仲間が いません', '#b98ae0');
+      beep(160,.09,'square',.03,.7); return;
+    }
+    aimItem = (aimItem === 'elixir') ? null : 'elixir';
+    selTool = null; selTower = null; closeInfo(); syncShop(); syncSkills();
+    if (aimItem) floatTx(W/2, H*0.42, 'にじいろに する仲間を タップ！', '#b98ae0');
+    return;
+  }
+
+  gear[it.id]--; saveGear();
+  iflash = 1; iSweep = 1; iflashCol = hexRgb(it.col);
+  vib(it.vib);
+
+  if (it.id === 'ball'){
+    // 画面の敵を ぜんぶ たおす。HPを けずるのでは なく たおすので、
+    // 後半の かたい敵にも おなじだけ 効く（そこが ワザとの ちがい）
+    for (const e of [...enemies]){ const q = posAt(e.d); killEnemy(e, q.x, q.y); }
+    for (let i=0;i<40;i++) mote(W/2 + (Math.random()-0.5)*W, H/2 + (Math.random()-0.5)*H, '#c9a7ff');
+    ring(W/2, H/2, '#c9a7ff', H*0.9);
+    floatTx(W/2, H*0.42, 'にじいろボール！ ぜんめつ！', '#8f66d8');
+    beep(520,.18,'triangle',.06); setTimeout(()=>beep(700,.2,'triangle',.06),120);
+    setTimeout(()=>beep(920,.28,'triangle',.06),260);
+
+  } else if (it.id === 'bolt'){
+    // いちばん 敵が こんでいる よこの おびを 落とす
+    const band = CELL*1.6;
+    let best = H/2, bn = -1;
+    for (const e of enemies){
+      const q = posAt(e.d);
+      const n = enemies.filter(o => Math.abs(posAt(o.d).y - q.y) <= band/2).length;
+      if (n > bn){ bn = n; best = q.y; }
+    }
+    for (const e of [...enemies]){
+      const q = posAt(e.d);
+      if (Math.abs(q.y - best) <= band/2) killEnemy(e, q.x, q.y);
+    }
+    for (let i=0;i<26;i++) mote(Math.random()*W, best + (Math.random()-0.5)*band, '#ffd76e');
+    floatTx(W/2, best - CELL*0.6, 'いなずま！', '#e0a52e');
+    beep(240,.1,'sawtooth',.07,.5); setTimeout(()=>beep(180,.22,'sawtooth',.06,.5),90);
+
+  } else if (it.id === 'hammer'){
+    // ボス1体だけを 落とす。HPの いちばん 多い子
+    let tgt = null;
+    for (const e of enemies) if (!tgt || e.hp > tgt.hp) tgt = e;
+    if (tgt){
+      const q = posAt(tgt.d);
+      killEnemy(tgt, q.x, q.y);
+      ring(q.x, q.y, '#ff9ec9', CELL*2.6);
+      for (let i=0;i<20;i++) puff(q.x, q.y, '#ff9ec9');
+      floatTx(q.x, q.y - CELL*0.8, 'ハンマー！', '#e05f9e');
+    }
+    beep(150,.16,'square',.07,.5); setTimeout(()=>beep(110,.24,'square',.06,.5),100);
+
+  } else if (it.id === 'freeze'){
+    for (const e of enemies){ e.stun = 8; const q = posAt(e.d); for (let i=0;i<4;i++) mote(q.x, q.y, '#bfe8ff'); }
+    ring(W/2, H/2, '#9ed8ff', H*0.8);
+    floatTx(W/2, H*0.42, 'こおりのつぼ！ 8秒 ストップ！', '#4a9ed8');
+    beep(880,.12,'sine',.05,.8); setTimeout(()=>beep(660,.3,'sine',.05,.8),110);
+
+  } else if (it.id === 'rain'){
+    // ⭐は そのウェーブの かせぎに 合わせる。決めうちの 数字だと
+    // 後半で ただの ごみに なる（W60で293、W380で6,228 もらえるため）
+    const gain = Math.max(120, goldOf('golem') * 10);
+    stars += gain;
+    floatTx(W/2, H*0.42, '⭐+' + fmtN(gain), '#e0a52e');
+    for (let i=0;i<34;i++) mote(Math.random()*W, Math.random()*H*0.6, '#ffe08a');
+    beep(760,.1,'triangle',.05); setTimeout(()=>beep(990,.14,'triangle',.05),110);
+    setTimeout(()=>beep(1180,.18,'triangle',.05),230);
+    saveRun();   // ⭐は saveRun でしか のこらない
+  }
+  syncHUD(); syncSkills(); syncShop();
+}
+/* '#c9a7ff' → '201,167,255'。ひかりの 色は rgba() で つくるため */
+function hexRgb(h){
+  const n = parseInt(h.slice(1), 16);
+  return ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255);
+}
+/* 秘薬を 1人に かける */
+function applyElixir(t){
+  if (!t || t.rb || gear.elixir < 1) return false;
+  gear.elixir--; saveGear();
+  t.rb = true;
+  aimItem = null;
+  const x = tcx(t), y = tcy(t);
+  iflash = 1; iSweep = 1; iflashCol = hexRgb(ITEM_BY_ID.elixir.col);
+  vib(ITEM_BY_ID.elixir.vib);
+  ring(x, y, '#8fe3c4', CELL*3);
+  for (let i=0;i<26;i++) mote(x, y, ['#ff9ec9','#ffd76e','#8fe3c4','#9ed8ff','#c9a7ff'][i%5]);
+  floatTx(x, y - CELL*0.9, TOWERS[t.k].name + ' が にじいろに！ 攻撃2倍', '#b98ae0');
+  beep(600,.1,'triangle',.05); setTimeout(()=>beep(800,.1,'triangle',.05),100);
+  setTimeout(()=>beep(1000,.22,'triangle',.06),200);
+  saveRun(); syncSkills(); syncHUD();
+  return true;
+}
+
 function buildSkillBar(){
   // つかいきったなかまはバーからはずれる（この整理では1こへらさない）
-  const alive = pins.filter(ch => SKILLS.some(s => s.ch === ch) && hasCh(ch) && items[ch] > 0);
+  const alive = pins.filter(ch => SKILLS.some(s => s.ch === ch) && hasCh(ch) && skStock[ch] > 0);
   if (alive.length !== pins.length){ pins = alive; savePins(); }
   skillBar.innerHTML = '';
+  /* 持っている アイテムを 左はしに 出す。バーは 横スクロールなので
+     高さは ふえない（下のボタンが 画面の外に 出ない） */
+  for (const it of ITEMS){
+    if (gear[it.id] < 1) continue;
+    const b = document.createElement('button');
+    b.className = 'sk it';
+    b.dataset.it = it.id;
+    b.innerHTML = '<div class="itIc">' + it.ic + '</div>' +
+                  '<div class="skN">' + it.sn + '</div><div class="skC"></div>';
+    const ic = b.querySelector('.itIc');
+    if (ART_SPRITE[it.art]){
+      ic.textContent = '';
+      const im = document.createElement('img');
+      im.src = ART_SPRITE[it.art].src; im.width = 38; im.height = 38;
+      ic.append(im);
+    }
+    b.onclick = () => useItem(it);
+    skillBar.append(b);
+  }
   // はってあるなかまのワザボタン（さいだい7こ・横スクロール）
   for (const ch of pins){
     const s = SKILLS.find(x => x.ch === ch);
@@ -8199,7 +8495,7 @@ function buildSkillBar(){
     skillBar.append(b);
   }
   // のこりは「はれる」空きスロット
-  for (let i = skillBar.children.length; i < PIN_MAX; i++){
+  for (let i = pins.length; i < PIN_MAX; i++){
     const b = document.createElement('button');
     b.className = 'sk empty';
     b.disabled = true;
@@ -8210,10 +8506,18 @@ function buildSkillBar(){
 }
 function syncSkills(){
   for (const b of skillBar.children){
+    if (b.dataset.it){
+      const it = ITEM_BY_ID[b.dataset.it];
+      b.querySelector('.skC').textContent = '×' + gear[it.id];
+      b.classList.toggle('off', over || gear[it.id] < 1);
+      // えらんでいる あいだは 光らせる（どれを かけるか わからなくなるため）
+      b.classList.toggle('aim', aimItem === it.id);
+      continue;
+    }
     if (!b.dataset.ch) continue;
     const s = SKILLS.find(x => x.ch === b.dataset.ch);
     if (!hasCh(s.ch)) continue;
-    const st = items[s.ch];
+    const st = skStock[s.ch];
     b.querySelector('.skC').textContent = '残り ×' + st;
     const cd = skCd[s.ch], cdEl = b.querySelector('.skCd');
     cdEl.style.display = cd > 0 ? '' : 'none';
@@ -8234,7 +8538,8 @@ function saveRun(w){
       w: (w !== undefined ? w : wave), st: stars, hp: hearts, lf: life,
       cu: continueUsed ? 1 : 0,
       tw: towers.map(t => {
-        return { k:t.k, c:t.c, r:t.r, lv:t.lv };
+        return t.rb ? { k:t.k, c:t.c, r:t.r, lv:t.lv, rb:1 }
+                        : { k:t.k, c:t.c, r:t.r, lv:t.lv };
       }),
     }));
   }catch(e){}
@@ -8298,7 +8603,7 @@ function tryResume(){
   life = rn.lf === undefined ? maxLife() : Math.min(maxLife(), Math.max(1, rn.lf | 0));
   towers = (rn.tw || [])
     .filter(t => TOWERS[t.k] && !pathCells.has(key(t.c, t.r)))
-    .map(t => ({ k:t.k, c:t.c, r:t.r, lv:Math.min(5, Math.max(1, t.lv|0)),
+    .map(t => ({ k:t.k, c:t.c, r:t.r, lv:Math.min(5, Math.max(1, t.lv|0)), rb:!!t.rb,
                  cd:0, ang:-Math.PI/2, pulse:0, ph:Math.random()*6.3 }));
   continueUsed = !!rn.cu;
   floatTx(COLS*CELL/2, ROWS*CELL/2, '続きから再開！', '#b98ae0');
@@ -8367,10 +8672,10 @@ function applyLoginReward(day){
     const names = [];
     for (let i=0;i<n;i++){
       const s = owned[(Math.random()*owned.length)|0];
-      items[s.ch] = Math.min(ITEM_MAX, items[s.ch] + 1);
+      skStock[s.ch] = Math.min(ITEM_MAX, skStock[s.ch] + 1);
       names.push(s.name);
     }
-    saveItems();
+    saveSkStock();
     return 'ワザのストック <b>+' + n + '</b>（' + names.join('・') + '）！';
   };
   switch(day){
@@ -8381,8 +8686,8 @@ function applyLoginReward(day){
     case 5: return addStart(300);
     case 6:
       if (!owned.length) return addStart(300);
-      for (const s of owned) items[s.ch] = Math.min(ITEM_MAX, items[s.ch] + 1);
-      saveItems();
+      for (const s of owned) skStock[s.ch] = Math.min(ITEM_MAX, skStock[s.ch] + 1);
+      saveSkStock();
       return '所持しているワザのストック <b>全部+1</b>！';
     default:
       if (!dex['sp_rpurin']){
@@ -8661,6 +8966,21 @@ function buildHelp(){
       const nm = c ? c.name : 'ながれぼし';
       return '<li><b>' + s.name + '</b>（' + nm + '）：' + s.desc + '</li>';
     }).join('') + '</ul></div>';
+  h += '<div class="hSec"><h3>🎒 アイテム</h3>' +
+    '<p>ワザより <b>強くて めずらしい 切りふだ</b>です。ワザが「HPをけずる」のに対して、' +
+    'アイテムは <b>たおす</b>ので、後半の かたい敵にも おなじだけ 効きます。' +
+    '敵からのドロップ・ステージクリア・ショップで 手に入ります。' +
+    'ワザバーの <b>左はし</b>に 出ます。</p><ul style="margin-top:5px">' +
+    ITEMS.map(it => '<li>' + it.ic + ' <b>' + it.name + '</b>：' + it.desc +
+                    '<br><span style="opacity:.7">' + it.note + '</span></li>').join('') +
+    '</ul></div>';
+  h += '<div class="hSec"><h3>📳 ふるえ（バイブ）</h3>' +
+    '<p>アイテムを つかったときに 端末が ふるえます。' +
+    '苦手な人も いるので、ここで 止められます（音と 同じ あつかい）。</p>' +
+    '<div style="display:flex;gap:8px;justify-content:center;margin-top:6px">' +
+    '<button class="mini" id="vibBtn"></button></div>' +
+    '<p style="opacity:.7;margin-top:5px">iPhone の Safari は ふるえに 対応していないので、' +
+    'その ときは なにも おきません（エラーには なりません）。</p></div>';
   h += '<div class="hSec"><h3>🏆 強くなるコツ</h3><ul>' +
     '<li>早よびボーナスで⭐を稼いで、どんどん強化する</li>' +
     '<li>ワザは<b>ここぞ</b>で使う。ボス・ラッシュ・ハートのピンチに</li>' +
@@ -8677,6 +8997,13 @@ function buildHelp(){
   h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、メイン画面の<b>「🔑合言葉・着せかえ」</b>ボタンから入れてください。限定テーマが届きます🎁</p></div>';
   helpBody.innerHTML = h;
+  const vb = $('vibBtn');
+  if (vb){
+    const paint = () => { vb.textContent = vibOn ? '📳 ふるえ：オン' : '📴 ふるえ：オフ';
+                          vb.classList.toggle('gray', !vibOn); };
+    paint();
+    vb.onclick = () => { setVib(!vibOn); paint(); if (vibOn) vib([25]); beep(700,.08,'triangle',.04); };
+  }
 }
 
 /* ==========================================================
@@ -8889,6 +9216,22 @@ const SHOP_ITEMS = [
       hearts = maxHearts(); setNextHeartAt(0); saveRun(); syncHUD();
       return '🎫 パスポート ' + passLeft() + '日ぶん！ かけら🩷+' + PASS_SHARDS + '・💗満タン';
     } },
+  /* アイテムの パック。**消耗品**なので、買わなくても ドロップと
+     ステージクリアで たまる。「待てば無料」を くずさないための 線引き。
+     強さそのもの（攻撃力・⭐）は 売らない、という きまりは まもっている */
+  { id:'it_set', sec:'あそぶ', ic:'🎒', name:'おたすけセット',
+    desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×1こずつ',
+    note: () => 'アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP*100) + '%）。' +
+                'ステージクリアでも 1こ もらえます',
+    cost: 12,
+    buy: () => { for (const it of ITEMS) giveItem(it.id, 1); buildSkillBar();
+                 return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
+  { id:'it_big', sec:'あそぶ', ic:'🌈', name:'にじいろセット',
+    desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×3こずつ',
+    note: () => 'おたすけセット3こぶん。まとめて 買うと おとく',
+    cost: 30,
+    buy: () => { for (const it of ITEMS) giveItem(it.id, 3); buildSkillBar();
+                 return '🌈 6しゅるいの アイテムが 3こずつ！'; } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
     desc:'あと何回あそべるかが 満タンに もどります', cost:10,
     can:  () => hearts < maxHearts(),
@@ -8965,7 +9308,9 @@ function buildShopScreen(){
     h += '<div class="spIt' + (ok ? '' : ' poor') + '" data-id="' + it.id + '">' +
       '<div class="spIc">' + it.ic + '</div>' +
       '<div class="spTx"><div class="spN">' + it.name + '</div>' +
-      '<div class="spD">' + ((it.can && !it.can()) ? it.poor() : it.desc) + '</div></div>' +
+      // desc は 文字でも 関数でも よい（中みが 変わる 品ものが あるため）
+      '<div class="spD">' + ((it.can && !it.can()) ? it.poor()
+                             : (typeof it.desc === 'function' ? it.desc() : it.desc)) + '</div></div>' +
       '<div class="spP">' + (got ? '✓' : '💎' + it.cost) + '</div></div>' +
       // ランダムが 入るものは かくりつを かならず 出す（Apple 3.1.1／景品表示法）
       // 品ものが うすくなるときは 説明も いっしょに うすくする
@@ -10771,6 +11116,18 @@ function drawTower(t){
     roundRect(-R*0.95, R*0.4, R*1.9, R*0.55, R*0.28); ctx.stroke();
   }
 
+  /* にじいろの秘薬を のんだ子は、色が まわる オーラを つける。
+     絵の 色相だけを かえても 小さいと わかりにくいので、
+     まわりの ひかりで「この子は 特別」と 見せる */
+  if (t.rb){
+    const hue = (time*90) % 360;
+    const ag2 = ctx.createRadialGradient(0,0,R*0.5, 0,0,R*2.1);
+    ag2.addColorStop(0,    'hsla(' + hue + ',100%,72%,0)');
+    ag2.addColorStop(0.58, 'hsla(' + hue + ',100%,72%,.42)');
+    ag2.addColorStop(1,    'hsla(' + ((hue+120)%360) + ',100%,72%,0)');
+    ctx.fillStyle = ag2;
+    ctx.beginPath(); ctx.arc(0,0,R*2.1,0,6.3); ctx.fill();
+  }
   // 強化オーラ（Lv2でしろく、Lv4からきんいろに）
   if (t.lv >= 2){
     const pu = 0.75 + Math.sin(time*3.2 + t.ph)*0.25;
@@ -10790,12 +11147,14 @@ function drawTower(t){
   } else if (T.gen){
     // なかまは コレクションの絵を そのまま つかう
     const px = R*TOWER_PX;
-    ctx.drawImage(genSprite(T.gen, px), -px/2, -px/2, px, px);
+    const sp = genSprite(T.gen, px);
+    ctx.drawImage(t.rb ? rbSprite(sp, px, 'g_'+T.gen.id) : sp, -px/2, -px/2, px, px);
   } else if (T.art && ART_SPRITE[T.art]){
     // コレクションと 同じ 絵。はね・だい・リボンは この あとも つくので
     // 「タワーの すがた」で あることは 見わけられる
     const px = R*TOWER_PX;
-    ctx.drawImage(ART_SPRITE[T.art], -px/2, -px/2, px, px);
+    const sp = ART_SPRITE[T.art];
+    ctx.drawImage(t.rb ? rbSprite(sp, px, 'a_'+T.art) : sp, -px/2, -px/2, px, px);
   } else {
     sweetBody(ctx, t.k, R, T.color, T.dark, false);
     drawFace(R*SWEET_FACE[t.k], t.ph, 'smile');
@@ -10981,7 +11340,7 @@ function render(){
 
   // 飛んでいくプレゼントキャンディ（行き先のワザの色でつつむ）
   for (const gf of gifts){
-    const col = SKILLS.find(s => s.ch === gf.ch).color;
+    const col = gf.it ? ITEM_BY_ID[gf.it].col : SKILLS.find(s => s.ch === gf.ch).color;
     const cr = CELL*0.16;
     ctx.save(); ctx.translate(gf.x, gf.y); ctx.rotate(gf.rot);
     ctx.fillStyle = col;
@@ -11143,6 +11502,27 @@ function render(){
   if (flash > 0){
     ctx.fillStyle = 'rgba(255,90,140,' + (flash*0.3) + ')';
     ctx.fillRect(0,0,W,H);
+  }
+  /* アイテムの ひかり。色を のせてから、まん中から わっかを ひろげる。
+     まっ白に とばさないのは、どの アイテムを つかったかを 色で 見せたいため */
+  if (iflash > 0){
+    const W = COLS*CELL, H = ROWS*CELL;
+    const rg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.75);
+    rg.addColorStop(0,   'rgba(' + iflashCol + ',' + (iflash*0.72) + ')');
+    rg.addColorStop(0.55,'rgba(' + iflashCol + ',' + (iflash*0.38) + ')');
+    rg.addColorStop(1,   'rgba(' + iflashCol + ',0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
+  if (iSweep > 0){
+    const W = COLS*CELL, H = ROWS*CELL;
+    const mx = Math.hypot(W, H) * 0.62;
+    for (let i=0;i<3;i++){
+      const t2 = iSweep - i*0.16;
+      if (t2 <= 0) continue;
+      ctx.strokeStyle = 'rgba(' + iflashCol + ',' + (t2*0.55) + ')';
+      ctx.lineWidth = CELL*0.22*t2 + 2;
+      ctx.beginPath(); ctx.arc(W/2, H/2, (1-t2)*mx, 0, 6.3); ctx.stroke();
+    }
   }
   if (wflash > 0){
     ctx.fillStyle = 'rgba(255,255,255,' + (wflash*0.7) + ')';
@@ -11369,8 +11749,14 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   /* ワザを 1つ ためす。バーは 7こまでなので、はっていない子は 押せない */
   skill: ch => { const s = SKILLS.find(x => x.ch === ch);
                  if (!s) return 'そのワザは ない';
-                 items[ch] = Math.max(items[ch], 1); skCd[ch] = 0; useSkill(s); return 'つかった'; },
+                 skStock[ch] = Math.max(skStock[ch], 1); skCd[ch] = 0; useSkill(s); return 'つかった'; },
   enemyD: () => enemies.map(e => Math.round(e.d)),
+  /* アイテムを ためす */
+  give: (id, n) => { if (id) giveItem(id, n||1); else for (const it of ITEMS) giveItem(it.id, n||3);
+                     buildSkillBar(); return JSON.stringify(gear); },
+  gear: () => ({ ...gear }),
+  useItem: id => { const it = ITEM_BY_ID[id]; if (!it) return 'ない'; useItem(it); return 'つかった'; },
+  towersRb: () => towers.map(t => ({ k:t.k, rb:!!t.rb, dmg:Math.round(dmgOf(t)) }),),
   setStars: n => { stars = n; syncHUD(); syncShop(); },
   setTool: k => { selTool = k; },
   towers: () => towers.map(t => ({ k:t.k, c:t.c, r:t.r, sp:tSpan(t), lv:t.lv })),
