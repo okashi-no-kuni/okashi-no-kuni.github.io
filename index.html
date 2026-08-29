@@ -342,8 +342,6 @@
   @media (max-width:359px){
     #colTtl{font-size:calc(12px * var(--fs))}
     #colHead .mini{padding:7px 5px}
-    /* ここまで せまいと 名前は 入らない。となりの 🏰🎀📤 と 同じ 絵文字だけに */
-    .pwTx{display:none}
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
@@ -411,11 +409,10 @@
   /* ---------- 合言葉・着せかえ ---------- */
   /* ショップ・今週のおだい・合言葉は 図鑑（👑）の 中に 入れてある。
      ここは 盤面の 高さを 1pxも 取らないので、そのぶん マスが 大きい。
-     見出しの 名前は **みじかく**すること。「🏅 今週のおだい」と 書くと
-     見出しが 374px 必要になり、393pxの iPhone（つかえるのは 357px）で
-     はみ出して ✕が 画面の 外に 出た。だから ここだけ 「おだい」にする
-     （ひらいた 先の 画面は 「今週のおだい」の まま）。
-     それでも 入らない せまい画面では 絵文字だけに 落とす（下の @media）*/
+     見出しの 名前は **出したあとに 測って きめる**（fitHead）。
+     決めうちの @media では 実機で はみ出す ——Linuxで 測った幅は
+     iPhoneの 丸ゴシックより せまく、393pxでは 余裕が 25pxしか ない。
+     はみ出すと ✕が 画面の 外に 出て「戻れない」に なる */
   .pwTx{margin-left:3px}
   #colTabs .mini{flex:0 0 auto;padding:7px 7px;font-size:calc(11px * var(--fs))}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
@@ -520,7 +517,7 @@
     <div id="colOv">
       <div id="colHead">
         <button class="mini" id="btnShop" aria-label="ショップ">🛍<span class="pwTx">ショップ</span></button>
-        <button class="mini" id="btnWk" aria-label="今週のおだい">🏅<span class="pwTx">おだい</span></button>
+        <button class="mini" id="btnWk" aria-label="今週のおだい">🏅<span class="pwTx"><span class="wkLong">今週の</span>おだい</span></button>
         <div id="colHeadSp"></div>
         <button class="mini" id="colKing">🏰</button>
         <button class="mini" id="colAv">🎀</button>
@@ -7891,7 +7888,7 @@ function legendArrival(L, preview){
 /* ---------- 図鑑モーダル ---------- */
 let colTab = 'ch';   // ひらいたときは 仲間タブ
 let buyWait = null;   // ×0のなかまを2回タップで買うときの1回目おぼえ
-btnCol.onclick = () => togglePanel('colOv', buildColGrid);
+btnCol.onclick = () => togglePanel('colOv', () => { buildColGrid(); fitHead(); });
 /* 下の 👑／📕 を もう一度 おしても とじられるが、
    下まで スクロールしていると そこまで 目が いかない。見出しにも 置く */
 $('colClose').onclick  = () => { $('colOv').classList.remove('on');  syncNav(); beep(520,.07,'triangle',.03); };
@@ -9437,6 +9434,25 @@ btnHelp.onclick = () => {
   seeGuide();                       // 1回ひらいたら もう 光らせない
   togglePanel('helpOv', buildHelp);
 };
+/* 見出しの 名前は 出したあとに 測って きめる。
+   「🛍 ショップ」「🏅 今週のおだい」は ひろい画面なら 入るが、393px では
+   余裕が 25pxしか なく、実機の 丸ゴシック（Linuxより ひろい）では はみ出す。
+   はみ出すと ✕が 画面の 外に 出て「戻れない」に なるので、決めうちの
+   @media では なく、**すき間の のこり幅を 見て 1段ずつ けずる**。
+   横に ならぶ札の fitStat() と 同じ 考えかた */
+const HEAD_SLACK = 8;                       // すき間が これを 切ったら みじかくする
+function fitHead(){
+  const sp = $('colHeadSp'); if (!sp) return;
+  const wide = () => sp.getBoundingClientRect().width >= HEAD_SLACK;
+  const show = (cls, on) =>
+    document.querySelectorAll('.' + cls).forEach(e => e.style.display = on ? '' : 'none');
+  show('pwTx', true); show('wkLong', true);   // いちばん長い形から ためす
+  if (wide()) return;
+  show('wkLong', false);                      // 「今週の」を おとす → おだい
+  if (wide()) return;
+  show('pwTx', false);                        // 名前ごと おとす → 絵文字だけ
+}
+
 /* はじめて あそぶ人にだけ 📕 を 光らせる。giveStarters と 同じで、
    localStorage の 旗 1つで「もう見た」を おぼえる */
 function hintGuide(){
@@ -12026,6 +12042,7 @@ function resize(){
   CELL = Math.max(24, Math.floor(Math.min(w/COLS, h/ROWS)));
   applyCell();
   measurePath();
+  if (typeof fitHead === 'function') fitHead();   // よこ向きに したときも 名前を あわせなおす
   /* てきの すすみぐあい e.d は ピクセルで もっている。マスが 小さくなると
      道も みじかくなるので、そのままだと「もう ゴールに ついている」あつかいに
      なって、まだ とちゅうの子まで いっせいに 通りぬけ、💗が いっきに 0になる。
