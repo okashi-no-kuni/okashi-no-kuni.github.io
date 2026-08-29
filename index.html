@@ -6609,7 +6609,7 @@ const CREATURES = [
   ['bug','サソリ',       ['#e8a86a','#ffd8b0','#b9773a'], 3,'en',{key:'scorpion', wing:'shell', bodyC:'#b9773a'}],
   ['quad','フェネック',  ['#f0dcb8','#fff6e8','#d9b98a'], 3,'en',{key:'fennec',   sc:0.86, ear:'big', head:'small', tail:'bushy', stout:0.85, mark:'belly', line:'#c9a878'}],
   ['fowl','ダチョウ',    ['#c9a888','#fff0dc','#ffb43f'], 4,'en',{key:'ostrich',  dx:0.11, neck:0.9, sneck:true, slim:true, legC:'#ffb43f', tail:'fan'}],
-  ['quad','オオトカゲ',  ['#a8b88a','#d8e8c0','#7a8a5e'], 4,'en',{key:'monitor',  ear:'round', head:'long', snout:'long', tail:'long', shortLeg:true, stout:1.1}],
+  ['quad','アルマジロ',  ['#d8b98a','#fff0d8','#a88a5e'], 4,'en',{key:'armadillo',ear:'round', head:'small', snout:'long', tail:'long', shortLeg:true, stout:1.1, mark:'quill', markC:'#a88a5e'}],
   ['quad','ラクダ',      ['#e0b878','#fff0d8','#b9903f'], 5,'en',{key:'camel',    ear:'round', head:'long', neck:0.7, snout:'long', tail:'tuft', stout:1.05}],
   ['dragon','コブラ',    ['#c9a85e','#f0dcb0','#8a6a2e'], 6,'en',{key:'cobra', sc:0.96}],
   // --- ひのくに。赤ではなく さんごいろで、パステルから 浮かないように ---
@@ -6618,10 +6618,10 @@ const CREATURES = [
   ['ghost','おにび',     ['#b8c8f0','#e8f0ff','#8fa8e0'], 2,'en',{key:'onibi',    line:'#8fa8e0'}],
   ['quad','サラマンダー',['#ff9f7a','#ffd0b8','#d9714e'], 3,'en',{key:'salamander',ear:'round', head:'long', snout:'long', tail:'long', shortLeg:true, stout:0.95}],
   ['bug','カブトムシ',   ['#e8705e','#ffb0a0','#ffd76e'], 3,'en',{key:'beetle',   wing:'shell', bodyC:'#8a5a4a'}],
-  ['turtle','マグマガメ',['#e8a87a','#ffd0b0','#6b6070'], 4,'en',{key:'lavaturtle'}],
+  ['slime','ようがんまいまい',['#e8a87a','#ffd0b0','#6b6070'], 4,'en',{key:'lavasnail'}],
   ['golem','ようがんゴーレム',['#a87a72','#d9a898','#7a4f4a'],4,'en',{key:'lavagolem'}],
   ['fowl','ひのとり',    ['#ffb08a','#ffe0c0','#ffd76e'], 5,'en',{key:'firebird', dx:0.11, crest:'tuft', tail:'fan', wing:true}],
-  ['dragon','ドラゴン',  ['#e8907a','#ffc9b0','#c96a4a'], 6,'en',{key:'dragon', sc:0.96}],
+  ['hero','オニ',        ['#e8705e','#ffb0a0','#ffd76e'], 6,'en',{key:'oni', horns:true, hair:'#5b3a4a', legC:'#e8705e', shoeC:'#c9503f'}],
 
   // --- 人のキャラ。ぼうし・マント・ドレスまで つくって その役らしくする ---
   ['slime',    'スライム',   ['#8fe3c4','#d8fff0','#5fc4a0'], 1,'en'],
@@ -7668,7 +7668,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'dragon', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavaturtle', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monitor', 'monkey', 'mont', 'mouse', 'nagareboshi', 'octopus', 'ohagi', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -7757,8 +7757,8 @@ const EN_THEME = [
   /* 5 ゆきのケーキやま     */ ['rabbit','sheep','penguin','deer','wolf','eagle','bear','snowqueen'],
   /* 6 ソーダのうみべ       */ ['jelly','starfish','clownfish','hermit','seahorse','crab','turtle','gull','octopus','seal','shark','manta'],
   /* 7 キャラメルのさばく   */ ['mouse','hedgehog','turtle','monkey','kangaroo','zebra','horse','tiger','giraffe','lion'],
-  /* 8 さばくのくに         */ ['cactus','sandcat','lizard','meerkat','scorpion','fennec','ostrich','monitor','camel','cobra'],
-  /* 9 ひのくに             */ ['hinotama','bat','onibi','salamander','beetle','lavaturtle','lavagolem','firebird','dragon'],
+  /* 8 さばくのくに         */ ['cactus','sandcat','lizard','meerkat','scorpion','fennec','ostrich','armadillo','camel','cobra'],
+  /* 9 ひのくに             */ ['hinotama','bat','onibi','salamander','beetle','lavasnail','lavagolem','firebird','oni'],
   /* 10 よぞらのくに        */ ['ghost','butterfly','bat','onibi','owl','wolf','devil','snowqueen'],
   /* 11 にじのてんくう      */ ['ladybug','ghost','butterfly','gull','swan','eagle','firebird','manta'],
 ];
