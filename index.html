@@ -402,11 +402,22 @@
 
   /* ---------- 画面ぜんたいにあふれる紙吹雪 ---------- */
   #confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:99}
-  .cf{position:absolute;top:-7vh;will-change:transform;animation:confFall linear forwards}
-  @keyframes confFall{
-    0%{transform:translateY(0) rotate(0) scale(1)}
-    100%{transform:translateY(115vh) rotate(var(--rot)) scale(.85)}
-  }
+  /* 紙吹雪あらため「銀のきらめき」。おちる（外）・よこゆれ（中）・またたき（内）の
+     3枚がさね。transform のアニメは 1要素に 1本しか かけられない */
+  .cf{position:absolute;top:-8vh;will-change:transform;animation:confFall linear forwards}
+  @keyframes confFall{to{transform:translateY(120vh)}}
+  .cfS{display:block;animation:confSway ease-in-out infinite alternate}
+  @keyframes confSway{from{transform:translateX(calc(var(--sw) * -1))}to{transform:translateX(var(--sw))}}
+  .cfT{display:block;background-size:contain;background-repeat:no-repeat;
+       animation:confTw ease-in-out infinite alternate}
+  @keyframes confTw{from{opacity:.25;transform:scale(.55)}to{opacity:1;transform:scale(1.06)}}
+  /* 小さな光の粒。filter を つかわず グラデーションで 光らせる（数が多いので 軽く） */
+  .cfDot{border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.85) 32%,rgba(230,240,255,0) 72%)}
+  /* 銀の紙ふぶき。ひらひらは rotate3d で 紙の おもてうらを 見せる */
+  .cfPp{border-radius:2px;background:linear-gradient(135deg,#ffffff,#cfd8e6 55%,#f4f7fd);
+        animation:confFlut ease-in-out infinite alternate}
+  @keyframes confFlut{from{opacity:.9;transform:rotate(-30deg) rotate3d(1,0.3,0,8deg)}
+                      to{opacity:.55;transform:rotate(26deg) rotate3d(1,0.3,0,72deg)}}
 </style>
 </head>
 <body>
@@ -2707,21 +2718,54 @@ function mote(x,y,color){
    お祝いエンジン（達成の瞬間を画面いっぱいに祝う）
    ========================================================== */
 const confettiEl = document.getElementById('confetti');
-const CONF_EMOJI = ['🎉','⭐','💗','🍬','✨','🌸','💖','🧁'];
-/* 画面ぜんたい（盤面の外まで）に紙吹雪を降らせる */
+/* 4条の きらめき（シリーズの星形）。ぼかしフィルタは 重いので、
+   にじみの まるは SVG の グラデーションで 先に 焼きこんでおく */
+const CONF_STAR = 'url("data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">' +
+  '<radialGradient id="g"><stop offset="0" stop-color="#fff" stop-opacity=".95"/>' +
+  '<stop offset=".55" stop-color="#eaf2ff" stop-opacity=".35"/>' +
+  '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+  '<circle cx="20" cy="20" r="15" fill="url(%23g)"/>' +
+  '<path d="M20 1 L22.6 17.4 L39 20 L22.6 22.6 L20 39 L17.4 22.6 L1 20 L17.4 17.4 Z" fill="#fff"/>' +
+  '<path d="M29.5 10.5 L20 20 M10.5 29.5 L20 20" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".65"/>' +
+  '</svg>') + '")';
+/* 画面ぜんたいに 銀のきらめきを 舞いおろす。
+   まえは 絵文字を 0.5秒で どさっと 落としていて うるさかった。
+   いまは 星・光の粒・銀の紙ふぶきを 時間差で ゆっくり ふらせて、
+   おちながら またたく（お手本：夜空に ふる 白い きらめき） */
 function confettiBurst(n){
-  n = Math.min(n, 260 - confettiEl.children.length);   // 出しすぎて重くならないように
+  n = Math.min(n, 200 - confettiEl.children.length);   // 出しすぎて重くならないように
   for (let i=0;i<n;i++){
-    const s = document.createElement('span');
-    s.className = 'cf';
-    s.textContent = CONF_EMOJI[(Math.random()*CONF_EMOJI.length)|0];
-    s.style.left = (Math.random()*100) + '%';
-    s.style.fontSize = (13 + Math.random()*16) + 'px';
-    s.style.setProperty('--rot', ((Math.random() < .5 ? -1 : 1)*(360 + Math.random()*540)) + 'deg');
-    s.style.animationDuration = (1.8 + Math.random()*1.7) + 's';
-    s.style.animationDelay = (Math.random()*0.5) + 's';
-    s.addEventListener('animationend', () => s.remove());
-    confettiEl.append(s);
+    const fall = document.createElement('span');       // おちる
+    const sway = document.createElement('span');       // よこに ゆれる
+    const body = document.createElement('span');       // またたく・かたち
+    fall.className = 'cf'; sway.className = 'cfS'; body.className = 'cfT';
+    const r = Math.random();
+    if (r < 0.40){                                     // 大きめの きらめき
+      const px = 14 + Math.random()*16;
+      body.style.width = body.style.height = px + 'px';
+      body.style.backgroundImage = CONF_STAR;
+    } else if (r < 0.85){                              // 小さな 光の粒
+      const px = 4 + Math.random()*6;
+      body.style.width = body.style.height = px + 'px';
+      body.classList.add('cfDot');
+    } else {                                           // 銀の 紙ふぶき
+      body.classList.add('cfPp');
+      body.classList.remove('cfT');                    // またたきの かわりに ひらひら
+      body.style.width = (5 + Math.random()*4) + 'px';
+      body.style.height = (9 + Math.random()*5) + 'px';
+    }
+    fall.style.left = (Math.random()*100) + '%';
+    fall.style.setProperty('--sw', (6 + Math.random()*22) + 'px');
+    // ばらばらに 出はじめて、ゆっくり おちる。「どさっと」に しないための 2つ
+    fall.style.animationDuration = (4.2 + Math.random()*3.2) + 's';
+    fall.style.animationDelay = (Math.random()*1.8) + 's';
+    sway.style.animationDuration = (1.6 + Math.random()*1.6) + 's';
+    sway.style.animationDelay = (-Math.random()*2) + 's';
+    body.style.animationDuration = (0.55 + Math.random()*0.9) + 's';
+    body.style.animationDelay = (-Math.random()*1.2) + 's';
+    fall.addEventListener('animationend', () => fall.remove());
+    sway.append(body); fall.append(sway); confettiEl.append(fall);
   }
 }
 /* 豪華なファンファーレ（big=true でさらに長く） */
