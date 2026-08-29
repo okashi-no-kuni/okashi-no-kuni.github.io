@@ -596,7 +596,12 @@ const COLS = 9, ROWS = 12;
      おけるマス 72〜82      すくない ＝ なかまを ならべられない
    はんいに 入るまで たねを ずらして 作りなおす。
    ========================================================== */
-const LAP_WAVES = 200;
+/* 1周 ＝ 国を ひとめぐり。国を ふやしたら ここも のびる。
+   そろえないと 1周したときに 通らない国が できて、
+   ステージ番号と 国が 合わなくなる（なかまも てきも ずれる） */
+const STAGE_WAVES = 20;
+const THEME_COUNT = 12;
+const LAP_WAVES = STAGE_WAVES * THEME_COUNT;
 const lapOf = w => Math.floor(Math.max(0, w - 1) / LAP_WAVES);
 /* さいしょの1周は 手で 作った道。はじめての人が 見る 画面なので */
 const FIRST_WAY = [[1,-1],[1,2],[7,2],[7,5],[1,5],[1,8],[7,8],[7,12]];
@@ -757,30 +762,39 @@ const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04)
 /* ==========================================================
    ステージ（20ウェーブクリアごとに景色が変わる）
    ========================================================== */
-const STAGE_WAVES = 20;
 const THEMES = [
   { name:'シュガーガーデン',     g1:'#d9f7e6', g2:'#cdf2dd', p1:'#f0c9a0', p2:'#ffe8c8',
     spr:['#ff9ec9','#9ed8ff','#b6f0c4','#ffe08a'] },
   { name:'いちごのおかしばたけ', g1:'#ffe4ef', g2:'#ffd9e8', p1:'#c98a5e', p2:'#eec49a',
     spr:['#ff7fae','#ffffff','#ffd0df','#b6f0c4'] },
+  { name:'マカロンのもり',       g1:'#c8e6c0', g2:'#b8dcae', p1:'#8a5a34', p2:'#b07d4e',
+    spr:['#ffd0df','#fff0b8','#c9a7ff','#ffffff'] },
   { name:'チョコレートのたに',   g1:'#eed9c2', g2:'#e6cdb2', p1:'#8a5a34', p2:'#b07d4e',
     spr:['#ffffff','#ffd76e','#ff9ec9','#9ed8ff'] },
   { name:'こおりのくに',         g1:'#e2f3fc', g2:'#d6ecf8', p1:'#a8cfe6', p2:'#eef9ff',
     spr:['#ffffff','#bfe8ff','#c9a7ff','#ffd0df'] },
-  { name:'よぞらのくに',         g1:'#ded4f6', g2:'#d3c7f1', p1:'#d9b96a', p2:'#f6e2a4',
-    spr:['#ffffff','#ffe27a','#ff9ec9','#bfe8ff'] },
-  // ---- 後半（W101〜）はさらに新しい国へ。1周すると じゅんばんが ずれる ----
-  { name:'キャラメルのさばく',   g1:'#f5dfb0', g2:'#efd49c', p1:'#b5722f', p2:'#dda45e',
-    spr:['#ffffff','#ffd76e','#ff9ec9','#b98ae0'] },
-  { name:'ソーダのうみべ',       g1:'#d3f2f5', g2:'#c2ebf0', p1:'#e8c49a', p2:'#fff0d8',
-    spr:['#ffffff','#8fd8ff','#b6f0c4','#ffd0df'] },
-  { name:'マカロンのもり',       g1:'#c8e6c0', g2:'#b8dcae', p1:'#8a5a34', p2:'#b07d4e',
-    spr:['#ffd0df','#fff0b8','#c9a7ff','#ffffff'] },
   { name:'ゆきのケーキやま',     g1:'#f2f4fa', g2:'#e6eaf5', p1:'#a8c4e6', p2:'#dceafc',
     spr:['#ffffff','#bfe8ff','#ffd0df','#e8d8ff'] },
+  { name:'ソーダのうみべ',       g1:'#d3f2f5', g2:'#c2ebf0', p1:'#e8c49a', p2:'#fff0d8',
+    spr:['#ffffff','#8fd8ff','#b6f0c4','#ffd0df'] },
+  // ---- ここから おくの国。さばくが 2つ つづいて、だんだん あつくなる ----
+  { name:'キャラメルのさばく',   g1:'#f5dfb0', g2:'#efd49c', p1:'#b5722f', p2:'#dda45e',
+    spr:['#ffffff','#ffd76e','#ff9ec9','#b98ae0'] },
+  /* キャラメルのさばくの おく。あめ色ではなく クッキーの粉のような 白っぽい砂にして、
+     キラキラに ラムネ色を まぜて 見わける（同じ あめ色にすると 2つが 見わけられない） */
+  { name:'さばくのくに',         g1:'#f9ead6', g2:'#f2e0c6', p1:'#a88a5e', p2:'#e6d0aa',
+    spr:['#ffffff','#bfe8ff','#ffd0df','#ffe6a8'] },
+  /* 火の国。パステルを くずさないように 赤ではなく さんごいろ。
+     じめんは 灰がかった うすいバラいろ、道だけ ようがんの色で 光らせる */
+  { name:'ひのくに',             g1:'#f6dcd8', g2:'#efcfcb', p1:'#c96a4a', p2:'#ffb07a',
+    spr:['#ffd76e','#ffb08a','#ffffff','#ffc2d4'] },
+  { name:'よぞらのくに',         g1:'#ded4f6', g2:'#d3c7f1', p1:'#d9b96a', p2:'#f6e2a4',
+    spr:['#ffffff','#ffe27a','#ff9ec9','#bfe8ff'] },
   { name:'にじのてんくう',       g1:'#eadcf8', g2:'#f6d9ee', p1:'#d9a54e', p2:'#ffe9b0',
     spr:['#ff9ec9','#ffd76e','#8fe3c4','#9ed8ff'] },
 ];
+/* THEME_COUNT と ずれると ステージと 国が 合わなくなる。ここで すぐ 気づけるように */
+if (THEMES.length !== THEME_COUNT) throw new Error('THEME_COUNT が THEMES.length と ちがう');
 /* あいことばで解放される限定テーマ（見た目とBGMのきせかえ。難易度は変わらない） */
 const SP_THEMES = {
   sakura: {   // 春
@@ -1010,15 +1024,16 @@ const themeOfStage = n => THEMES[themeIdxOf((n-1)*STAGE_WAVES + 1)];
 const CHARS = [
   { id:'apple',  name:'ふたばのこ',     title:'双葉の芽',     fx:'ワザ「りんごのいやし」＋回復+3' },
   { id:'prince', name:'よつばのこ',     title:'幸運の四つ葉', fx:'ワザ「いちごのはた」＋おほしさま+10%' },
+  { id:'taffy',  name:'つむじかぜ',     title:'小さな旋風',   fx:'ワザ「ふえのマーチ」＋速度UP' },
   { id:'choco',  name:'かみなりのこ',   title:'雷雲の子',     fx:'ワザ「チョコばくだん」が使える' },
   { id:'purin',  name:'こおりのつぶ',   title:'氷のかけら',   fx:'ワザ「まもりのたて」が使える' },
-  { id:'cake',   name:'はなびのこ',     title:'花火の玉',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
-  { id:'queen',  name:'すなどけい',     title:'時をはこぶ砂', fx:'ワザ「おうひのいのり」＋値段-20%' },
-  { id:'donut',  name:'いずみのしずく', title:'泉の雫',       fx:'ワザ「ハートかいふく」が使える' },
-  { id:'taffy',  name:'つむじかぜ',     title:'小さな旋風',   fx:'ワザ「ふえのマーチ」＋速度UP' },
   { id:'gumgum', name:'わたぐも',       title:'ちぎれ雲',     fx:'ワザ「ぷるぷるスロー」が使える' },
-  { id:'fairy',  name:'ひかりのわ',     title:'光の輪',       fx:'ワザ「ようせいのこな」＋範囲+5%' },
+  { id:'donut',  name:'いずみのしずく', title:'泉の雫',       fx:'ワザ「ハートかいふく」が使える' },
+  { id:'queen',  name:'すなどけい',     title:'時をはこぶ砂', fx:'ワザ「おうひのいのり」＋値段-20%' },
+  { id:'kagero', name:'かげろう',       title:'ゆらめく熱気', fx:'ワザ「かげろうのまい」が使える' },
   { id:'king',   name:'たいようのこ',   title:'小さな太陽',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
+  { id:'cake',   name:'はなびのこ',     title:'花火の玉',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
+  { id:'fairy',  name:'ひかりのわ',     title:'光の輪',       fx:'ワザ「ようせいのこな」＋範囲+5%' },
 ];
 
 /* ずかん用のよみもの。おかし（タワー）は置くと、てきはたおすと登録される */
@@ -6285,6 +6300,7 @@ const DEX_ART = {
   purin:'koori',   choco:'kaminari', gumgum:'watagumo', donut:'shizuku',
   taffy:'tsumuji', cake:'hanabi',    fairy:'hikari',    prince:'yotsuba',
   apple:'futaba',  queen:'sunadokei', king:'taiyou',    rpurin:'nagareboshi',
+  kagero:'kagero',
   whale:'kujaku',  phoenix:'ryu',    chronos:'sphinx',
 };
 
@@ -6583,6 +6599,29 @@ const CREATURES = [
   ['quad','シマウマ', ['#fdfaff','#2f3346','#2f3346'], 4,'en',{key:'zebra',  ear:'horse', head:'long', tail:'tuft', snout:'long', mane:'horse', maneC:'#2f3346', tuftC:'#2f3346', mark:'stripe', dark:'rgba(40,35,50,.75)', line:'#2f3346'}],
   ['quad','キリン',   ['#f0c060','#fff0c8','#8a6440'], 5,'en',{key:'giraffe',ear:'horse', head:'long', horn:'ossicone', tail:'tuft', neck:0.8, stout:0.9, mark:'spot', markC:'rgba(150,100,40,.55)', tuftC:'#8a6440'}],
   // --- そら（追加） ---
+
+  // --- さばくのくに。キャラメルのさばくは サバンナの大きい子、
+  //     こちらは 砂の中の 小さい子と は虫るいで 見わける ---
+  ['slime','サボテン',   ['#8fd8a0','#c8f0d0','#5faf78'], 1,'en',{key:'cactus'}],
+  ['quad','スナネコ',    ['#e8d4b0','#fff0dc','#c9a878'], 1,'en',{key:'sandcat',  ear:'round', tail:'long', stout:0.9, mark:'belly'}],
+  ['quad','トカゲ',      ['#9ed8a8','#d8f0d8','#7ab088'], 2,'en',{key:'lizard',   ear:'round', head:'long', snout:'long', tail:'long', shortLeg:true, stout:0.95}],
+  ['teddy','ミーアキャット',['#d8b98a','#fff0d8','#a88a5e'],2,'en',{key:'meerkat', ear:'round', earC:'#b9976a', snoutC:'#fff0d8', noseC:'#6b5040'}],
+  ['bug','サソリ',       ['#e8a86a','#ffd8b0','#b9773a'], 3,'en',{key:'scorpion', wing:'shell', bodyC:'#b9773a'}],
+  ['quad','フェネック',  ['#f0dcb8','#fff6e8','#d9b98a'], 3,'en',{key:'fennec',   sc:0.86, ear:'big', head:'small', tail:'bushy', stout:0.85, mark:'belly', line:'#c9a878'}],
+  ['fowl','ダチョウ',    ['#c9a888','#fff0dc','#ffb43f'], 4,'en',{key:'ostrich',  dx:0.11, neck:0.9, sneck:true, slim:true, legC:'#ffb43f', tail:'fan'}],
+  ['quad','オオトカゲ',  ['#a8b88a','#d8e8c0','#7a8a5e'], 4,'en',{key:'monitor',  ear:'round', head:'long', snout:'long', tail:'long', shortLeg:true, stout:1.1}],
+  ['quad','ラクダ',      ['#e0b878','#fff0d8','#b9903f'], 5,'en',{key:'camel',    ear:'round', head:'long', neck:0.7, snout:'long', tail:'tuft', stout:1.05}],
+  ['dragon','コブラ',    ['#c9a85e','#f0dcb0','#8a6a2e'], 6,'en',{key:'cobra', sc:0.96}],
+  // --- ひのくに。赤ではなく さんごいろで、パステルから 浮かないように ---
+  ['ball','ひのたま',    ['#ffb07a','#ffe0c0','#ff8f5e'], 1,'en',{key:'hinotama'}],
+  ['bird','コウモリ',    ['#a88ab0','#d8c8e0','#7a5f8a'], 2,'en',{key:'bat'}],
+  ['ghost','おにび',     ['#ffd9b8','#fff0e0','#ffb07a'], 2,'en',{key:'onibi',    line:'#d9914e'}],
+  ['quad','サラマンダー',['#ff9f7a','#ffd0b8','#d9714e'], 3,'en',{key:'salamander',ear:'round', head:'long', snout:'long', tail:'long', shortLeg:true, stout:0.95}],
+  ['bug','カブトムシ',   ['#c96a4a','#e8a88a','#8a3f2e'], 3,'en',{key:'beetle',   wing:'shell', bodyC:'#8a3f2e'}],
+  ['turtle','マグマガメ',['#d98a6a','#ffc9a8','#a85a3f'], 4,'en',{key:'lavaturtle'}],
+  ['golem','ようがんゴーレム',['#a87a72','#d9a898','#7a4f4a'],4,'en',{key:'lavagolem'}],
+  ['fowl','ひのとり',    ['#ffb08a','#ffe0c0','#ffd76e'], 5,'en',{key:'firebird', dx:0.11, crest:'tuft', tail:'fan', wing:true}],
+  ['dragon','ドラゴン',  ['#e8907a','#ffc9b0','#c96a4a'], 6,'en',{key:'dragon', sc:0.96}],
 
   // --- 人のキャラ。ぼうし・マント・ドレスまで つくって その役らしくする ---
   ['slime',    'スライム',   ['#8fe3c4','#d8fff0','#5fc4a0'], 1,'en'],
@@ -7712,14 +7751,16 @@ for (const o of GEN_LIST) if (o.side === 'en') (EN_BY_LV[o.lv] = EN_BY_LV[o.lv] 
 const EN_THEME = [
   /* 0 シュガーガーデン     */ ['ladybug','rabbit','slime','bee','hedgehog','turtle','butterfly','swan','giraffe','lion'],
   /* 1 いちごのおかしばたけ */ ['ladybug','mouse','bee','sheep','pig','butterfly','kangaroo','horse'],
-  /* 2 チョコレートのたに   */ ['mouse','slime','squirrel','pig','redpanda','panda','zebra','devil','tiger','golem'],
-  /* 3 こおりのくに         */ ['rabbit','sheep','penguin','swan','seal','golem','snowqueen'],
-  /* 4 よぞらのくに         */ ['ghost','butterfly','owl','wolf','devil','snowqueen'],
-  /* 5 キャラメルのさばく   */ ['mouse','hedgehog','turtle','monkey','kangaroo','zebra','horse','tiger','giraffe','lion'],
+  /* 2 マカロンのもり       */ ['rabbit','mouse','squirrel','hedgehog','koala','monkey','redpanda','sloth','owl','deer','panda','bear'],
+  /* 3 チョコレートのたに   */ ['mouse','slime','squirrel','pig','redpanda','panda','zebra','devil','tiger','golem'],
+  /* 4 こおりのくに         */ ['rabbit','sheep','penguin','swan','seal','golem','snowqueen'],
+  /* 5 ゆきのケーキやま     */ ['rabbit','sheep','penguin','deer','wolf','eagle','bear','snowqueen'],
   /* 6 ソーダのうみべ       */ ['jelly','starfish','clownfish','hermit','seahorse','crab','turtle','gull','octopus','seal','shark','manta'],
-  /* 7 マカロンのもり       */ ['rabbit','mouse','squirrel','hedgehog','koala','monkey','redpanda','sloth','owl','deer','panda','bear'],
-  /* 8 ゆきのケーキやま     */ ['rabbit','sheep','penguin','deer','wolf','eagle','bear','snowqueen'],
-  /* 9 にじのてんくう       */ ['ladybug','ghost','butterfly','gull','swan','eagle','manta'],
+  /* 7 キャラメルのさばく   */ ['mouse','hedgehog','turtle','monkey','kangaroo','zebra','horse','tiger','giraffe','lion'],
+  /* 8 さばくのくに         */ ['cactus','sandcat','lizard','meerkat','scorpion','fennec','ostrich','monitor','camel','cobra'],
+  /* 9 ひのくに             */ ['hinotama','bat','onibi','salamander','beetle','lavaturtle','lavagolem','firebird','dragon'],
+  /* 10 よぞらのくに        */ ['ghost','butterfly','bat','onibi','owl','wolf','devil','snowqueen'],
+  /* 11 にじのてんくう      */ ['ladybug','ghost','butterfly','gull','swan','eagle','firebird','manta'],
 ];
 /* [国][★] = その国の その★の子。国ごとに ★べつに ならべておく */
 const EN_BY_TH = EN_THEME.map(keys => {
@@ -7972,6 +8013,7 @@ const SKILLS = [
   { ch:'apple',  name:'いやし',     base:60,  cd:12, needEnemy:false, color:'#ff5a5a', desc:'ハート+2。軽くて安い回復' },
   { ch:'queen',  name:'いのり',     base:130, cd:45, needEnemy:false, color:'#dcebf8', desc:'ほかのワザの準備を完了させる' },
   { ch:'king',   name:'ごうれい',   base:150, cd:30, needEnemy:false, color:'#ffe27a', desc:'8秒 攻撃2倍。ボスや どすんケーキに' },
+  { ch:'kagero', name:'かげろう',   base:100, cd:20, needEnemy:true,  color:'#ffd9b8', desc:'敵全員を2マス半 後ろへ もどす。ゴール直前をしのぐときに' },
   { ch:'rpurin', name:'おくりもの', base:100, cd:35, needEnemy:false, color:'#c9a7ff', desc:'プレゼントを2こもらう' },
 ];
 let skCd = {}, skTick = -1;
@@ -8120,6 +8162,16 @@ function useSkill(s){
     ring(W/2, H/2, '#ffe27a', H*0.8);
     floatTx(W/2, H*0.4, 'おうのごうれい！ 攻撃2倍！', '#c9821e');
     beep(440,.2,'triangle',.06); setTimeout(()=>beep(660,.25,'triangle',.06),160);
+  } else if (s.ch === 'kagero'){
+    // 道にそった きょりを へらして 後ろへ もどす。0より 前には 行かせない
+    for (const e of enemies){
+      const p = posAt(e.d);
+      e.d = Math.max(0, e.d - CELL*2.5);
+      for (let i=0;i<4;i++) mote(p.x, p.y, '#ffd9b8');
+    }
+    ring(W/2, H/2, '#ffd9b8', H*0.7);
+    floatTx(W/2, H*0.4, 'かげろうのまい！', '#d9914e');
+    beep(320,.22,'sine',.05,.6); setTimeout(()=>beep(260,.26,'sine',.05,.6),140);
   } else if (s.ch === 'rpurin'){
     spawnGift(W/2 - CELL, H*0.35);      // プレゼントを2こおとす
     spawnGift(W/2 + CELL, H*0.4);
@@ -11280,7 +11332,8 @@ window.__chk = {
   artHas: k => !!ART_SPRITE[k],
   /* てきの 顔ぶれ。国ごとに しぼっているので、どの国にも 入れ わすれた子は
      一生 出てこない。それを 検査で 見つける ために 出す */
-  enemyLook, enemyKinds: () => Object.keys(ENEMIES),
+  enemyLook, enemyKinds: () => Object.keys(ENEMIES), LAP_WAVES,
+  themeOfStage, chars: () => CHARS.map(c => c.name),
   // アバターも キャラなので おなじ検査に かける。
   // ぜんぶの くみあわせは 何万とおりも あるので、各こうもくを もれなく 1回は とおす数だけ 作る
   avatarSamples: () => {

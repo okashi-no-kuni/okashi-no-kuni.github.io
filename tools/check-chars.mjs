@@ -71,7 +71,8 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
   if (api.enemyLook && api.enemyKinds){
     const seen = new Set();
     const kinds = api.enemyKinds();
-    for (let n = 1; n <= 200; n++)
+    const LAP = api.LAP_WAVES || 200;      // 1周＝国ひとめぐり。ぜんぶの国を 1回ずつ 通る
+    for (let n = 1; n <= LAP; n++)
       for (const k of kinds)
         for (let i = 0; i < 24; i++){
           const g = api.enemyLook(k, n, i);
