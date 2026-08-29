@@ -63,6 +63,23 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
       const idKey = (o.opt && o.opt.key) ? o.opt.key : o.body;   // buildRoster の 規則
       if (api.artHas(idKey) && api.artKeyOf(o) !== idKey) artLost.push(o.name);
     }
+  /* 出ない てき。てきの見た目は 国ごとに しぼっているので、
+     どの国にも 入れ わすれた子は 一生 出てこない＝あつめられない。
+     ずかんに いるのに 会えない子が いると、コレクションが 完成しなくなる。
+     1周（200ウェーブ）ぜんぶを たどって、1回も 出ない子を さがす */
+  const enGhost = [];
+  if (api.enemyLook && api.enemyKinds){
+    const seen = new Set();
+    const kinds = api.enemyKinds();
+    for (let n = 1; n <= 200; n++)
+      for (const k of kinds)
+        for (let i = 0; i < 24; i++){
+          const g = api.enemyLook(k, n, i);
+          if (g) seen.add(g.id);
+        }
+    for (const o of R)
+      if (o.side === 'en' && !o.rainbow && !seen.has(o.id)) enGhost.push(o.name);
+  }
   // アバターも おなじ ものさしで しらべる（IDは ないので 名前だけ 見る）
   const AV = api.avatarSamples ? api.avatarSamples() : [];
   const drawAv = api.drawAvatar;
@@ -123,7 +140,7 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     if (Math.abs(cx) > MAX_OFF || Math.abs(cy) > MAX_OFF)
       off.push(o.name + '(' + cx.toFixed(2) + ',' + cy.toFixed(2) + ')');
   }
-  return { artLost, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
+  return { artLost, enGhost, n: R.length, nav: AV.length, over, small, off, dupName, dupId };
 }, { MIN_BIG, MAX_OFF });
 await b.close();
 
@@ -141,9 +158,10 @@ line('中心ずれ',   rep.off);
 line('名前かぶり', rep.dupName);
 line('IDかぶり',   rep.dupId);
 line('絵の とりこぼし', rep.artLost || []);
+line('出ない てき', rep.enGhost || []);
 
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
-         + rep.dupId.length + (rep.artLost || []).length;
+         + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

@@ -994,11 +994,12 @@ applyThemeSel();
 // きせかえ中は限定テーマを優先する
 /* 景色は 20ウェーブごと。1周（200ウェーブ）すると 道が かわるので、
    景色の じゅんばんも 1つ ずらして 前の周と 同じ ならびに ならないようにする */
-const themeOf = w => themeOverride ? themeOverride.th
-  : THEMES[(Math.max(0, Math.ceil(w/STAGE_WAVES)-1) + lapOf(w)) % THEMES.length];
-/* ステージ番号（1〜）から その国。きせかえ中でも 本来の国を かえすので、
-   図鑑の「どの国で 仲間になるか」が テーマで 変わってしまうことがない */
-const themeOfStage = n => THEMES[(Math.max(0, n-1) + lapOf((n-1)*STAGE_WAVES + 1)) % THEMES.length];
+/* 何番目の国かだけを かえす。きせかえ中でも 本来の番号なので、
+   てきの顔ぶれや 図鑑の表示が きせかえで 変わってしまうことがない */
+const themeIdxOf = w => (Math.max(0, Math.ceil(w/STAGE_WAVES)-1) + lapOf(w)) % THEMES.length;
+const themeOf = w => themeOverride ? themeOverride.th : THEMES[themeIdxOf(w)];
+/* ステージ番号（1〜）から その国 */
+const themeOfStage = n => THEMES[themeIdxOf((n-1)*STAGE_WAVES + 1)];
 
 /* ==========================================================
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
@@ -7703,13 +7704,50 @@ function towerAt(c, r){
    見た目と 名前だけ さしかえるので、ゲームの つりあいは 変わらない */
 const EN_BY_LV = {};
 for (const o of GEN_LIST) if (o.side === 'en') (EN_BY_LV[o.lv] = EN_BY_LV[o.lv] || []).push(o);
+
+/* その国に すんでいそうな子だけが 出る。ならびは THEMES と おなじ順。
+   1人が いくつの国に いても よい（ウサギは のはらにも 雪山にも いる）。
+   どの国にも 入れなかった子は 一生 出てこないので、
+   tools/check-chars.mjs の「出ない てき」が それを 見つける */
+const EN_THEME = [
+  /* 0 シュガーガーデン     */ ['ladybug','rabbit','slime','bee','hedgehog','turtle','butterfly','swan','giraffe','lion'],
+  /* 1 いちごのおかしばたけ */ ['ladybug','mouse','bee','sheep','pig','butterfly','kangaroo','horse'],
+  /* 2 チョコレートのたに   */ ['mouse','slime','squirrel','pig','redpanda','panda','zebra','devil','tiger','golem'],
+  /* 3 こおりのくに         */ ['rabbit','sheep','penguin','swan','seal','golem','snowqueen'],
+  /* 4 よぞらのくに         */ ['ghost','butterfly','owl','wolf','devil','snowqueen'],
+  /* 5 キャラメルのさばく   */ ['mouse','hedgehog','turtle','monkey','kangaroo','zebra','horse','tiger','giraffe','lion'],
+  /* 6 ソーダのうみべ       */ ['jelly','starfish','clownfish','hermit','seahorse','crab','turtle','gull','octopus','seal','shark','manta'],
+  /* 7 マカロンのもり       */ ['rabbit','mouse','squirrel','hedgehog','koala','monkey','redpanda','sloth','owl','deer','panda','bear'],
+  /* 8 ゆきのケーキやま     */ ['rabbit','sheep','penguin','deer','wolf','eagle','bear','snowqueen'],
+  /* 9 にじのてんくう       */ ['ladybug','ghost','butterfly','gull','swan','eagle','manta'],
+];
+/* [国][★] = その国の その★の子。国ごとに ★べつに ならべておく */
+const EN_BY_TH = EN_THEME.map(keys => {
+  const by = {};
+  for (const o of GEN_LIST){
+    if (o.side !== 'en' || !keys.includes(artKeyOf(o))) continue;
+    (by[o.lv] = by[o.lv] || []).push(o);
+  }
+  return by;
+});
+/* その★に 子が いなければ 近い★へ。下から さがすので、
+   ★7を たのまれた国は その国の いちばん つよそうな子を かえす */
+function nearLv(by, lv){
+  for (let d = 0; d < 7; d++){
+    const p = by[lv - d] || by[lv + d];
+    if (p && p.length) return p;
+  }
+  return null;
+}
 /* かたい子・ボスは 見た目も 強そうに する */
 const EN_BUMP = { slime:0, fast:0, tank:1, crystal:1, bat:0, golem:2, boss:2 };
 function enemyLook(k, n, i){
-  const lv = Math.min(7, Math.max(1, 1 + Math.floor(n / 12) + (EN_BUMP[k] || 0)));
-  let pool = null;
-  for (let d = 0; d < 7 && !pool; d++)                 // その ★に 子がいなければ 近い★から
-    pool = EN_BY_LV[lv - d] || EN_BY_LV[lv + d] || null;
+  /* 見た目の ★は「国の中の どこまで きたか」で 上がる。国が かわると また 小さい子から。
+     ウェーブで 上げると ウェーブ72で 上限に はりついて、そこから先は
+     ★6の 4体しか 出なくなる（何百ウェーブ あそんでも 顔が 4つ）。
+     国ごとに 上げなおすと、どの国でも 小さい子 → ボスの ながれに なる */
+  const lv = Math.min(7, 1 + Math.floor(((n - 1) % STAGE_WAVES) / 4) + (EN_BUMP[k] || 0));
+  const pool = nearLv(EN_BY_TH[themeIdxOf(n)], lv) || nearLv(EN_BY_LV, lv);
   if (!pool || !pool.length) return null;
   // おなじウェーブなら いつも おなじ顔ぶれに する（あつめる目あてが 立つように）
   // 周が かわると 顔ぶれも ずれる。おなじ道を 何周も 見るので、ここで 変化をつける
@@ -11240,6 +11278,9 @@ window.__chk = {
      数える ために 出す。drawGen と おなじ 式で キーを 作る こと */
   artKeyOf,                                   // drawGen が つかう ものと 同じ 関数
   artHas: k => !!ART_SPRITE[k],
+  /* てきの 顔ぶれ。国ごとに しぼっているので、どの国にも 入れ わすれた子は
+     一生 出てこない。それを 検査で 見つける ために 出す */
+  enemyLook, enemyKinds: () => Object.keys(ENEMIES),
   // アバターも キャラなので おなじ検査に かける。
   // ぜんぶの くみあわせは 何万とおりも あるので、各こうもくを もれなく 1回は とおす数だけ 作る
   avatarSamples: () => {
