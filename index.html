@@ -996,22 +996,28 @@ applyThemeSel();
    景色の じゅんばんも 1つ ずらして 前の周と 同じ ならびに ならないようにする */
 const themeOf = w => themeOverride ? themeOverride.th
   : THEMES[(Math.max(0, Math.ceil(w/STAGE_WAVES)-1) + lapOf(w)) % THEMES.length];
+/* ステージ番号（1〜）から その国。きせかえ中でも 本来の国を かえすので、
+   図鑑の「どの国で 仲間になるか」が テーマで 変わってしまうことがない */
+const themeOfStage = n => THEMES[(Math.max(0, n-1) + lapOf((n-1)*STAGE_WAVES + 1)) % THEMES.length];
 
 /* ==========================================================
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
    ========================================================== */
+/* ステージ（＝国）ごとに、その景色に合う子が仲間になる。
+   nextChar() は この並び順に わたすので、ここの順番が そのまま
+   「どの国で だれが 来るか」になる。id は変えないこと（セーブが これで つながっている） */
 const CHARS = [
-  { id:'purin',  name:'こおりのつぶ',         title:'氷のかけら',       fx:'ワザ「まもりのたて」が使える' },
-  { id:'choco',  name:'かみなりのこ',         title:'雷雲の子', fx:'ワザ「チョコばくだん」が使える' },
-  { id:'gumgum', name:'わたぐも',       title:'ちぎれ雲',       fx:'ワザ「ぷるぷるスロー」が使える' },
-  { id:'donut',  name:'いずみのしずく',       title:'泉の雫', fx:'ワザ「ハートかいふく」が使える' },
-  { id:'taffy',  name:'つむじかぜ',       title:'小さな旋風', fx:'ワザ「ふえのマーチ」＋速度UP' },
-  { id:'cake',   name:'はなびのこ',   title:'花火の玉',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
-  { id:'fairy',  name:'ひかりのわ', title:'光の輪', fx:'ワザ「ようせいのこな」＋範囲+5%' },
-  { id:'prince', name:'よつばのこ',   title:'幸運の四つ葉',   fx:'ワザ「いちごのはた」＋おほしさま+10%' },
-  { id:'apple',  name:'ふたばのこ',   title:'双葉の芽',     fx:'ワザ「りんごのいやし」＋回復+3' },
+  { id:'apple',  name:'ふたばのこ',     title:'双葉の芽',     fx:'ワザ「りんごのいやし」＋回復+3' },
+  { id:'prince', name:'よつばのこ',     title:'幸運の四つ葉', fx:'ワザ「いちごのはた」＋おほしさま+10%' },
+  { id:'choco',  name:'かみなりのこ',   title:'雷雲の子',     fx:'ワザ「チョコばくだん」が使える' },
+  { id:'purin',  name:'こおりのつぶ',   title:'氷のかけら',   fx:'ワザ「まもりのたて」が使える' },
+  { id:'cake',   name:'はなびのこ',     title:'花火の玉',     fx:'ワザ「おいわいシャワー」＋ボーナス+20%' },
   { id:'queen',  name:'すなどけい',     title:'時をはこぶ砂', fx:'ワザ「おうひのいのり」＋値段-20%' },
-  { id:'king',   name:'たいようのこ',       title:'小さな太陽',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
+  { id:'donut',  name:'いずみのしずく', title:'泉の雫',       fx:'ワザ「ハートかいふく」が使える' },
+  { id:'taffy',  name:'つむじかぜ',     title:'小さな旋風',   fx:'ワザ「ふえのマーチ」＋速度UP' },
+  { id:'gumgum', name:'わたぐも',       title:'ちぎれ雲',     fx:'ワザ「ぷるぷるスロー」が使える' },
+  { id:'fairy',  name:'ひかりのわ',     title:'光の輪',       fx:'ワザ「ようせいのこな」＋範囲+5%' },
+  { id:'king',   name:'たいようのこ',   title:'小さな太陽',   fx:'ワザ「おうのごうれい」＋攻撃+10%' },
 ];
 
 /* ずかん用のよみもの。おかし（タワー）は置くと、てきはたおすと登録される */
@@ -7494,6 +7500,14 @@ function stageClear(){
   ovT.textContent = (done && ch) ? 'おかしの国 完成！🏰' : 'ステージ ' + stageNo + ' クリア！🎉';
   ovB.innerHTML = '';
   if (ch){
+    // どの国の子かを ここで 見せる。CHARS の ならびは 国に そろえてあるので、
+    // 「こおりのくに → こおりのつぶ」が つながって 見える。
+    // 国は ステージ番号ではなく その子の ならび順から 出すこと。
+    // まけて やりなおすと、ステージ1の クリアで 5人目が 来ることが あり、
+    // ステージ番号で 出すと「シュガーガーデンの子」と うそを 言ってしまう
+    ovB.insertAdjacentHTML('beforeend',
+      '<div style="font-size:calc(11px * var(--fs));color:#b98ae0">「' +
+      themeOfStage(CHARS.indexOf(ch) + 1).name + '」の子が やってきた！</div>');
     const th = charThumb(ch, 96);
     th.style.display = 'block'; th.style.margin = '0 auto 4px';
     ovB.append(th);
@@ -7592,7 +7606,7 @@ function dexList(){
     ...DEX_TOWERS.map(o => ({ ...o, cat:'tw', pid:o.id, hint:'置くと図鑑に登録' })),
     ...DEX_ENEMIES.map(o => ({ ...o, cat:'en', pid:o.id, hint:'倒すと図鑑に登録' })),
     ...CHARS.map((c,i) => ({ id:'ch_'+c.id, pid:c.id, name:c.name, title:c.title, cat:'ch', fx:c.fx,
-                             hint:'ステージ' + (i+1) + 'クリアで仲間に' })),
+                             hint:'ステージ' + (i+1) + '「' + themeOfStage(i+1).name + '」クリア' })),
     { id:'sp_rpurin', pid:'rpurin', name:'ながれぼし', title:'贈りものを運ぶ星', cat:'ch',
       fx:'ワザ「にじのおくりもの」＋ドロップUP', hint:'ログインボーナス7日目で仲間に' },
     ...LEGENDS.map(l => ({ id:'lg_'+l.id, pid:l.id, name:l.name, title:l.title, cat:'lg', fx:l.fx,
@@ -11279,6 +11293,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return c.toDataURL('image/png');
   },
   setWave: w => { wave = w; syncHUD(); },
+  /* クリア画面の 見た目を たしかめる。ステージNまで あそばずに 出せる */
+  stageClear: n => { wave = n * STAGE_WAVES; stageClear(); },
   setStars: n => { stars = n; syncHUD(); syncShop(); },
   setTool: k => { selTool = k; },
   towers: () => towers.map(t => ({ k:t.k, c:t.c, r:t.r, sp:tSpan(t), lv:t.lv })),
