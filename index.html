@@ -68,7 +68,13 @@
   .stat{flex:1;padding:4px 4px;text-align:center;line-height:1.1}
   .stat .k{font-size:calc(10px * var(--fs));opacity:.6;letter-spacing:.06em}
   .stat .v{font-size:calc(19px * var(--fs));font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:center;gap:3px}
-  .stat .sub{font-size:calc(9px * var(--fs));color:#e0a52e;line-height:1.2}
+  /* 3つの札とも かならず 1行 つくる。中みが 出たり 消えたり すると
+     HUDの 高さが かわり、盤面が びくびく 動く（ウェーブのボタンと おなじ話）*/
+  .stat .sub{font-size:calc(9px * var(--fs));color:#e0a52e;line-height:1.2;min-height:calc(11px * var(--fs))}
+  /* げんき（たたかい中の たいりょく）。ばんめんの 上の バーは
+     ステージ名が 見えにくいので 外し、ここに 出すことにした */
+  .stat .sub.gk{color:var(--pink-d)}
+  .stat .sub.gk.low{color:#e0466d;animation:blink .6s infinite alternate}
   #hpBox.low .v{color:#ff5a8a;animation:blink .6s infinite alternate}
   @keyframes blink{to{opacity:.45}}
 
@@ -524,7 +530,7 @@
 <div id="app">
 
   <div id="hud">
-    <div class="card stat" id="hpBox"><div class="k">ハート</div><div class="v"><span>💗</span><span id="vHp">20</span></div></div>
+    <div class="card stat" id="hpBox"><div class="k">ハート</div><div class="v"><span>💗</span><span id="vHp">20</span></div><div class="sub gk" id="vLf"></div></div>
     <div class="card stat"><div class="k">おほしさま</div><div class="v"><span>⭐</span><span id="vSt">250</span></div></div>
     <div class="card stat"><div class="k">ウェーブ</div><div class="v"><span id="vWv">0</span></div><div class="sub" id="vBw"></div></div>
   </div>
@@ -1264,6 +1270,7 @@ let ctx = null, DPR = 1;
 const $ = id => document.getElementById(id);
 const vHp = $('vHp'), vSt = $('vSt'), vWv = $('vWv'), vBw = $('vBw'), hpBox = $('hpBox');
 const shopEl = $('shop'), infoEl = $('info'), infoIc = $('infoIc'), infoTx = $('infoTx');
+const vLf = $('vLf');
 const btnUp = $('btnUp'), btnSell = $('btnSell'), btnWave = $('btnWave'), btnSpd = $('btnSpd'), btnSnd = $('btnSnd');
 /* ウェーブのボタンの 文字は ここを とおして 入れる。
    **高さは CSS で 決めうち**（46px）なので、2行に なっても 行は のびない。
@@ -2773,6 +2780,12 @@ btnSell.onclick = () => {
 function syncHUD(){
   syncInfo();                     // カードの ⭐・レベル上限も いっしょに 最新にする
   vHp.textContent = Math.max(0, hearts);
+  // げんき（たたかい中の たいりょく）。0で ゲームオーバーなので かならず 見せる
+  {
+    const mx = maxLife(), v = Math.max(0, Math.min(mx, life | 0));
+    vLf.textContent = 'げんき ' + v;
+    vLf.classList.toggle('low', v <= mx * 0.3);
+  }
   vSt.textContent = fmtN(stars);
   vWv.textContent = wave;
   vBw.textContent = rec.bw > 0 ? '🏆 ベスト ' + rec.bw : '';
@@ -10949,34 +10962,8 @@ function drawBoardOverlay(){
   }
   ctx.globalAlpha = 1;
 
-  /* おかしの国の げんき。💗は「あと なんかい あそべるか」なので、
-     いま たたかっている ぶんの たいりょくは これで 見せる。
-     DOMの 行にすると 下の あんない文が 画面から はみ出すので、
-     ばんめんの 中に えがいて レイアウトを 1ミリも 動かさない */
-  {
-    const mx = maxLife(), v = Math.max(0, Math.min(mx, life | 0));
-    const bh = CELL*0.28, by = CELL*0.15;
-    const bx0 = CELL*0.62, bx1 = W - CELL*0.2, bw = bx1 - bx0;
-    const low = v <= mx*0.3;
-    ctx.font = "800 " + (CELL*0.28) + "px 'Hiragino Maru Gothic ProN','Noto Sans JP',system-ui,sans-serif";
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText('💗', CELL*0.16, by + bh/2);
-    ctx.fillStyle = 'rgba(255,255,255,.78)';
-    roundRect(bx0, by, bw, bh, bh/2); ctx.fill();
-    if (v > 0){
-      const fw = Math.max(bh, bw * v / mx);
-      const lg = ctx.createLinearGradient(bx0, 0, bx0 + fw, 0);
-      lg.addColorStop(0, low ? '#ff5f83' : '#ff8fc4');
-      lg.addColorStop(1, low ? '#ffa3b4' : '#ffc0dd');
-      ctx.fillStyle = lg;
-      roundRect(bx0, by, fw, bh, bh/2); ctx.fill();
-    }
-    ctx.textAlign = 'right';
-    ctx.lineWidth = CELL*0.08; ctx.strokeStyle = '#ffffff'; ctx.lineJoin = 'round';
-    ctx.strokeText(v, bx1 - CELL*0.12, by + bh/2);
-    ctx.fillStyle = low ? '#e0466d' : '#e05f9e';
-    ctx.fillText(v, bx1 - CELL*0.12, by + bh/2);
-  }
+  /* げんきのバー（💗＋ピンクの帯）は ここに あったが、ステージ名が
+     見えにくいので 外した。げんきの のこりは HUD の ハートの札に 出す */
 
   // いまのステージ名（右上のかわいいラベル。左上は敵の入り口なので避ける）
   {
@@ -10985,7 +10972,7 @@ function drawBoardOverlay(){
     ctx.font = "800 " + (CELL*0.27) + "px 'Hiragino Maru Gothic ProN','Noto Sans JP',system-ui,sans-serif";
     const lw = ctx.measureText(label).width;
     const bx = COLS*CELL - CELL*0.22 - lw - CELL*0.56;
-    const ly = CELL*0.46;   // げんきのバーの すぐ下。かさならないように さげてある
+    const ly = CELL*0.18;   // バーを 外したので うえに つめた
     // まるいピル（ピンクのふちどり＋ふんわり影）
     ctx.save();
     ctx.shadowColor = 'rgba(190,140,180,.4)'; ctx.shadowBlur = CELL*0.12; ctx.shadowOffsetY = CELL*0.04;
@@ -12088,8 +12075,8 @@ function resize(){
         + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, shown - 1);
   if (infoWasOn){ infoEl.classList.add('on'); shopEl.style.display = 'none'; }
   // 起動直後は レイアウトが まだ なくて 0 になるので、そのときだけ 決めうち。
-  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 271 になった）
-  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 271);
+  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 283 になった）
+  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 283);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
