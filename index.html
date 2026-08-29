@@ -340,15 +340,11 @@
     font-size:calc(11px * var(--fs));
     display:inline-flex;align-items:center;justify-content:center;gap:2px;line-height:1;
     white-space:nowrap;overflow:hidden}
-  /* ✕ は 🎀📤 と **おなじ大きさ**にする。タブの行は 7つを 等分するので、
-     1つぶんは (はば − すき間5px×6) ÷ 7。見出しと タブの 行は はばが おなじ
-     なので、この式で ぴったり そろう。
+  /* ✕ の 大きさは 🎀📤 と そろえて --icoW（上で 決めうち）。
      **実寸を 測って 合わせては いけない** ——ひらいた 直後は まだ はばが
      決まっておらず、6px ずれた（じっさいに そうなった）。
-     タブの 数を 変えたら この 7 も 直すこと。
      `#colHead .mini`（id+class）より 強く 書かないと 等分に 巻きこまれる */
-  #colHead #colClose{flex:0 0 calc((100% - 30px) / 7);padding:0;
-    font-size:calc(15px * var(--fs))}
+  #colHead #colClose{font-size:calc(15px * var(--fs))}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
   @media (max-width:359px){
     #colTtl{font-size:calc(12px * var(--fs))}
@@ -358,13 +354,18 @@
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
   #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #colTabs::-webkit-scrollbar{display:none}
-  /* タブの行は 仲間〜📤 まで **7つとも おなじ大きさ**。flex:1 1 0 で 等分する。
+  /* タブの行。**名前のタブ5つ（仲間〜友だち）だけを 等分**し、
+     🎀📤 は 絵文字ボタンなので 等分には 入れない（下の --icoW の 四角）。
      「アイテム」は 4文字あって そのままでは 入らないので、
      fitHead が --fsTab を さげて 入るまで 文字を 小さくする（fitStat と 同じ考え）*/
-  #colTabs > *{flex:1 1 0;min-width:0;height:32px;border-radius:11px;padding:0 2px;
+  #colTabs > *{height:32px;border-radius:11px;padding:0 2px;
     display:inline-flex;align-items:center;justify-content:center;line-height:1;
     font-size:calc(11px * var(--fs) * var(--fsTab, 1));
     white-space:nowrap;overflow:hidden}
+  #colTabs .ctab{flex:1 1 0;min-width:0}
+  /* 🎀📤 と ✕ は おなじ大きさの 四角。1か所（--icoW）で きめる */
+  :root{--icoW:36px}
+  #colTabs .mini, #colHead #colClose{flex:0 0 var(--icoW);width:var(--icoW);padding:0}
   .ctab{border:none;font:inherit;font-size:calc(11px * var(--fs) * var(--fsTab, 1));
     color:var(--ink);background:rgba(255,255,255,.65);cursor:pointer}
   .ctab.sel{background:linear-gradient(180deg,#ffb3dc,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
@@ -432,7 +433,7 @@
      iPhoneの 丸ゴシックより せまく、393pxでは 余裕が 25pxしか ない。
      はみ出すと ✕が 画面の 外に 出て「戻れない」に なる */
   .pwTx{margin-left:3px}
-  #colTabs .mini{font-size:calc(13px * var(--fs))}
+  #colTabs .mini{font-size:calc(14px * var(--fs))}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:14px;overflow-y:auto;z-index:5}
   #pwOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
@@ -9462,7 +9463,7 @@ btnHelp.onclick = () => {
 
    見出し … 名前を 長い順に けずる（今週のおだい → おだい → 🏅だけ）
    タブ  … --fsTab を さげて、いちばん長い「アイテム」が 入るまで 小さくする */
-const FSTAB_MIN = 0.7;                    // これ以上は 小さくしない
+const FSTAB_MIN = 0.6;                    // これ以上は 小さくしない（320pxで ここまで 要る）
 function fitHead(){
   const head = $('colHead'), ov = $('colOv');
   if (!head || !ov) return;
