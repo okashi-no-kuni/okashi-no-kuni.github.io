@@ -12409,10 +12409,17 @@ let titleRaf = 0, titleT0 = 0;
    絵が まだ 読めていない子は とばす（rAF で えがきつづけるので、
    読めた つぎの フレームから ひとりでに 出てくる） */
 const TITLE_CAST = [
-  { k:'candy',   x:0.78, y:0.042, s:0.50, a:0.80, ph:1.7 },   // おく（小さく うすく）
-  { k:'rabbit',  x:0.36, y:0.098, s:0.70, a:0.92, ph:0.0 },
-  { k:'unicorn', x:0.20, y:0.140, s:1.00, a:1.00, ph:1.1 },   // なか
-  { k:'bear',    x:0.74, y:0.150, s:1.02, a:1.00, ph:0.6 },   // 手まえ（大きく）
+  /* おく（小さく うすく）→ 手まえ（大きく）。おなじ大きさで 横に ならべると
+     「キャラえらび」に 見えるので、大きさと こさで おくゆきを つける。
+     どうぶつと おかしを まぜる ——この国は おかしの国なので */
+  { k:'candy',   x:0.80, y:0.038, s:0.50, a:0.82, ph:1.7 },
+  { k:'macaron', x:0.13, y:0.050, s:0.54, a:0.85, ph:2.4 },
+  { k:'rabbit',  x:0.36, y:0.092, s:0.70, a:0.92, ph:0.0 },
+  { k:'donut',   x:0.885,y:0.098, s:0.72, a:0.94, ph:3.1 },
+  { k:'purin',   x:0.075,y:0.118, s:0.80, a:0.98, ph:1.9 },
+  { k:'unicorn', x:0.225,y:0.150, s:1.00, a:1.00, ph:1.1 },
+  { k:'bear',    x:0.735,y:0.152, s:1.02, a:1.00, ph:0.6 },
+  { k:'cupcake', x:0.895,y:0.178, s:0.92, a:1.00, ph:0.9 },
 ];
 
 /* おかしの城。cx=まん中・base=足もと・w=はば。
@@ -12593,84 +12600,6 @@ function titleGrass(g, x, y, s, col){
   }
 }
 
-/* じめんから 生えている おかし。5しゅるい。
-   小さく なっても 見わけられるよう、**形で** ちがえる
-   （色だけ 変えても 36pxでは 同じに 見える。キャラと 同じ話）*/
-function titleSweet(g, kind, x, y, s, t){
-  const TAU = 6.2832;
-  g.lineCap = 'round';
-  /* 足もとの かげ */
-  g.fillStyle = 'rgba(120,90,120,.13)';
-  g.beginPath(); g.ellipse(x, y, s*0.42, s*0.13, 0, 0, TAU); g.fill();
-  const stem = (h, col) => {
-    g.strokeStyle = col || '#7fc79f'; g.lineWidth = s*0.13;
-    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x - s*0.06, y - h*0.6, x, y - h); g.stroke();
-  };
-  const leaf = (dir, h) => {
-    g.fillStyle = '#8fd8b0';
-    g.beginPath(); g.ellipse(x + dir*s*0.24, y - h, s*0.22, s*0.10, dir*0.5, 0, TAU); g.fill();
-  };
-  const gloss = (cx, cy, r) => {       // つやの ハイライト
-    g.fillStyle = 'rgba(255,255,255,.55)';
-    g.beginPath(); g.ellipse(cx - r*0.32, cy - r*0.38, r*0.30, r*0.18, -0.6, 0, TAU); g.fill();
-  };
-  if (kind === 0){                     // ぺろぺろキャンディ
-    const h = s*1.55, r = s*0.44;
-    stem(h, '#fff6e6'); leaf(-1, s*0.42); leaf(1, s*0.30);
-    const cy = y - h - r*0.7;
-    g.fillStyle = '#fffaf0'; g.beginPath(); g.arc(x, cy, r, 0, TAU); g.fill();
-    g.strokeStyle = '#f58cb6'; g.lineWidth = r*0.28;
-    g.beginPath();
-    const TURN = TAU*1.7;
-    for (let a=0; a<=TURN; a+=0.12){ const rr = r*0.10 + (a/TURN)*r*0.74;
-      g.lineTo(x + Math.cos(a + t*0.5)*rr, cy + Math.sin(a + t*0.5)*rr); }
-    g.stroke(); gloss(x, cy, r);
-  } else if (kind === 1){              // つえキャンディ
-    const h = s*1.7;
-    g.strokeStyle = '#fffaf0'; g.lineWidth = s*0.30;
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h);
-    g.arc(x + s*0.32, y - h, s*0.32, Math.PI, 0); g.stroke();
-    g.save();
-    g.strokeStyle = '#f58cb6'; g.lineWidth = s*0.30; g.setLineDash([s*0.20, s*0.24]);
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h);
-    g.arc(x + s*0.32, y - h, s*0.32, Math.PI, 0); g.stroke();
-    g.restore(); leaf(-1, s*0.30);
-  } else if (kind === 2){              // ソフトクリーム
-    const h = s*0.95;
-    g.fillStyle = '#e8c08a';
-    g.beginPath(); g.moveTo(x - s*0.32, y - h); g.lineTo(x + s*0.32, y - h); g.lineTo(x, y); g.closePath(); g.fill();
-    g.strokeStyle = 'rgba(196,150,96,.5)'; g.lineWidth = Math.max(1, s*0.06);
-    g.beginPath(); g.moveTo(x - s*0.20, y - h*0.72); g.lineTo(x + s*0.16, y - h*0.38); g.stroke();
-    const sw = [[0.36, 0.40, '#fff6ea'], [0.24, 0.72, '#ffe2ef'], [0.15, 0.98, '#ffd0e4']];
-    for (const [r, dy, c] of sw){
-      g.fillStyle = c;
-      g.beginPath(); g.arc(x, y - h - s*dy, s*r, 0, TAU); g.fill();
-    }
-    gloss(x, y - h - s*0.40, s*0.36);
-  } else if (kind === 3){              // マカロン
-    const h = s*1.25, r = s*0.42;
-    stem(h); leaf(1, s*0.40);
-    const cy = y - h - r*0.4;
-    g.fillStyle = '#c9a7ff';
-    roundRect(x - r, cy - r*0.22, r*2, r*0.44, r*0.20); g.fill();
-    g.fillStyle = '#ffd0e4';
-    g.beginPath(); g.ellipse(x, cy - r*0.42, r, r*0.44, 0, 0, TAU); g.fill();
-    g.fillStyle = '#ffbcd8';
-    g.beginPath(); g.ellipse(x, cy + r*0.42, r, r*0.44, 0, 0, TAU); g.fill();
-    gloss(x, cy - r*0.42, r*0.8);
-  } else {                             // グミの 実
-    const cols = ['#8fdcff','#ffd76e','#ff9dc2'];
-    stem(s*0.9);
-    for (let i=0;i<3;i++){
-      const a = -1.9 + i*0.95, r = s*0.24;
-      const cx2 = x + Math.cos(a)*s*0.34, cy2 = y - s*0.9 + Math.sin(a)*s*0.30;
-      g.fillStyle = cols[i];
-      g.beginPath(); g.arc(cx2, cy2, r, 0, TAU); g.fill();
-      gloss(cx2, cy2, r);
-    }
-  }
-}
-
 function paintTitle(t){
   const cv = titleCv; if (!cv) return;
   const g = cv.getContext('2d');
@@ -12691,6 +12620,11 @@ function paintTitle(t){
     const tx0 = titleIn.firstElementChild;
     const txTop = (tx0 ? tx0.getBoundingClientRect().top : H) || H;
     const hz = Math.min(H*0.605, txTop - H*0.205);
+    /* なかまの ずれは おかを えがく 前に 決める。
+       草原の 上はし（ユニコーンの 足もと）を それに あわせるため */
+    const cs = Math.min(W*0.205, H*0.108);
+    const dyC = Math.min(0, (txTop - cs*0.60) - (hz + H*0.150));
+    const meadow = hz + H*0.128 + dyC;         // ここから 下が 草原
     const sx = W*0.62, sy = hz - H*0.175;      // ひかりの もと（城の うしろ）
 
     /* ぼんやりした 色の かたまり。これを かさねると
@@ -12792,14 +12726,16 @@ function paintTitle(t){
 
     /* --- おくの おか。おくほど うすく（空気えんきん法）--- */
     titleHill(g, hz - H*0.030, H, W, '#c3b7e0', 0.042, '#d2c8ea');
-    titleHill(g, hz + H*0.008, H, W, '#bfdccc', 0.030, '#cfe6d8');
+    titleHill(g, hz + H*0.008, H, W, '#d2c4e6', 0.030, '#ded3ee');
 
     /* --- 城。まん中では なく 少し 右に。左下の 道と 対角に なる --- */
     titleCastle(g, W*0.600, hz + H*0.014, Math.min(W*0.50, H*0.240), t);
 
     /* --- 手まえの おか --- */
-    titleHill(g, hz + H*0.058, H, W, '#cdeadb', 0.024, '#d8f0e2');
-    titleHill(g, hz + H*0.124, H, W, '#b9e2cd', 0.020, '#c6e9d6');
+    titleHill(g, hz + H*0.058, H, W, '#f5dcc8', 0.024, '#f0d0bc');
+    /* 草原は ユニコーンの 足もとから 下だけ。上まで みどりに すると
+       絵の 半分が みどりに なって パステルの 空から 浮きます */
+    titleHill(g, meadow, H, W, '#bfe3ce', 0.018, '#cbeada');
 
     /* --- クッキーの道。左下から 城の 足もとへ ゆるく S字 ---
        城の 足もとまで 引かない。入り口が かくれて 城に 見えなくなる */
@@ -12842,36 +12778,17 @@ function paintTitle(t){
     blob(W*0.52, hz + H*0.32, W*0.75, '255,178,220', 0.26);
     g.restore();
 
-    /* --- 草原。道の 上には 生やさない --- */
-    const cs = Math.min(W*0.205, H*0.108);
-    const yBase0 = hz + H*0.150;
-    const dyC = Math.min(0, (txTop - cs*0.60) - yBase0);   // 文字に かぶるぶんだけ 上へ
+    /* --- 草原。ユニコーンの 足もとから 下だけ。道の 上には 生やさない --- */
     const rdPts = []; for (let i=0;i<=22;i++) rdPts.push(bez(i/22));
     const onRoad = (x, y, m) => rdPts.some(p => Math.abs(p[0]-x) < m && Math.abs(p[1]-y) < m*0.8);
     const gcol = ['#96d9b6','#a8e2c4','#88cfa8'];
-    for (let i=0;i<58;i++){
+    for (let i=0;i<44;i++){
       const gx = tRnd(i)*W*1.04 - W*0.02;
       const u = tRnd(i+300);
-      const gy = hz + H*0.012 + u*H*0.34;
-      const gs = W*(0.013 + 0.030*u);
+      const gy = meadow + H*0.008 + u*H*0.24;
+      const gs = W*(0.014 + 0.028*u);
       if (onRoad(gx, gy, W*0.055 + gs)) continue;
       titleGrass(g, gx, gy, gs, gcol[i%3]);
-    }
-
-    /* --- じめんから 生えている おかし。おくほど 小さく --- */
-    const SWEETS = [
-      [0.090, 0.028, 0.50, 0], [0.265, 0.024, 0.44, 3], [0.885, 0.032, 0.48, 4],
-      [0.050, 0.078, 0.70, 2], [0.305, 0.066, 0.60, 1], [0.850, 0.072, 0.68, 0],
-      [0.930, 0.100, 0.78, 3], [0.065, 0.152, 0.98, 1], [0.300, 0.172, 0.90, 4],
-      [0.620, 0.176, 1.00, 0], [0.905, 0.184, 1.04, 2],
-    ];
-    for (const [fx, fy, fs, kd] of SWEETS){
-      const x = W*fx, y = hz + H*fy + dyC;
-      const ss = Math.min(W*0.075, H*0.040)*fs;
-      /* 足もとだけでなく **てっぺんも** 見ること。
-         下だけ しらべると、のっぽの キャンディが 道に かぶさります */
-      if (onRoad(x, y, W*0.085) || onRoad(x, y - ss*1.7, W*0.085)) continue;
-      titleSweet(g, kd, x, y, ss, t);
     }
 
     /* --- なかま。人数を へらして 大きさを ずらし、おく・なか・手まえに 置く。
