@@ -332,30 +332,41 @@
      高さ0に つぶれて **文字が まるごと 消える**。#colTabs と 同じ わな） */
   #colTtl{flex:0 0 auto;font-size:calc(13px * var(--fs));color:var(--pink-d);font-weight:700;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
-  /* 見出しは ボタンだけ。左の あきで 右に よせる */
-  #colHeadSp{flex:1;min-width:0}
   #colCount{font-size:calc(12px * var(--fs));opacity:.8}
-  /* 見出しの ボタンは たかさを そろえる（ショップ・おだい・合言葉・✕）。
-     実機（iPhoneの 丸ゴシック）は Linux より 広いので、余白を 作っておくこと */
-  #colHead .mini{padding:0 8px;height:34px;font-size:calc(11px * var(--fs));flex:0 0 auto;
-    display:inline-flex;align-items:center;justify-content:center;gap:2px;line-height:1}
-  /* ✕ だけ 細い字なので、となりの 絵文字と おなじ 大きさに 見えるよう 少し 大きく */
-  #colClose{font-size:calc(15px * var(--fs))}
+  /* 見出しの 3つ（ショップ・おだい・合言葉）は **同じ幅**。flex:1 1 0 で
+     のこりを 等分する。文字数が ちがっても はこの 大きさは そろう。
+     入りきらないときは fitHead が 名前を みじかくする */
+  #colHead .mini{flex:1 1 0;min-width:0;padding:0 4px;height:32px;
+    font-size:calc(11px * var(--fs));
+    display:inline-flex;align-items:center;justify-content:center;gap:2px;line-height:1;
+    white-space:nowrap;overflow:hidden}
+  /* ✕ は 🎀📤 と **おなじ大きさ**にする。タブの行は 7つを 等分するので、
+     1つぶんは (はば − すき間5px×6) ÷ 7。見出しと タブの 行は はばが おなじ
+     なので、この式で ぴったり そろう。
+     **実寸を 測って 合わせては いけない** ——ひらいた 直後は まだ はばが
+     決まっておらず、6px ずれた（じっさいに そうなった）。
+     タブの 数を 変えたら この 7 も 直すこと。
+     `#colHead .mini`（id+class）より 強く 書かないと 等分に 巻きこまれる */
+  #colHead #colClose{flex:0 0 calc((100% - 30px) / 7);padding:0;
+    font-size:calc(15px * var(--fs))}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
   @media (max-width:359px){
     #colTtl{font-size:calc(12px * var(--fs))}
-    #colHead .mini{padding:0 5px;height:32px}
+    #colHead .mini{padding:0 2px}
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
   #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #colTabs::-webkit-scrollbar{display:none}
-  /* タブの行は 仲間〜📤 まで ぜんぶ おなじ たかさ・おなじ 角丸に そろえる */
-  #colTabs > *{height:32px;border-radius:11px;flex:0 0 auto;
+  /* タブの行は 仲間〜📤 まで **7つとも おなじ大きさ**。flex:1 1 0 で 等分する。
+     「アイテム」は 4文字あって そのままでは 入らないので、
+     fitHead が --fsTab を さげて 入るまで 文字を 小さくする（fitStat と 同じ考え）*/
+  #colTabs > *{flex:1 1 0;min-width:0;height:32px;border-radius:11px;padding:0 2px;
     display:inline-flex;align-items:center;justify-content:center;line-height:1;
-    font-size:calc(11px * var(--fs));white-space:nowrap}
-  .ctab{border:none;padding:0 6px;font:inherit;font-size:calc(11px * var(--fs));color:var(--ink);
-    background:rgba(255,255,255,.65);cursor:pointer}
+    font-size:calc(11px * var(--fs) * var(--fsTab, 1));
+    white-space:nowrap;overflow:hidden}
+  .ctab{border:none;font:inherit;font-size:calc(11px * var(--fs) * var(--fsTab, 1));
+    color:var(--ink);background:rgba(255,255,255,.65);cursor:pointer}
   .ctab.sel{background:linear-gradient(180deg,#ffb3dc,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
   #colDone{background:linear-gradient(90deg,#ffe9b8,#ffd9ec);border-radius:12px;padding:8px;
     text-align:center;font-size:calc(12.5px * var(--fs))}
@@ -421,7 +432,7 @@
      iPhoneの 丸ゴシックより せまく、393pxでは 余裕が 25pxしか ない。
      はみ出すと ✕が 画面の 外に 出て「戻れない」に なる */
   .pwTx{margin-left:3px}
-  #colTabs .mini{padding:0 7px;font-size:calc(13px * var(--fs))}
+  #colTabs .mini{font-size:calc(13px * var(--fs))}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:14px;overflow-y:auto;z-index:5}
   #pwOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
@@ -526,7 +537,6 @@
         <button class="mini" id="btnShop" aria-label="ショップ">🛍<span class="pwTx">ショップ</span></button>
         <button class="mini" id="btnWk" aria-label="今週のおだい">🏅<span class="pwTx"><span class="wkLong">今週の</span>おだい</span></button>
         <button class="mini" id="btnPw" aria-label="合言葉"></button>
-        <div id="colHeadSp"></div>
         <button class="mini gray" id="colClose" aria-label="閉じる">✕</button>
       </div>
       <div id="colTabs">
@@ -9443,23 +9453,37 @@ btnHelp.onclick = () => {
   seeGuide();                       // 1回ひらいたら もう 光らせない
   togglePanel('helpOv', buildHelp);
 };
-/* 見出しの 名前は 出したあとに 測って きめる。
-   「🛍 ショップ」「🏅 今週のおだい」は ひろい画面なら 入るが、393px では
-   余裕が 25pxしか なく、実機の 丸ゴシック（Linuxより ひろい）では はみ出す。
-   はみ出すと ✕が 画面の 外に 出て「戻れない」に なるので、決めうちの
-   @media では なく、**すき間の のこり幅を 見て 1段ずつ けずる**。
-   横に ならぶ札の fitStat() と 同じ 考えかた */
-const HEAD_SLACK = 8;                       // すき間が これを 切ったら みじかくする
+/* 図鑑の 2行（見出し・タブ）は、中みを **みんな おなじ大きさ**で ならべる。
+   はこの 幅は flex:1 1 0 で 等分するので CSS だけで そろうが、
+   中の 文字が 入るかどうかは 画面の はばと フォントで 変わる。
+   **決めうちの @media では 実機で はみ出す** ——Linuxで 測った幅は
+   iPhone の 丸ゴシックより せまいため。だから 出したあとに 測って きめる
+   （横に ならぶ札の fitStat() と 同じ 考えかた）。
+
+   見出し … 名前を 長い順に けずる（今週のおだい → おだい → 🏅だけ）
+   タブ  … --fsTab を さげて、いちばん長い「アイテム」が 入るまで 小さくする */
+const FSTAB_MIN = 0.7;                    // これ以上は 小さくしない
 function fitHead(){
-  const sp = $('colHeadSp'); if (!sp) return;
-  const wide = () => sp.getBoundingClientRect().width >= HEAD_SLACK;
+  const head = $('colHead'), ov = $('colOv');
+  if (!head || !ov) return;
+  // はこから 文字が あふれているか。overflow:hidden なので scrollWidth で 分かる
+  const over = el => [...el.querySelectorAll('button')].some(b => b.scrollWidth > b.clientWidth + 1);
   const show = (cls, on) =>
     document.querySelectorAll('.' + cls).forEach(e => e.style.display = on ? '' : 'none');
+
+  // タブは 7つ 等分なので「アイテム」が いちばん きつい。入るまで 文字を 小さく
+  let k = 1;
+  ov.style.setProperty('--fsTab', k);
+  while (over(colTabsEl) && k > FSTAB_MIN){
+    k = Math.round((k - 0.04) * 100) / 100;
+    ov.style.setProperty('--fsTab', k);
+  }
+  // 2. 見出しの 名前は 長い順に けずる（✕の 幅は CSS で きまっている）
   show('pwTx', true); show('wkLong', true);   // いちばん長い形から ためす
-  if (wide()) return;
-  show('wkLong', false);                      // 「今週の」を おとす → おだい
-  if (wide()) return;
-  show('pwTx', false);                        // 名前ごと おとす → 絵文字だけ
+  if (over(head)){
+    show('wkLong', false);                    // 「今週の」を おとす → おだい
+    if (over(head)) show('pwTx', false);      // 名前ごと おとす → 絵文字だけ
+  }
 }
 
 /* はじめて あそぶ人にだけ 📕 を 光らせる。giveStarters と 同じで、
