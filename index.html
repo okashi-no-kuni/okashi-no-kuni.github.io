@@ -147,6 +147,20 @@
   .btn.sm:active{box-shadow:0 1px 0 #7d5fd0}
   /* いま ひらいている画面の ボタン。もう一度 おすと とじる目じるし */
   .btn.sm.on{background:linear-gradient(180deg,#ffa6d0,var(--pink));box-shadow:0 4px 0 var(--pink-d)}
+  /* はじめての人にだけ、ガイドの ありかを 教える。
+     場所を 1pxも とらない ように、文字では なく 光で 知らせる
+     （説明文を 消したので、📕 が ゆいいつの 入り口になった）*/
+  /* 金の ふちは ずっと 出しておく（うごきが 止まって見える 一しゅんでも
+     気づけるように）。その上に 波紋を くりかえす */
+  .btn.sm.hint{box-shadow:0 4px 0 #7d5fd0, 0 0 0 3px #ffd76e;
+    animation:hintGlow 1.8s ease-out infinite}
+  @keyframes hintGlow{
+    0%  {box-shadow:0 4px 0 #7d5fd0, 0 0 0 3px #ffd76e, 0 0 0  3px rgba(255,199,64,.9)}
+    70% {box-shadow:0 4px 0 #7d5fd0, 0 0 0 3px #ffd76e, 0 0 0 12px rgba(255,199,64,0)}
+    100%{box-shadow:0 4px 0 #7d5fd0, 0 0 0 3px #ffd76e, 0 0 0 12px rgba(255,199,64,0)}
+  }
+  /* うごきを へらす せっていの人は ふちだけ（iOSの アクセシビリティ）*/
+  @media (prefers-reduced-motion:reduce){ .btn.sm.hint{animation:none} }
   .mini.on{filter:brightness(1.1) saturate(1.15)}
   .btn:disabled{opacity:.45}
 
@@ -9412,7 +9426,21 @@ function buildPw(){
   }
 }
 $('btnPw').onclick = () => togglePanel('pwOv', buildPw);
-btnHelp.onclick = () => togglePanel('helpOv', buildHelp);
+btnHelp.onclick = () => {
+  seeGuide();                       // 1回ひらいたら もう 光らせない
+  togglePanel('helpOv', buildHelp);
+};
+/* はじめて あそぶ人にだけ 📕 を 光らせる。giveStarters と 同じで、
+   localStorage の 旗 1つで「もう見た」を おぼえる */
+function hintGuide(){
+  try{ if (localStorage.getItem('sweetTD.guided')) return; }catch(e){ return; }
+  btnHelp.classList.add('hint');
+}
+function seeGuide(){
+  if (!btnHelp.classList.contains('hint')) return;
+  btnHelp.classList.remove('hint');
+  try{ localStorage.setItem('sweetTD.guided', dateStr()); }catch(e){}
+}
 
 /* ==========================================================
    今週のおだい（週替わりステージ）
@@ -12091,6 +12119,7 @@ avFromLink();     // ともだちの リンクで ひらいたなら、その人
 tryResume();      // とちゅうのセーブがあれば、そのウェーブから再開
 checkLogin();     // きょうはじめての起動ならプレゼントを渡す
 checkLife();      // 💗の回復まちの途中なら、その画面にもどす
+hintGuide();      // はじめての人には 📕 を 光らせて ガイドの ありかを 教える
 
 game = new Phaser.Game({
   type: Phaser.CANVAS,        // 絵は Canvas 2D で描くので いまは WebGL にしない
