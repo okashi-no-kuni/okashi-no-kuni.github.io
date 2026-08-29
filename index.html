@@ -212,7 +212,7 @@
   #titleIn{position:absolute;inset:0;display:flex;flex-direction:column;
     align-items:center;justify-content:flex-end;gap:0;
     padding:0 22px calc(30px + env(safe-area-inset-bottom));text-align:center}
-  .tSub{font-size:calc(12.5px * var(--fs));color:#a07fb6;font-weight:600;
+  .tSub{font-size:calc(12.5px * var(--fs));color:#8c62a8;font-weight:600;
     letter-spacing:.42em;text-indent:.42em;margin-bottom:5px;
     text-shadow:0 1px 0 rgba(255,255,255,.85)}
   .tMain{font-size:calc(38px * var(--fs));line-height:1.16;font-weight:800;
@@ -223,7 +223,7 @@
   .tOrn i{flex:1 1 0;height:1px;
     background:linear-gradient(90deg,rgba(190,146,96,0),rgba(190,146,96,.62),rgba(190,146,96,0))}
   .tOrn b{font-size:calc(8.5px * var(--fs));color:#c09660;font-weight:400;line-height:1}
-  .tLat{font-size:calc(9.5px * var(--fs));color:#a98aa4;letter-spacing:.44em;text-indent:.44em;
+  .tLat{font-size:calc(9.5px * var(--fs));color:#96738f;letter-spacing:.44em;text-indent:.44em;
     margin-bottom:24px}
   /* 表紙の ボタンは まるいカプセル。かたい 3D かげでは なく やわらかい ぼかし */
   #titleGo{flex:0 0 auto;width:min(62%,252px);height:50px;border:0;border-radius:999px;
@@ -12271,7 +12271,10 @@ function resize(){
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
-    if (game){
+    /* Phaser の 立ちあがりは 非同期。`game` に 入っていても canvas は
+       まだ ないことが あり、その とちゅうで scale.resize を よぶと 落ちる
+       （表紙を とじた ときの resize で 実際に おきた）*/
+    if (game && game.isBooted && game.canvas){
       // 中みは こまかく（DPR倍）、見た目は CSSピクセルで
       game.scale.resize(W*DPR, H*DPR);
       game.canvas.style.width = W + 'px';
@@ -12428,12 +12431,29 @@ function titleCastle(g, cx, base, w, t){
     g.fillStyle = gr; roundRect(x, y, ww, hh, r); g.fill();
     /* クリーム色は 空に とけるので 細い線で ふちどる（白っぽい子と 同じ話）*/
     g.strokeStyle = 'rgba(160,106,94,.42)'; g.lineWidth = 1.1; g.stroke();
+    /* つや。まん中より 左に 白い おびを 1本。これが 入ると
+       べた塗りが「つやのある あめ」に 見える */
+    g.save(); roundRect(x, y, ww, hh, r); g.clip();
+    const sh = g.createLinearGradient(x + ww*0.06, 0, x + ww*0.42, 0);
+    sh.addColorStop(0, 'rgba(255,255,255,0)');
+    sh.addColorStop(0.5, 'rgba(255,255,255,.60)');
+    sh.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = sh; g.fillRect(x, y, ww, hh);
+    g.restore();
   };
   /* とんがり屋根。こい ピンクでは なく くすんだ ばら色にする */
   const roof = (rx, ry, rw, rh) => {
     const gr = g.createLinearGradient(rx - rw/2, ry, rx + rw/2, ry + rh);
     gr.addColorStop(0, '#ee8fb4'); gr.addColorStop(1, '#c05384');
     g.fillStyle = gr;
+    g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx + rw/2, ry + rh); g.lineTo(rx - rw/2, ry + rh);
+    g.closePath(); g.fill();
+    /* 屋根の つや */
+    const rs = g.createLinearGradient(rx - rw*0.42, ry, rx - rw*0.06, ry + rh);
+    rs.addColorStop(0, 'rgba(255,255,255,0)');
+    rs.addColorStop(0.5, 'rgba(255,255,255,.42)');
+    rs.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = rs;
     g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx + rw/2, ry + rh); g.lineTo(rx - rw/2, ry + rh);
     g.closePath(); g.fill();
     /* しぼった クリームの ふち */
@@ -12581,61 +12601,102 @@ function paintTitle(t){
     const hz = Math.min(H*0.605, txTop - H*0.205);
     const sx = W*0.62, sy = hz - H*0.175;      // ひかりの もと（城の うしろ）
 
-    /* --- 空。上は うすい すみれ、下ほど ばら色 → クリーム。
-       まっピンク 一色より、色が うつろうほうが おとなっぽく 見える --- */
+    /* ぼんやりした 色の かたまり。これを かさねると
+       ホログラムのような とうめい感が 出る（1色の グラデでは 出ない） */
+    const blob = (x, y, r, rgb, al) => {
+      const gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0.00, 'rgba(' + rgb + ',' + al + ')');
+      gr.addColorStop(0.50, 'rgba(' + rgb + ',' + (al*0.44).toFixed(3) + ')');
+      gr.addColorStop(1.00, 'rgba(' + rgb + ',0)');
+      g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    };
+
+    /* --- 空。したじの グラデは うすく。色は このあと 玉で のせる --- */
     const sky = g.createLinearGradient(0, 0, 0, hz + H*0.10);
-    sky.addColorStop(0.00, '#c6d2f0');
-    sky.addColorStop(0.26, '#dcccf0');
-    sky.addColorStop(0.52, '#f5cfe2');
-    sky.addColorStop(0.76, '#ffd9d6');
-    sky.addColorStop(1.00, '#ffeed9');
+    sky.addColorStop(0.00, '#dfe4fb');
+    sky.addColorStop(0.30, '#f0dcf8');
+    sky.addColorStop(0.60, '#ffdcec');
+    sky.addColorStop(0.82, '#ffe4dc');
+    sky.addColorStop(1.00, '#fff3e4');
     g.fillStyle = sky; g.fillRect(0, 0, W, H);
 
+    /* --- 色の かたまり。ミント・水色・レモン・藤・もも。
+       ピンクと 藤だけだと くすむので、**さむい色を かならず 入れる** --- */
+    blob(W*0.14, H*0.10, W*0.85, '150,225,255', 0.50);   // 水色
+    blob(W*0.88, H*0.06, W*0.70, '255,244,180', 0.44);   // レモン
+    blob(W*0.06, H*0.42, W*0.72, '165,244,214', 0.40);   // ミント
+    blob(W*0.92, H*0.40, W*0.78, '255,190,220', 0.46);   // もも
+    blob(W*0.50, H*0.30, W*0.62, '210,180,255', 0.34);   // 藤
+
     /* --- 城の うしろの ひかり --- */
-    const sun = g.createRadialGradient(sx, sy, 0, sx, sy, Math.max(W, H)*0.38);
-    sun.addColorStop(0.00, 'rgba(255,243,208,.62)');
-    sun.addColorStop(0.26, 'rgba(255,224,198,.22)');
-    sun.addColorStop(1.00, 'rgba(255,224,198,0)');
+    const sun = g.createRadialGradient(sx, sy, 0, sx, sy, Math.max(W, H)*0.40);
+    sun.addColorStop(0.00, 'rgba(255,248,225,.66)');
+    sun.addColorStop(0.28, 'rgba(255,232,208,.24)');
+    sun.addColorStop(1.00, 'rgba(255,232,208,0)');
     g.fillStyle = sun; g.fillRect(0, 0, W, H);
 
-    /* --- ちいさな 星。うえの すみれ色の 帯だけ --- */
-    for (let i=0;i<20;i++){
-      const x = ((i*0.1732 + 0.03) % 1) * W, y = ((i*0.2911 + 0.02) % 1) * H*0.34;
-      g.globalAlpha = 0.20 + 0.30*Math.abs(Math.sin(t*0.8 + i*1.7));
-      g.fillStyle = '#ffffff';
-      g.beginPath(); g.arc(x, y, 1.1 + (i%3)*0.5, 0, TAU); g.fill();
+    /* --- にじ。**表紙の 主役**。1本ずつ ふとさを 変えて 3回 かさね、
+       ふちを ぼかす（canvas の blur は 古い iOS で 効かないので 使わない）--- */
+    const bowCols = ['#ff9ec6','#ffc48f','#fff29a','#9ff0c6','#8fdcff','#c8b2ff'];
+    const bow = (bx, by, rad, bwd, al, from, to) => {
+      bowCols.forEach((c, i) => {
+        const r = rad - i*bwd;
+        [[bwd*2.2, 0.26],[bwd*1.30, 0.40],[bwd*0.62, 0.72]].forEach(([lw, k]) => {
+          g.globalAlpha = al*k; g.lineWidth = lw; g.strokeStyle = c;
+          g.beginPath(); g.arc(bx, by, r, from, to); g.stroke();
+        });
+      });
+      g.globalAlpha = 1;
+    };
+    const bcx = W*0.34, bcy = hz + H*0.16, brd = W*1.05, bwd = W*0.040;
+    bow(bcx, bcy, brd, bwd, 0.62, Math.PI*1.00, Math.PI*2.00);
+    /* 内がわの もう1本。二重にじで 色数が ふえて にぎやかに なる */
+    bow(bcx, bcy, brd - bwd*8.4, bwd*0.52, 0.30, Math.PI*1.06, Math.PI*1.94);
+
+    /* --- にじの 上の キラキラ。見本の「星が ちりばめられた にじ」 --- */
+    for (let i=0;i<16;i++){
+      const ang = Math.PI*1.03 + (i/15)*Math.PI*0.94;
+      const rr2 = brd - bwd*(0.6 + (i*2.7 % 5.4));
+      const px2 = bcx + Math.cos(ang)*rr2, py2 = bcy + Math.sin(ang)*rr2;
+      g.globalAlpha = 0.40 + 0.45*Math.abs(Math.sin(t*1.3 + i*1.9));
+      sparkle(px2, py2, W*(0.006 + (i%3)*0.004), t*0.4 + i, '#ffffff');
     }
     g.globalAlpha = 1;
 
-    /* --- ひかりの すじ。うすく、ゆっくり ゆれる --- */
+    /* --- ちいさな 星。うえの ほうだけ --- */
+    for (let i=0;i<22;i++){
+      const x = ((i*0.1732 + 0.03) % 1) * W, y = ((i*0.2911 + 0.02) % 1) * H*0.40;
+      g.globalAlpha = 0.24 + 0.34*Math.abs(Math.sin(t*0.8 + i*1.7));
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(x, y, 1.1 + (i%3)*0.6, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 1;
+
+    /* --- ひかりの すじ --- */
     g.save();
     for (let i=0;i<7;i++){
       g.save(); g.translate(sx, sy);
       g.rotate((i-3)*0.21 + Math.sin(t*0.16 + i)*0.014);
       const gr = g.createLinearGradient(0, 0, 0, H);
-      gr.addColorStop(0, 'rgba(255,247,224,.15)'); gr.addColorStop(1, 'rgba(255,247,224,0)');
+      gr.addColorStop(0, 'rgba(255,250,232,.17)'); gr.addColorStop(1, 'rgba(255,250,232,0)');
       g.fillStyle = gr;
       g.beginPath(); g.moveTo(0, 0); g.lineTo(-W*0.045, H); g.lineTo(W*0.045, H); g.closePath(); g.fill();
       g.restore();
     }
     g.restore();
 
-    /* --- にじ。空に とけるくらい うすく --- */
-    const rr = W*1.02, rx = W*0.40, ry = hz + H*0.05;
-    const bows = ['#ffc0d6','#ffd8b4','#fff0bb','#c4eed9','#c2e3f5','#ddccf2'];
-    g.save(); g.globalAlpha = 0.15; g.lineWidth = W*0.026;
-    bows.forEach((c, i) => {
-      g.strokeStyle = c;
-      g.beginPath(); g.arc(rx, ry, rr - i*W*0.026, Math.PI*1.06, Math.PI*1.94); g.stroke();
-    });
-    g.restore();
-
-    /* --- くも。数を へらして 大きく。ゆっくり ながれる --- */
+    /* --- くも。ゆっくり ながれる --- */
     const CL = [[0.18,0.115,0.072,0.80],[0.74,0.062,0.052,0.62],[0.46,0.205,0.040,0.42]];
     CL.forEach(([bx, by, br, a], i) => {
       const x = (((bx + t*(0.0055 + i*0.0014)) % 1.36) - 0.18) * W;
       titleCloud(g, x, H*by + Math.sin(t*0.45 + i)*3, W*br, a);
     });
+
+    /* --- ちへいせんの くも。城が 雲の 上に うかんで 見える --- */
+    for (let i=0;i<7;i++){
+      const x = W*(-0.06 + i*0.19) + Math.sin(t*0.20 + i)*W*0.006;
+      titleCloud(g, x, hz - H*0.028 + ((i*37)%11)*H*0.004, W*(0.086 + (i%3)*0.020), 0.72);
+    }
 
     /* --- おくの おか。おくほど うすく（空気えんきん法）--- */
     titleHill(g, hz - H*0.030, H, W, '#c8bce4', 0.042, '#d6cbec');
@@ -12658,6 +12719,12 @@ function paintTitle(t){
       g.stroke();
     };
     seg(W*0.098, '#eccfa4'); seg(W*0.072, '#fff0d6');
+    /* 道の つや。ほんの少し 左うえに ずらした 白い すじ */
+    g.save(); g.globalAlpha = 0.50; g.strokeStyle = '#fffdf4';
+    g.lineWidth = W*0.018; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(W*0.064, H + 12);
+    g.bezierCurveTo(W*0.124, hz + H*0.30, W*0.544, hz + H*0.25, rEx - W*0.016, rEy);
+    g.stroke(); g.restore();
     /* トッピングの つぶつぶ。くすんだ 4色で、こまかく */
     const sp = ['#f293bd','#b79bea','#8fd8bd','#f2c56b'];
     const bez = u => {
@@ -12674,6 +12741,14 @@ function paintTitle(t){
       roundRect(-W*0.0085, -W*0.0035, W*0.017, W*0.007, W*0.0035); g.fill(); g.restore();
     }
     g.globalAlpha = 1;
+
+    /* --- じめんにも 空と おなじ 色を のせる。
+       下だけ くすむと「絵が 2まいに 分かれている」ように 見える --- */
+    g.save(); g.beginPath(); g.rect(0, hz - H*0.03, W, H); g.clip();
+    blob(W*0.10, hz + H*0.08, W*0.62, '150,232,255', 0.30);
+    blob(W*0.94, hz + H*0.14, W*0.64, '255,240,178', 0.24);
+    blob(W*0.52, hz + H*0.32, W*0.75, '255,178,220', 0.26);
+    g.restore();
 
     /* --- なかま。人数を へらして 大きさを ずらし、おく・なか・手まえに 置く。
        おなじ大きさで 横に ならべると「キャラえらび」に 見えて 絵に ならない。
@@ -12701,14 +12776,16 @@ function paintTitle(t){
     g.fillStyle = hg; g.fillRect(0, hazeTop, W, H - hazeTop);
 
     /* --- 玉ボケ。ゆっくり のぼる。キラキラより 上品に 見える --- */
-    for (let i=0;i<11;i++){
+    const boke = ['255,255,255','200,242,255','255,246,200','255,206,232','214,196,255'];
+    for (let i=0;i<17;i++){
       const bx = ((i*0.1637 + 0.06) % 1) * W;
       const by = (((i*0.2113 + 0.20 - t*0.011) % 1.25) + 1.25) % 1.25 * H - H*0.12;
-      const br = W*(0.016 + (i%4)*0.011);
+      const br = W*(0.014 + (i%5)*0.012);
+      const c = boke[i%5];
       const gr = g.createRadialGradient(bx, by, 0, bx, by, br);
-      gr.addColorStop(0, 'rgba(255,255,255,.30)');
-      gr.addColorStop(0.55, 'rgba(255,238,246,.16)');
-      gr.addColorStop(1, 'rgba(255,238,246,0)');
+      gr.addColorStop(0.00, 'rgba(' + c + ',.34)');
+      gr.addColorStop(0.55, 'rgba(' + c + ',.18)');
+      gr.addColorStop(1.00, 'rgba(' + c + ',0)');
       g.fillStyle = gr; g.beginPath(); g.arc(bx, by, br, 0, TAU); g.fill();
     }
 
@@ -12724,7 +12801,7 @@ function paintTitle(t){
     /* --- まわりを ほんの少し おとす。まん中に 目が いく --- */
     const vg = g.createRadialGradient(W*0.5, H*0.44, Math.min(W,H)*0.34,
                                       W*0.5, H*0.44, Math.max(W,H)*0.76);
-    vg.addColorStop(0, 'rgba(120,90,120,0)'); vg.addColorStop(1, 'rgba(120,90,120,.17)');
+    vg.addColorStop(0, 'rgba(120,90,120,0)'); vg.addColorStop(1, 'rgba(120,90,120,.13)');
     g.fillStyle = vg; g.fillRect(0, 0, W, H);
   });
 }
