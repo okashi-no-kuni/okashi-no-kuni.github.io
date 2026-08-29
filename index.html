@@ -255,6 +255,9 @@
     animation:tBob 3.2s ease-in-out infinite}
   #titleGo:active{transform:translateY(1px);box-shadow:0 4px 12px rgba(190,105,150,.34)}
   @keyframes tBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  /* 「はじめる」を おしたら 文字を すっと 消す（光の わっかは canvas がわ）*/
+  #titleOv.out #titleIn{opacity:0;transform:translateY(-8px) scale(1.04);
+    transition:opacity .30s ease,transform .46s cubic-bezier(.3,.9,.4,1)}
   @media (prefers-reduced-motion:reduce){
     #titleGo,.tMain,.tSub::before,.tSub::after{animation:none} }
   @media (max-height:620px){ .tMain{font-size:calc(30px * var(--fs))}
@@ -12425,7 +12428,7 @@ const BoardScene = {
    表紙のためだけに 大きな 絵を 置きたくないためです。
    ========================================================== */
 const titleOv = $('titleOv'), titleCv = $('titleCv'), titleIn = $('titleIn');
-let titleRaf = 0, titleT0 = 0;
+let titleRaf = 0, titleT0 = 0, titleExit = 0;   // titleExit は とじる 演出の 始まり
 
 /* 表紙に 立つ子。x は 画面はばに 対する いち、s は 大きさの 倍率。
    絵が まだ 読めていない子は とばす（rAF で えがきつづけるので、
@@ -12492,15 +12495,22 @@ function titleCastle(g, cx, base, w, t){
       g.beginPath(); g.arc(x, ry + rh, rw/n*0.48, 0, TAU); g.fill();
     }
   };
-  /* 小さな アーチまど。おくに 明かりが ついているように 見せる */
+  /* 小さな アーチまど。**ひとつずつ 時間を ずらして ともす。**
+     ぜんぶ 同じ 明るさだと ただの もように 見える */
+  let winN = 0;
   const win = (x, y, r) => {
     g.fillStyle = '#a98ad6';
     g.beginPath();
     g.moveTo(x-r, y+r*1.15); g.lineTo(x-r, y);
     g.arc(x, y, r, Math.PI, 0); g.lineTo(x+r, y+r*1.15);
     g.closePath(); g.fill();
-    g.fillStyle = 'rgba(255,240,200,.55)';
-    g.beginPath(); g.arc(x, y + r*0.30, r*0.52, 0, TAU); g.fill();
+    const lit = 0.30 + 0.55*Math.abs(Math.sin(t*0.95 + (winN++)*0.85));
+    const gw = g.createRadialGradient(x, y + r*0.30, 0, x, y + r*0.30, r*1.5);
+    gw.addColorStop(0, 'rgba(255,240,196,' + (lit*0.95).toFixed(3) + ')');
+    gw.addColorStop(0.34, 'rgba(255,236,186,' + (lit*0.45).toFixed(3) + ')');
+    gw.addColorStop(1, 'rgba(255,236,186,0)');
+    g.fillStyle = gw;
+    g.beginPath(); g.arc(x, y + r*0.30, r*1.5, 0, TAU); g.fill();
   };
   /* はた。てっぺんの 玉から よこへ */
   const flag = (x, y, fw, dir) => {
@@ -12888,6 +12898,61 @@ function paintTitle(t){
       titleGrass(g, gx, gy, gs, gcol[i%3]);
     }
 
+    /* --- 道を のぼる 光。城へ みちびく「まほうの ともしび」 --- */
+    {
+      const u = (t*0.20) % 1.35;                  // 1.35秒に 1回 空はしり
+      if (u <= 1){
+        const fade = Math.sin(u*Math.PI);
+        for (let k=0;k<9;k++){                    // しっぽ
+          const uu = Math.max(0, u - k*0.020);
+          const [lx, ly] = bez(uu);
+          const rr = W*(0.020 - k*0.0016);
+          if (rr <= 0) break;
+          const gr2 = g.createRadialGradient(lx, ly, 0, lx, ly, rr);
+          const al = fade * (1 - k/9) * 0.55;
+          gr2.addColorStop(0, 'rgba(255,252,226,' + al.toFixed(3) + ')');
+          gr2.addColorStop(1, 'rgba(255,244,196,0)');
+          g.fillStyle = gr2; g.beginPath(); g.arc(lx, ly, rr, 0, TAU); g.fill();
+        }
+        const [lx, ly] = bez(u);
+        g.globalAlpha = fade;
+        sparkle(lx, ly, W*0.014, t*2.2, '#fffdf0');
+        g.globalAlpha = 1;
+      }
+    }
+
+    /* --- 光の玉。ホタルのように ふわふわ ただよう --- */
+    for (let i=0;i<10;i++){
+      const ox = W*(0.06 + 0.88*tRnd(i+5200)) + Math.sin(t*0.34 + i*1.7)*W*0.045;
+      const oy = hz + H*(0.02 + 0.26*tRnd(i+6100)) + Math.cos(t*0.29 + i*2.3)*H*0.020;
+      const orr = W*(0.010 + 0.010*tRnd(i+7000));
+      const oa = (0.30 + 0.45*Math.abs(Math.sin(t*0.8 + i*1.9)));
+      const gr3 = g.createRadialGradient(ox, oy, 0, ox, oy, orr*3.2);
+      gr3.addColorStop(0.00, 'rgba(255,252,224,' + (oa*0.85).toFixed(3) + ')');
+      gr3.addColorStop(0.24, 'rgba(255,238,198,' + (oa*0.32).toFixed(3) + ')');
+      gr3.addColorStop(1.00, 'rgba(255,238,198,0)');
+      g.fillStyle = gr3; g.beginPath(); g.arc(ox, oy, orr*3.2, 0, TAU); g.fill();
+    }
+
+    /* --- 流れ星。ときどき 空を わたる --- */
+    {
+      const PER = 6.2, k = Math.floor(t / PER), u = (t % PER) / 1.15;
+      if (u <= 1){
+        const a0 = 0.34 + tRnd(k*7+3)*0.30;                 // 右下へ ながれる
+        const x0 = W*(0.08 + tRnd(k*7+1)*0.62), y0 = hz*(0.04 + tRnd(k*7+2)*0.34);
+        const len = W*0.62, px = x0 + Math.cos(a0)*len*u, py = y0 + Math.sin(a0)*len*u;
+        const tl = W*0.20, fade = Math.sin(u*Math.PI);
+        const gr4 = g.createLinearGradient(px - Math.cos(a0)*tl, py - Math.sin(a0)*tl, px, py);
+        gr4.addColorStop(0, 'rgba(255,255,255,0)');
+        gr4.addColorStop(1, 'rgba(255,255,255,' + (fade*0.85).toFixed(3) + ')');
+        g.strokeStyle = gr4; g.lineWidth = W*0.006; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(px - Math.cos(a0)*tl, py - Math.sin(a0)*tl); g.lineTo(px, py); g.stroke();
+        g.globalAlpha = fade;
+        sparkle(px, py, W*0.016, t*3, '#ffffff');
+        g.globalAlpha = 1;
+      }
+    }
+
     /* --- なかま。人数を へらして 大きさを ずらし、おく・なか・手まえに 置く。
        おなじ大きさで 横に ならべると「キャラえらび」に 見えて 絵に ならない。
        たて位置は 文字の 上はしから 決めます。決めうちの わりあいだと、
@@ -12944,6 +13009,42 @@ function paintTitle(t){
     }
     g.globalAlpha = 1;
 
+    /* --- 「はじめる」を おしたら、光の わっかが ひろがって 国へ 入る --- */
+    if (titleExit){
+      const ex = (performance.now() - titleExit) / 1000, EX = 0.46;
+      const u = Math.min(1, ex / EX);
+      const b = $('titleGo').getBoundingClientRect();
+      const bx = b.left + b.width/2, by = b.top + b.height/2;
+      const maxR = Math.hypot(Math.max(bx, W-bx), Math.max(by, H-by));
+      /* ひろがる わっか。**白では なく 色を つけること。**
+         白い とばしと かさなって 消えてしまいます */
+      g.save();
+      g.globalAlpha = (1 - u) * 0.95;
+      g.strokeStyle = '#ff9ecf'; g.lineWidth = W*0.055*(1 - u*0.55);
+      g.beginPath(); g.arc(bx, by, maxR*u*1.02, 0, TAU); g.stroke();
+      g.strokeStyle = '#b98fff'; g.lineWidth = W*0.026*(1 - u*0.55);
+      g.beginPath(); g.arc(bx, by, maxR*u*0.80, 0, TAU); g.stroke();
+      g.strokeStyle = '#8fe3ff'; g.lineWidth = W*0.014*(1 - u*0.55);
+      g.beginPath(); g.arc(bx, by, maxR*u*0.60, 0, TAU); g.stroke();
+      g.restore();
+      /* まん中から 白く とばす。**わっかより あとから**。
+         はじめから かけると わっかが 見えません */
+      const fu = Math.max(0, (u - 0.30) / 0.70);
+      const fl = g.createRadialGradient(bx, by, 0, bx, by, maxR);
+      fl.addColorStop(0, 'rgba(255,255,255,' + (fu*0.96).toFixed(3) + ')');
+      fl.addColorStop(Math.min(0.98, 0.20 + fu*0.75), 'rgba(255,244,252,' + (fu*0.60).toFixed(3) + ')');
+      fl.addColorStop(1, 'rgba(255,244,252,0)');
+      g.fillStyle = fl; g.fillRect(0, 0, W, H);
+      /* とびちる キラキラ */
+      for (let i=0;i<22;i++){
+        const a = i/22*TAU + 0.2, d = maxR*u*(0.55 + 0.45*tRnd(i+8100));
+        g.globalAlpha = (1 - u);
+        sparkle(bx + Math.cos(a)*d, by + Math.sin(a)*d*0.8,
+                W*(0.010 + 0.010*tRnd(i+8800)), t*2 + i, i%2 ? '#ffffff' : '#ffe6f6');
+      }
+      g.globalAlpha = 1;
+    }
+
     /* --- まわりを ほんの少し おとす。まん中に 目が いく --- */
     const vg = g.createRadialGradient(W*0.5, H*0.44, Math.min(W,H)*0.34,
                                       W*0.5, H*0.44, Math.max(W,H)*0.76);
@@ -12958,6 +13059,7 @@ function titleLoop(ts){
   titleRaf = requestAnimationFrame(titleLoop);
 }
 function openTitle(){
+  titleExit = 0; titleOv.classList.remove('out');
   /* ?dbg=1 は 検査どうぐの 入り口。表紙は 画面ぜんぶを おおうので、
      出したままだと tools/check-path.mjs が 盤面を さわれません */
   if (location.search.includes('dbg=1')) return;
@@ -12971,11 +13073,18 @@ function closeTitle(){
   resize();      // セーフエリアが 出そろってから もう一度 はかる
 }
 $('titleGo').onclick = () => {
+  if (titleExit) return;                 // 2度おしで 演出が 重ならないように
   /* ここが その回 はじめての タップ。
      WebAudio は 手を ふれるまで 鳴らせないので、この音で ふうを ときます */
-  playSnd([[660,.10,'triangle',.05,1.5],[880,.14,'triangle',.05,1.6,90]]);
-  vib(14);
-  closeTitle();
+  playSnd([[660,.10,'triangle',.05,1.5],[880,.14,'triangle',.05,1.6,90],
+           [1320,.22,'sine',.045,1.8,180]]);
+  vib([12, 40, 22]);
+  /* うごきを へらす せっていの人は 演出なしで すぐ とじる */
+  const slow = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (slow){ closeTitle(); return; }
+  titleExit = performance.now();
+  titleOv.classList.add('out');          // 文字は すっと 消す
+  setTimeout(closeTitle, 460);
 };
 /* 画面の むきが かわったら 1まい えがきなおす（とじていても 害はない） */
 window.addEventListener('resize', () => { if (titleRaf) paintTitle(0); });
