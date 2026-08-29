@@ -225,9 +225,15 @@ async function cutout(page, buf, size){
    よこ顔の きまり（GSIDE）は drawGen の 中の 話で、絵に さしかえた子は
    そこを とおらないので かからない。
 
-   **さかな・鳥は よこ向きの まま**（目1つ・口なし）。
-   よこから 見て 目が2つ 見える 生きものでは ないため。
-   その子たちは 右を むかせる。index.html の GFX が 正の 数
+   **さかな・鳥も 顔は こちらに むける。**目は2つ、口（鳥は くちばし）を つける。
+   はじめは よこ顔（目1つ・口なし）だったが、顔が 見えない ぶん
+   そっけなく 見えるので やめた。
+
+   **フクロウだけ からだごと まっすぐ 正面。**ふくろうは もともと
+   両目が 前を むいている 鳥なので、これが しぜん。
+
+   よこ顔の きまり（GSIDE）は drawGen の 中の 話で、絵に さしかえた子は
+   そこを とおらないので かからない。index.html の GFX が 正の 数
    （＝かおを 右へ ずらす）なので、ゲームの よこ向きは みんな 右むき。
    書かないと 左むきで 出る（1バッチ目で 6体 そうなった）。
    タツノオトシゴだけ GFX が -0.08 なので 左むき。
@@ -252,28 +258,28 @@ const ART = {
   おばけ:  { key:'ghost',  p:'A white round ghost with a flowing wavy tail streaming to one side, tiny stubby arms.' },
   クラゲ:        { key:'jelly', p:'A round pink jellyfish with a translucent dome and short frilly tentacles hanging below.' },
   ヒトデ:        { key:'starfish', p:'A chubby coral orange starfish with five rounded arms, seen from the front.' },
-  カクレクマノミ:    { key:'clownfish', p:'An orange clownfish facing right, seen from the side, one visible eye and no mouth, white bands edged with soft charcoal, small rounded fins.' },
-  ヤドカリ:       { key:'hermit', p:'A hermit crab facing right, seen from the side, one visible eye and no mouth, sandy beige spiral shell, small coral pink claws.' },
-  タツノオトシゴ:    { key:'seahorse', p:'A golden yellow seahorse seen from the side, one visible eye and no mouth, curled tail, small dorsal fin.' },
+  カクレクマノミ:    { key:'clownfish', p:'An orange clownfish, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, white bands edged with soft charcoal, and small rounded fins.' },
+  ヤドカリ:       { key:'hermit', p:'A hermit crab, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a sandy beige spiral shell, and small coral pink claws.' },
+  タツノオトシゴ:    { key:'seahorse', p:'A golden yellow seahorse, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a curled tail and a small dorsal fin.' },
   カニ:         { key:'crab', p:'A red-orange crab seen from the front, wide flat shell, two rounded claws held up, small legs.' },
   タコ:         { key:'octopus', p:'A rose pink octopus seen from the front, round head, eight short curling arms.' },
-  イルカ:        { key:'dolphin', p:'A soft periwinkle blue dolphin facing right, seen from the side, one visible eye and no mouth, cream belly, curved dorsal fin.' },
-  シャチ:        { key:'orca', p:'An orca facing right, seen from the side, one visible eye and no mouth, soft charcoal back and white belly, tall rounded dorsal fin.' },
-  アザラシ:       { key:'seal', p:'A soft pale blue seal facing right, seen from the side, one visible eye and no mouth, plump body, cream belly, small front flippers.' },
-  サメ:         { key:'shark', p:'A blue-grey shark facing right, seen from the side, one visible eye and no mouth, pale belly, rounded friendly snout, tall dorsal fin.' },
+  イルカ:        { key:'dolphin', p:'A soft periwinkle blue dolphin, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a cream belly and a curved dorsal fin.' },
+  シャチ:        { key:'orca', p:'An orca, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a soft charcoal back and white belly, and a tall rounded dorsal fin.' },
+  アザラシ:       { key:'seal', p:'A soft pale blue seal, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a plump body, cream belly and small front flippers.' },
+  サメ:         { key:'shark', p:'A blue-grey shark, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a pale belly, a rounded friendly snout and a tall dorsal fin.' },
   マンタ:        { key:'manta', p:'A manta ray seen from the front, wide triangular wings in soft periwinkle blue with a cream belly, two small head fins, gentle face.' },
-  クジラ:        { key:'whale', p:'A blue whale facing right, seen from the side, one visible eye and no mouth, very pale blue belly, a small spout of water above the head.' },
-  カメ:         { key:'turtle', p:'A green turtle facing right, seen from the side, one visible eye and no mouth, tan domed shell, four short legs.' },
-  ユニコーン:      { key:'unicorn', p:'A white unicorn facing right, seen from the side, one visible eye and no mouth, lavender mane and tail, a small pale gold spiral horn.' },
+  クジラ:        { key:'whale', p:'A blue whale, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a very pale blue belly, and a small spout of water above the head.' },
+  カメ:         { key:'turtle', p:'A green turtle, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a tan domed shell and four short legs.' },
+  ユニコーン:      { key:'unicorn', p:'A white unicorn, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small smiling mouth, a lavender mane and tail, and a small pale gold spiral horn.' },
   ようせい:       { key:'fairy', p:'A tiny fairy girl standing on two legs, pink dress, translucent rounded wings, small pale gold wand.' },
   ちょうちょ:      { key:'butterfly', p:'A butterfly seen from the front, two large rounded wings in soft tan and cream, thin antennae, small body.' },
   だんご:        { key:'dango', p:'Three round dumplings on a wooden stick, cream, pale green and pink, stacked in a vertical row, the face on the middle one.' },
   だいふく:       { key:'daifuku', p:'A round white mochi daifuku dusted with pale pink, sitting, soft and plump.' },
   ようかん:       { key:'youkan', p:'A block of youkan jelly with rounded corners, soft plum purple, glossy top.' },
-  カモメ: { key:'gull', p:'A white seagull facing right, seen from the side, one visible eye and no mouth, pale blue-grey wing, small orange beak and feet.' },
-  ハクチョウ: { key:'swan', p:'A white swan facing right, seen from the side, one visible eye and no mouth, long curved neck, orange beak with a small dark knob, folded wing, fanned tail.' },
-  フクロウ: { key:'owl', p:'A tawny brown owl facing right, seen from the side, one visible eye and no mouth, cream belly, small ear tufts, short hooked beak.' },
-  ワシ: { key:'eagle', p:'A soft cocoa brown eagle facing right, seen from the side, one visible eye and no mouth, cream white head, pale gold hooked beak and pale gold feet, fanned tail.' },
+  カモメ: { key:'gull', p:'A white seagull, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small orange beak, a pale blue-grey wing and small orange feet.' },
+  ハクチョウ: { key:'swan', p:'A white swan, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a small orange beak with a dark knob, a long curved neck, a folded wing and a fanned tail.' },
+  フクロウ: { key:'owl', p:'A tawny brown owl sitting and facing the viewer straight on, its body and face both square to the front the way an owl naturally sits, two big round eyes with white highlights, a small hooked beak, a cream belly and small ear tufts.' },
+  ワシ: { key:'eagle', p:'A soft cocoa brown eagle, its body turned to the side and its face turned to the viewer, two round eyes with white highlights, a pale gold hooked beak, a cream white head, pale gold feet and a fanned tail.' },
   テントウムシ: { key:'ladybug', p:'A ladybug seen from the front, round domed shell in a warm strawberry red with soft charcoal spots, small charcoal head, tiny legs.' },
   ミツバチ: { key:'bee', p:'A round honeybee seen from the front, golden yellow body with soft charcoal stripes, small translucent wings.' },
   ネズミ: { key:'mouse', p:'A soft lavender-grey mouse sitting up, its body turned to the side and its head turned to face the viewer, very big round ears with pink inner ears, cream muzzle and belly, a small pink nose, fine whiskers, and a long thin tail curving out behind.' },
