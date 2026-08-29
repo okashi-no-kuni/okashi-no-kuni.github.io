@@ -9386,9 +9386,12 @@ function buildHelp(){
      Last-Modified なので、手で 書きかえなくても デプロイごとに かわる。
      「直したはずが 直っていない」ときに、まず ここを 見てもらえば
      古いキャッシュか 本物のバグかを 1発で 切りわけられる */
-  h += '<div style="text-align:center;opacity:.45;font-size:calc(10px * var(--fs));padding:6px 0">' +
+  /* 画面の はしの 数字。実機でしか 分からない ことが 多いので、
+     ここを 読んでもらえば 遠くからでも 切りわけられる */
+  h += '<div id="hDiag" style="text-align:center;opacity:.45;font-size:calc(10px * var(--fs));padding:6px 0">' +
        'はいしん: ' + document.lastModified + '</div>';
   helpBody.innerHTML = h;
+  showDiag();
   const vb = $('vibBtn');
   if (vb){
     const paint = () => { vb.textContent = vibOn ? '📳 ふるえ：オン' : '📴 ふるえ：オフ';
@@ -9508,6 +9511,32 @@ btnHelp.onclick = () => {
   seeGuide();                       // 1回ひらいたら もう 光らせない
   togglePanel('helpOv', buildHelp);
 };
+/* セーフエリア（ホームバーの ぶん）を じっさいに 測る。
+   env() は CSS の 中でしか つかえないので、その高さの 目に 見えない
+   はこを 1つ 作って 高さを 読む */
+function safeBottom(){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;bottom:0;left:0;width:1px;visibility:hidden;' +
+                    'height:env(safe-area-inset-bottom,0px)';
+  document.body.append(d);
+  const v = Math.round(d.getBoundingClientRect().height);
+  d.remove();
+  return v;
+}
+/* ガイドの いちばん下に 画面の 数字を 出す。
+   「写真だと 余白が あるのに 実機だと ない」のような、
+   こちらでは 再現できない ときに ここを 読んでもらう */
+function showDiag(){
+  const el = $('hDiag'); if (!el) return;
+  const c = $('ctrl').getBoundingClientRect();
+  const vv = window.visualViewport;
+  el.innerHTML = 'はいしん: ' + document.lastModified +
+    '<br>まど ' + window.innerHeight +
+    ' ／ 見えてる ' + (vv ? Math.round(vv.height) : '-') +
+    ' ／ ホームバー ' + safeBottom() +
+    ' ／ 下のすき間 ' + Math.round((vv ? vv.height : window.innerHeight) - c.bottom);
+}
+
 /* 図鑑の 2行（見出し・タブ）は、中みを **みんな おなじ大きさ**で ならべる。
    はこの 幅は flex:1 1 0 で 等分するので CSS だけで そろうが、
    中の 文字が 入るかどうかは 画面の はばと フォントで 変わる。
@@ -12082,6 +12111,9 @@ function resize(){
   if (infoWasOn){ infoEl.classList.add('on'); shopEl.style.display = 'none'; }
   // 起動直後は レイアウトが まだ なくて 0 になるので、そのときだけ 決めうち。
   // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 298 になった）
+  /* ここは innerHeight の まま。visualViewport に かえると iOS の
+     バーの 出入りで ばんめんが ちぢみつづける（上の コメントの 失敗）。
+     下が 足りない ときは 余白（#app の padding-bottom）で 取ること */
   const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 298);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
