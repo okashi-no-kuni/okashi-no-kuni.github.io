@@ -1021,7 +1021,9 @@ const ENEMY_TITLES = {
   boss:'お菓子の国を狙うボス',
 };
 const DEX_TOWERS  = ORDER.map(k => ({ id:'tw_'+k, name:TOWERS[k].name, title:TOWERS[k].desc }));
-const DEX_ENEMIES = Object.keys(ENEMIES).map(k => ({ id:'en_'+k, name:ENEMIES[k].name, title:ENEMY_TITLES[k] }));
+const DEX_HIDE_EN = ['slime','fast','tank','crystal','bat','golem','boss'];
+const DEX_ENEMIES = Object.keys(ENEMIES).filter(k => !DEX_HIDE_EN.includes(k))
+  .map(k => ({ id:'en_'+k, name:ENEMIES[k].name, title:ENEMY_TITLES[k] }));
 
 /* ==========================================================
    でんせつのなかま：とうたつウェーブで出会えて、永続の「しゅくふく」をくれる
