@@ -1930,6 +1930,7 @@ function buildShop(){
     d.onclick = () => {
       selTower = null; closeInfo();
       selTool = (selTool === k) ? null : k;
+      tapSel();                 // えらぶ ボタンにも 音と ふるえ
       syncShop();
     };
     shopEl.append(d);
@@ -1940,7 +1941,7 @@ function buildShop(){
   pk.dataset.k = '__pick';
   pk.innerHTML = '<div class="ic" style="font-size:34px;line-height:46px">🧸</div>' +
                  '<div class="nm">仲間</div><div class="cs">選ぶ<span class="twC"></span></div>';
-  pk.onclick = () => { selTower = null; closeInfo(); openPick(); };
+  pk.onclick = () => { selTower = null; closeInfo(); tapSel(); openPick(); };
   shopEl.append(pk);
   syncShop();
 }
@@ -2834,7 +2835,7 @@ function boardTap(px, py){
     floatTx(px, py, 'やめました', '#b98ae0');
     return;
   }
-  if (hit){ selTool = null; selTower = hit; syncShop(); openInfo(hit); return; }
+  if (hit){ selTool = null; selTower = hit; tapSel(); syncShop(); openInfo(hit); return; }
 
   if (!selTool){ closeInfo(); return; }
 
@@ -8465,26 +8466,66 @@ const skillCost = s => Math.round(s.base * (1 + wave*0.03) * (hasCh('queen') ? 0
    ワザは「HPをけずる」、アイテムは「たおす」で 効きめの しゅるいも 変えてある。
    買いものは payGems() の 1か所を とおすので、ここに 足すだけで 課金にも つながる
    ========================================================== */
+/* 音と ふるえは **ここ 1か所**に まとめる（TOWERS や ENEMIES と おなじ考え）。
+   むかしは 音が useItem() の 6つの えだに ちらばっていて、
+   ならべて 聞きくらべることが できなかった。
+
+   snd の 1行 = [高さ, ながさ, 波の形, 大きさ, すべり, 何びょう後]
+   6つとも **形が ちがう**ように している。目をつぶっても どれを つかったか
+   分かるのが ねらい：
+     ボール  … ぜんぶ たおす 切りふだ。4つ 上がって いちばん 高く 終わる
+     いなずま… 一しゅん。のこぎり波が 上から 下へ 落ちる
+     ハンマー… 重い。四角波の 低い 2発
+     ひやく  … きらきら。三角波が 3つ 上がる
+     こおり  … かたい。高い サイン波の あと 長く 尾を 引く
+     ⭐の雨   … こばんが ころがる。5つ 速く 上がる                        */
 const ITEMS = [
   { id:'ball',   name:'にじいろボール', sn:'ボール',   ic:'🌈', col:'#c9a7ff', need:true,
     art:'it_ball',   vib:[40,30,90],
+    snd:[[520,.18,'triangle',.06,1.4,0], [700,.20,'triangle',.06,1.4,110],
+         [920,.22,'triangle',.06,1.4,220], [1240,.34,'triangle',.07,1.6,330]],
     desc:'画面の敵を ぜんぶ たおす',        note:'いちばん強い切りふだ' },
   { id:'bolt',   name:'いなずま',       sn:'いなずま', ic:'⚡', col:'#ffd76e', need:true,
     art:'it_bolt',   vib:[25,20,25],
+    snd:[[1300,.05,'sawtooth',.06,.35,0], [620,.09,'sawtooth',.07,.4,45],
+         [190,.26,'sawtooth',.06,.5,110]],
     desc:'横1れつの敵を たおす',            note:'かたまって来たときに' },
   { id:'hammer', name:'ハンマー',       sn:'ハンマー', ic:'🔨', col:'#ff9ec9', need:true,
     art:'it_hammer', vib:[60],
+    snd:[[150,.16,'square',.07,.5,0], [96,.30,'square',.07,.45,110]],
     desc:'いちばんHPの多い敵を 1体たおす',  note:'ボス1体だけを 落とす' },
   { id:'elixir', name:'にじいろの秘薬', sn:'ひやく',   ic:'🧪', col:'#8fe3c4', need:false,
     art:'it_elixir', vib:[20,40,20,40,60],
+    snd:[[600,.10,'triangle',.05,1.4,0], [800,.10,'triangle',.05,1.4,100],
+         [1000,.24,'triangle',.06,1.5,200]],
     desc:'仲間を1人 にじいろに して 攻撃2倍', note:'そのプレイの おわりまで つづく' },
   { id:'freeze', name:'こおりのつぼ',   sn:'こおり',   ic:'🧊', col:'#9ed8ff', need:true,
     art:'it_freeze', vib:[80],
+    snd:[[1480,.07,'sine',.05,.9,0], [990,.12,'sine',.05,.85,80],
+         [660,.46,'sine',.05,.8,180]],
     desc:'敵ぜんぶを 8秒 とめる',           note:'ゴール直前を しのぐときに' },
   { id:'rain',   name:'おほしさまの雨', sn:'⭐の雨',   ic:'⭐', col:'#ffe08a', need:false,
     art:'it_rain',   vib:[20,20,20],
+    snd:[[760,.07,'triangle',.05,1.5,0],  [990,.07,'triangle',.05,1.5,70],
+         [1180,.07,'triangle',.05,1.5,140],[1400,.07,'triangle',.05,1.5,210],
+         [1660,.20,'triangle',.06,1.6,280]],
     desc:'おほしさまが たくさん ふる',      note:'つよい仲間を すぐ 置きたいときに' },
 ];
+/* ITEMS の snd を そのまま ならす。おくれは setTimeout（音は 数百ミリびょう） */
+function playSnd(list){
+  if (!list) return;
+  for (const [f, d, ty, v, sl, at] of list){
+    if (at) setTimeout(() => beep(f, d, ty, v, sl), at);
+    else beep(f, d, ty, v, sl);
+  }
+}
+/* えらぶ ボタンの 手ごたえ。**音と ふるえは かならず 対で 出す**
+   （音を 切っている人にも つたわるように）。
+   ok=false は「いま つかえない」の 合図で、低い音＋みじかい 2回ふるえ */
+function tapSel(ok){
+  if (ok === false){ beep(160,.09,'square',.03,.7); vib([14,50,14]); return; }
+  beep(660,.05,'triangle',.03); vib(10);
+}
 const ITEM_BY_ID = {};
 for (const it of ITEMS) ITEM_BY_ID[it.id] = it;
 const ITEM_CAP = 99;
@@ -8723,7 +8764,7 @@ function rbSprite(src, px, tag){
    ワザは「HPをけずる」、アイテムは「たおす」で 効きめの しゅるいが ちがうため */
 function useItem(it){
   if (over || gear[it.id] < 1) return;
-  if (it.need && !enemies.length){ beep(160,.09,'square',.03,.7); return; }
+  if (it.need && !enemies.length){ tapSel(false); return; }
   const W = COLS*CELL, H = ROWS*CELL;
 
   // 秘薬だけは「だれに かけるか」を えらんでから へらす
@@ -8731,17 +8772,24 @@ function useItem(it){
     const able = towers.filter(t => !t.rb);
     if (!able.length){
       floatTx(W/2, H*0.45, 'にじいろに できる仲間が いません', '#b98ae0');
-      beep(160,.09,'square',.03,.7); return;
+      tapSel(false); return;
     }
     aimItem = (aimItem === 'elixir') ? null : 'elixir';
     selTool = null; selTower = null; closeInfo(); syncShop(); syncSkills();
-    if (aimItem) floatTx(W/2, H*0.42, 'にじいろに する仲間を タップ！', '#b98ae0');
+    /* かける相手を えらぶ モードに 入った／出た。まだ 秘薬は へっていないので、
+       つかった ときの 音とは 分ける（えらんだ だけ、と 分かるように）*/
+    if (aimItem){
+      floatTx(W/2, H*0.42, 'にじいろに する仲間を タップ！', '#b98ae0');
+      beep(880,.07,'triangle',.04); setTimeout(()=>beep(1180,.09,'triangle',.04),70);
+      vib([12,40,12]);
+    } else { beep(520,.06,'triangle',.03); vib(10); }
     return;
   }
 
   gear[it.id]--; saveGear();
   iflash = 1; iSweep = 1; iflashCol = hexRgb(it.col);
   vib(it.vib);
+  playSnd(it.snd);      // 音は ITEMS の snd（6つとも 形が ちがう）
 
   if (it.id === 'ball'){
     // 画面の敵を ぜんぶ たおす。HPを けずるのでは なく たおすので、
@@ -8750,8 +8798,6 @@ function useItem(it){
     for (let i=0;i<40;i++) mote(W/2 + (Math.random()-0.5)*W, H/2 + (Math.random()-0.5)*H, '#c9a7ff');
     ring(W/2, H/2, '#c9a7ff', H*0.9);
     floatTx(W/2, H*0.42, 'にじいろボール！ ぜんめつ！', '#8f66d8');
-    beep(520,.18,'triangle',.06); setTimeout(()=>beep(700,.2,'triangle',.06),120);
-    setTimeout(()=>beep(920,.28,'triangle',.06),260);
 
   } else if (it.id === 'bolt'){
     // いちばん 敵が こんでいる よこの おびを 落とす
@@ -8768,7 +8814,6 @@ function useItem(it){
     }
     for (let i=0;i<26;i++) mote(Math.random()*W, best + (Math.random()-0.5)*band, '#ffd76e');
     floatTx(W/2, best - CELL*0.6, 'いなずま！', '#e0a52e');
-    beep(240,.1,'sawtooth',.07,.5); setTimeout(()=>beep(180,.22,'sawtooth',.06,.5),90);
 
   } else if (it.id === 'hammer'){
     // ボス1体だけを 落とす。HPの いちばん 多い子
@@ -8781,13 +8826,11 @@ function useItem(it){
       for (let i=0;i<20;i++) puff(q.x, q.y, '#ff9ec9');
       floatTx(q.x, q.y - CELL*0.8, 'ハンマー！', '#e05f9e');
     }
-    beep(150,.16,'square',.07,.5); setTimeout(()=>beep(110,.24,'square',.06,.5),100);
 
   } else if (it.id === 'freeze'){
     for (const e of enemies){ e.stun = 8; const q = posAt(e.d); for (let i=0;i<4;i++) mote(q.x, q.y, '#bfe8ff'); }
     ring(W/2, H/2, '#9ed8ff', H*0.8);
     floatTx(W/2, H*0.42, 'こおりのつぼ！ 8秒 ストップ！', '#4a9ed8');
-    beep(880,.12,'sine',.05,.8); setTimeout(()=>beep(660,.3,'sine',.05,.8),110);
 
   } else if (it.id === 'rain'){
     // ⭐は そのウェーブの かせぎに 合わせる。決めうちの 数字だと
@@ -8796,8 +8839,6 @@ function useItem(it){
     stars += gain;
     floatTx(W/2, H*0.42, '⭐+' + fmtN(gain), '#e0a52e');
     for (let i=0;i<34;i++) mote(Math.random()*W, Math.random()*H*0.6, '#ffe08a');
-    beep(760,.1,'triangle',.05); setTimeout(()=>beep(990,.14,'triangle',.05),110);
-    setTimeout(()=>beep(1180,.18,'triangle',.05),230);
     saveRun();   // ⭐は saveRun でしか のこらない
   }
   syncHUD(); syncSkills(); syncShop();
@@ -8819,8 +8860,7 @@ function applyElixir(t){
   ring(x, y, '#8fe3c4', CELL*3);
   for (let i=0;i<26;i++) mote(x, y, ['#ff9ec9','#ffd76e','#8fe3c4','#9ed8ff','#c9a7ff'][i%5]);
   floatTx(x, y - CELL*0.9, TOWERS[t.k].name + ' が にじいろに！ 攻撃2倍', '#b98ae0');
-  beep(600,.1,'triangle',.05); setTimeout(()=>beep(800,.1,'triangle',.05),100);
-  setTimeout(()=>beep(1000,.22,'triangle',.06),200);
+  playSnd(ITEM_BY_ID.elixir.snd);
   saveRun(); syncSkills(); syncHUD();
   return true;
 }
@@ -8869,14 +8909,19 @@ function buildSkillBar(){
         const nm = ch === 'rpurin' ? 'ながれぼし' : (CHARS.find(c => c.id === ch) || {}).name;
         togglePin(ch);
         floatTx(COLS*CELL/2, ROWS*CELL - CELL*0.6, nm + 'を図鑑に戻した', '#b98ae0');
-        beep(480,.1,'triangle',.04);
+        beep(480,.1,'triangle',.04); vib([18,40,18]);
       }, 550);
     });
     b.addEventListener('pointerup', cancelLp);
     b.addEventListener('pointerleave', cancelLp);
     b.addEventListener('pointercancel', cancelLp);
     b.addEventListener('contextmenu', e => e.preventDefault());
-    b.onclick = () => { if (lpFired){ lpFired = false; return; } useSkill(s); };
+    b.onclick = () => {
+      if (lpFired){ lpFired = false; return; }
+      // つかえない（クールダウン中・0こ）ときは 低い音＋ふるえで 知らせる
+      if (b.disabled || skCd[ch] > 0 || (skStock[ch] || 0) < 1){ tapSel(false); return; }
+      useSkill(s);
+    };
     skillBar.append(b);
   }
   // のこりは「はれる」空きスロット
