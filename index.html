@@ -1909,15 +1909,27 @@ const hasGen  = o => !!dex[o.id];
 
 /* たまごを ひらく。まだ いない子を ゆうせんし、ぜんぶ いるなら かけらに する。
    「まだ いない子ゆうせん」は 親切なうえに、ダブり待ちの ストレスを なくす */
+/* にじの わく（DEX_LEGEND）の子は「運が よければ」の あつかい。
+   たまごの 中で あわせて 5% しか 出ない。かくりつ表示（eggRates）と
+   ここの 数字は かならず そろえること（Apple 3.1.1／景品表示法） */
+const LEG_RATE = 0.05;
+function eggPick(list){
+  const leg  = list.filter(o => DEX_LEGEND.has(artKeyOf(o)));
+  const norm = list.filter(o => !DEX_LEGEND.has(artKeyOf(o)));
+  if (!norm.length) return leg[(Math.random() * leg.length) | 0];
+  if (!leg.length || Math.random() >= LEG_RATE)
+    return norm[(Math.random() * norm.length) | 0];
+  return leg[(Math.random() * leg.length) | 0];
+}
 function eggDraw(e){
   const pool = eggPool(e);
   const news = pool.filter(o => !hasGen(o));
   if (news.length){
-    const o = news[(Math.random() * news.length) | 0];
+    const o = eggPick(news);
     unlock(o.id);
     return { o, dup: false };
   }
-  const o = pool[(Math.random() * pool.length) | 0];
+  const o = eggPick(pool);
   const n = SHARD_GET[o.lv] || 1;
   shards += n; saveShards();
   return { o, dup: true, shard: n };
@@ -2012,9 +2024,16 @@ function buildEggScreen(){
   }
   // かくりつ表示。Apple の 審査でも 日本の 法律でも 出すことに なっている
   eggRates.innerHTML = '<b>出てくる確率</b><br>' + EGGS.map(e => {
-    const n = eggPool(e).length;
-    return '・' + e.name + '：★' + e.lv.join('と') + 'の ' + n + '人から 1人。' +
-           'どの子も同じ確率（' + (100/n).toFixed(1) + '%）';
+    const pool = eggPool(e);
+    const leg = pool.filter(o => DEX_LEGEND.has(artKeyOf(o))).length;
+    const norm = pool.length - leg;
+    if (!leg)
+      return '・' + e.name + '：★' + e.lv.join('と') + 'の ' + pool.length + '人から 1人。' +
+             'どの子も同じ確率（' + (100/pool.length).toFixed(1) + '%）';
+    return '・' + e.name + '：★' + e.lv.join('と') + 'の ' + pool.length + '人から 1人。' +
+           '🌈でんせつの子（' + leg + '人）は あわせて' + (LEG_RATE*100) + '%・1人あたり' +
+           (LEG_RATE*100/leg).toFixed(1) + '%、のこり' + norm + '人は 均等（1人あたり' +
+           ((1-LEG_RATE)*100/norm).toFixed(1) + '%）';
   }).join('<br>') +
   '<br>・すでにいる子が出たときは <b>かけら</b>になります' +
   '<br>・まだいない子が残っていれば、かならず その中から出ます' +
@@ -3192,6 +3211,7 @@ function hitTarget(s, p){
 /* 敵をひとり道においてスタートさせる（通常出現とボスのしょうかんで共用） */
 let spawnSeq = 0;                                     // ウェーブ内での 何ばんめか
 let friendWave = false;                               // いまが ともだちバトルか
+let legMissWave = -1;                                 // にじの子に にげられた ウェーブ（お知らせは 1回）
 const nameRects = [];                                 // ともだちの なまえを おいた ばしょ
 /* ともだちが いれば、ステージの まん中で「ともだちバトル」を ひらく。
    ステージクリアの ウェーブと ぶつからないように 10の ところに おく */
@@ -3214,8 +3234,19 @@ function killEnemy(e, px, py){
   enemies.splice(idx,1);
   if (unlock('en_' + e.k))
     floatTx(px, py - CELL*0.7, '図鑑に登録！', '#b98ae0');
-  if (e.gi && unlock(e.gi.id))
-    floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
+  if (e.gi){
+    /* にじの わくの子（ゆきのじょおう・ひのとり・ゆきおんな）は
+       たおしても ときどきしか 図鑑に 入らない。「運が よければ」の 手ざわり。
+       おなじ ウェーブで 何度も「にげた」と 言うと うるさいので 1回だけ */
+    const isLg = DEX_LEGEND.has(artKeyOf(e.gi));
+    if (!isLg || dex[e.gi.id] || Math.random() < 0.25){
+      if (unlock(e.gi.id))
+        floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
+    } else if (legMissWave !== wave){
+      legMissWave = wave;
+      floatTx(px, py - CELL*1.2, '✨' + e.gi.name + 'は にげてしまった…', '#b98ae0');
+    }
+  }
   if (e.av){
     stars += 60;
     const f = avResult(e.av, true);
@@ -7748,7 +7779,9 @@ function dexList(){
       id:o.id, name:o.name, cat:'g'+o.lv, gen:o,
       title:(DEX_LEGEND.has(artKeyOf(o)) ? 'でんせつ'
              : (DEX_SIDE[artKeyOf(o)] || o.side) === 'en' ? 'てき' : '仲間') + '・★' + o.lv + (o.cells > 1 ? '・' + o.cells + 'マス' : ''),
-      hint:o.side === 'en' ? '倒すと仲間になる' : '🥚たまごから',
+      hint:DEX_LEGEND.has(artKeyOf(o))
+        ? (o.side === 'en' ? '倒すと ときどき 仲間になる' : '🥚たまごから（でんせつは 出にくい）')
+        : (o.side === 'en' ? '倒すと仲間になる' : '🥚たまごから'),
     })),
   ];
 }
@@ -8254,7 +8287,7 @@ let gifts = [];
 /* アイテムが 落ちる わりあい。ワザより ずっと めずらしい。
    これが 主な 入手ルート＝あそんでいれば ためられる。
    「待てば無料」を くずさないために、ここを 0 に しないこと */
-const ITEM_DROP = 0.12;
+const ITEM_DROP = 0.08;
 function spawnGift(x, y){
   // ときどき ワザでは なく アイテムが 落ちる
   if (Math.random() < ITEM_DROP){
@@ -9255,7 +9288,15 @@ const shopOv = $('shopOv'), shopBody = $('shopBody'), shopGem = $('shopGem');
    ⭐は はじめてパックの 中身としてだけ 出す */
 const PACK_STARS = 3000;              // 伝説のたまご 1こぶん。はじめの 1歩として ちょうどいい
 const PACK_LV    = 4;                 // わたす なかまの ★
-const packPool   = () => GEN_LIST.filter(o => o.side === 'ch' && o.lv === PACK_LV);
+/* きょうの 日づけ（端末のローカル）。アイテムセットの 1日1回に つかう */
+const dayKey = () => { const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); };
+let itDay = {};
+try{ itDay = JSON.parse(localStorage.getItem('sweetTD.itDay') || '{}'); }catch(e){}
+function saveItDay(){ try{ localStorage.setItem('sweetTD.itDay', JSON.stringify(itDay)); }catch(e){} }
+/* はじめてパックからは にじの子は 出ない（かんたんな 近道に しない） */
+const packPool   = () => GEN_LIST.filter(o => o.side === 'ch' && o.lv === PACK_LV
+                                           && !DEX_LEGEND.has(artKeyOf(o)));
 const SHOP_ITEMS = [
   /* 1回だけの はじめてパック。ランダムが 入るので、たまごと おなじ
      「おなじ★の子から 均等に 1人」に して かくりつを 1行で 言いきれる形に する。
@@ -9306,18 +9347,26 @@ const SHOP_ITEMS = [
   /* アイテムの パック。**消耗品**なので、買わなくても ドロップと
      ステージクリアで たまる。「待てば無料」を くずさないための 線引き。
      強さそのもの（攻撃力・⭐）は 売らない、という きまりは まもっている */
+  /* アイテムは 金の わく＝レア。お金で かんたんに 山づみ できないよう、
+     セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
   { id:'it_set', sec:'あそぶ', ic:'🎒', name:'おたすけセット',
     desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×1こずつ',
-    note: () => 'アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP*100) + '%）。' +
+    note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
-    cost: 12,
+    cost: 20,
+    can:  () => itDay.set !== dayKey(),
+    poor: () => 'きょうは もう 買いました。また あした',
     buy: () => { for (const it of ITEMS) giveItem(it.id, 1); buildSkillBar();
+                 itDay.set = dayKey(); saveItDay();
                  return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
   { id:'it_big', sec:'あそぶ', ic:'🌈', name:'にじいろセット',
     desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×3こずつ',
-    note: () => 'おたすけセット3こぶん。まとめて 買うと おとく',
-    cost: 30,
+    note: () => '1日1回まで。おたすけセット3こぶん',
+    cost: 55,
+    can:  () => itDay.big !== dayKey(),
+    poor: () => 'きょうは もう 買いました。また あした',
     buy: () => { for (const it of ITEMS) giveItem(it.id, 3); buildSkillBar();
+                 itDay.big = dayKey(); saveItDay();
                  return '🌈 6しゅるいの アイテムが 3こずつ！'; } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
     desc:'あと何回あそべるかが 満タンに もどります', cost:10,
@@ -11884,6 +11933,8 @@ window.__chk = {
      一生 出てこない。それを 検査で 見つける ために 出す */
   enemyLook, enemyKinds: () => Object.keys(ENEMIES), LAP_WAVES,
   eggs: () => EGGS,
+  eggPick, eggPool, artKeyOf2: artKeyOf, isLegKey: k => DEX_LEGEND.has(k),
+  openEgg: () => openEggScreen(''),
   artKeys: () => ART_KEYS,
   themeOfStage, chars: () => CHARS.map(c => c.name),
   // アバターも キャラなので おなじ検査に かける。
