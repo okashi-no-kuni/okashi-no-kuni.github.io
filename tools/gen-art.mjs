@@ -302,7 +302,7 @@ const ART = {
   プリン: { key:'purin', p:'A custard pudding with caramel sauce running down the sides, wobbly and glossy.' },
   マカロン: { key:'macaron', p:'A pink macaron, two round shells with a pale cream filling between them.' },
   わたあめ: { key:'watame', p:'A fluffy cloud of cotton candy in pink and lavender on a thin paper stick.' },
-  ほしクッキー: { key:'star', p:'A golden star shaped cookie with a warm sugary glow, facing the viewer. It shines brightly: a soft golden halo around it, a glossy highlight sweeping across the top point, a light dusting of sugar sparkle on the surface, and a few small four-pointed sparkles floating around it. Rich warm gold, brighter and more radiant than the other sweets.' },
+  ほしクッキー: { key:'star', p:'A plump five-pointed star character facing the viewer, a bright warm golden yellow. Its surface is smooth and glossy like glass or a gummy sweet: a soft gradient across the body, one large soft highlight sweeping over the upper half, a few small bright white specular glints near the points, and a gentle glow inside. A few pale blue four-pointed sparkles float around it. Rounded and puffy, with no hard edges.' },
   アイス: { key:'icecream', p:'A scoop of pale blue soda ice cream sitting in a golden waffle cone.' },
   ソフトクリーム: { key:'soft', p:'A tall swirl of cream coloured soft serve in a golden cone.' },
   かきごおり: { key:'kakigori', p:'A bowl of shaved ice piled into a fluffy dome with pale blue syrup poured over it.' },
