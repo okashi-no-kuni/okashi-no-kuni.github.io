@@ -6637,6 +6637,8 @@ const CREATURES = [
   ['golem',    'ゴーレム',   ['#8a8296','#c0b8cc','#6b6478'], 6,'en'],
   ['hero','まほうつかい',['#3f5a8a','#5f7ab0','#e8e4f0'],6,'ch',{key:'wizard', dy:0.018, robe:true, hat:'wizard', hatC:'#3f5a8a', beard:'#e8e4f0', staff:true, staffC:'#8a6440', gemC:'#8fe3c4', legC:'#3f5a8a'}],
   ['hero','ゆきのじょおう',['#cfeaff','#fdfaff','#8fd8f0'],6,'en',{key:'snowqueen',robe:true, hat:'ice', hair:'#dff0ff', longHair:true, legC:'#cfeaff', shoeC:'#a8d4ea'}],
+  // 白い着物の子。うすい色なので 線で ふちどらないと 雪の地面に とける
+  ['princess','ゆきおんな',['#fdfaff','#bcd8f0','#8fa8d8'],5,'en',{key:'yukionna', line:'#8fa8d8'}],
   ['witch',    'まじょ',     ['#5b4278','#6b4f8a','#6b4a3a'], 5,'ch',{dy:0.018}],
   ['princess', 'おひめさま', ['#ffb3d4','#ffffff','#f0c46a'], 4, 'ch'],
   ['prince',   'おうじさま', ['#7b9ed8','#c85a7a','#8a6a4a'], 4, 'ch'],
@@ -7673,7 +7675,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -7758,8 +7760,8 @@ const EN_THEME = [
   /* 1 いちごのおかしばたけ */ ['ladybug','mouse','bee','sheep','pig','butterfly','kangaroo','horse'],
   /* 2 マカロンのもり       */ ['rabbit','mouse','squirrel','hedgehog','koala','monkey','redpanda','sloth','owl','deer','panda','bear'],
   /* 3 チョコレートのたに   */ ['mouse','slime','squirrel','pig','redpanda','panda','zebra','devil','tiger','golem'],
-  /* 4 こおりのくに         */ ['rabbit','sheep','penguin','swan','seal','golem','snowqueen'],
-  /* 5 ゆきのケーキやま     */ ['rabbit','sheep','penguin','deer','wolf','eagle','bear','snowqueen'],
+  /* 4 こおりのくに         */ ['rabbit','sheep','penguin','swan','seal','yukionna','golem','snowqueen'],
+  /* 5 ゆきのケーキやま     */ ['rabbit','sheep','penguin','deer','wolf','eagle','bear','yukionna','snowqueen'],
   /* 6 ソーダのうみべ       */ ['jelly','starfish','clownfish','hermit','seahorse','crab','turtle','gull','octopus','seal','shark','manta'],
   /* 7 キャラメルのさばく   */ ['mouse','hedgehog','turtle','monkey','kangaroo','zebra','horse','tiger','giraffe','lion'],
   /* 8 さばくのくに         */ ['cactus','sandcat','lizard','meerkat','scorpion','fennec','ostrich','armadillo','mummy','camel','cleopatra','pharaoh','cobra','tutankhamun'],
