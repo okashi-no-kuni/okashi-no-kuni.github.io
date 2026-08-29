@@ -387,8 +387,11 @@
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
-  #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  #colTabs::-webkit-scrollbar{display:none}
+  /* **`overflow-x:auto` を つけないこと。**スクロールわく に なると
+     たてにも 切られて、🎀📤 の かげ（box-shadow:0 3px 0）が
+     下で ちょん切れます（実機の 報告）。
+     いまは タブが flex:1 1 0 で ちぢむので、はみ出すことは ありません */
+  #colTabs{display:flex;gap:5px;flex:0 0 auto}
   /* タブの行。**名前のタブ5つ（仲間〜友だち）だけを 等分**し、
      🎀📤 は 絵文字ボタンなので 等分には 入れない（下の --icoW の 四角）。
      「アイテム」は 4文字あって そのままでは 入らないので、
@@ -1344,9 +1347,35 @@ let iflash = 0, iflashCol = '255,255,255', iSweep = 0;
 let vibOn = true;
 try{ vibOn = localStorage.getItem('sweetTD.vib') !== 'off'; }catch(e){}
 function setVib(on){ vibOn = on; try{ localStorage.setItem('sweetTD.vib', on ? 'on' : 'off'); }catch(e){} }
+/* iPhone の Safari には **ふるえの API が ない**（navigator.vibrate が 無い）。
+   Android は これで ふるえる。iPhone は アプリに つつめば 本物の
+   ハプティクスが つかえるので、そのときに ここを さしかえる。
+
+   それまでの あいだの 代わり：iOS 17.4 から、スイッチ型の チェックボックス
+   （<input type="checkbox" switch>）を 切りかえると OSが 小さく ふるえる。
+   **Apple が 決めた 正しい つかい方では ない**ので、効かない 端末も ある。
+   効かなければ なにも おきないだけ（例外に しない）*/
+let hapEl = null;
+function hapticTick(){
+  try{
+    if (!hapEl){
+      hapEl = document.createElement('input');
+      hapEl.type = 'checkbox';
+      hapEl.setAttribute('switch', '');       // iOS 17.4+ の スイッチ表示
+      hapEl.setAttribute('aria-hidden', 'true');
+      hapEl.tabIndex = -1;
+      // 見えない けれど「ある」状態に する（display:none だと 効かない）
+      hapEl.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;' +
+                            'opacity:0;margin:0;padding:0;border:0;appearance:none';
+      document.body.append(hapEl);
+    }
+    hapEl.click();                            // きりかえた しゅんかんに ふるえる
+  }catch(e){}
+}
 function vib(pat){
-  if (!vibOn || !navigator.vibrate) return;
-  try{ navigator.vibrate(pat); }catch(e){}
+  if (!vibOn) return;
+  if (navigator.vibrate){ try{ navigator.vibrate(pat); }catch(e){} return; }
+  hapticTick();                               // iPhone むけの 代わり
 }
 let paraders = [];            // 応援パレード中のなかま
 let phoenixUsed = false;      // ふしちょうのごかご（1プレイ1回）
@@ -9410,8 +9439,10 @@ function buildHelp(){
     '苦手な人も いるので、ここで 止められます（音と 同じ あつかい）。</p>' +
     '<div style="display:flex;gap:8px;justify-content:center;margin-top:6px">' +
     '<button class="mini" id="vibBtn"></button></div>' +
-    '<p style="opacity:.7;margin-top:5px">iPhone の Safari は ふるえに 対応していないので、' +
-    'その ときは なにも おきません（エラーには なりません）。</p></div>';
+    '<p style="opacity:.7;margin-top:5px">Android は ふるえます。' +
+    '<b>iPhone の Safari には ふるえの しくみが ありません</b>ので、' +
+    'iOS 17.4 以降でだけ 小さく コツンと 鳴る かもしれません。' +
+    'なにも おきなくても こわれては いません（音は 鳴ります）。</p></div>';
   h += '<div class="hSec"><h3>🏆 強くなるコツ</h3><ul>' +
     '<li>早よびボーナスで⭐を稼いで、どんどん強化する</li>' +
     '<li>ワザは<b>ここぞ</b>で使う。ボス・ラッシュ・ハートのピンチに</li>' +
