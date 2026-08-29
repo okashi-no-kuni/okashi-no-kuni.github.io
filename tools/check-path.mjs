@@ -37,6 +37,22 @@ for (let i=0;i<700 && !bad;i++){
   if (i % 31 === 0) await pg.setViewportSize({ width:393, height: (i/31)%2 ? 660 : 852 });
 }
 console.log(bad ? ('✗ ずれ発見\n' + JSON.stringify(bad, null, 1)) : ('✅ ' + n + '回 しらべて ずれなし'));
+
+/* canvas の 大きさが ずれても 消しのこりが 出ないか。
+   ずれたまま だと clearRect が 左上しか 消さず、古い絵が のこったまま
+   新しい絵だけ 小さく 左上に えがかれる（実機で これが おきた）。
+   わざと 2倍に して 赤で ぬり、つぎの フレームで 消えるかを 見る */
+await pg.evaluate(() => { const c = document.querySelector('#cv canvas');
+  c.width *= 2; c.height *= 2;
+  const g = c.getContext('2d'); g.setTransform(1,0,0,1,0,0);
+  g.fillStyle = '#ff0000'; g.fillRect(0, 0, c.width, c.height); });
+await pg.waitForTimeout(500);
+const red = await pg.evaluate(() => { const c = document.querySelector('#cv canvas'), g = c.getContext('2d');
+  const d = g.getImageData(0,0,c.width,c.height).data; let k = 0;
+  for (let i=0;i<d.length;i+=4) if (d[i]>200 && d[i+1]<60 && d[i+2]<60) k++;
+  return { red:k, size:c.width+'x'+c.height }; });
+console.log(red.red ? ('✗ 消しのこり ' + red.red + 'px（canvas ' + red.size + '）') : '✅ 消しのこりなし');
+if (red.red) bad = bad || { 消しのこり: red };
 console.log('errors', errs.slice(0,3));
 await b.close();
 process.exit(bad || errs.length ? 1 : 0);

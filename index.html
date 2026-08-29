@@ -11333,8 +11333,13 @@ function render(){
      ctx の 変換が 1倍に もどっていて、DPR ぶん（さいだい2.5倍）小さい
      左上だけに ばんめんが えがかれ、のこりは 前の絵が こびりつく。
      resize() のときだけ かけていると 直せないので、まいフレーム かけなおす */
+  /* 消すのは **canvas の 実寸で ぜんぶ**。W×H（CSSピクセル）で 消していたので、
+     canvas の 大きさと W×H×DPR が ずれると **左上しか 消えず、
+     古い絵が のこったまま 新しい絵だけ 小さく 左上に えがかれる**。
+     （実機で これが おきて「キャラが 小さく 道を 外れて 歩く」に 見えた） */
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.clearRect(0, 0, W, H);
   ctx.save();
   roundRect(0,0,W,H,20); ctx.clip();
 
@@ -11616,6 +11621,12 @@ function resize(){
       game.scale.resize(W*DPR, H*DPR);
       game.canvas.style.width = W + 'px';
       game.canvas.style.height = H + 'px';
+      /* Phaser が すぐに 変えないことが あるので、canvas そのものにも 入れる。
+         ここが ずれたままだと 消しのこりが 出る（render を 見ること） */
+      const cw = Math.round(W*DPR), ch = Math.round(H*DPR);
+      if (game.canvas.width !== cw || game.canvas.height !== ch){
+        game.canvas.width = cw; game.canvas.height = ch;
+      }
     }
   };
   /* ばんめんの 大きさは innerHeight から そのまま 決める。
@@ -11689,6 +11700,19 @@ const BoardScene = {
     /* ますの 大きさか 道の 形が 変わったのに はかりなおしていなければ、
        ここで 直す。どこか 1か所でも measurePath() を よび わすれると
        敵が 道の 外を あるくので、さいごの とりでを おいておく */
+    /* canvas の 実寸が W×H×DPR と ずれていたら 合わせる。
+       Phaser の scale.resize() が すぐに 反映されないことが あるため。
+       **render の 中では やらないこと**——あそこは Phaser の save/restore の
+       内がわで、canvas を つくりなおすと Phaser の 状態が こわれる */
+    if (game && game.canvas){
+      const cw = Math.round(COLS*CELL*DPR), ch = Math.round(ROWS*CELL*DPR);
+      if (game.canvas.width !== cw || game.canvas.height !== ch){
+        game.scale.resize(cw, ch);
+        game.canvas.width = cw; game.canvas.height = ch;
+        game.canvas.style.width = (COLS*CELL) + 'px';
+        game.canvas.style.height = (ROWS*CELL) + 'px';
+      }
+    }
     if (pathCell !== CELL || pathWay !== WAY.join(';')){
       const prev = pathLen;
       measurePath();
@@ -11817,6 +11841,18 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   cellPx: () => CELL,
   /* わざと ますの 大きさだけ 変えて、まもりが 直すかを ためす */
   breakCell: () => { CELL = CELL + 14; return CELL; },
+  /* わざと canvas を 大きくして 赤で ぬり、消しのこりが 出ないかを ためす */
+  breakCanvas: () => { const c = game.canvas;
+    c.width = c.width * 2; c.height = c.height * 2;
+    const g = c.getContext('2d'); g.setTransform(1,0,0,1,0,0);
+    g.fillStyle = '#ff0000'; g.fillRect(0,0,c.width,c.height);
+    return c.width + 'x' + c.height; },
+  canvasSize: () => game.canvas.width + 'x' + game.canvas.height,
+  wantSize: () => Math.round(COLS*CELL*DPR) + 'x' + Math.round(ROWS*CELL*DPR),
+  redLeft: () => { const c = game.canvas, g = c.getContext('2d');
+    const d = g.getImageData(0,0,c.width,c.height).data; let n = 0;
+    for (let i=0;i<d.length;i+=4) if (d[i]>200 && d[i+1]<60 && d[i+2]<60) n++;
+    return n; },
   /* 焼いた じめんを 1マスずつ よんで、道に ぬられているかを しらべる。
      その国の 道の色（p1/p2）と じめんの色（g1/g2）の どちらに 近いかで 見る。
      色を きめうちに すると 国ごとに ちがうので まちがえる */
