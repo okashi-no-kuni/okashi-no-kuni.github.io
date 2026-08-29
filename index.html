@@ -331,16 +331,19 @@
   /* たて方向の flex の中なので、ちぢませない（`flex:0 0 auto` が ないと
      高さ0に つぶれて **文字が まるごと 消える**。#colTabs と 同じ わな） */
   #colTtl{flex:0 0 auto;font-size:calc(13px * var(--fs));color:var(--pink-d);font-weight:700;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:2px}
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
   /* 見出しは ボタンだけ。左の あきで 右に よせる */
   #colHeadSp{flex:1;min-width:0}
   #colCount{font-size:calc(12px * var(--fs));opacity:.8}
-  /* 見出しの まる ボタンは 幅を つめる（コレクションが おりかえさないように）*/
-  #colHead .mini{padding:9px 8px;flex:0 0 auto}
+  /* 見出しの ボタンは 幅を つめる。ここは 7つ ならぶので いちばん きつい。
+     実機（iPhoneの 丸ゴシック）は Linux より 広いので、余白を 作っておくこと */
+  #colHead .mini{padding:8px 6px;font-size:calc(11px * var(--fs));flex:0 0 auto}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
-  @media (max-width:345px){
+  @media (max-width:359px){
     #colTtl{font-size:calc(12px * var(--fs))}
-    #colHead .mini{padding:8px 6px;font-size:calc(11px * var(--fs))}
+    #colHead .mini{padding:7px 5px}
+    /* ここまで せまいと 名前は 入らない。となりの 🏰🎀📤 と 同じ 絵文字だけに */
+    .pwTx{display:none}
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
@@ -408,10 +411,12 @@
   /* ---------- 合言葉・着せかえ ---------- */
   /* ショップ・今週のおだい・合言葉は 図鑑（👑）の 中に 入れてある。
      ここは 盤面の 高さを 1pxも 取らないので、そのぶん マスが 大きい。
-     見出しの 🛍🏅 は **文字を つけない**こと。「🛍 ショップ」「🏅 今週のおだい」と
-     書くと 見出しが 374px 必要になり、393pxの iPhone（つかえるのは 357px）で
-     はみ出して ✕が 画面の 外に 出る。となりの 🏰🎀📤 と そろえて 絵文字だけにする。
-     合言葉は タブの ならび（横スクロールする）なので 文字を つけられる */
+     見出しの 名前は **みじかく**すること。「🏅 今週のおだい」と 書くと
+     見出しが 374px 必要になり、393pxの iPhone（つかえるのは 357px）で
+     はみ出して ✕が 画面の 外に 出た。だから ここだけ 「おだい」にする
+     （ひらいた 先の 画面は 「今週のおだい」の まま）。
+     それでも 入らない せまい画面では 絵文字だけに 落とす（下の @media）*/
+  .pwTx{margin-left:3px}
   #colTabs .mini{flex:0 0 auto;padding:7px 7px;font-size:calc(11px * var(--fs))}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:14px;overflow-y:auto;z-index:5}
@@ -514,8 +519,8 @@
     </div>
     <div id="colOv">
       <div id="colHead">
-        <button class="mini" id="btnShop" aria-label="ショップ" title="ショップ">🛍</button>
-        <button class="mini" id="btnWk" aria-label="今週のおだい" title="今週のおだい">🏅</button>
+        <button class="mini" id="btnShop" aria-label="ショップ">🛍<span class="pwTx">ショップ</span></button>
+        <button class="mini" id="btnWk" aria-label="今週のおだい">🏅<span class="pwTx">おだい</span></button>
         <div id="colHeadSp"></div>
         <button class="mini" id="colKing">🏰</button>
         <button class="mini" id="colAv">🎀</button>
