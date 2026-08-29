@@ -214,10 +214,31 @@
     padding:0 22px calc(30px + env(safe-area-inset-bottom));text-align:center}
   .tSub{font-size:calc(12.5px * var(--fs));color:#8c62a8;font-weight:600;
     letter-spacing:.42em;text-indent:.42em;margin-bottom:5px;
-    text-shadow:0 1px 0 rgba(255,255,255,.85)}
+    text-shadow:0 1px 0 rgba(255,255,255,.85),0 0 10px rgba(200,160,255,.7)}
+  /* ちいさな ひかりを 両わきに。絵文字では なく 文字なので 色を つけられる */
+  .tSub::before,.tSub::after{content:'\2727';font-size:.78em;color:#c79ae2;
+    opacity:.85;margin:0 .5em;display:inline-block;
+    animation:tTwk 2.8s ease-in-out infinite}
+  .tSub::after{animation-delay:1.4s}
+  @keyframes tTwk{0%,100%{opacity:.30;transform:scale(.82)}50%{opacity:.95;transform:scale(1.12)}}
   .tMain{font-size:calc(38px * var(--fs));line-height:1.16;font-weight:800;
     color:#a63f78;letter-spacing:.07em;text-indent:.07em;
     text-shadow:0 1px 0 rgba(255,255,255,.9),0 10px 26px rgba(150,80,120,.24)}
+  /* 魔法っぽさは **グラデの 文字＋ぼんやりした ひかり**で 出す。
+     background-clip:text は 文字が すきとおるので text-shadow が すけて しまう。
+     かげは かならず filter:drop-shadow の ほうを つかうこと */
+  @supports (-webkit-background-clip:text) or (background-clip:text){
+    .tMain{
+      background:linear-gradient(176deg,#ffa9d4 0%,#ee6bb2 30%,#b649c0 64%,#6a51d6 100%);
+      background-size:100% 240%;
+      -webkit-background-clip:text;background-clip:text;
+      -webkit-text-fill-color:transparent;color:transparent;text-shadow:none;
+      filter:drop-shadow(0 1px 0 rgba(255,255,255,.95))
+             drop-shadow(0 0 11px rgba(255,166,224,.85))
+             drop-shadow(0 0 26px rgba(174,138,255,.55));
+      animation:tShine 7s ease-in-out infinite}
+  }
+  @keyframes tShine{0%,100%{background-position:50% 12%}50%{background-position:50% 88%}}
   /* 細い けい線＋ちいさな ひし形。おとなっぽさは ここで 出る */
   .tOrn{display:flex;align-items:center;gap:10px;width:min(70%,258px);margin:11px 0 9px;flex:0 0 auto}
   .tOrn i{flex:1 1 0;height:1px;
@@ -234,7 +255,8 @@
     animation:tBob 3.2s ease-in-out infinite}
   #titleGo:active{transform:translateY(1px);box-shadow:0 4px 12px rgba(190,105,150,.34)}
   @keyframes tBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-  @media (prefers-reduced-motion:reduce){ #titleGo{animation:none} }
+  @media (prefers-reduced-motion:reduce){
+    #titleGo,.tMain,.tSub::before,.tSub::after{animation:none} }
   @media (max-height:620px){ .tMain{font-size:calc(30px * var(--fs))}
     .tLat{margin-bottom:16px} .tOrn{margin:8px 0 6px} #titleGo{height:46px} }
 
@@ -12556,21 +12578,27 @@ function titleCastle(g, cx, base, w, t){
   g.lineCap = 'butt';
 }
 
-/* わたあめの くも。手まえほど こく、おくほど うすく */
+/* わたあめの くも。**べた塗りの まるを ならべない。**
+   1つ1つを ラジアルグラデにして ふちを ぼかすと、すきとおって 見える */
 function titleCloud(g, x, y, r, a){
   const TAU = 6.2832;
-  const puff = (dx, dy, rr) => { g.beginPath(); g.arc(x+dx, y+dy, rr, 0, TAU); g.fill(); };
+  const puff = (dx, dy, rr, tint) => {
+    const c = tint ? '255,224,240' : '255,255,255';
+    const gr = g.createRadialGradient(x+dx, y+dy-rr*0.22, rr*0.08, x+dx, y+dy, rr);
+    gr.addColorStop(0.00, 'rgba(' + c + ',.95)');
+    gr.addColorStop(0.58, 'rgba(' + c + ',.60)');
+    gr.addColorStop(1.00, 'rgba(' + c + ',0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x+dx, y+dy, rr, 0, TAU); g.fill();
+  };
   g.save(); g.globalAlpha = a;
-  g.fillStyle = 'rgba(255,255,255,.92)';
-  puff(-r*0.86, r*0.16, r*0.54); puff(r*0.88, r*0.20, r*0.46);
-  puff(-r*0.18, -r*0.26, r*0.80); puff(r*0.42, -r*0.04, r*0.60);
-  g.fillStyle = 'rgba(255,214,232,.42)';
-  puff(-r*0.24, r*0.34, r*0.46); puff(r*0.56, r*0.36, r*0.34);
+  puff(-r*0.86, r*0.16, r*0.70); puff(r*0.88, r*0.20, r*0.58);
+  puff(-r*0.18, -r*0.26, r*0.98); puff(r*0.42, -r*0.04, r*0.76);
+  puff(-r*0.24, r*0.36, r*0.58, 1); puff(r*0.56, r*0.36, r*0.46, 1);
   g.restore();
 }
 
 /* おか。ふもとを 少し うすくして 空気えんきん法（おくほど かすむ）を 出す */
-function titleHill(g, top, H, W, col, k, fade){
+function titleHill(g, top, H, W, col, k, fade, al){
   const path = () => {
     g.beginPath(); g.moveTo(-2, top + H*k*0.5);
     g.bezierCurveTo(W*0.22, top - H*k, W*0.52, top + H*k*0.9, W*0.74, top - H*k*0.25);
@@ -12578,8 +12606,10 @@ function titleHill(g, top, H, W, col, k, fade){
   };
   const gr = g.createLinearGradient(0, top - H*k, 0, top + H*0.34);
   gr.addColorStop(0, col); gr.addColorStop(1, fade || col);
+  g.save(); g.globalAlpha = al == null ? 1 : al;   // すかすと 空の 色が すけて 見える
   g.fillStyle = gr;
   path(); g.lineTo(W+2, H+2); g.lineTo(-2, H+2); g.closePath(); g.fill();
+  g.restore();
   /* てっぺんの あかるい ふち。これが ないと 色の おびが ならんだだけに 見える */
   g.strokeStyle = 'rgba(255,255,255,.42)'; g.lineWidth = 1.6;
   path(); g.stroke();
@@ -12725,22 +12755,33 @@ function paintTitle(t){
     /* 内がわの もう1本。二重にじで 色数が ふえて にぎやかに なる */
     bow(bcx, bcy, brd - bwd*8.4, bwd*0.52, 0.30, Math.PI*1.06, Math.PI*1.94);
 
-    /* --- にじの 上の キラキラ。見本の「星が ちりばめられた にじ」 --- */
-    for (let i=0;i<16;i++){
-      const ang = Math.PI*1.03 + (i/15)*Math.PI*0.94;
-      const rr2 = brd - bwd*(0.6 + (i*2.7 % 5.4));
+    /* --- にじの キラキラ。見本のように **こまかい 粉**を たくさん。
+       大きな 星を 数こ 置くより、小さな つぶを 150こ ちらすほうが
+       「すきとおった きらめき」に なります --- */
+    for (let i=0;i<150;i++){
+      const ang = Math.PI*1.01 + tRnd(i)*Math.PI*0.98;
+      const rr2 = brd - bwd*(tRnd(i+700)*6.3);        // 帯の 中に おさめる
       const px2 = bcx + Math.cos(ang)*rr2, py2 = bcy + Math.sin(ang)*rr2;
-      g.globalAlpha = 0.40 + 0.45*Math.abs(Math.sin(t*1.3 + i*1.9));
-      sparkle(px2, py2, W*(0.006 + (i%3)*0.004), t*0.4 + i, '#ffffff');
+      g.globalAlpha = (0.18 + 0.72*Math.abs(Math.sin(t*1.9 + i*2.3))) * 0.85;
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(px2, py2, W*(0.0016 + 0.0024*tRnd(i+1400)), 0, TAU); g.fill();
+    }
+    /* 大きめの 星も すこしだけ。粉だけだと のっぺりする */
+    for (let i=0;i<10;i++){
+      const ang = Math.PI*1.05 + (i/9)*Math.PI*0.90;
+      const rr2 = brd - bwd*(0.8 + (i*2.7 % 5.0));
+      g.globalAlpha = 0.35 + 0.50*Math.abs(Math.sin(t*1.3 + i*1.9));
+      sparkle(bcx + Math.cos(ang)*rr2, bcy + Math.sin(ang)*rr2,
+              W*(0.005 + (i%3)*0.0035), t*0.4 + i, '#ffffff');
     }
     g.globalAlpha = 1;
 
     /* --- ちいさな 星。うえの ほうだけ --- */
-    for (let i=0;i<22;i++){
-      const x = ((i*0.1732 + 0.03) % 1) * W, y = ((i*0.2911 + 0.02) % 1) * H*0.40;
-      g.globalAlpha = 0.24 + 0.34*Math.abs(Math.sin(t*0.8 + i*1.7));
+    for (let i=0;i<70;i++){
+      const x = tRnd(i+50)*W, y = tRnd(i+900)*hz*0.98;
+      g.globalAlpha = 0.16 + 0.44*Math.abs(Math.sin(t*0.9 + i*1.7));
       g.fillStyle = '#ffffff';
-      g.beginPath(); g.arc(x, y, 1.1 + (i%3)*0.6, 0, TAU); g.fill();
+      g.beginPath(); g.arc(x, y, 0.8 + tRnd(i+1900)*1.5, 0, TAU); g.fill();
     }
     g.globalAlpha = 1;
 
@@ -12758,7 +12799,7 @@ function paintTitle(t){
     g.restore();
 
     /* --- くも。ゆっくり ながれる --- */
-    const CL = [[0.18,0.115,0.072,0.80],[0.74,0.062,0.052,0.62],[0.46,0.205,0.040,0.42]];
+    const CL = [[0.18,0.115,0.076,0.72],[0.74,0.062,0.056,0.54],[0.46,0.205,0.042,0.38]];
     CL.forEach(([bx, by, br, a], i) => {
       const x = (((bx + t*(0.0055 + i*0.0014)) % 1.36) - 0.18) * W;
       titleCloud(g, x, H*by + Math.sin(t*0.45 + i)*3, W*br, a);
@@ -12767,7 +12808,7 @@ function paintTitle(t){
     /* --- ちへいせんの くも。城が 雲の 上に うかんで 見える --- */
     for (let i=0;i<7;i++){
       const x = W*(-0.06 + i*0.19) + Math.sin(t*0.20 + i)*W*0.006;
-      titleCloud(g, x, hz - H*0.028 + ((i*37)%11)*H*0.004, W*(0.086 + (i%3)*0.020), 0.72);
+      titleCloud(g, x, hz - H*0.028 + ((i*37)%11)*H*0.004, W*(0.090 + (i%3)*0.022), 0.60);
     }
 
     /* --- おくの おか。おくほど うすく（空気えんきん法）--- */
@@ -12778,10 +12819,10 @@ function paintTitle(t){
     titleCastle(g, W*0.600, hz + H*0.014, Math.min(W*0.50, H*0.240), t);
 
     /* --- 手まえの おか --- */
-    titleHill(g, hz + H*0.058, H, W, '#f0bdd4', 0.024, '#e9abc8');
+    titleHill(g, hz + H*0.058, H, W, '#f0bdd4', 0.024, '#e9abc8', 0.93);
     /* 草原は ユニコーンの 足もとから 下だけ。上まで みどりに すると
        絵の 半分が みどりに なって パステルの 空から 浮きます */
-    titleHill(g, meadow, H, W, '#bfe3ce', 0.018, '#cbeada');
+    titleHill(g, meadow, H, W, '#bfe3ce', 0.018, '#cbeada', 0.93);
 
     /* --- クッキーの道。左下から 城の 足もとへ ゆるく S字 ---
        城の 足もとまで 引かない。入り口が かくれて 城に 見えなくなる */
@@ -12818,10 +12859,20 @@ function paintTitle(t){
 
     /* --- じめんにも 空と おなじ 色を のせる。
        下だけ くすむと「絵が 2まいに 分かれている」ように 見える --- */
-    g.save(); g.beginPath(); g.rect(0, hz - H*0.03, W, H); g.clip();
-    blob(W*0.10, hz + H*0.08, W*0.62, '150,232,255', 0.30);
-    blob(W*0.94, hz + H*0.14, W*0.64, '255,240,178', 0.24);
-    blob(W*0.52, hz + H*0.32, W*0.75, '255,178,220', 0.26);
+    g.save(); g.beginPath(); g.rect(0, hz + H*0.024, W, H); g.clip();
+    blob(W*0.10, hz + H*0.08, W*0.62, '150,232,255', 0.34);
+    blob(W*0.94, hz + H*0.14, W*0.64, '255,240,178', 0.28);
+    blob(W*0.52, hz + H*0.32, W*0.75, '255,178,220', 0.30);
+    g.restore();
+    /* ななめの ひかり。じめんが つやのある ガラスのように 見える。
+       **城より 下にだけ かけること。**ちへいせんから かけると
+       城の 足もとまで 白く とんで、5本の とうが 消えます */
+    g.save(); g.beginPath(); g.rect(0, hz + H*0.045, W, H); g.clip();
+    const sn = g.createLinearGradient(0, hz, W*0.95, H);
+    sn.addColorStop(0.00, 'rgba(255,255,255,0)');
+    sn.addColorStop(0.42, 'rgba(255,255,255,.15)');
+    sn.addColorStop(1.00, 'rgba(255,255,255,0)');
+    g.fillStyle = sn; g.fillRect(0, hz, W, H);
     g.restore();
 
     /* --- 草原。ユニコーンの 足もとから 下だけ。道の 上には 生やさない --- */
@@ -12870,18 +12921,26 @@ function paintTitle(t){
       const br = W*(0.014 + (i%5)*0.012);
       const c = boke[i%5];
       const gr = g.createRadialGradient(bx, by, 0, bx, by, br);
-      gr.addColorStop(0.00, 'rgba(' + c + ',.34)');
-      gr.addColorStop(0.55, 'rgba(' + c + ',.18)');
+      gr.addColorStop(0.00, 'rgba(' + c + ',.24)');
+      gr.addColorStop(0.66, 'rgba(' + c + ',.16)');
+      gr.addColorStop(0.90, 'rgba(' + c + ',.36)');   // ふちが 明るい＝玉ボケ らしさ
       gr.addColorStop(1.00, 'rgba(' + c + ',0)');
       g.fillStyle = gr; g.beginPath(); g.arc(bx, by, br, 0, TAU); g.fill();
     }
 
     /* --- キラキラ。数を へらして 小さく。多すぎると にぎやかになりすぎる --- */
-    for (let i=0;i<11;i++){
+    for (let i=0;i<17;i++){
       const px = ((i*0.1873 + 0.04 + t*0.008*(1 + i%3)) % 1.1 - 0.05) * W;
-      const py = ((i*0.2437 + 0.05) % 1) * hz;
-      g.globalAlpha = 0.28 + 0.34*Math.abs(Math.sin(t*1.5 + i));
-      sparkle(px, py, W*(0.005 + (i%3)*0.0028), t*0.5 + i, i%2 ? '#ffffff' : '#fff2c8');
+      const py = ((i*0.2437 + 0.05) % 1) * H*0.96;     // じめんにも ちらす
+      g.globalAlpha = 0.26 + 0.36*Math.abs(Math.sin(t*1.5 + i));
+      sparkle(px, py, W*(0.0045 + (i%3)*0.0028), t*0.5 + i, i%2 ? '#ffffff' : '#fff2c8');
+    }
+    /* こまかい 粉。じめんの ほうにも すこし */
+    for (let i=0;i<46;i++){
+      const px = tRnd(i+2600)*W, py = hz*0.9 + tRnd(i+3300)*H*0.30;
+      g.globalAlpha = 0.12 + 0.42*Math.abs(Math.sin(t*1.6 + i*2.1));
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(px, py, 0.8 + tRnd(i+4000)*1.4, 0, TAU); g.fill();
     }
     g.globalAlpha = 1;
 
