@@ -346,7 +346,7 @@
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
   #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #colTabs::-webkit-scrollbar{display:none}
-  .ctab{flex:0 0 auto;border:none;border-radius:11px;padding:7px 9px;font:inherit;font-size:calc(11px * var(--fs));color:var(--ink);
+  .ctab{flex:0 0 auto;border:none;border-radius:11px;padding:7px 7px;font:inherit;font-size:calc(11px * var(--fs));color:var(--ink);
     background:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap}
   .ctab.sel{background:linear-gradient(180deg,#ffb3dc,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
   #colDone{background:linear-gradient(90deg,#ffe9b8,#ffd9ec);border-radius:12px;padding:8px;
@@ -406,7 +406,13 @@
   #kingCap{text-align:center;font-size:calc(11px * var(--fs));opacity:.7;line-height:1.5}
 
   /* ---------- 合言葉・着せかえ ---------- */
-  #pwRow{text-align:center}
+  /* ショップ・今週のおだい・合言葉は 図鑑（👑）の 中に 入れてある。
+     ここは 盤面の 高さを 1pxも 取らないので、そのぶん マスが 大きい。
+     見出しの 🛍🏅 は **文字を つけない**こと。「🛍 ショップ」「🏅 今週のおだい」と
+     書くと 見出しが 374px 必要になり、393pxの iPhone（つかえるのは 357px）で
+     はみ出して ✕が 画面の 外に 出る。となりの 🏰🎀📤 と そろえて 絵文字だけにする。
+     合言葉は タブの ならび（横スクロールする）なので 文字を つけられる */
+  #colTabs .mini{flex:0 0 auto;padding:7px 7px;font-size:calc(11px * var(--fs))}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:14px;overflow-y:auto;z-index:5}
   #pwOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
@@ -444,7 +450,6 @@
   /* 下の3つは よこに ならぶので、せまい画面では 文字を 小さくせずに
      まわりの あきだけ つめる。文字を 小さくすると 読めなくなる */
   @media (max-width:370px){
-    #pwRow .mini{padding:7px 5px}
   }
 
   /* ---------- 画面ぜんたいにあふれる紙吹雪 ---------- */
@@ -474,12 +479,6 @@
     <div class="card stat" id="hpBox"><div class="k">ハート</div><div class="v"><span>💗</span><span id="vHp">20</span></div></div>
     <div class="card stat"><div class="k">おほしさま</div><div class="v"><span>⭐</span><span id="vSt">250</span></div></div>
     <div class="card stat"><div class="k">ウェーブ</div><div class="v"><span id="vWv">0</span></div><div class="sub" id="vBw"></div></div>
-  </div>
-
-  <div id="pwRow">
-    <button class="mini" id="btnShop">🛍 ショップ</button>
-    <button class="mini" id="btnWk">🏅 今週のおだい</button>
-    <button class="mini" id="btnPw"><span style="font-size:calc(17px * var(--fs));line-height:.7">🔑</span> 合言葉</button>
   </div>
 
   <div id="wrap">
@@ -515,6 +514,8 @@
     </div>
     <div id="colOv">
       <div id="colHead">
+        <button class="mini" id="btnShop" aria-label="ショップ" title="ショップ">🛍</button>
+        <button class="mini" id="btnWk" aria-label="今週のおだい" title="今週のおだい">🏅</button>
         <div id="colHeadSp"></div>
         <button class="mini" id="colKing">🏰</button>
         <button class="mini" id="colAv">🎀</button>
@@ -527,6 +528,7 @@
         <button class="ctab" data-t="lg">伝説</button>
         <button class="ctab" data-t="it">アイテム</button>
         <button class="ctab" data-t="fr">👭 友だち</button>
+        <button class="mini" id="btnPw" aria-label="合言葉">🔑 合言葉</button>
       </div>
       <div id="colStats"></div>
       <div id="colHint" style="display:none">📌 集めた仲間をタップすると ワザバーに貼ったり はがしたりできます（7こまで）</div>
@@ -11994,8 +11996,8 @@ function resize(){
         + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, shown - 1);
   if (infoWasOn){ infoEl.classList.add('on'); shopEl.style.display = 'none'; }
   // 起動直後は レイアウトが まだ なくて 0 になるので、そのときだけ 決めうち。
-  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 304 になった）
-  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 304);
+  // 下のUIを つめたら この数字も 直すこと（説明文を消して 382 → 267 になった）
+  const h = window.innerHeight - (used > 200 ? Math.ceil(used) : 267);
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
