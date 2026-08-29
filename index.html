@@ -753,6 +753,45 @@ const ENEMIES = {
   boss:    { name:'ケーキだいおう', hp:700, spd:0.50, gold:120, r:0.50, color:'#ffb36e', dark:'#dd8028' },
 };
 
+/* とつぜんの ウェーブ。1周（240）に 10こほど、むずかしい・やさしいが まざる。
+   ウェーブ番号から きめる（乱数だと セーブや ともだちとの 話が 合わなくなる）。
+   ステージクリア（%20=0）・ともだちバトル（%20=10）・はじめの14ウェーブは さける */
+const WAVE_MODS = [
+  { name:'⚡ とつげきラッシュ！', spd:1.35, count:1.5, col:'#e0a52e' },
+  { name:'🛡 がんこな大群！',     hp:1.9,              col:'#8f66d8' },
+  { name:'🌸 そよかぜタイム',     hp:0.5,   gold:1.6,  col:'#e05f9e' },
+];
+/* 1周に かならず 10こ。「周の 中で 何番目か」で 決めるので、
+   ハッシュの かたよりで 周ごとに 6こや 15こに なることがない
+   （番号だけで 決めていたら 周1が8こ、周3が15こに なった）。
+   ステージクリア（%20=0）・ともだちバトル（%20=10）・はじめの14は さける */
+const WMOD_N = 10;
+/* どの しゅるいに するかは 決めうちの ならび。ハッシュで えらんでいたら
+   周2が やさしい7・むずかしい3に なって、その周だけ 楽に なっていた。
+   1周は かならず むずかしい7（ラッシュ4・がんこ3）・やさしい3。
+   周ごとに ならびを 1つ ずらすので、おなじ ならびは くり返さない */
+const WMOD_PAT = [0, 1, 2, 0, 1, 0, 2, 1, 0, 2];
+function waveMod(n){
+  const i = ((n - 1) % LAP_WAVES) + 1;                  // 周の 中の いち（1〜240）
+  if (i < 15 || i % STAGE_WAVES === 0 || i % STAGE_WAVES === 10) return null;
+  const seed = lapOf(n) * 7919;
+  const rnd  = k => ((Math.imul(k ^ 0x9e3779, 2654435761) >>> 0) % 1000) / 1000;
+  /* 周の あたまで その周の 10こを 決める。おなじ周なら いつも おなじ
+     （セーブや ともだちと 話が 合わなくなるので 乱数は つかわない） */
+  const slot = Math.floor((i - 15) / ((LAP_WAVES - 14) / WMOD_N));   // 0〜9 の わく
+  if (slot < 0 || slot >= WMOD_N) return null;
+  const lo = 15 + Math.ceil(slot * (LAP_WAVES - 14) / WMOD_N);
+  const hi = 14 + Math.floor((slot + 1) * (LAP_WAVES - 14) / WMOD_N);
+  // わくの 中で 1つだけ えらぶ。ダメな いちに 当たったら 次へ ずらす
+  let pick = lo + Math.floor(rnd(seed + slot) * (hi - lo + 1));
+  for (let t = 0; t < hi - lo + 1; t++){
+    const j = lo + ((pick - lo + t) % (hi - lo + 1));
+    if (j % STAGE_WAVES !== 0 && j % STAGE_WAVES !== 10){ pick = j; break; }
+  }
+  if (i !== pick) return null;
+  return WAVE_MODS[WMOD_PAT[(slot + lapOf(n)) % WMOD_PAT.length]];
+}
+
 function waveList(n){
   const out = [];
   // 数はほどほどで打ち止めにして、後半はHP・敵の種類で手強くする
@@ -777,10 +816,15 @@ function waveList(n){
      HP    25をこえたら 1.020の 複利
      ⭐    30をこえたら 1.004の 複利（HPより ゆっくり ＝ じわじわ おいつかれる）
    数字を いじるときは かならず sim を かけなおすこと */
-const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.020, Math.max(0, n-25));
+/* 1周（LAP_WAVES）ごとの 段差。複利の 坂だけだと「スターを ならべておけば
+   自動で すすむ」時間が ながく つづくので、周の かわりめで がくんと 上げる。
+   この数字を さわったら かならず node tools/sim.mjs を かけ直すこと */
+const LAP_HP = 1.6;
+const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.020, Math.max(0, n-25))
+                   * Math.pow(LAP_HP, lapOf(n));
 const goldWave = n => Math.pow(1.004, Math.max(0, n-30));
 // （ベリーおうじが なかまだと さらに +10%）
-const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04) * goldWave(wave) * (hasCh('prince') ? 1.1 : 1) * (buffs.gold > 0 ? 2 : 1));
+const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04) * goldWave(wave) * (hasCh('prince') ? 1.1 : 1) * (buffs.gold > 0 ? 2 : 1) * (wmod && wmod.gold ? wmod.gold : 1));
 
 /* ==========================================================
    ステージ（20ウェーブクリアごとに景色が変わる）
@@ -2696,6 +2740,18 @@ function startWave(early){
   }
   bgmStart();          // 最初のウェーブからBGM開始（タップ後なので再生できる）
   spawnQ = waveList(wave).slice();
+  // とつぜんの ウェーブ。waveList そのものは いじらない（tools/sim.mjs が つかうため）
+  wmod = weekly ? null : waveMod(wave);
+  if (wmod){
+    if (wmod.count){
+      const base = spawnQ.slice(), add = Math.round(base.length * (wmod.count - 1));
+      for (let i = 0; i < add; i++) spawnQ.push(base[i % base.length]);
+    }
+    floatTx(COLS*CELL/2, CELL*3.0, wmod.name, wmod.col);
+    iflash = 0.7; iflashCol = hexRgb(wmod.col);
+    vib([25, 30, 25]);
+    beep(wmod.hp && wmod.hp < 1 ? 780 : 300, .16, 'triangle', .06);
+  }
   if (weekly){
     // おだいの ぶん。waveList そのものは いじらない（tools/sim.mjs が つかうため）
     if (weekly.many){
@@ -3050,7 +3106,7 @@ function update(dt){
       }
     }
     const mul = e.stun > 0 ? 0 : (e.slow > 0 ? (1 - e.slowAmt) : 1);
-    e.d += E.spd * CELL * mul * dt * (weekly && weekly.spd ? weekly.spd : 1);
+    e.d += E.spd * CELL * mul * dt * (weekly && weekly.spd ? weekly.spd : 1) * (wmod && wmod.spd ? wmod.spd : 1);
     e.wob += dt*9;
     if (e.d >= pathLen){
       enemies.splice(i,1);
@@ -3212,13 +3268,14 @@ function hitTarget(s, p){
 let spawnSeq = 0;                                     // ウェーブ内での 何ばんめか
 let friendWave = false;                               // いまが ともだちバトルか
 let legMissWave = -1;                                 // にじの子に にげられた ウェーブ（お知らせは 1回）
+let wmod = null;                                      // いまの「とつぜんの ウェーブ」（waveMod）
 const nameRects = [];                                 // ともだちの なまえを おいた ばしょ
 /* ともだちが いれば、ステージの まん中で「ともだちバトル」を ひらく。
    ステージクリアの ウェーブと ぶつからないように 10の ところに おく */
 const isFriendWave = n => avFriends.length > 0 && n >= 10 && n % STAGE_WAVES === 10;
 function spawnEnemy(k, d0){
   const E = ENEMIES[k];
-  const hp = E.hp * hpScale(wave) * (weekly && weekly.hp ? weekly.hp : 1);
+  const hp = E.hp * hpScale(wave) * (weekly && weekly.hp ? weekly.hp : 1) * (wmod && wmod.hp ? wmod.hp : 1);
   const i = spawnSeq++;
   // ともだちバトルでは 'golem'（おもい役）が ともだち本人になる
   const av = (friendWave && k === 'golem') ? avFriends[(i/3|0) % avFriends.length] : null;
@@ -11953,7 +12010,7 @@ window.__chk = {
   },
   drawAvatar, portraitShade,
   /* つりあいの 検査（tools/sim.mjs）用。数字を いじったら かならず かけなおす */
-  bal: { hpScale, goldWave, upMul, waveList, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10),
+  bal: { hpScale, goldWave, upMul, waveList, waveMod, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10),
          makeWay, wayMeasure, LAP_WAVES },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };

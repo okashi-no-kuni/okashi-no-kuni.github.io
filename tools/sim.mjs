@@ -47,7 +47,11 @@ const out = await p.evaluate(() => {
     }
     // この ウェーブを たおしきれるか
     const q = B.waveList(n);
-    const hp = q.reduce((s, k) => s + B.ENEMIES[k].hp, 0) * B.hpScale(n);
+    // とつぜんの ウェーブ（数と HPの 上げ下げ）も かべの ものさしに 入れる
+    const m = B.waveMod ? B.waveMod(n) : null;
+    const cnt = m && m.count ? m.count : 1;
+    const hpK = m && m.hp ? m.hp : 1;
+    const hp = q.reduce((s, k) => s + B.ENEMIES[k].hp, 0) * cnt * hpK * B.hpScale(n);
     const walk = PATH / Math.min(...q.map(k => B.ENEMIES[k].spd));
     const dps = towers.reduce((s, lv) => s + dps1 * Math.pow(1.78, lv - 1), 0) * 0.6;
     if (hp > dps * walk * 0.55)
