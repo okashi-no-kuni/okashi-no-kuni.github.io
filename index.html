@@ -1347,35 +1347,24 @@ let iflash = 0, iflashCol = '255,255,255', iSweep = 0;
 let vibOn = true;
 try{ vibOn = localStorage.getItem('sweetTD.vib') !== 'off'; }catch(e){}
 function setVib(on){ vibOn = on; try{ localStorage.setItem('sweetTD.vib', on ? 'on' : 'off'); }catch(e){} }
-/* iPhone の Safari には **ふるえの API が ない**（navigator.vibrate が 無い）。
-   Android は これで ふるえる。iPhone は アプリに つつめば 本物の
-   ハプティクスが つかえるので、そのときに ここを さしかえる。
+/* ふるえ。pat は [鳴る, 休む, 鳴る, …] の ミリびょうの ならび。
 
-   それまでの あいだの 代わり：iOS 17.4 から、スイッチ型の チェックボックス
-   （<input type="checkbox" switch>）を 切りかえると OSが 小さく ふるえる。
-   **Apple が 決めた 正しい つかい方では ない**ので、効かない 端末も ある。
-   効かなければ なにも おきないだけ（例外に しない）*/
-let hapEl = null;
-function hapticTick(){
-  try{
-    if (!hapEl){
-      hapEl = document.createElement('input');
-      hapEl.type = 'checkbox';
-      hapEl.setAttribute('switch', '');       // iOS 17.4+ の スイッチ表示
-      hapEl.setAttribute('aria-hidden', 'true');
-      hapEl.tabIndex = -1;
-      // 見えない けれど「ある」状態に する（display:none だと 効かない）
-      hapEl.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;' +
-                            'opacity:0;margin:0;padding:0;border:0;appearance:none';
-      document.body.append(hapEl);
-    }
-    hapEl.click();                            // きりかえた しゅんかんに ふるえる
-  }catch(e){}
-}
+   **iPhone では 鳴りません。**iOS の Safari にも WKWebView にも
+   Vibration API（navigator.vibrate）が 無いためです。Android は 鳴ります。
+
+   iOS 17.4 の スイッチ型チェックボックスを 切りかえる 手も ためしましたが、
+   **実機で なにも おきなかった**ので 外しました。効かないコードを のこすと、
+   つぎに さわる人が「動くはず」と 勘ちがいします。
+
+   ちゃんと 鳴らすには **ネイティブの 橋わたし**が いります。アプリに
+   つつむだけでは 足りません（中みは 同じ WKWebView なので）。
+   iOS なら Core Haptics（CHHapticPattern）が この ミリびょうの ならびを
+   そのまま 鳴らせます。UIFeedbackGenerator は 単発の トンッ だけなので、
+   せっかくの リズムが つぶれます。
+   **さしかえるのは この関数 1つだけ。**ゲーム側は 1行も さわりません */
 function vib(pat){
-  if (!vibOn) return;
-  if (navigator.vibrate){ try{ navigator.vibrate(pat); }catch(e){} return; }
-  hapticTick();                               // iPhone むけの 代わり
+  if (!vibOn || !navigator.vibrate) return;
+  try{ navigator.vibrate(pat); }catch(e){}
 }
 let paraders = [];            // 応援パレード中のなかま
 let phoenixUsed = false;      // ふしちょうのごかご（1プレイ1回）
@@ -9441,9 +9430,8 @@ function buildHelp(){
     '<div style="display:flex;gap:8px;justify-content:center;margin-top:6px">' +
     '<button class="mini" id="vibBtn"></button></div>' +
     '<p style="opacity:.7;margin-top:5px">Android は ふるえます。' +
-    '<b>iPhone の Safari には ふるえの しくみが ありません</b>ので、' +
-    'iOS 17.4 以降でだけ 小さく コツンと 鳴る かもしれません。' +
-    'なにも おきなくても こわれては いません（音は 鳴ります）。</p></div>';
+    '<b>iPhone は ふるえません</b>（iOS に その しくみが ないためです）。' +
+    'こわれては いません ——音は ちゃんと 鳴ります。</p></div>';
   h += '<div class="hSec"><h3>🏆 強くなるコツ</h3><ul>' +
     '<li>早よびボーナスで⭐を稼いで、どんどん強化する</li>' +
     '<li>ワザは<b>ここぞ</b>で使う。ボス・ラッシュ・ハートのピンチに</li>' +
