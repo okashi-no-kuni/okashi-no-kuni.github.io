@@ -335,20 +335,27 @@
   /* 見出しは ボタンだけ。左の あきで 右に よせる */
   #colHeadSp{flex:1;min-width:0}
   #colCount{font-size:calc(12px * var(--fs));opacity:.8}
-  /* 見出しの ボタンは 幅を つめる。ここは 7つ ならぶので いちばん きつい。
+  /* 見出しの ボタンは たかさを そろえる（ショップ・おだい・合言葉・✕）。
      実機（iPhoneの 丸ゴシック）は Linux より 広いので、余白を 作っておくこと */
-  #colHead .mini{padding:8px 6px;font-size:calc(11px * var(--fs));flex:0 0 auto}
+  #colHead .mini{padding:0 8px;height:34px;font-size:calc(11px * var(--fs));flex:0 0 auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:2px;line-height:1}
+  /* ✕ だけ 細い字なので、となりの 絵文字と おなじ 大きさに 見えるよう 少し 大きく */
+  #colClose{font-size:calc(15px * var(--fs))}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
   @media (max-width:359px){
     #colTtl{font-size:calc(12px * var(--fs))}
-    #colHead .mini{padding:7px 5px}
+    #colHead .mini{padding:0 5px;height:32px}
   }
   /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
   /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
   #colTabs{display:flex;gap:5px;flex:0 0 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #colTabs::-webkit-scrollbar{display:none}
-  .ctab{flex:0 0 auto;border:none;border-radius:11px;padding:7px 7px;font:inherit;font-size:calc(11px * var(--fs));color:var(--ink);
-    background:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap}
+  /* タブの行は 仲間〜📤 まで ぜんぶ おなじ たかさ・おなじ 角丸に そろえる */
+  #colTabs > *{height:32px;border-radius:11px;flex:0 0 auto;
+    display:inline-flex;align-items:center;justify-content:center;line-height:1;
+    font-size:calc(11px * var(--fs));white-space:nowrap}
+  .ctab{border:none;padding:0 6px;font:inherit;font-size:calc(11px * var(--fs));color:var(--ink);
+    background:rgba(255,255,255,.65);cursor:pointer}
   .ctab.sel{background:linear-gradient(180deg,#ffb3dc,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
   #colDone{background:linear-gradient(90deg,#ffe9b8,#ffd9ec);border-radius:12px;padding:8px;
     text-align:center;font-size:calc(12.5px * var(--fs))}
@@ -414,7 +421,7 @@
      iPhoneの 丸ゴシックより せまく、393pxでは 余裕が 25pxしか ない。
      はみ出すと ✕が 画面の 外に 出て「戻れない」に なる */
   .pwTx{margin-left:3px}
-  #colTabs .mini{flex:0 0 auto;padding:7px 7px;font-size:calc(11px * var(--fs))}
+  #colTabs .mini{padding:0 7px;font-size:calc(13px * var(--fs))}
   #pwOv{position:absolute;inset:0;display:none;flex-direction:column;gap:10px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:14px;overflow-y:auto;z-index:5}
   #pwOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
@@ -518,10 +525,8 @@
       <div id="colHead">
         <button class="mini" id="btnShop" aria-label="ショップ">🛍<span class="pwTx">ショップ</span></button>
         <button class="mini" id="btnWk" aria-label="今週のおだい">🏅<span class="pwTx"><span class="wkLong">今週の</span>おだい</span></button>
+        <button class="mini" id="btnPw" aria-label="合言葉"></button>
         <div id="colHeadSp"></div>
-        <button class="mini" id="colKing">🏰</button>
-        <button class="mini" id="colAv">🎀</button>
-        <button class="mini" id="colShare">📤</button>
         <button class="mini gray" id="colClose" aria-label="閉じる">✕</button>
       </div>
       <div id="colTabs">
@@ -529,8 +534,9 @@
         <button class="ctab" data-t="en">敵</button>
         <button class="ctab" data-t="lg">伝説</button>
         <button class="ctab" data-t="it">アイテム</button>
-        <button class="ctab" data-t="fr">👭 友だち</button>
-        <button class="mini" id="btnPw" aria-label="合言葉">🔑 合言葉</button>
+        <button class="ctab" data-t="fr">友だち</button>
+        <button class="mini" id="colAv" aria-label="アバター">🎀</button>
+        <button class="mini" id="colShare" aria-label="記録をシェア">📤</button>
       </div>
       <div id="colStats"></div>
       <div id="colHint" style="display:none">📌 集めた仲間をタップすると ワザバーに貼ったり はがしたりできます（7こまで）</div>
@@ -7894,10 +7900,12 @@ btnCol.onclick = () => togglePanel('colOv', () => { buildColGrid(); fitHead(); }
 $('colClose').onclick  = () => { $('colOv').classList.remove('on');  syncNav(); beep(520,.07,'triangle',.03); };
 $('helpClose').onclick = () => { $('helpOv').classList.remove('on'); syncNav(); beep(520,.07,'triangle',.03); };
 $('colAv').onclick = () => openAvatar('colOv');
-for (const b of colTabsEl.children){
+/* ここは **`.ctab` だけ**にすること。`children` を まわすと、
+   おなじ行に ならべた 🎀📤 の はたらきまで 上書きしてしまう */
+for (const b of colTabsEl.querySelectorAll('.ctab')){
   b.onclick = () => {
     colTab = b.dataset.t;
-    for (const x of colTabsEl.children) x.classList.toggle('sel', x === b);
+    for (const x of colTabsEl.querySelectorAll('.ctab')) x.classList.toggle('sel', x === b);
     buildColGrid();
     beep(660,.06,'triangle',.03);
   };
@@ -9241,7 +9249,8 @@ btnSnd.innerHTML = noteSvg(25, ICO_BTN);
 /* 文の中にならべる絵。まわりの行の高さを のばさないよう マイナスの余白つき */
 const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
 const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
-$('btnPw').innerHTML = keySvg(23, INLINE) + ' 合言葉';   // 3つ ならぶので みじかく
+// 見出しに 3つ ならぶので、名前は .pwTx（fitHead が はばに あわせて 出し引きする）
+$('btnPw').innerHTML = keySvg(19, INLINE) + '<span class="pwTx">合言葉</span>';
 
 /* ==========================================================
    遊びかたガイド（本のボタン）
@@ -10246,7 +10255,7 @@ function showComplete(){
   const d = document.createElement('div');
   d.innerHTML = '図鑑の <b>全員</b>が あつまって、<br><b>おかしの国が ほんとうに完成</b>しました！<br>' +
     'タワーのようせいも、敵だったみんなも、いまでは おまつりの仲間🎉<br>' +
-    '<span style="opacity:.7">🏰ボタンから いつでも見られます</span>';
+    '<span style="opacity:.7">ここから ひとめ 見ていってね</span>';
   ovB.append(d);
   ovAlt.style.display = 'none';
   ovBtn.textContent = '国を見る 🏰';
@@ -10257,8 +10266,10 @@ function showComplete(){
   parade();
 }
 
+/* おかしの国（🏰）の 入り口は 図鑑から はずした。キャラが ふえて
+   1枚の絵に 収まらなくなったため。画面じたいは のこしてあり、
+   ずかん完成の お祝いからだけ 見られる */
 let kingFrom = '';    // おかしの国を どこから ひらいたか
-$('colKing').onclick = () => { kingFrom = 'colOv'; openPanel('kingOv', buildKingdom); };
 $('kingClose').onclick = () => kingFrom ? openPanel(kingFrom) : closePanels();
 $('kingShare').onclick = async () => {
   // おかしの国の一枚絵をそのままシェア
