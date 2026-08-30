@@ -9414,11 +9414,15 @@ function passDaily(){
   return '<br>🎫 パスポート：かけら <b>+' + PASS_SHARDS + '</b>／💗が満タンに！' +
          '<span style="opacity:.7">（のこり' + passLeft() + '日）</span>';
 }
+/* きょう はじめての 起動なら プレゼントを わたす。
+   **よぶのは 表紙を とじた あと**（afterTitle）。起動と 同時に 出すと、
+   紙ふぶきも 音も 表紙の うしろで 終わってしまい、だれも 見られません。
+   出したら true を かえす（うしろに あった 画面を もどすため） */
 function checkLogin(){
   const today = dateStr();
   let lg = { last:'', streak:0 };
   try{ lg = JSON.parse(localStorage.getItem('sweetTD.login') || '{"last":"","streak":0}'); }catch(e){}
-  if (lg.last === today) return;
+  if (lg.last === today) return false;
   const y = new Date(); y.setDate(y.getDate() - 1);
   const yest = y.getFullYear() + '/' + String(y.getMonth()+1).padStart(2,'0') + '/' + String(y.getDate()).padStart(2,'0');
   const day = (lg.last === yest) ? (lg.streak % 7) + 1 : 1;   // 途切れたら1日目から
@@ -9441,6 +9445,7 @@ function checkLogin(){
     (day === 6 ? '<br><span style="opacity:.7">あしたは 伝説の仲間が…！？</span>' : '');
   ovShare.style.display = 'none';
   ovAlt.style.display = 'none';
+  ovBtn.disabled = false;   // 💗まちの 画面から 来ると 押せなく なっている
   ovBtn.textContent = '受け取る ✨';
   ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); };
   ov.classList.add('on');
@@ -9449,6 +9454,7 @@ function checkLogin(){
   else celebrate({ conf: 24 + day*6 });
   beep(700,.12,'triangle',.05);
   setTimeout(()=>beep(930,.15,'triangle',.05),130);
+  return true;
 }
 
 /* ==========================================================
@@ -12625,13 +12631,25 @@ function openTitle(){
   titleExit = 0; titleOv.classList.remove('out');
   /* ?dbg=1 は 検査どうぐの 入り口。表紙は 画面ぜんぶを おおうので、
      出したままだと tools/check-path.mjs が 盤面を さわれません */
-  if (location.search.includes('dbg=1')) return;
+  if (location.search.includes('dbg=1')){ afterTitle(); return; }
   titleOv.classList.add('on');
 }
 function closeTitle(){
   titleOv.classList.remove('on');
   titleOv.classList.remove('out');
   resize();      // セーフエリアが 出そろってから もう一度 はかる
+  afterTitle();  // 「はじめる」の つぎは 今日のプレゼント
+}
+/* 表紙の つぎに 出す もの。
+   **💗の 回復まちの 画面が 先に 出ている ことが あります。**その画面は
+   ボタンを 1秒ごとに 書きかえる（armLifeButton）ので、止めてから
+   プレゼントを 出し、受け取った あとに もどします
+   ——もどさないと「最初からやり直す」も「続きから」も 押せなくなります */
+function afterTitle(){
+  const rest = ov.classList.contains('on');
+  if (rest && lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
+  if (!checkLogin()){ if (rest) armLifeButton(true); return; }
+  if (rest) ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); checkLife(); };
 }
 $('titleGo').onclick = () => {
   if (titleExit) return;                 // 2度おしで 演出が 重ならないように
@@ -12657,8 +12675,8 @@ resize();
 giveStarters();   // はじめての人に ★1の なかまを 5人
 avFromLink();     // ともだちの リンクで ひらいたなら、その人を むかえる
 tryResume();      // とちゅうのセーブがあれば、そのウェーブから再開
-checkLogin();     // きょうはじめての起動ならプレゼントを渡す
 checkLife();      // 💗の回復まちの途中なら、その画面にもどす
+                  // ※ 今日のプレゼント（checkLogin）は 表紙を とじた あと
 hintGuide();      // はじめての人には 📕 を 光らせて ガイドの ありかを 教える
 openTitle();      // 表紙（本でいう 表紙）から はじまる
 
