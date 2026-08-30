@@ -200,6 +200,235 @@
   .btn:disabled{opacity:.45}
 
   /* ---------- overlay ---------- */
+  /* ---------- 表紙（タイトル） ----------
+     1まいの 完成した 絵（art/title/title_main.webp・1024x1536）を
+     そのまま 見せます。空・にじ・城・なかま・題字・「はじめる」まで
+     ぜんぶ 絵の中に 入っているので、**コードでは 何も えがきなおしません**
+     （canvas も つかいません）。
+
+     いちばん 大事な きまりは **切らないこと**。
+     object-fit:cover で 画面いっぱいに すると にじの 左右と
+     ユニコーンが 外に 出ます。「cover して 切る」ではなく
+     「contain して 全部 見せる」。 */
+  #titleOv{position:fixed;inset:0;z-index:40;display:none;
+    width:100vw;height:100vh;height:100dvh;
+    overflow:hidden;box-sizing:border-box;
+    /* 下は セーフエリア。ホームバーの ない 端末でも 10px は あける
+       ——絵の 中の ボタンの 下は 3%（320px幅で 15px）しか ないため */
+    --padT:env(safe-area-inset-top);
+    --padB:max(10px, env(safe-area-inset-bottom));
+    padding:var(--padT) 0 var(--padB) 0;
+    /* 絵より 画面が たて長。あまった ところを 黒や 白で うめない */
+    background:linear-gradient(to bottom,#cfe7fa 0%,#eee0f4 45%,#f4d8e7 100%);
+    align-items:flex-start;justify-content:center}
+  #titleOv.on{display:flex;animation:tFade .45s ease}
+  @keyframes tFade{from{opacity:0}to{opacity:1}}
+  /* うしろに おなじ絵を もう1まい。ぼかして うすく 敷くだけで、
+     あまった 空が 絵と おなじ 色あいに なります。**こちらは 切れてよい** */
+  #titleBg{position:absolute;inset:-30px;
+    width:calc(100% + 60px);height:calc(100% + 60px);
+    object-fit:cover;filter:blur(30px);opacity:.40;transform:scale(1.06);
+    pointer-events:none;user-select:none}
+  /* 前がわの 絵。**ゆがめない・切らない。**
+     はばは 画面はば、たては その 1.5倍（1024:1536）。
+     画面が ひくいとき（よこ向きなど）だけ 高さ基準に なるよう、
+     min() で「画面はば」「430px」「使える高さ÷1.5」の いちばん 小さいのを とる。
+     --availH は dvh が つかえない ブラウザの ために vh も 書いておく */
+  #titleArt{position:relative;z-index:1;flex:0 0 auto;
+    --availH:calc(100vh - var(--padT) - var(--padB));
+    --availH:calc(100dvh - var(--padT) - var(--padB));
+    /* **100% では なく 100vw を つかうこと。**この 変数は width だけでなく
+       top / bottom / margin にも 入ります。% は width では「はば」・
+       top では「高さ」を 指すので、おなじ 変数が 場所によって
+       ちがう 値に なり、小さい 画面で ボタンが 画面の 外に 出ました。
+       #titleOv の 左右の padding は 0 なので 100vw と 100% は 同じです */
+    --artW:min(100vw, 430px, calc(var(--availH) / 1.5));
+    --artH:calc(var(--artW) * 1.5);
+    /* 絵の 下に のこる すき間（--titleUp の 反対がわ）*/
+    --gapB:max(0px, calc((var(--availH) - var(--artH)) * (1 - var(--titleUp))));
+    /* 「はじめる」を 置ける はんい：絵の y=1350 から 画面の 下まで。
+       1350 は 題字の かざりの しっぽ（y=1308 で 終わる）より 下 */
+    --slotTop:calc(var(--artH) * 0.87891);
+    --slotH:calc(var(--artH) - var(--slotTop) + var(--gapB));
+    /* 切りぬいた ボタンの わく（原画で x=248..800・y=1322..1524）。
+       左は 道（x<248）に、右は 草（x>820）に かからない はんい */
+    --btnW:calc(var(--artW) * 0.5390625);
+    --btnH:calc(var(--btnW) * 202 / 552);
+    /* **あまった たては 上下に わける。**下ぞろえに すると たて長の
+       iPhone では あまりが ぜんぶ 上へ 行き、空だけが 広くなって
+       城から 下が 画面の 下に かたまります。--titleUp が 上の 取り分 */
+    --titleUp:.40;
+    width:var(--artW);
+    margin-top:max(0px, calc((var(--availH) - var(--artW) * 1.5) * var(--titleUp)));
+    aspect-ratio:1024 / 1536}
+  /* 絵の 四すみは 角丸（半けい 22px）で、その外がわは **黒**。
+     そのまま 出すと すみに 黒い つめが 見えるので、切りぬきます。
+     **絵の 画素は 1つも さわっていません**（切りぬきは CSS がわ）。
+     半けいは 絵より すこし 大きい 32px ぶん（3.1% = 32/1024・
+     2.0667% = 32/1536）。ぴたり 22px に すると、ふちの
+     なめらか処理（アンチエイリアス）で 黒が 数px のこります
+     ——実測で 120画素 のこった。よぶんに 切っても 消えるのは 空だけ */
+  #titleArtIm{display:block;width:100%;height:100%;
+    border-radius:3.1% / 2.0667%;
+    /* **上と 下の はしだけ** すっと 消して、うしろの 空から そのまま
+       つながって 見えるように する（「カード」の ふちを 消す）。
+       **左右には かけないこと。**
+       上は 2%（y=31）——にじの てっぺんは y=210（13.7%）なので かからない。
+       下は 1.5%（y=1513 から）——「はじめる」の 下はしは y=1489 なので、
+       ボタンにも そのまわりの ピンクにも かからない（24px 下から 始まる）*/
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 2%,#000 98.5%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 2%,#000 98.5%,rgba(0,0,0,0) 100%);
+    pointer-events:none;user-select:none;-webkit-user-drag:none}
+  /* **絵の 上に、絵じしんの 空の色を つづける。**
+     これが 上ふちの 線を 消す かなめです。うしろの ぼかした 1まいは
+     絵と ちがう ところを 写しているので、絵の 上はしだけ うすくしても
+     「青い 空が いきなり 始まる」線が のこりました（実機の 見え方と同じ）。
+     絵の いちばん上（y=26..90）の 色を 列ごとに 平均して、その 横の
+     グラデを そのまま 上へ のばし、上へ 行くほど 消します。
+     **よこに 大きく ならしてから 拾うこと**（±110px）。生の 値を
+     つかうと、雲や キラキラの 明るい 点が **たての すじ**に なります
+     （実際に 60% あたりに 白い 帯が 出ました）。
+     色を 決めうちに するのは ここだけ ——絵を さしかえたら はかりなおすこと */
+  /* **絵の 下に もぐりこませる**こと（bottom:97%・z-index:-1）。
+     絵の 上はしで ぴたり 止めると、うすくした ところの うしろが
+     ぼかした1まいの ままに なり、そこだけ 明るい すじが 出ます
+     （実測で となりの行と 17も ちがった）*/
+  #titleArt::before{content:'';position:absolute;left:0;right:0;bottom:97%;height:30%;
+    z-index:-1;
+    background:linear-gradient(to right,
+      #bad6f1 0%,#bad7f2 12.5%,#c0d8f1 25%,#cadaed 37.5%,#d9dfea 50%,
+      #e1e0e5 62.5%,#dfd9dc 75%,#e1d9da 87.5%,#e2d9da 100%);
+    -webkit-mask-image:linear-gradient(to top,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to top,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
+  /* **絵の 下にも、絵じしんの じめんの 色を つづける。**上と 同じ 考えかた。
+     まん中の 色は、元ボタンを かくした あとの じめん（きれいな 右がわを
+     実測した もの）に そろえてある ——ボタンの かげを 拾うと こく なる。
+     **おなじ色の 止まりを 2つ ならべない こと**（左はしを #e8bfd1 で 平らに
+     したら、12.5% の ところで 傾きが 変わって たての すじに 見えた）*/
+  #titleArt::after{content:'';position:absolute;left:0;right:0;top:98.5%;height:30%;
+    z-index:-1;
+    background:linear-gradient(to right,
+      #e9bfd2 0%,#e8bfd1 12.5%,#e7bfd0 25%,#e6c0cf 37.5%,#e6c0cf 50%,
+      #e6c0cf 62.5%,#e6c0d0 75%,#e5bfd1 87.5%,#e4bfd1 100%);
+    -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to bottom,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
+
+  /* **左下の 道を、下へ 行くほど じめんに とかす。**
+     道は 絵の いちばん下まで つづいていて、周りの ピンクより
+     黄いろ寄り（道 #eecfd1 / じめん #e2bad0）なので、**たての ベージュの帯**に
+     見えます。上の 道は のこしたいので、消すのでは なく
+     **下へ 行くほど じめんの色を こく かぶせて**いきます。
+     色は その行の じめんの 実測値。右はしは 道が にげる 向きに 合わせて
+     よこにも 弱く ぼかし、たての 帯に 見えないように します。
+
+     **絵の 下まで のばすこと**（bottom:-28.5%）。うしろの ぼかした 1まいにも
+     道の ベージュが 写っているので、絵の 中だけ 直すと、絵の 下から また
+     ベージュの 帯が 出ます（実測で よこに 12 の さ）。下の 帯（::after）と
+     おなじ 消えかた（36%で 不とうめい → 41%から 0へ）に そろえます */
+  #titleRoad{position:absolute;left:0;right:74.0234%;top:83.9844%;bottom:-28.5%;
+    background:linear-gradient(to bottom,
+      rgba(227,191,212,0) 0%, rgba(226,186,208,.40) 21%, rgba(228,187,208,.68) 27%,
+      rgba(231,189,209,.92) 33%, rgba(232,191,209,1) 36%, rgba(232,191,209,1) 41%,
+      rgba(232,191,209,0) 100%);
+    -webkit-mask-image:linear-gradient(to right,#000 0,#000 72%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to right,#000 0,#000 72%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
+
+  /* **元の いちの ボタンを かくす。**絵の ファイルは さわりません。
+     おおうのは 原画の **x=246..804・y=1334..1536 だけ**。ここには
+     ボタンと ピンクの じめんしか ありません。だから
+     **道も 草も キラキラも のこります**（道の 右はしは y=1356 で x=243、
+     下へ 行くほど 左へ 行く。草は x>806）。
+
+     色は「ボタンの すぐ右の きれいな じめん」（x=764..792）を 行ごとに
+     実測した もの。**元ボタンの 下（y=1494..1512）から 拾っては いけません**
+     ——ボタンの かげが 入って こく なり、四角い 跡に なりました（実際に なった）。
+     ふちは 3方向とも やわらかく 消して、ほんものの じめんに とかします */
+  #titleHide{position:absolute;left:24.0234%;right:21.4844%;top:85.5469%;bottom:0;
+    -webkit-mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3.23%,#000 96.77%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3.23%,#000 96.77%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
+  /* **ボタンの ぼんやりした 光は y=1335 あたりから 始まります。**
+     おおいは そこまでに 完全に 不とうめいに する こと（上ふちは 1314 から
+     1336 で 消える）。ここが 足りないと、光の 頭だけが すけて
+     よこ一本の 線に 見えました（実測で となりの行と 8ちがった）*/
+  #titleHideIn{position:absolute;inset:0;
+    background:linear-gradient(to bottom,
+      #e5bbd5 0.9%,#e5bfd7 6.3%,#e5bfd7 11.7%,#e5bfd5 17.1%,#e5bfd4 22.5%,
+      #e4bfd3 27.9%,#e4bfd2 33.3%,#e3bed1 38.7%,#e3bdd0 44.1%,#e3bdd0 49.5%,
+      #e4bed0 55.0%,#e4bed0 60.4%,#e5bed0 65.8%,#e5bed0 71.2%,#e6bfd0 76.6%,
+      #e6c0d0 82.0%,#e6c0cf 87.4%,#e7c1cf 92.8%,#e7c1cf 98.2%);
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9.91%);
+            mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9.91%)}
+
+  /* **新しい いちの「はじめる」。**絵を 作りなおしては いません ——
+     おなじ title_main.webp を もう1まい 出して、ボタンの ところ
+     （原画 x=246..794・y=1322..1524）だけを 見せています。
+     倍率は 前がわの 絵と まったく 同じなので、画質は 1ミリも 落ちません。
+     ファイルも ふえません（同じ 絵を つかいまわす）。
+     いちは 「絵の y=1350 から 画面の 下まで」の すき間の 62% あたり。
+     画面が ひくい 端末では、おおった ところに かさなるだけで 収まります */
+  #titleStart{position:absolute;left:50%;transform:translateX(-50%);
+    width:var(--btnW);aspect-ratio:552 / 202;
+    /* すき間の 62% あたり。ただし 画面の 下から はみ出さない ように
+       とめる（よこ向きや 小さい 画面では すき間が ボタンより せまい）*/
+    top:min(calc(var(--slotTop) + (var(--slotH) - var(--btnH)) * .62),
+            calc(var(--artH) + var(--gapB) - var(--btnH) - 6px));
+    z-index:4}
+  /* ふちを やわらかく 消す。よこは 外がわの わく、たては 絵じしんに かける
+     （2まいに 分けるのは、mask-composite が まだ どこでも 使えないため）*/
+  /* **切りぬきの 下に、切りぬきと おなじ じめんの色の 台を 敷く。**
+     切りぬきの 地（#e3bdd2）は、ここの 背景より 8ほど こい ので、
+     台が ないと 四角い わくに 見えます。台は だ円で 大きく ぼかすので、
+     おなじ 8の ちがいでも 40pxかけて 変わり、目に 見えません。
+     ——**四角い ふちは 目立ち、ぼかした ふちは 目立たない。**
+     ちがいを 消すのでは なく「ゆっくり 変える」のが 直しかたです。
+
+     **radial-gradient で 作っては いけません。**大きさを 書かないと
+     いちばん遠い 角で 0に なる ので、よこの まん中の ふちでは まだ 61%
+     のこっていて、そこに **1pxの 段**が できました（実測 5.9）。
+     `filter:blur()` なら ふちが ガウスで なめらかに 消えます */
+  #titleStart::before{content:'';position:absolute;
+    left:-4%;right:-4%;top:-10%;bottom:-10%;
+    background:#e3bdd2;border-radius:40px;filter:blur(14px);
+    pointer-events:none}
+  /* よこの ふちを やわらかく 消す。カプセルは x=265..757 なので、
+     左は 3%（x=264.6）まで、右は 93%（x=761）から。字や 金の ふちには
+     かかりません */
+  #titleStartH{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+    -webkit-mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3%,#000 93%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3%,#000 93%,rgba(0,0,0,0) 100%)}
+  /* **たての ぼかしは 窓（#titleStartV）に かけること。**絵じしんに かけると
+     % が「絵の 高さ」に なるので、88% ＝ 絵の y=1352 から 消えはじめ、
+     カプセルが 65% の うすさで 出ていました（実測）*/
+  #titleStartV{position:absolute;inset:0;overflow:hidden;
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9%,#000 88%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9%,#000 88%,rgba(0,0,0,0) 100%)}
+  #titleStartIm{position:absolute;
+    width:185.5072%;height:760.396%;left:-44.9275%;top:-654.4554%;
+    pointer-events:none;user-select:none;-webkit-user-drag:none}
+  /* 当たり判定は 切りぬいた わくの 中。カプセルの いち（原画 x265 y1344
+     w493 h146）を、わく（x246 y1322 548x202）に 対する 百分率に した もの */
+  #titleGo{position:absolute;
+    left:3.0797%;top:10.8911%;width:89.3116%;height:72.2772%;
+    padding:0;margin:0;border:0;outline:0;background:transparent;
+    border-radius:999px;cursor:pointer;z-index:5;
+    -webkit-tap-highlight-color:transparent}
+  /* すきとおっているので、押した ことが わかるよう 白く さっと 光らせる */
+  #titleGo:active{background:rgba(255,255,255,.30)}
+  /* 読みあげ用にだけ のこす 題字（見た目は 絵がわ）*/
+  .tSr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  /* とじる 演出。すっと うすくして 国へ 入る */
+  #titleOv.out{opacity:0;transform:scale(1.03);
+    transition:opacity .34s ease,transform .46s cubic-bezier(.3,.9,.4,1)}
+  @media (prefers-reduced-motion:reduce){
+    #titleOv.on{animation:none}
+    #titleOv.out{transition:none} }
+
+
   #ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:6;
     gap:12px;border-radius:20px;background:rgba(255,240,250,.9);backdrop-filter:blur(5px);text-align:center;padding:22px}
   #ov.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
@@ -686,6 +915,33 @@
 </div>
 
 <div id="confetti"></div>
+
+<!-- 表紙（タイトル画面）。本でいう 表紙で、ゲームの 入り口。
+     #app の 外に 置く（position:fixed で 画面ぜんぶを おおうため）。
+     resize() は #app の 子しか 数えないので、盤面の 高さに ひびかない -->
+<div id="titleOv">
+  <!-- うしろ：おなじ絵を ぼかして 敷くだけ。あまった ところの 色あわせ用 -->
+  <img id="titleBg" src="art/title/title_main.webp" alt="" aria-hidden="true">
+  <!-- 前：1024x1536 の 原画を まるごと。ゆがめない・切らない -->
+  <div id="titleArt">
+    <img id="titleArtIm" src="art/title/title_main.webp"
+         width="1024" height="1536" alt="" draggable="false">
+    <h1 class="tSr">魔法の おかしの国</h1>
+    <!-- 左下へ のびる 道を、下へ 行くほど じめんの 色に とかす -->
+    <div id="titleRoad"></div>
+    <!-- 絵に 焼きこまれた「はじめる」を、まわりの じめんの 色で おおう -->
+    <div id="titleHide"><div id="titleHideIn"></div></div>
+    <!-- 同じ絵を もう1まい 出して、ボタンの ところだけ 見せる（切りぬき）。
+         見た目と 当たり判定を 1つの 親に 入れるので、いちを 変えても ずれない -->
+    <div id="titleStart">
+      <div id="titleStartH"><div id="titleStartV">
+        <img id="titleStartIm" src="art/title/title_main.webp" alt="" aria-hidden="true"
+             draggable="false">
+      </div></div>
+      <button id="titleGo" aria-label="はじめる"></button>
+    </div>
+  </div>
+</div>
 
 <script src="vendor/phaser.min.js"></script>
 <script>
@@ -9158,11 +9414,15 @@ function passDaily(){
   return '<br>🎫 パスポート：かけら <b>+' + PASS_SHARDS + '</b>／💗が満タンに！' +
          '<span style="opacity:.7">（のこり' + passLeft() + '日）</span>';
 }
+/* きょう はじめての 起動なら プレゼントを わたす。
+   **よぶのは 表紙を とじた あと**（afterTitle）。起動と 同時に 出すと、
+   紙ふぶきも 音も 表紙の うしろで 終わってしまい、だれも 見られません。
+   出したら true を かえす（うしろに あった 画面を もどすため） */
 function checkLogin(){
   const today = dateStr();
   let lg = { last:'', streak:0 };
   try{ lg = JSON.parse(localStorage.getItem('sweetTD.login') || '{"last":"","streak":0}'); }catch(e){}
-  if (lg.last === today) return;
+  if (lg.last === today) return false;
   const y = new Date(); y.setDate(y.getDate() - 1);
   const yest = y.getFullYear() + '/' + String(y.getMonth()+1).padStart(2,'0') + '/' + String(y.getDate()).padStart(2,'0');
   const day = (lg.last === yest) ? (lg.streak % 7) + 1 : 1;   // 途切れたら1日目から
@@ -9185,6 +9445,7 @@ function checkLogin(){
     (day === 6 ? '<br><span style="opacity:.7">あしたは 伝説の仲間が…！？</span>' : '');
   ovShare.style.display = 'none';
   ovAlt.style.display = 'none';
+  ovBtn.disabled = false;   // 💗まちの 画面から 来ると 押せなく なっている
   ovBtn.textContent = '受け取る ✨';
   ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); };
   ov.classList.add('on');
@@ -9193,6 +9454,7 @@ function checkLogin(){
   else celebrate({ conf: 24 + day*6 });
   beep(700,.12,'triangle',.05);
   setTimeout(()=>beep(930,.15,'triangle',.05),130);
+  return true;
 }
 
 /* ==========================================================
@@ -12219,7 +12481,10 @@ function resize(){
   const applyCell = () => {
     const W = COLS*CELL, H = ROWS*CELL;
     DPR = Math.min(window.devicePixelRatio||1, 2.5);
-    if (game){
+    /* Phaser の 立ちあがりは 非同期。`game` に 入っていても canvas は
+       まだ ないことが あり、その とちゅうで scale.resize を よぶと 落ちる
+       （表紙を とじた ときの resize で 実際に おきた）*/
+    if (game && game.isBooted && game.canvas){
       // 中みは こまかく（DPR倍）、見た目は CSSピクセルで
       game.scale.resize(W*DPR, H*DPR);
       game.canvas.style.width = W + 'px';
@@ -12341,6 +12606,67 @@ const BoardScene = {
 };
 
 /* ==========================================================
+   表紙（タイトル画面）
+   本でいう 表紙。「まほうの おかしの国」の 入り口。
+
+   **絵は 1まいの 完成した 画像**（art/title/title_main.webp・1024x1536）。
+   空・にじ・城・なかま・題字・「はじめる」まで ぜんぶ 絵の中に 入っているので、
+   ここでは 何ひとつ えがきなおしません。canvas も rAF も つかいません
+   ——毎フレーム えがく ものが 無くなったので、いちばん 軽い 表紙です。
+
+   大きさと いちは ぜんぶ CSS がわ（#titleArt の min() と #titleGo の 百分率）。
+   JS は **ひらく・とじる だけ**。
+
+   絵を さしかえるときの 手じゅん:
+     ① 原画を art/title/ に 置く（source も のこす）
+     ② 原画の たてよこ比を CSS の #titleArt の aspect-ratio と
+        min() の わりざん（いまは 1.5）に 書きうつす
+     ③ 「はじめる」の いちを 原画の 画素で はかり、
+        百分率に して #titleGo の left/top/width/height に 入れる
+   ========================================================== */
+const titleOv = $('titleOv');
+let titleExit = 0;                     // とじる 演出の 始まり（2度おしの よけ）
+
+function openTitle(){
+  titleExit = 0; titleOv.classList.remove('out');
+  /* ?dbg=1 は 検査どうぐの 入り口。表紙は 画面ぜんぶを おおうので、
+     出したままだと tools/check-path.mjs が 盤面を さわれません */
+  if (location.search.includes('dbg=1')){ afterTitle(); return; }
+  titleOv.classList.add('on');
+}
+function closeTitle(){
+  titleOv.classList.remove('on');
+  titleOv.classList.remove('out');
+  resize();      // セーフエリアが 出そろってから もう一度 はかる
+  afterTitle();  // 「はじめる」の つぎは 今日のプレゼント
+}
+/* 表紙の つぎに 出す もの。
+   **💗の 回復まちの 画面が 先に 出ている ことが あります。**その画面は
+   ボタンを 1秒ごとに 書きかえる（armLifeButton）ので、止めてから
+   プレゼントを 出し、受け取った あとに もどします
+   ——もどさないと「最初からやり直す」も「続きから」も 押せなくなります */
+function afterTitle(){
+  const rest = ov.classList.contains('on');
+  if (rest && lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
+  if (!checkLogin()){ if (rest) armLifeButton(true); return; }
+  if (rest) ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); checkLife(); };
+}
+$('titleGo').onclick = () => {
+  if (titleExit) return;                 // 2度おしで 演出が 重ならないように
+  /* ここが その回 はじめての タップ。
+     WebAudio は 手を ふれるまで 鳴らせないので、この音で ふうを ときます */
+  playSnd([[660,.10,'triangle',.05,1.5],[880,.14,'triangle',.05,1.6,90],
+           [1320,.22,'sine',.045,1.8,180]]);
+  vib([12, 40, 22]);
+  /* うごきを へらす せっていの人は 演出なしで すぐ とじる */
+  const slow = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (slow){ closeTitle(); return; }
+  titleExit = performance.now();
+  titleOv.classList.add('out');
+  setTimeout(closeTitle, 460);
+};
+
+/* ==========================================================
    ゲーム開始
    ========================================================== */
 reset();
@@ -12349,9 +12675,10 @@ resize();
 giveStarters();   // はじめての人に ★1の なかまを 5人
 avFromLink();     // ともだちの リンクで ひらいたなら、その人を むかえる
 tryResume();      // とちゅうのセーブがあれば、そのウェーブから再開
-checkLogin();     // きょうはじめての起動ならプレゼントを渡す
 checkLife();      // 💗の回復まちの途中なら、その画面にもどす
+                  // ※ 今日のプレゼント（checkLogin）は 表紙を とじた あと
 hintGuide();      // はじめての人には 📕 を 光らせて ガイドの ありかを 教える
+openTitle();      // 表紙（本でいう 表紙）から はじまる
 
 game = new Phaser.Game({
   type: Phaser.CANVAS,        // 絵は Canvas 2D で描くので いまは WebGL にしない
