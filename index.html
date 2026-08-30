@@ -13109,28 +13109,29 @@ function titleBakePoster(G, g){
   const { W, H } = G;
   const im = TITLE_ART.poster;
   const btn = $('titleGo');
-  /* --- 倍率 ---
-     はば に 合わせると、絵は 9:16・画面は もっと たて長なので
-     上に 150〜190px の すきまが 出ます。そこに 空を つぎたして
-     いましたが、**どう つないでも 継ぎ目が 見えました**（実機で 3回 報告）。
-     元絵の 平らな 空は 上から 40行ぶん しか なく、その先は もう にじ。
-     つぎたしを のばせば にじを 塗りつぶし、短くすれば 質感の 差が 出る。
+  /* --- 倍率。よこは 1pxも 切らない ---
+     絵は 9:16、画面は もっと たて長なので 上に 150〜190px の すきまが 出る。
+     そこを どう うめるかで 4回 失敗した。記録として のこす。
 
-     なので **画面を うめる 倍率まで 拡大して、すきま自体を なくします**。
-     よこは 1割ほど 切れますが、題字は 読めますし、絵も 大きく なります。
-     継ぎ目は「消す」のでは なく「作らない」のが 正しい直しかた。
+       ① 上端を たてに のばす      → 縦筋・光柱
+       ② 100px かぶせて 溶かす      → にじが 横じまに つぶれる
+       ③ 短く かぶせる              → 質感の さが 線に 見える
+       ④ 空を スライスして 伸ばす   → また 縦筋（伸ばせる 空が 足りない）
 
-     必要な 倍率は ボタンの いちから 逆算できます。
-       iy = H - PAD - s*(BTN.y + BTN.h)       ← これが 0 に なる s
-     PAD は ボタンの 下の 余白（CSS が セーフエリアこみで 決める）。
-     切れすぎないよう 上限を つけ、超える ときは すきまを のこして
-     下の つぎたしに まかせます */
-  const pad  = Math.max(0, H - btn.offsetTop - btn.offsetHeight);
-  const sFit = W / TITLE_IW;
-  const s    = Math.min(Math.max(sFit, (H - pad) / (TITLE_BTN.y + TITLE_BTN.h)),
-                        sFit * 1.34);
-  const iw = TITLE_IW * s, ih = TITLE_IH * s;
-  const ox = (W - iw) / 2;                 // よこは まん中ぞろえ
+     ④で 分かった のは、**この絵には 伸ばせる 空が ない**こと。
+     上から 7行目には もう きらめきと シャボン玉が あり（実測。上端の色から
+     ずれ48 に とどく のが 7行目）、必要な 追加は 369行ぶん。
+     何本に 分けても 平均 11倍の 引きのばしに なり、模様が 線に なる。
+
+     ①〜③に 共通する 本当の 原因は 色では なく **質感**だった。
+     空がわは なめらかな グラデ、元絵は きらめきが ぎっしり。
+     その「つるつる → ざらざら」の 変わり目が 線に 見えていた。
+     だから 色を どれだけ 合わせても 消えなかった。
+
+     いまの やりかたは **空がわにも 同じ 密度で きらめきと もやを 置く**。
+     伸ばさないので 縦筋は 出ず、質感が つながるので 変わり目も 出ない */
+  const s  = W / TITLE_IW;                 // よこ合わせ。**1pxも 切らない**
+  const iw = W, ih = TITLE_IH * s, ox = 0;
   /* 当たり判定を 絵の ボタンと 同じ 大きさに する。
      **先に 大きさを 決めてから いちを 読むこと**（flex-end なので
      高さが 変わると offsetTop も 動く）*/
@@ -13151,100 +13152,93 @@ function titleBakePoster(G, g){
   const mix = (c, w2, k) => c.map((v,i) => Math.round(v*(1-k) + w2[i]*k));
   const rgb = c => 'rgb(' + c.join(',') + ')';
   if (iy > 0){
-    /* --- つぎたしの 空。継ぎ目を「線」では なく「帯」に する ---
-
-       色を どれだけ 合わせても、境めが 1本の 線に 見えつづけました。
-       原因は 色の 段差では なく **明るさの 変わりかたが 急に 変わる**こと。
-       元絵は 上端から 下へ 一気に 明るくなり（実測 y=0で174 → y=100で240）、
-       つぎたしの 空は ゆるやか。値は つながっていても 折れ目が できるので、
-       目には 線に 見えます（マッハバンド）。
-
-       なので 上下を 1本で つなぐのを やめて、つぎたしを 元絵の 上へ
-       OVER px ぶん **かぶせて、その中で だんだん すきとおらせます**。
-       継ぎ目が 100px ほどの グラデの 帯に なるので、折れ目が 消えます。
-
-       もう1つ、**つぎたしの 色は 元絵の「その行の 平均色」に します**。
-       元絵を はば1px に 縮めると 行ごとの 平均が そのまま 手に入るので、
-       かさねても 明るさが 変わりません（変わるのは よこの ムラだけ）。
-       よこ方向は 完全に 平らなので、**縦筋や 光柱が 出ようが ありません**。
-       画素を 読まない（getImageData を つかわない）のは、file:// で
-       ひらくと 絵を 読んだ canvas が よごれ扱いに なり 落ちるためです */
-    /* **かぶせる ぶんは 短くする こと（元絵の 平らな 空の 中で 終える）。**
-       100px かぶせたら、元絵の 上から 40行目で もう にじが 始まっているので、
-       にじの 上に ある 濃い むらさきの 空まで うすく 塗りつぶし、
-       そこが 終わる ところが 1本の 帯に 見えました（実機の 報告）。
-       加工なしの 元絵には 線が ありません ——線は こちらが 作っていた。
-       元絵の 平らな 空は 上から 40行ぶん しか ないので、そこを 超えない */
-    const OVER = Math.max(8, Math.min(16, Math.round(38 * s)));
+    const OVER = 26;                       // 元絵に かける ぶん（質感を つなぐ）
     const BH   = iy + OVER;
     const ob   = titleCanvas(W, BH), bg = ob.g;
     bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
+    const ss = u => u*u*(3 - 2*u);
 
-    /* ① 元絵の 上から OVER ぶんを はば1px に 縮める＝行ごとの 平均色 */
-    const KH = 96;
+    /* ① 地の色。**はば1px に 縮めた 元絵**を 引きのばす。
+       縮めると 上端の 平均色に なるので、画素を 読まずに 色が 合う
+       （file:// では 絵を 読んだ canvas の 画素を 読めない）。
+       よこ方向は 完全に 平らなので 縦筋が 出ようが ない */
     const col = document.createElement('canvas');
-    col.width = 1; col.height = KH;
+    col.width = 1; col.height = 64;
     const cg = col.getContext('2d');
     cg.imageSmoothingEnabled = true; cg.imageSmoothingQuality = 'high';
-    cg.drawImage(im, 0, 0, TITLE_IW, Math.max(2, Math.round(OVER / s)), 0, 0, 1, KH);
-    bg.drawImage(col, 0, 0, 1, KH, 0, iy, W, OVER);      // かぶせる ところ
-    bg.drawImage(col, 0, 0, 1,  1, 0,  0, W, iy + 1);    // その上は 元絵の 上端の 色
+    cg.drawImage(im, 0, 0, TITLE_IW, Math.max(2, Math.round(OVER / s)), 0, 0, 1, 64);
+    bg.drawImage(col, 0, 0, 1, 64, 0, iy, W, OVER);
+    bg.drawImage(col, 0, 0, 1,  1, 0,  0, W, iy + 1);
 
-    /* ② 上へ いくほど うすい ラベンダーへ。**なめらかに 立ち上げる**こと。
-       まっすぐ 変えると 境めで 傾きが 折れて、また 線に 見えます */
-    const ss = u => u*u*(3 - 2*u);                        // smoothstep
-    /* 元絵の 上端は やや こい 青むらさき（174,166,221）。そのまま 上へ
-       のばすと 空が 重くなるので、うすい ラベンダーを かぶせて 軽くする。
-       **境め（iy）でも 少しだけ かけたままに して、消えるのは かぶせた
-       ぶんの 中でやる。**iy で きっちり 0 に すると、そこだけ 元絵の
-       こい色が 顔を 出して、また 帯に 見えます */
-    /* **境め（iy）で きっちり 0 に すること。**元絵に はみ出して かけると、
-       にじの 上の 濃い 空だけが うすく 抜けて、そこが 帯に 見えます */
+    /* ② 上ほど うすい ラベンダーへ。**境め（iy）で 0 に する**こと。
+       元絵に はみ出して かけると、にじの 上の こい 空だけ うすく 抜けて 帯に 見える */
     const tint = bg.createLinearGradient(0, iy, 0, 0);
-    for (let i = 0; i <= 10; i++){
-      const u = i/10;
-      tint.addColorStop(u, 'rgba(206,192,226,' + (ss(u)*0.72).toFixed(3) + ')');
-    }
+    for (let i = 0; i <= 10; i++) tint.addColorStop(i/10, 'rgba(206,192,226,' + (ss(i/10)*0.66).toFixed(3) + ')');
     bg.fillStyle = tint; bg.fillRect(0, 0, W, iy + 1);
 
-    /* ③ のっぺりさせない ための かすみ。**帯ぜんぶを 塗ること。**
-       つぎたしの ぶんだけ 塗って 途中で 切ると、そこが 線に なります
-       （前に それで 失敗しました）。この あと かける マスクが
-       下では 消してくれるので、切る 必要は ありません */
-    const haze = (x, y, r, c, a) => {
+    /* ③ 色の もや。**帯ぜんぶを 塗る**こと（途中で 切ると そこが 線に なる）*/
+    const blob = (x, y, r, c, a) => {
       const gr = bg.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, 'rgba(' + c + ',' + a + ')');
-      gr.addColorStop(1, 'rgba(' + c + ',0)');
+      gr.addColorStop(0, 'rgba(' + c + ',' + a + ')'); gr.addColorStop(1, 'rgba(' + c + ',0)');
       bg.fillStyle = gr; bg.fillRect(0, 0, W, BH);
     };
-    haze(W*0.26, BH*0.34, W*0.66, '255,206,232', 0.13);   // もも
-    haze(W*0.84, BH*0.18, W*0.58, '198,228,255', 0.12);   // ベビーブルー
-    haze(W*0.52, BH*0.62, W*0.70, '255,240,222', 0.08);   // クリーム
+    blob(W*0.24, BH*0.30, W*0.62, '255,206,232', 0.15);
+    blob(W*0.86, BH*0.14, W*0.54, '198,228,255', 0.13);
+    blob(W*0.52, BH*0.66, W*0.66, '255,238,220', 0.10);
+    blob(W*0.08, BH*0.78, W*0.46, '214,196,255', 0.11);
 
-    /* ④ かぶせた ぶんを 下へ いくほど すきとおらせる。
-       **destination-in は canvas ぜんぶに かかる**ので、1回で 塗ること
-       （2回に 分けると さきに 塗った ぶんが 消えます）*/
+    /* ④ **ここが 肝。きらめきの 密度を 元絵に そろえる。**
+       なめらかな 空の まま だと、元絵の ぎっしりした きらめきとの あいだで
+       「つるつる → ざらざら」の 変わり目が 線に 見える（4回 それで 失敗した）。
+       下ほど 密に して、元絵の 上端に 密度を つなぐ */
+    const star = (x, y, r, a) => {                    // 4方向に とがった 星
+      bg.save(); bg.translate(x, y); bg.globalAlpha = a;
+      bg.fillStyle = '#ffffff'; bg.beginPath();
+      bg.moveTo(0, -r); bg.quadraticCurveTo(r*0.16, -r*0.16, r, 0);
+      bg.quadraticCurveTo(r*0.16, r*0.16, 0, r);
+      bg.quadraticCurveTo(-r*0.16, r*0.16, -r, 0);
+      bg.quadraticCurveTo(-r*0.16, -r*0.16, 0, -r);
+      bg.fill(); bg.restore();
+    };
+    for (let i = 0; i < 150; i++){
+      const u = tRnd(i + 4100);                       // 0=上 1=下
+      const y = Math.pow(u, 0.72) * BH;               // 下ほど 密
+      const d = 0.9 + tRnd(i + 4300)*1.8;
+      bg.globalAlpha = 0.20 + tRnd(i + 4500)*0.45;
+      bg.fillStyle = '#ffffff';
+      bg.fillRect(tRnd(i + 4700)*W - d/2, y - d/2, d, d);
+    }
+    bg.globalAlpha = 1;
+    for (let i = 0; i < 9; i++){
+      const y = Math.pow(tRnd(i + 5100), 0.70) * BH;
+      star(tRnd(i + 5300)*W, y, 2.6 + tRnd(i + 5500)*3.4, 0.36 + tRnd(i + 5700)*0.34);
+    }
+    /* ⑤ シャボン玉。元絵にも 浮いているので、空がわにも 少しだけ */
+    for (let i = 0; i < 4; i++){
+      const bx = (0.10 + tRnd(i + 6100)*0.82) * W;
+      const by = Math.pow(tRnd(i + 6300), 0.80) * BH;
+      const br = W*(0.017 + tRnd(i + 6500)*0.020);
+      const gr = bg.createRadialGradient(bx - br*0.3, by - br*0.3, br*0.1, bx, by, br);
+      gr.addColorStop(0.00, 'rgba(255,255,255,0.34)');
+      gr.addColorStop(0.62, 'rgba(226,238,255,0.10)');
+      gr.addColorStop(0.90, 'rgba(255,214,240,0.20)');
+      gr.addColorStop(1.00, 'rgba(255,255,255,0)');
+      bg.fillStyle = gr; bg.beginPath(); bg.arc(bx, by, br, 0, 6.2832); bg.fill();
+    }
+
+    /* ⑥ 元絵に かけた ぶんを 下へ すきとおらせる。
+       **destination-in は canvas ぜんぶに かかる**ので 1回で 塗ること */
     const mk = bg.createLinearGradient(0, 0, 0, BH);
     const q = iy / BH;
-    mk.addColorStop(0, 'rgba(0,0,0,1)');
-    mk.addColorStop(q, 'rgba(0,0,0,1)');
-    /* **前へ 寄せた カーブに すること。**まっすぐ 消すと、
-       まだ こい うちに 元絵の にじに とどいて、にじが 行ごとの
-       平均色に ならされ、**弧が 横じまに つぶれます**（実際に つぶれました）。
-       元絵は 上から 40〜120行目で にじに 変わるので、そこに 着くまでに
-       うすくなっている 必要が あります。^5 なら 1/4 の 深さで 0.24、
-       半分で 0.03。平らな 空の ところで ほぼ 使いきる 形です */
-    for (let i = 1; i <= 8; i++){
-      const u = i/8;
-      mk.addColorStop(q + (1-q)*u, 'rgba(0,0,0,' + (1 - ss(u)).toFixed(3) + ')');
-    }
+    mk.addColorStop(0, 'rgba(0,0,0,1)'); mk.addColorStop(q, 'rgba(0,0,0,1)');
+    for (let i = 1; i <= 8; i++) mk.addColorStop(q + (1-q)*(i/8), 'rgba(0,0,0,' + (1 - ss(i/8)).toFixed(3) + ')');
     bg.globalCompositeOperation = 'destination-in';
     bg.fillStyle = mk; bg.fillRect(0, 0, W, BH);
     bg.globalCompositeOperation = 'source-over';
 
-    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
     g.drawImage(ob.c, 0, 0, W, BH);
   }
+
   const seam = iy + ih;
   if (seam < H){
     const bot = avg(seam - 3);
