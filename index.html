@@ -415,7 +415,27 @@
     left:3.0797%;top:10.8911%;width:89.3116%;height:72.2772%;
     padding:0;margin:0;border:0;outline:0;background:transparent;
     border-radius:999px;cursor:pointer;z-index:5;
-    -webkit-tap-highlight-color:transparent}
+    -webkit-tap-highlight-color:transparent;
+    /* **いつも 光らせる。**ガイドの 📕 は はじめての人だけ 光らせるが
+       （場所を 教えたら 用ずみ）、表紙の「はじめる」は いつでも
+       いちばん 押してほしい ところなので 出しっぱなしに する。
+       金の ふちは ずっと 出しておき、その上に 波紋を くりかえす
+       ——波紋だけだと、消えている 一しゅんに 見た人が 気づけない。
+       ふちは カプセルの すぐ外に つくので、絵に 焼きこまれた 金の ふちとは
+       かさなりません（絵は 1pxも さわっていない）*/
+    animation:goGlow 1s ease-in-out infinite}
+  /* 1びょうで 1回 チカチカ する。**ふちじたいも 明るさが 動く**こと
+     ——波紋を 出すだけだと ゆっくり 光るだけで「チカチカ」に ならない。
+     ふちは いちばん暗い ところでも 60% のこす（消えない）*/
+  @keyframes goGlow{
+    0%  {box-shadow:0 0 0 4px rgba(255,201,66,1),   0 0 0  4px rgba(255,214,120,.95)}
+    55% {box-shadow:0 0 0 4px rgba(255,232,165,.62), 0 0 0 18px rgba(255,201,66,0)}
+    100%{box-shadow:0 0 0 4px rgba(255,201,66,1),   0 0 0 18px rgba(255,201,66,0)}
+  }
+  /* うごきを へらす せっていの人は ふちだけ（📕 と 同じ あつかい）*/
+  @media (prefers-reduced-motion:reduce){
+    #titleGo{animation:none;box-shadow:0 0 0 4px rgba(255,201,66,1)}
+  }
   /* すきとおっているので、押した ことが わかるよう 白く さっと 光らせる */
   #titleGo:active{background:rgba(255,255,255,.30)}
   /* 読みあげ用にだけ のこす 題字（見た目は 絵がわ）*/
