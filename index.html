@@ -3079,10 +3079,17 @@ function syncHUD(){
    入力
    ========================================================== */
 /* 盤面のタップ。px,py は 盤面の左上を原点とした CSSピクセル */
+/* さいごの 盤面タップの 記録。**だまって 何も おきない みちが 4つ ある**
+   （over・bonus・道具えらんでいない・盤面の外）ので、実機で
+   「タップが きかない」と 言われたときに どれか わかるように のこす。
+   ガイド（📕）の いちばん下に 出る */
+let lastTap = null;
 function boardTap(px, py){
-  if (over) return;
+  lastTap = { x:Math.round(px), y:Math.round(py), cell:'-', why:'ok', t:Date.now() };
+  if (over){ lastTap.why = 'over'; return; }
   const c = Math.floor(px/CELL), r = Math.floor(py/CELL);
-  if (c<0||c>=COLS||r<0||r>=ROWS) return;
+  lastTap.cell = c + ',' + r;
+  if (c<0||c>=COLS||r<0||r>=ROWS){ lastTap.why = '盤面の外'; return; }
 
   // ボーナス中は、ふってくるおかしのキャッチ専用
   if (bonus){
@@ -3100,6 +3107,7 @@ function boardTap(px, py){
     return;
   }
 
+  if (bonus) lastTap.why = 'bonus';
   const hit = towerAt(c, r);
   // にじいろの秘薬を えらんでいる あいだは、仲間を タップ＝かける
   if (aimItem === 'elixir'){
@@ -3111,7 +3119,7 @@ function boardTap(px, py){
   }
   if (hit){ selTool = null; selTower = hit; tapSel(); syncShop(); openInfo(hit); return; }
 
-  if (!selTool){ closeInfo(); return; }
+  if (!selTool){ lastTap.why = '道具なし'; closeInfo(); return; }
 
   // 4マスの子は 2×2 ぶん あいている ひつようがある
   const sp = spanOf(selTool);
@@ -9447,7 +9455,10 @@ function checkLogin(){
   ovAlt.style.display = 'none';
   ovBtn.disabled = false;   // 💗まちの 画面から 来ると 押せなく なっている
   ovBtn.textContent = '受け取る ✨';
-  ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); };
+  /* とじたら **はかりなおす**。プレゼントを 出している あいだに HUD や
+     ワザバーの 中みが かわって 盤面が 上下に ずれていることが ある。
+     resize() は Phaser にも 大きさを 入れなおすので、タップの ずれも そろう */
+  ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); resize(); };
   ov.classList.add('on');
   // 7日目（でんせつのなかま）はとびきり盛大に
   if (day >= 7) celebrate({ rays: 3, conf: 160, flash: true, fanfare: 2 });
@@ -9896,7 +9907,13 @@ function showDiag(){
     '<br>まど ' + window.innerHeight +
     ' ／ 見えてる ' + (vv ? Math.round(vv.height) : '-') +
     ' ／ ホームバー ' + sb +
-    ' ／ 下のすき間 ' + gap + (gap >= sb + 8 ? ' ✅' : ' ⚠はみ出し');
+    ' ／ 下のすき間 ' + gap + (gap >= sb + 8 ? ' ✅' : ' ⚠はみ出し') +
+    '<br>ばんめん: マス ' + CELL + ' ／ ' + (over ? '⚠おわり(over)' : 'うごいてる') +
+    ' ／ えらび ' + (selTool || 'なし') +
+    '<br>さいごのタップ: ' + (lastTap
+        ? (lastTap.x + ',' + lastTap.y + ' → マス ' + lastTap.cell + ' ／ ' + lastTap.why +
+           ' ／ ' + Math.round((Date.now() - lastTap.t)/1000) + '秒前')
+        : '**まだ 1回も とどいていない**');
 }
 
 /* 図鑑の 2行（見出し・タブ）は、中みを **みんな おなじ大きさ**で ならべる。
@@ -12569,9 +12586,30 @@ const BoardScene = {
   key: 'board',
   create(){
     this.add.existing(new Painter(this, render));
-    // Phaser が タッチとマウスを 同じように あつかってくれる。
-    // 座標は デバイスピクセルで来るので CSSピクセルに もどす
-    this.input.on('pointerdown', p => boardTap(p.x/DPR, p.y/DPR));
+    /* **Phaser の 座標（p.x / p.y）を そのまま つかわないこと。**
+       Phaser は canvas の 画面での いちを おぼえていて、window の
+       resize か scroll が 起きたときにしか はかりなおしません。
+       HUDの 高さが 変わって 盤面が 上下に ずれると、おぼえた いちが
+       古いまま になり、タップが ずれて 盤面の 外に 落ちます。
+       boardTap は 外の タップを だまって 捨てるので、**何の メッセージも
+       出ないまま「タップが きかない」ように 見えます**（実機で おきた）。
+
+       だから その場で canvas の いちを 読んで 計算します。
+       getBoundingClientRect は タップ1回に 1回だけなので 重くありません */
+    this.input.on('pointerdown', p => {
+      const cv = game && game.canvas;
+      const ev = p.event;
+      const t  = (ev && ev.changedTouches && ev.changedTouches[0]) || ev;
+      if (cv && t && t.clientX !== undefined){
+        const r = cv.getBoundingClientRect();
+        /* 見た目の 大きさと 中みの 大きさが ずれていても 合うように、
+           CSSピクセルの ひりつで 直す */
+        const k = r.width ? (COLS*CELL) / r.width : 1;
+        boardTap((t.clientX - r.left) * k, (t.clientY - r.top) * k);
+      } else {
+        boardTap(p.x/DPR, p.y/DPR);   // ひかえ（イベントが とれない とき）
+      }
+    });
   },
   update(_t, dtMs){
     const dt = Math.min(0.05, dtMs/1000);
