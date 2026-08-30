@@ -13131,80 +13131,95 @@ function titleBakePoster(G, g){
   const mix = (c, w2, k) => c.map((v,i) => Math.round(v*(1-k) + w2[i]*k));
   const rgb = c => 'rgb(' + c.join(',') + ')';
   if (iy > 0){
-    /* --- つぎたしの 空 ---
-       ここは 3回 やりなおしています。おとし穴が 2つ あって、
-       **どちらか片方だけを 直すと もう片方に 落ちます。**
+    /* --- つぎたしの 空。継ぎ目を「線」では なく「帯」に する ---
 
-       ① 元絵の 上の行を そのまま たてに のばす → **縦の筋**
-          元絵の 上端は 横に 大きく 色が ちがい（実測で 最大57。
-          まん中が 青く 両はしが ピンク）、たてに のばすと その差が
-          そのまま カーテンのような 帯に 見えます。
-       ② 1色で ぬりつぶす → **境めの 段差**
-          こんどは その57の さが、まるごと 境めの 線に なります。
+       色を どれだけ 合わせても、境めが 1本の 線に 見えつづけました。
+       原因は 色の 段差では なく **明るさの 変わりかたが 急に 変わる**こと。
+       元絵は 上端から 下へ 一気に 明るくなり（実測 y=0で174 → y=100で240）、
+       つぎたしの 空は ゆるやか。値は つながっていても 折れ目が できるので、
+       目には 線に 見えます（マッハバンド）。
 
-       なので **小さな canvas（24×3）を 引きのばして、たて・よこ
-       両方の グラデに します**。下の段は 元絵の 上端を 縮めた もの
-       （縮小で 横に ならされるので、筋の もとに なる こまかい ムラは
-       消え、大きな 色の ながれだけ のこる）。上の段へ いくほど
-       空の色を かぶせて 1色に 寄せ、すこし 青く 明るく する。
-       拡大は なめらかに 補間されるので、
-         下 … 元絵の 横の 色の ながれに 合う → 境めが 消える
-         上 … なめらかに 1色へ 溶ける   → 縦筋が 出ない
+       なので 上下を 1本で つなぐのを やめて、つぎたしを 元絵の 上へ
+       OVER px ぶん **かぶせて、その中で だんだん すきとおらせます**。
+       継ぎ目が 100px ほどの グラデの 帯に なるので、折れ目が 消えます。
 
-       **getImageData を つかわない**のも わざとです。file:// で
-       ひらいた ときに 絵を 読んだ canvas は よごれ扱いに なり、
-       画素を 読むと 例外で 表紙ごと 落ちます（README は
-       「index.html を ブラウザで ひらくだけ」と 書いている）。
-       drawImage と かぶせ塗りだけなら その心配が ありません。
+       もう1つ、**つぎたしの 色は 元絵の「その行の 平均色」に します**。
+       元絵を はば1px に 縮めると 行ごとの 平均が そのまま 手に入るので、
+       かさねても 明るさが 変わりません（変わるのは よこの ムラだけ）。
+       よこ方向は 完全に 平らなので、**縦筋や 光柱が 出ようが ありません**。
+       画素を 読まない（getImageData を つかわない）のは、file:// で
+       ひらくと 絵を 読んだ canvas が よごれ扱いに なり 落ちるためです */
+    const OVER = Math.min(100, Math.max(56, Math.round(H*0.12)));  // 元絵に かぶせる ぶん
+    const BH   = iy + OVER;
+    const ob   = titleCanvas(W, BH), bg = ob.g;
+    bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
 
-       焼きこみの 中で 1回 やるだけ。毎フレームの 負担は ありません */
+    /* ① 元絵の 上から OVER ぶんを はば1px に 縮める＝行ごとの 平均色 */
+    const KH = 96;
+    const col = document.createElement('canvas');
+    col.width = 1; col.height = KH;
+    const cg = col.getContext('2d');
+    cg.imageSmoothingEnabled = true; cg.imageSmoothingQuality = 'high';
+    cg.drawImage(im, 0, 0, TITLE_IW, Math.max(2, Math.round(OVER / s)), 0, 0, 1, KH);
+    bg.drawImage(col, 0, 0, 1, KH, 0, iy, W, OVER);      // かぶせる ところ
+    bg.drawImage(col, 0, 0, 1,  1, 0,  0, W, iy + 1);    // その上は 元絵の 上端の 色
+
+    /* ② 上へ いくほど うすい ラベンダーへ。**なめらかに 立ち上げる**こと。
+       まっすぐ 変えると 境めで 傾きが 折れて、また 線に 見えます */
+    const ss = u => u*u*(3 - 2*u);                        // smoothstep
+    /* 元絵の 上端は やや こい 青むらさき（174,166,221）。そのまま 上へ
+       のばすと 空が 重くなるので、うすい ラベンダーを かぶせて 軽くする。
+       **境め（iy）でも 少しだけ かけたままに して、消えるのは かぶせた
+       ぶんの 中でやる。**iy で きっちり 0 に すると、そこだけ 元絵の
+       こい色が 顔を 出して、また 帯に 見えます */
+    const TIN = 'rgba(212,197,228,';
+    const tint = bg.createLinearGradient(0, 0, 0, BH);
+    for (let i = 0; i <= 10; i++){
+      const u = i/10, y = u*BH;
+      let a;
+      if (y <= iy) a = 0.90 - 0.58*ss(y/Math.max(1, iy));      // 上ほど こく
+      else         a = 0.32 * Math.max(0, 1 - (y - iy)/(OVER*0.45));
+      tint.addColorStop(u, TIN + a.toFixed(3) + ')');
+    }
+    bg.fillStyle = tint; bg.fillRect(0, 0, W, BH);
+
+    /* ③ のっぺりさせない ための かすみ。**帯ぜんぶを 塗ること。**
+       つぎたしの ぶんだけ 塗って 途中で 切ると、そこが 線に なります
+       （前に それで 失敗しました）。この あと かける マスクが
+       下では 消してくれるので、切る 必要は ありません */
+    const haze = (x, y, r, c, a) => {
+      const gr = bg.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(' + c + ',' + a + ')');
+      gr.addColorStop(1, 'rgba(' + c + ',0)');
+      bg.fillStyle = gr; bg.fillRect(0, 0, W, BH);
+    };
+    haze(W*0.26, BH*0.34, W*0.66, '255,206,232', 0.13);   // もも
+    haze(W*0.84, BH*0.18, W*0.58, '198,228,255', 0.12);   // ベビーブルー
+    haze(W*0.52, BH*0.62, W*0.70, '255,240,222', 0.08);   // クリーム
+
+    /* ④ かぶせた ぶんを 下へ いくほど すきとおらせる。
+       **destination-in は canvas ぜんぶに かかる**ので、1回で 塗ること
+       （2回に 分けると さきに 塗った ぶんが 消えます）*/
+    const mk = bg.createLinearGradient(0, 0, 0, BH);
+    const q = iy / BH;
+    mk.addColorStop(0, 'rgba(0,0,0,1)');
+    mk.addColorStop(q, 'rgba(0,0,0,1)');
+    /* **前へ 寄せた カーブに すること。**まっすぐ 消すと、
+       まだ こい うちに 元絵の にじに とどいて、にじが 行ごとの
+       平均色に ならされ、**弧が 横じまに つぶれます**（実際に つぶれました）。
+       元絵は 上から 40〜120行目で にじに 変わるので、そこに 着くまでに
+       うすくなっている 必要が あります。^5 なら 1/4 の 深さで 0.24、
+       半分で 0.03。平らな 空の ところで ほぼ 使いきる 形です */
+    for (let i = 1; i <= 12; i++){
+      const u = i/12;
+      mk.addColorStop(q + (1-q)*u, 'rgba(0,0,0,' + Math.pow(1-u, 5).toFixed(4) + ')');
+    }
+    bg.globalCompositeOperation = 'destination-in';
+    bg.fillStyle = mk; bg.fillRect(0, 0, W, BH);
+    bg.globalCompositeOperation = 'source-over';
+
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-
-    /* ① たての グラデだけで 空ぜんぶを ぬる（よこの ムラは 入れない）。
-       **はば1の canvas を 引きのばす**のが みそ。元絵を はば1に 縮めると
-       それが そのまま「上端の 平均色」に なるので、画素を 読まずに
-       絵に 合った 色が 手に入ります。よこ方向は 完全に 平らなので、
-       ここからは 縦筋が 出ようが ありません。
-
-       かぶせる 空の色は 元絵の 上端より すこし **深く** すること。
-       元絵は 上端が いちばん 暗く、下へ いくほど 明るい（実測 172→207）。
-       ここで 上へ 明るくすると 境めが「暗さの谷」に なり、
-       色の 段差が ゼロでも 線に 見えます（実際に そう 見えました）。
-       上へ 深い 青に すれば 明るさが 境めを またいで ひとつづきに 下がる。
-       空は 高いほど 青が 深い ものなので、絵としても 自然です */
-    const va = document.createElement('canvas');
-    va.width = 1; va.height = 3;
-    const vg = va.getContext('2d');
-    vg.imageSmoothingEnabled = true; vg.imageSmoothingQuality = 'high';
-    vg.drawImage(im, 0, 0, TITLE_IW, 6, 0, 0, 1, 3);   // 横に つぶす＝平均色
-    vg.fillStyle = 'rgb(150,158,224)';
-    vg.globalAlpha = 0.55; vg.fillRect(0, 1, 1, 1);    // 中ほど
-    vg.globalAlpha = 0.92; vg.fillRect(0, 0, 1, 1);    // てっぺん
-    vg.globalAlpha = 1;
-    g.drawImage(va, 0, 0, 1, 3, 0, 0, W, iy + 2);
-
-    /* ② 境めの ちかくだけ、元絵の よこの 色の ながれを かさねて 段差を 消す。
-       **上へ いくらか で 消えきる ことが 大事。**元絵の 上端は
-       左右で 最大57も ちがい（にじの はしが 明るい）、これを 空の
-       てっぺんまで のばすと、その 明るい ところが そのまま
-       光の柱に なります（実際に 何本も 立ちました）。
-       56px で 消えるなら、境めは 合うのに 柱には 見えません */
-    /* N は 少ないほど よこの 変化が ゆるくなる。24 だと 帯の 中に
-       まだ 細い 筋が 見えたので 12 まで 粗くした。境めを 合わせるのに
-       必要なのは 大きな 色の ながれだけで、細かさは 要らない */
-    const FADE = Math.min(iy, 44), N = 12, FH = 32;
-    const fb = document.createElement('canvas');
-    fb.width = N; fb.height = FH;
-    const fg2 = fb.getContext('2d');
-    fg2.imageSmoothingEnabled = true; fg2.imageSmoothingQuality = 'high';
-    fg2.drawImage(im, 0, 0, TITLE_IW, 6, 0, 0, N, FH);
-    /* 上へ 消えていく すきとおりを、マスクで 焼きつける */
-    const mk = fg2.createLinearGradient(0, 0, 0, FH);
-    mk.addColorStop(0, 'rgba(0,0,0,0)'); mk.addColorStop(1, 'rgba(0,0,0,1)');
-    fg2.globalCompositeOperation = 'destination-in';
-    fg2.fillStyle = mk; fg2.fillRect(0, 0, N, FH);
-    fg2.globalCompositeOperation = 'source-over';
-    g.drawImage(fb, 0, 0, N, FH, 0, iy - FADE, W, FADE + 2);
+    g.drawImage(ob.c, 0, 0, W, BH);
   }
   const seam = iy + ih;
   if (seam < H){
