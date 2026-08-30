@@ -178,13 +178,22 @@ if (rep.err) { console.error('✗', rep.err); process.exit(1); }
 
 /* art/sprites/ に 絵が あるのに ART_KEYS に 書きわすれると、
    だまって コードの絵の ままに なる。目では 気づけないので ここで しらべる */
+
+/* ただし **キャラでは ない 絵**も art/sprites/ に 入る。
+   画面の かざりに つかう ぶんで、CREATURES にも 図鑑にも いない。
+   ここに 書いておかないと「ART_KEYS に 無い」と 毎回 おこられる。
+   絵を 足したら、キャラなら ART_KEYS に、画面用なら こちらに 足すこと */
+const SCREEN_ART = new Set([
+  'witch_fly',   // 「おかえりなさい」の 画面で ほうきに のって いる まじょ
+]);
+
 const spriteDir = resolve(target, '..', 'art/sprites');
 let keyMiss = [];
 if (rep.artKeys && existsSync(spriteDir)){
   const have = new Set(rep.artKeys);
   keyMiss = readdirSync(spriteDir)
     .filter(n => /\.png$/i.test(n)).map(n => n.replace(/\.png$/i, ''))
-    .filter(k => !have.has(k));
+    .filter(k => !have.has(k) && !SCREEN_ART.has(k));
 }
 
 const line = (label, arr) =>

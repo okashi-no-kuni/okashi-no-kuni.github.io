@@ -87,9 +87,15 @@ const STYLE = [
   'and a small simple mouth.',
   'Draw exactly the body described and nothing else: no bows, ribbons, collars,',
   'hearts, stars, patterns, badges or any other accessory unless it is described.',
-  'Front facing, whole body visible, centered, generous margin on all sides.',
   'Plain solid white background, no shadow on the ground, no text, no watermark, no border.',
 ].join(' ');
+
+/* たちかたは STYLE から 切りはなす。ふだんは まえ向きで そろえたいが、
+   「おかえりなさい」の まじょだけは ほうきで とんでいる ところが ほしい。
+   STYLE に 書きこんだ ままだと、あとの 文で「ななめに とんで」と 書いても
+   まえ向きの 指示と けんかして、立った 絵が かえって くる（実際 そうなった）。
+   だから ART の エントリが `pose` を 持っていたら そちらを つかう */
+const POSE_FRONT = 'Front facing, whole body visible, centered, generous margin on all sides.';
 
 /* わくの 中での 大きさ。長辺で そろえる。
    高さで そろえると、しっぽが 横に 流れる おばけが 横に はみ出す。
@@ -345,6 +351,23 @@ const ART = {
   まほうつかい: { key:'wizard', p:'A small chibi wizard standing, deep blue robe and a tall pointed blue hat, a long soft white beard, holding a wooden staff topped with a mint green gem.' },
   ゆきのじょおう: { key:'snowqueen', p:'A small chibi snow queen standing, pale ice blue gown, long white blue hair, a crown of pale ice crystals.' },
   まじょ: { key:'witch', p:'A small chibi witch girl standing, purple dress and a wide pointed purple hat, holding a wooden broom.' },
+  /* 「おかえりなさい」の 画面 だけの 1体。盤面の まじょ（witch）は 立って いて
+     表情も 変えられない ので、あの 画面に そのまま 貼ると 同じ絵が 2か所に
+     出て お祝いに 見えない。だから 向きも 表情も ちがう 絵を 別に 出す。
+     ゲームの 中には 出さない ので CREATURES には いない */
+  とぶまじょ: { key:'witch_fly', refs:['witch'], sprite:512,
+    pose:'Seen from the side and slightly above, her whole body and the whole broom visible, '
+       + 'centered in the frame with a generous margin on all sides.',
+    p:'The attached image is this exact character. Draw HER, the same girl, keeping every '
+    + 'detail of her design: straight WHITE hair cut in a blunt fringe under the hat, '
+    + 'a light purple pointed hat with a wide brim and a BLACK band with a square buckle '
+    + 'on the front, a light purple dress, and a wooden broom with DARK CHARCOAL bristles. '
+    + 'Do not change her hair colour, her hat band or her broom. '
+    + 'The only thing that changes is what she is doing: she is now flying, sitting '
+    + 'side-saddle on the broom which is tilted diagonally upward to the right, her hair '
+    + 'and the brim of her hat streaming behind her. She is facing the viewer, winking '
+    + 'with one eye closed in a happy curve while the other stays wide open, her mouth '
+    + 'open in a cheerful smile, and one hand raised to wave hello.' },
   おひめさま: { key:'princess', p:'A small chibi princess girl standing, pink ball gown, long hair, a small pale gold crown.' },
   おうじさま: { key:'prince', p:'A young prince standing and facing the viewer, drawn with the same chibi proportions as the other characters: a big round head about as tall as the whole body below it, and short little arms and legs. He wears a smart royal blue jacket with pale gold epaulettes and a row of gold buttons, a rose pink sash across the chest, a short cape hanging from one shoulder, white trousers and small boots. Neat light brown hair swept to one side, a small pale gold crown, and a short sword in a pale gold scabbard at his hip, with one hand resting on the hilt. Calm and confident, with a small gentle smile.' },
   プリンアラモード: { key:'purinala', p:'A pudding a la mode on an oval plate, arranged the way a real one is: a custard pudding with caramel sauce running down it in the middle, a scoop of vanilla ice cream beside it, a swirl of whipped cream, two orange segments, a strawberry and a cherry arranged around the pudding. The face is on the custard pudding itself.' },
@@ -466,14 +489,15 @@ async function listModels(){
 
 /* 画像を 1枚 もらう。返事の どこに 画像が 入るかは モデルで ちがうので、
    inlineData を もつ part を さがす形にしてある */
-async function generate(model, prompt, refs = []){
+async function generate(model, prompt, refs = [], pose = ''){
   /* 手本を さきに 置いて、そのあと 文。あとに 置くと 文の ほうが 弱まる */
   const reqParts = [];
   for (const k of refs){
     reqParts.push({ inlineData: { mimeType:'image/png',
       data: readFileSync(resolve(root, `art/${k}.png`)).toString('base64') } });
   }
-  reqParts.push({ text: STYLE + (refs.length ? '\n\n' + REF_LINE : '') + '\n\n' + prompt });
+  reqParts.push({ text: STYLE + ' ' + (pose || POSE_FRONT)
+    + (refs.length ? '\n\n' + REF_LINE : '') + '\n\n' + prompt });
   const body = {
     contents: [{ role:'user', parts: reqParts }],
     generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } },
@@ -527,7 +551,11 @@ if (args[0] === '--sprites'){
   if (!files.length) die('art/ に 絵が ありません');
   await withPage(async page => {
     for (const n of files){
-      const png = await cutout(page, readFileSync(resolve(dir, n)), SPRITE);
+      /* ふだんは 256 で 足りる（盤面では せいぜい 128px）。
+         「おかえりなさい」の まじょだけは カードの 中で 360px ほどに
+         なるので、その子だけ 大きく 切る（`sprite` を 持たせる）*/
+      const ent = Object.values(ART).find(a => a.key + '.png' === n);
+      const png = await cutout(page, readFileSync(resolve(dir, n)), ent?.sprite || SPRITE);
       writeFileSync(resolve(out, n), png);
       console.log(`art/sprites/${n} (${(png.length/1024).toFixed(0)}KB) ✅`);
     }
@@ -562,8 +590,12 @@ await withPage(async page => {
     const a = ART[n];
     if (!a){ console.error(`✗ ${n} は ART に ありません`); continue; }
     process.stdout.write(`${n} … `);
-    const refs = REF_KEYS.filter(k => k !== a.key);
-    const { buf, mime } = await generate(GEN_MODEL, a.p, refs);
+    /* おなじ子の 別ポーズを 出すときは、**その子 じしんを 手本に 入れる**。
+       ふつうは 自分を 見せると 寄せすぎる ので のぞくが、ここは
+       「同じ子だと 分かる」ほうが 大事。入れないと 髪の色も
+       ぼうしの かざりも 変わって 別人に なった（実際 そうなった）*/
+    const refs = a.refs || REF_KEYS.filter(k => k !== a.key);
+    const { buf, mime } = await generate(GEN_MODEL, a.p, refs, a.pose);
     if (!EXT[mime]) die(`知らない 形式 ${mime}。EXT に 足してください`);
     /* そろえたあとは かならず PNG。名前と 中みが 合う */
     const png = await fit(page, buf, mime);
