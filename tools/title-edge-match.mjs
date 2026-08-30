@@ -179,6 +179,59 @@ const png = await p.evaluate(async (K) => {
       cp(K.ML+K.IW-1+k, y, K.ML+K.IW-1+K.SKIP, y);
     }
   }
+  /* --- 上の 余白の「くもり」を とる ---
+     モデルの 空には よこ方向の うすい ムラが 入る（たての 光の 帯・
+     乳白の もや。実測で 32px平均の 振れはばが 33）。プロンプトで
+     「雲なしの グラデ空」と 言っても ここまでは 消えない（実機の 報告）。
+
+     上の 余白の 正解は「平らな グラデ＋粒」なので、機械で そこへ 寄せる。
+       土台 … 行ごとの 平均色を たてに ならした もの（きれいな グラデ）
+       粒   … 各画素 − 行の 横ならし（細かい きらめきだけ 残る）
+     土台に よこの ムラは 入らないので 帯も もやも 消え、粒は のこる。
+     ぼかしでは ない（ぼかすと 上だけ 曇る。前に それで 失敗した）。
+
+     境めの 手まえ KEEP px は さわらない（そこは 元絵と 合わせてある）。
+     そこから RAMP px かけて 効きを 上げるので、境めに 段差は 出ない */
+  {
+    const KEEP = 16, RAMP = 124, RV = 90, RD = 12;
+    const mrow = [];
+    for (let y = 0; y < K.MT; y++){
+      const t = [0,0,0];
+      for (let x = 0; x < K.MW; x++){ const i = at(D,K.MW,x,y);
+        t[0]+=D[i]; t[1]+=D[i+1]; t[2]+=D[i+2]; }
+      mrow.push(t.map(v => v/K.MW));
+    }
+    const msm = mrow.map((_, y) => { const t=[0,0,0]; let n=0;
+      for (let k=-RV; k<=RV; k++){ const j=y+k; if (j<0||j>=mrow.length) continue;
+        t[0]+=mrow[j][0]; t[1]+=mrow[j][1]; t[2]+=mrow[j][2]; n++; }
+      return t.map(v => v/n); });
+    for (let y = 0; y < K.MT; y++){
+      const d0 = K.MT - KEEP - y;
+      if (d0 <= 0) continue;
+      const w = ss(Math.min(1, d0/RAMP));
+      /* 行の 横ならし（running sum）。粒より 大きい 成分 */
+      const hb = new Float32Array(K.MW*3);
+      { const sum=[0,0,0]; let n=0;
+        for (let x=-RD; x<=RD; x++){ const xx=Math.min(K.MW-1,Math.max(0,x));
+          const i=at(D,K.MW,xx,y); sum[0]+=D[i]; sum[1]+=D[i+1]; sum[2]+=D[i+2]; n++; }
+        for (let x=0; x<K.MW; x++){
+          hb[x*3]=sum[0]/n; hb[x*3+1]=sum[1]/n; hb[x*3+2]=sum[2]/n;
+          const ad=Math.min(K.MW-1,x+RD+1), rm=Math.max(0,x-RD);
+          const ia=at(D,K.MW,ad,y), ir=at(D,K.MW,rm,y);
+          sum[0]+=D[ia]-D[ir]; sum[1]+=D[ia+1]-D[ir+1]; sum[2]+=D[ia+2]-D[ir+2];
+        }
+      }
+      for (let x=0; x<K.MW; x++){
+        const i=at(D,K.MW,x,y);
+        for (let c2=0; c2<3; c2++){
+          const det  = D[i+c2] - hb[x*3+c2];        // 粒
+          const flat = msm[y][c2] + det;            // グラデ＋粒
+          D[i+c2] = Math.max(0, Math.min(255, Math.round(D[i+c2]*(1-w) + flat*w)));
+        }
+      }
+    }
+  }
+
   g.putImageData(IM,0,0);
   return c.toDataURL('image/png');
 }, { SRC, ORIG, MW, MH, ML, MT, IW, IH, FADE, BAND, SKIP });
