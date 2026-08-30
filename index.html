@@ -12766,6 +12766,27 @@ let backRaf = 0, backT0 = 0, backWitch = null;
    ここで 左右を うつしては いけない（うつすと 手を ふる 側が うしろに 回る）*/
 backWitch = new Image();
 backWitch.src = 'art/sprites/witch_fly.png';
+/* まじょ＋むらさきの オーラを 1枚に 焼く。
+   オーラは スターの 金いろと そろえた あつかい（かげの 色を つけて ぼかす）。
+   **色は その子の 色に そろえること** ——スターが 金なのは 体が 金だから で、
+   まじょは むらさきの ドレス。かげは 絵の 形どおりに つくので、
+   まるい にじみには ならない。
+   ぼかしは スターと そろえる。スターは わくの 半けいの 0.5倍＝
+   さしわたしの 0.25倍 なので、こちらも その あたり。せまく すると
+   オーラでは なく **むらさきの ふちどり**に 見える。
+   わくは ぼかしが 外へ 出る ぶん 大きく とる（切れると 四角い 跡に なる）*/
+let backAura = null;
+function backBakeAura(S){
+  const pad = Math.ceil(S*0.34), N = Math.ceil(S) + pad*2;
+  const c = document.createElement('canvas');
+  c.width = c.height = N; c.dataset.s = String(S);
+  const g = c.getContext('2d');
+  g.shadowColor = 'rgba(176,132,255,.52)';
+  g.shadowBlur = S*0.14;  g.drawImage(backWitch, pad, pad, S, S);
+  g.shadowBlur = S*0.28;  g.drawImage(backWitch, pad, pad, S, S);  // 1回だと うすい
+  g.shadowBlur = 0;       g.drawImage(backWitch, pad, pad, S, S);
+  return c;
+}
 /* スター。**盤面と おなじ 絵素材**（art/sprites/star.png）。
    はじめは GBODY.star に 顔を えがきなおして 出していましたが、
    まじょを 絵素材に した とたん、となりで **描きかたが ちがう**のが
@@ -12805,9 +12826,13 @@ function backPaint(t){
   if (backWitch.complete && backWitch.naturalWidth){
     const S = H*0.92;
     const wx = W*0.36, wy = H*0.50 + Math.sin(t*1.5)*H*0.045;
+    /* **オーラごと 1枚に 焼く。**ぼかしを 毎フレーム かけると
+       60fps → 44fps に 落ちた（実測）。毎フレーム 同じ絵に なる ものは
+       焼く、という いつもの やりかた */
+    if (!backAura || backAura.dataset.s !== String(S)) backAura = backBakeAura(S);
     g.save(); g.translate(wx, wy);
     g.rotate(Math.sin(t*1.5)*0.045);
-    g.drawImage(backWitch, -S/2, -S/2, S, S);
+    g.drawImage(backAura, -backAura.width/2, -backAura.height/2);
     g.restore();
     withCtx(g, () => {                              // ほうきの あとの きらめき（左下へ）
       for (let i = 0; i < 6; i++){
