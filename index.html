@@ -237,7 +237,23 @@
   #titleArt{position:relative;z-index:1;flex:0 0 auto;
     --availH:calc(100vh - var(--padT) - var(--padB));
     --availH:calc(100dvh - var(--padT) - var(--padB));
-    --artW:min(100%, 430px, calc(var(--availH) / 1.5));
+    /* **100% では なく 100vw を つかうこと。**この 変数は width だけでなく
+       top / bottom / margin にも 入ります。% は width では「はば」・
+       top では「高さ」を 指すので、おなじ 変数が 場所によって
+       ちがう 値に なり、小さい 画面で ボタンが 画面の 外に 出ました。
+       #titleOv の 左右の padding は 0 なので 100vw と 100% は 同じです */
+    --artW:min(100vw, 430px, calc(var(--availH) / 1.5));
+    --artH:calc(var(--artW) * 1.5);
+    /* 絵の 下に のこる すき間（--titleUp の 反対がわ）*/
+    --gapB:max(0px, calc((var(--availH) - var(--artH)) * (1 - var(--titleUp))));
+    /* 「はじめる」を 置ける はんい：絵の y=1350 から 画面の 下まで。
+       1350 は 題字の かざりの しっぽ（y=1308 で 終わる）より 下 */
+    --slotTop:calc(var(--artH) * 0.87891);
+    --slotH:calc(var(--artH) - var(--slotTop) + var(--gapB));
+    /* 切りぬいた ボタンの わく（原画で x=248..800・y=1322..1524）。
+       左は 道（x<248）に、右は 草（x>820）に かからない はんい */
+    --btnW:calc(var(--artW) * 0.5390625);
+    --btnH:calc(var(--btnW) * 202 / 552);
     /* **あまった たては 上下に わける。**下ぞろえに すると たて長の
        iPhone では あまりが ぜんぶ 上へ 行き、空だけが 広くなって
        城から 下が 画面の 下に かたまります。--titleUp が 上の 取り分 */
@@ -286,24 +302,90 @@
             mask-image:linear-gradient(to top,#000 0,#000 12%,rgba(0,0,0,0) 100%);
     pointer-events:none}
   /* **絵の 下にも、絵じしんの じめんの 色を つづける。**上と 同じ 考えかた。
-     色は ボタンの 下（y=1494..1512）を 列ごとに 平均した もの ——
-     ボタンの ピンクを 拾うと 帯が こく なるので、y=1489 より 下だけ 見る。
-     角丸の 黒（y>1514 の すみ）にも かからない はんい。
-     こちらも 絵の 下に もぐりこませる（top:98.5% ＋ z-index:-1）*/
+     まん中の 色は、元ボタンを かくした あとの じめん（きれいな 右がわを
+     実測した もの）に そろえてある ——ボタンの かげを 拾うと こく なる */
   #titleArt::after{content:'';position:absolute;left:0;right:0;top:98.5%;height:30%;
     z-index:-1;
     background:linear-gradient(to right,
-      #f0ccd0 0%,#ecc6cf 12.5%,#e4bace 25%,#dfb1ca 37.5%,#ddadc7 50%,
-      #deafc9 62.5%,#e3b9ce 75%,#e4bed1 87.5%,#e3bed1 100%);
+      #efccd1 0%,#ecc6cf 12.5%,#e7c0d0 25%,#e6c0cf 37.5%,#e6c0cf 50%,
+      #e6c0cf 62.5%,#e6c0d0 75%,#e5bfd1 87.5%,#e4bfd1 100%);
     -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 12%,rgba(0,0,0,0) 100%);
             mask-image:linear-gradient(to bottom,#000 0,#000 12%,rgba(0,0,0,0) 100%);
     pointer-events:none}
-  /* 「はじめる」の 絵は 表紙に 焼きこまれています。
-     DOM がわは **当たり判定と 読みあげだけ**。見た目は 作りません。
-     いちは 1024x1536 の 原画から はかった 値の 百分率
-     （x265 y1344 w493 h146）*/
+
+  /* **元の いちの ボタンを かくす。**絵の ファイルは さわりません。
+     おおうのは 原画の **x=246..804・y=1334..1536 だけ**。ここには
+     ボタンと ピンクの じめんしか ありません。だから
+     **道も 草も キラキラも のこります**（道の 右はしは y=1356 で x=243、
+     下へ 行くほど 左へ 行く。草は x>806）。
+
+     色は「ボタンの すぐ右の きれいな じめん」（x=764..792）を 行ごとに
+     実測した もの。**元ボタンの 下（y=1494..1512）から 拾っては いけません**
+     ——ボタンの かげが 入って こく なり、四角い 跡に なりました（実際に なった）。
+     ふちは 3方向とも やわらかく 消して、ほんものの じめんに とかします */
+  #titleHide{position:absolute;left:24.0234%;right:21.4844%;top:85.5469%;bottom:0;
+    -webkit-mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3.23%,#000 96.77%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3.23%,#000 96.77%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
+  /* **ボタンの ぼんやりした 光は y=1335 あたりから 始まります。**
+     おおいは そこまでに 完全に 不とうめいに する こと（上ふちは 1314 から
+     1336 で 消える）。ここが 足りないと、光の 頭だけが すけて
+     よこ一本の 線に 見えました（実測で となりの行と 8ちがった）*/
+  #titleHideIn{position:absolute;inset:0;
+    background:linear-gradient(to bottom,
+      #e5bbd5 0.9%,#e5bfd7 6.3%,#e5bfd7 11.7%,#e5bfd5 17.1%,#e5bfd4 22.5%,
+      #e4bfd3 27.9%,#e4bfd2 33.3%,#e3bed1 38.7%,#e3bdd0 44.1%,#e3bdd0 49.5%,
+      #e4bed0 55.0%,#e4bed0 60.4%,#e5bed0 65.8%,#e5bed0 71.2%,#e6bfd0 76.6%,
+      #e6c0d0 82.0%,#e6c0cf 87.4%,#e7c1cf 92.8%,#e7c1cf 98.2%);
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9.91%);
+            mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9.91%)}
+
+  /* **新しい いちの「はじめる」。**絵を 作りなおしては いません ——
+     おなじ title_main.webp を もう1まい 出して、ボタンの ところ
+     （原画 x=246..794・y=1322..1524）だけを 見せています。
+     倍率は 前がわの 絵と まったく 同じなので、画質は 1ミリも 落ちません。
+     ファイルも ふえません（同じ 絵を つかいまわす）。
+     いちは 「絵の y=1350 から 画面の 下まで」の すき間の 62% あたり。
+     画面が ひくい 端末では、おおった ところに かさなるだけで 収まります */
+  #titleStart{position:absolute;left:50%;transform:translateX(-50%);
+    width:var(--btnW);aspect-ratio:552 / 202;
+    /* すき間の 62% あたり。ただし 画面の 下から はみ出さない ように
+       とめる（よこ向きや 小さい 画面では すき間が ボタンより せまい）*/
+    top:min(calc(var(--slotTop) + (var(--slotH) - var(--btnH)) * .62),
+            calc(var(--artH) + var(--gapB) - var(--btnH) - 6px));
+    z-index:4}
+  /* ふちを やわらかく 消す。よこは 外がわの わく、たては 絵じしんに かける
+     （2まいに 分けるのは、mask-composite が まだ どこでも 使えないため）*/
+  /* **切りぬきの 下に、切りぬきと おなじ じめんの色の 台を 敷く。**
+     切りぬきの 地（#e3bdd2）は、ここの 背景より 8ほど こい ので、
+     台が ないと 四角い わくに 見えます。台は だ円で 大きく ぼかすので、
+     おなじ 8の ちがいでも 60pxかけて 変わり、目に 見えません。
+     ——**四角い ふちは 目立ち、だ円の ぼかしは 目立たない。**
+     ちがいを 消すのでは なく「ゆっくり 変える」のが 直しかたです */
+  #titleStart::before{content:'';position:absolute;
+    left:-18%;right:-18%;top:-45%;bottom:-45%;
+    background:radial-gradient(ellipse at 50% 50%,
+      #e3bdd2 0,#e3bdd2 52%,rgba(227,189,210,0) 100%);
+    pointer-events:none}
+  /* よこの ふちを やわらかく 消す。カプセルは x=265..757 なので、
+     左は 3%（x=264.6）まで、右は 93%（x=761）から。字や 金の ふちには
+     かかりません */
+  #titleStartH{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+    -webkit-mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3%,#000 93%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to right,rgba(0,0,0,0) 0,#000 3%,#000 93%,rgba(0,0,0,0) 100%)}
+  /* **たての ぼかしは 窓（#titleStartV）に かけること。**絵じしんに かけると
+     % が「絵の 高さ」に なるので、88% ＝ 絵の y=1352 から 消えはじめ、
+     カプセルが 65% の うすさで 出ていました（実測）*/
+  #titleStartV{position:absolute;inset:0;overflow:hidden;
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9%,#000 88%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 9%,#000 88%,rgba(0,0,0,0) 100%)}
+  #titleStartIm{position:absolute;
+    width:185.5072%;height:760.396%;left:-44.9275%;top:-654.4554%;
+    pointer-events:none;user-select:none;-webkit-user-drag:none}
+  /* 当たり判定は 切りぬいた わくの 中。カプセルの いち（原画 x265 y1344
+     w493 h146）を、わく（x246 y1322 548x202）に 対する 百分率に した もの */
   #titleGo{position:absolute;
-    left:25.8789%;top:87.5%;width:48.1445%;height:9.5052%;
+    left:3.0797%;top:10.8911%;width:89.3116%;height:72.2772%;
     padding:0;margin:0;border:0;outline:0;background:transparent;
     border-radius:999px;cursor:pointer;z-index:5;
     -webkit-tap-highlight-color:transparent}
@@ -818,8 +900,17 @@
     <img id="titleArtIm" src="art/title/title_main.webp"
          width="1024" height="1536" alt="" draggable="false">
     <h1 class="tSr">魔法の おかしの国</h1>
-    <!-- 絵に 焼きこまれた「はじめる」に かさねる、すきとおった 当たり判定 -->
-    <button id="titleGo" aria-label="はじめる"></button>
+    <!-- 絵に 焼きこまれた「はじめる」を、まわりの じめんの 色で おおう -->
+    <div id="titleHide"><div id="titleHideIn"></div></div>
+    <!-- 同じ絵を もう1まい 出して、ボタンの ところだけ 見せる（切りぬき）。
+         見た目と 当たり判定を 1つの 親に 入れるので、いちを 変えても ずれない -->
+    <div id="titleStart">
+      <div id="titleStartH"><div id="titleStartV">
+        <img id="titleStartIm" src="art/title/title_main.webp" alt="" aria-hidden="true"
+             draggable="false">
+      </div></div>
+      <button id="titleGo" aria-label="はじめる"></button>
+    </div>
   </div>
 </div>
 
