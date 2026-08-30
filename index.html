@@ -13108,9 +13108,29 @@ function titleCloudSprite(r){
 function titleBakePoster(G, g){
   const { W, H } = G;
   const im = TITLE_ART.poster;
-  const s  = W / TITLE_IW;
-  const ih = TITLE_IH * s;
   const btn = $('titleGo');
+  /* --- 倍率 ---
+     はば に 合わせると、絵は 9:16・画面は もっと たて長なので
+     上に 150〜190px の すきまが 出ます。そこに 空を つぎたして
+     いましたが、**どう つないでも 継ぎ目が 見えました**（実機で 3回 報告）。
+     元絵の 平らな 空は 上から 40行ぶん しか なく、その先は もう にじ。
+     つぎたしを のばせば にじを 塗りつぶし、短くすれば 質感の 差が 出る。
+
+     なので **画面を うめる 倍率まで 拡大して、すきま自体を なくします**。
+     よこは 1割ほど 切れますが、題字は 読めますし、絵も 大きく なります。
+     継ぎ目は「消す」のでは なく「作らない」のが 正しい直しかた。
+
+     必要な 倍率は ボタンの いちから 逆算できます。
+       iy = H - PAD - s*(BTN.y + BTN.h)       ← これが 0 に なる s
+     PAD は ボタンの 下の 余白（CSS が セーフエリアこみで 決める）。
+     切れすぎないよう 上限を つけ、超える ときは すきまを のこして
+     下の つぎたしに まかせます */
+  const pad  = Math.max(0, H - btn.offsetTop - btn.offsetHeight);
+  const sFit = W / TITLE_IW;
+  const s    = Math.min(Math.max(sFit, (H - pad) / (TITLE_BTN.y + TITLE_BTN.h)),
+                        sFit * 1.34);
+  const iw = TITLE_IW * s, ih = TITLE_IH * s;
+  const ox = (W - iw) / 2;                 // よこは まん中ぞろえ
   /* 当たり判定を 絵の ボタンと 同じ 大きさに する。
      **先に 大きさを 決めてから いちを 読むこと**（flex-end なので
      高さが 変わると offsetTop も 動く）*/
@@ -13119,7 +13139,7 @@ function titleBakePoster(G, g){
   const btnTop = btn.offsetTop || H*0.86;
   /* 絵の ボタンの まん中を、DOM の ボタンの まん中に そろえる */
   const iy = btnTop + bh/2 - (TITLE_BTN.y + TITLE_BTN.h/2) * s;
-  g.drawImage(im, 0, iy, W, ih);
+  g.drawImage(im, ox, iy, iw, ih);
   /* ふちの 平均色を 実際に はかる（絵を 差しかえても 合うように） */
   const avg = (yCss) => {
     const yy = Math.max(0, Math.min(g.canvas.height - 1, Math.round(yCss*TDPR)));
@@ -13149,7 +13169,13 @@ function titleBakePoster(G, g){
        よこ方向は 完全に 平らなので、**縦筋や 光柱が 出ようが ありません**。
        画素を 読まない（getImageData を つかわない）のは、file:// で
        ひらくと 絵を 読んだ canvas が よごれ扱いに なり 落ちるためです */
-    const OVER = Math.min(100, Math.max(56, Math.round(H*0.12)));  // 元絵に かぶせる ぶん
+    /* **かぶせる ぶんは 短くする こと（元絵の 平らな 空の 中で 終える）。**
+       100px かぶせたら、元絵の 上から 40行目で もう にじが 始まっているので、
+       にじの 上に ある 濃い むらさきの 空まで うすく 塗りつぶし、
+       そこが 終わる ところが 1本の 帯に 見えました（実機の 報告）。
+       加工なしの 元絵には 線が ありません ——線は こちらが 作っていた。
+       元絵の 平らな 空は 上から 40行ぶん しか ないので、そこを 超えない */
+    const OVER = Math.max(8, Math.min(16, Math.round(38 * s)));
     const BH   = iy + OVER;
     const ob   = titleCanvas(W, BH), bg = ob.g;
     bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
@@ -13172,16 +13198,14 @@ function titleBakePoster(G, g){
        **境め（iy）でも 少しだけ かけたままに して、消えるのは かぶせた
        ぶんの 中でやる。**iy で きっちり 0 に すると、そこだけ 元絵の
        こい色が 顔を 出して、また 帯に 見えます */
-    const TIN = 'rgba(212,197,228,';
-    const tint = bg.createLinearGradient(0, 0, 0, BH);
+    /* **境め（iy）で きっちり 0 に すること。**元絵に はみ出して かけると、
+       にじの 上の 濃い 空だけが うすく 抜けて、そこが 帯に 見えます */
+    const tint = bg.createLinearGradient(0, iy, 0, 0);
     for (let i = 0; i <= 10; i++){
-      const u = i/10, y = u*BH;
-      let a;
-      if (y <= iy) a = 0.90 - 0.58*ss(y/Math.max(1, iy));      // 上ほど こく
-      else         a = 0.32 * Math.max(0, 1 - (y - iy)/(OVER*0.45));
-      tint.addColorStop(u, TIN + a.toFixed(3) + ')');
+      const u = i/10;
+      tint.addColorStop(u, 'rgba(206,192,226,' + (ss(u)*0.72).toFixed(3) + ')');
     }
-    bg.fillStyle = tint; bg.fillRect(0, 0, W, BH);
+    bg.fillStyle = tint; bg.fillRect(0, 0, W, iy + 1);
 
     /* ③ のっぺりさせない ための かすみ。**帯ぜんぶを 塗ること。**
        つぎたしの ぶんだけ 塗って 途中で 切ると、そこが 線に なります
@@ -13210,9 +13234,9 @@ function titleBakePoster(G, g){
        元絵は 上から 40〜120行目で にじに 変わるので、そこに 着くまでに
        うすくなっている 必要が あります。^5 なら 1/4 の 深さで 0.24、
        半分で 0.03。平らな 空の ところで ほぼ 使いきる 形です */
-    for (let i = 1; i <= 12; i++){
-      const u = i/12;
-      mk.addColorStop(q + (1-q)*u, 'rgba(0,0,0,' + Math.pow(1-u, 5).toFixed(4) + ')');
+    for (let i = 1; i <= 8; i++){
+      const u = i/8;
+      mk.addColorStop(q + (1-q)*u, 'rgba(0,0,0,' + (1 - ss(u)).toFixed(3) + ')');
     }
     bg.globalCompositeOperation = 'destination-in';
     bg.fillStyle = mk; bg.fillRect(0, 0, W, BH);
