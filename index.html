@@ -12766,29 +12766,19 @@ let backRaf = 0, backT0 = 0, backWitch = null;
    ここで 左右を うつしては いけない（うつすと 手を ふる 側が うしろに 回る）*/
 backWitch = new Image();
 backWitch.src = 'art/sprites/witch_fly.png';
-/* スター。盤面の ほしのクッキーと おなじ 星形だが、
-   **顔は ここだけの もの**（ウインクして 口を あけて わらう）*/
+/* スター。**盤面と おなじ 絵素材**（art/sprites/star.png）。
+   はじめは GBODY.star に 顔を えがきなおして 出していましたが、
+   まじょを 絵素材に した とたん、となりで **描きかたが ちがう**のが
+   目立ちました（かたや 塗りの ある 絵、かたや 平らな 図形）。
+   1つの 画面に 2つの 絵柄を まぜない こと。
+   ちがいは 顔では なく **動き**で 出します（ぴょんぴょん はねる） */
+const backStarIm = new Image();
+backStarIm.src = 'art/sprites/star.png';
 function backStar(g, x, y, r, t){
-  const wob = Math.sin(t*2.2)*0.10;
-  g.save(); g.translate(x, y); g.rotate(wob);
+  if (!(backStarIm.complete && backStarIm.naturalWidth)) return;
+  g.save(); g.translate(x, y); g.rotate(Math.sin(t*2.2)*0.10);
   g.shadowColor = 'rgba(255,199,64,.55)'; g.shadowBlur = r*0.5;
-  GBODY.star(g, r*2, 0, 0, r, '#ffd76e');
-  g.shadowBlur = 0;
-  g.fillStyle = 'rgba(255,255,255,.45)';            // つや
-  g.beginPath(); g.ellipse(-r*0.26, -r*0.3, r*0.26, r*0.16, -0.5, 0, GTAU); g.fill();
-  g.fillStyle = 'rgba(255,150,190,.55)';            // ほっぺ
-  for (const sx of [-1, 1]){
-    g.beginPath(); g.ellipse(sx*r*0.42, r*0.18, r*0.16, r*0.11, 0, 0, GTAU); g.fill();
-  }
-  g.strokeStyle = '#8a5a2e'; g.lineWidth = r*0.075; g.lineCap = 'round';
-  g.beginPath(); g.moveTo(-r*0.46, -r*0.06);        // 左目：ウインク（への字）
-  g.quadraticCurveTo(-r*0.28, -r*0.20, -r*0.10, -r*0.06); g.stroke();
-  g.fillStyle = '#5a3a20';                          // 右目
-  g.beginPath(); g.ellipse(r*0.30, -r*0.06, r*0.085, r*0.115, 0, 0, GTAU); g.fill();
-  g.fillStyle = '#fff';
-  g.beginPath(); g.arc(r*0.33, -r*0.10, r*0.035, 0, GTAU); g.fill();
-  g.fillStyle = '#c9536f';                          // 口（あけて わらう）
-  g.beginPath(); g.ellipse(0, r*0.24, r*0.16, r*0.13, 0, 0, GTAU); g.fill();
+  g.drawImage(backStarIm, -r, -r, r*2, r*2);
   g.restore();
 }
 function backPaint(t){
@@ -12829,7 +12819,9 @@ function backPaint(t){
       g.globalAlpha = 1;
     });
   }
-  backStar(g, W*0.74, H*0.44 + Math.abs(Math.sin(t*2.0))*-H*0.10, H*0.155, t);
+  /* 素材の まわりに 余白と きらめきが 焼きこんで あるので、
+     見えている 星は わくより ひとまわり 小さい。その ぶん 大きく とる */
+  backStar(g, W*0.74, H*0.42 + Math.abs(Math.sin(t*2.0))*-H*0.10, H*0.21, t);
 }
 function backLoop(ts){
   if (!backT0) backT0 = ts;
