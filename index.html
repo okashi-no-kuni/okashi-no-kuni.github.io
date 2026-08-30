@@ -303,14 +303,37 @@
     pointer-events:none}
   /* **絵の 下にも、絵じしんの じめんの 色を つづける。**上と 同じ 考えかた。
      まん中の 色は、元ボタンを かくした あとの じめん（きれいな 右がわを
-     実測した もの）に そろえてある ——ボタンの かげを 拾うと こく なる */
+     実測した もの）に そろえてある ——ボタンの かげを 拾うと こく なる。
+     **おなじ色の 止まりを 2つ ならべない こと**（左はしを #e8bfd1 で 平らに
+     したら、12.5% の ところで 傾きが 変わって たての すじに 見えた）*/
   #titleArt::after{content:'';position:absolute;left:0;right:0;top:98.5%;height:30%;
     z-index:-1;
     background:linear-gradient(to right,
-      #efccd1 0%,#ecc6cf 12.5%,#e7c0d0 25%,#e6c0cf 37.5%,#e6c0cf 50%,
+      #e9bfd2 0%,#e8bfd1 12.5%,#e7bfd0 25%,#e6c0cf 37.5%,#e6c0cf 50%,
       #e6c0cf 62.5%,#e6c0d0 75%,#e5bfd1 87.5%,#e4bfd1 100%);
     -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 12%,rgba(0,0,0,0) 100%);
             mask-image:linear-gradient(to bottom,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
+
+  /* **左下の 道を、下へ 行くほど じめんに とかす。**
+     道は 絵の いちばん下まで つづいていて、周りの ピンクより
+     黄いろ寄り（道 #eecfd1 / じめん #e2bad0）なので、**たての ベージュの帯**に
+     見えます。上の 道は のこしたいので、消すのでは なく
+     **下へ 行くほど じめんの色を こく かぶせて**いきます。
+     色は その行の じめんの 実測値。右はしは 道が にげる 向きに 合わせて
+     よこにも 弱く ぼかし、たての 帯に 見えないように します。
+
+     **絵の 下まで のばすこと**（bottom:-28.5%）。うしろの ぼかした 1まいにも
+     道の ベージュが 写っているので、絵の 中だけ 直すと、絵の 下から また
+     ベージュの 帯が 出ます（実測で よこに 12 の さ）。下の 帯（::after）と
+     おなじ 消えかた（36%で 不とうめい → 41%から 0へ）に そろえます */
+  #titleRoad{position:absolute;left:0;right:74.0234%;top:83.9844%;bottom:-28.5%;
+    background:linear-gradient(to bottom,
+      rgba(227,191,212,0) 0%, rgba(226,186,208,.40) 21%, rgba(228,187,208,.68) 27%,
+      rgba(231,189,209,.92) 33%, rgba(232,191,209,1) 36%, rgba(232,191,209,1) 41%,
+      rgba(232,191,209,0) 100%);
+    -webkit-mask-image:linear-gradient(to right,#000 0,#000 72%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to right,#000 0,#000 72%,rgba(0,0,0,0) 100%);
     pointer-events:none}
 
   /* **元の いちの ボタンを かくす。**絵の ファイルは さわりません。
@@ -359,13 +382,17 @@
   /* **切りぬきの 下に、切りぬきと おなじ じめんの色の 台を 敷く。**
      切りぬきの 地（#e3bdd2）は、ここの 背景より 8ほど こい ので、
      台が ないと 四角い わくに 見えます。台は だ円で 大きく ぼかすので、
-     おなじ 8の ちがいでも 60pxかけて 変わり、目に 見えません。
-     ——**四角い ふちは 目立ち、だ円の ぼかしは 目立たない。**
-     ちがいを 消すのでは なく「ゆっくり 変える」のが 直しかたです */
+     おなじ 8の ちがいでも 40pxかけて 変わり、目に 見えません。
+     ——**四角い ふちは 目立ち、ぼかした ふちは 目立たない。**
+     ちがいを 消すのでは なく「ゆっくり 変える」のが 直しかたです。
+
+     **radial-gradient で 作っては いけません。**大きさを 書かないと
+     いちばん遠い 角で 0に なる ので、よこの まん中の ふちでは まだ 61%
+     のこっていて、そこに **1pxの 段**が できました（実測 5.9）。
+     `filter:blur()` なら ふちが ガウスで なめらかに 消えます */
   #titleStart::before{content:'';position:absolute;
-    left:-18%;right:-18%;top:-45%;bottom:-45%;
-    background:radial-gradient(ellipse at 50% 50%,
-      #e3bdd2 0,#e3bdd2 52%,rgba(227,189,210,0) 100%);
+    left:-4%;right:-4%;top:-10%;bottom:-10%;
+    background:#e3bdd2;border-radius:40px;filter:blur(14px);
     pointer-events:none}
   /* よこの ふちを やわらかく 消す。カプセルは x=265..757 なので、
      左は 3%（x=264.6）まで、右は 93%（x=761）から。字や 金の ふちには
@@ -900,6 +927,8 @@
     <img id="titleArtIm" src="art/title/title_main.webp"
          width="1024" height="1536" alt="" draggable="false">
     <h1 class="tSr">魔法の おかしの国</h1>
+    <!-- 左下へ のびる 道を、下へ 行くほど じめんの 色に とかす -->
+    <div id="titleRoad"></div>
     <!-- 絵に 焼きこまれた「はじめる」を、まわりの じめんの 色で おおう -->
     <div id="titleHide"><div id="titleHideIn"></div></div>
     <!-- 同じ絵を もう1まい 出して、ボタンの ところだけ 見せる（切りぬき）。
