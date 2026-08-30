@@ -438,6 +438,34 @@
   }
   /* すきとおっているので、押した ことが わかるよう 白く さっと 光らせる */
   #titleGo:active{background:rgba(255,255,255,.30)}
+  /* ---------- おかえりなさい ----------
+     表紙（プレゼントが ある日は その あと）の つぎに 出る。
+     とちゅうの セーブが ある人にだけ 出す ——はじめての人には
+     「つづきから」が 無いので、出しても えらべない。
+     表紙と 同じ 全画面（#app の 外）。ここは 2つの ボタンから
+     かならず どちらかを えらぶ 画面なので、盤面を さわれないように する */
+  #backOv{position:fixed;inset:0;z-index:38;display:none;
+    width:100vw;height:100vh;height:100dvh;overflow:hidden;box-sizing:border-box;
+    padding:calc(env(safe-area-inset-top) + 14px) 16px
+            calc(env(safe-area-inset-bottom) + 18px);
+    align-items:center;justify-content:center;
+    background:linear-gradient(to bottom,#cfe7fa 0%,#eee0f4 45%,#f4d8e7 100%)}
+  #backOv.on{display:flex;animation:tFade .4s ease}
+  #backCard{width:min(100%,410px);border-radius:26px;text-align:center;
+    padding:9px 18px 18px;
+    background:linear-gradient(180deg,rgba(255,252,254,.96),rgba(255,244,251,.94));
+    box-shadow:0 14px 40px rgba(180,130,175,.30), inset 0 0 0 3px rgba(255,255,255,.9);
+    animation:pop .42s cubic-bezier(.2,1.4,.5,1)}
+  /* 絵は canvas。まじょと スターが **うごく**（ほうきで とぶ・はねる）*/
+  #backCv{display:block;width:100%;height:auto;border-radius:20px}
+  #backT{font-size:calc(25px * var(--fs));color:var(--pink-d);margin-top:2px}
+  #backB{font-size:calc(13px * var(--fs));line-height:1.6;opacity:.8;margin:4px 0 14px}
+  /* **2つの ボタンは 色を 分ける。**おなじ色だと どちらが 本すじか
+     わからない。つづき＝ピンク（主）／さいしょ＝ラベンダー（副）*/
+  #backOv .btn{width:100%;height:auto;min-height:50px;margin-bottom:9px;
+    font-size:calc(16px * var(--fs));border-radius:16px}
+  #backNew{background:linear-gradient(180deg,#d7c2ff,#b394f0);box-shadow:0 4px 0 #8b6ad0}
+  #backNew:active{box-shadow:0 1px 0 #8b6ad0}
   /* 読みあげ用にだけ のこす 題字（見た目は 絵がわ）*/
   .tSr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
     clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -960,6 +988,18 @@
       </div></div>
       <button id="titleGo" aria-label="はじめる"></button>
     </div>
+  </div>
+</div>
+
+<!-- おかえりなさい。表紙の つぎ（プレゼントが ある日は その あと）。
+     #app の 外に 置く（position:fixed で 画面ぜんぶを おおうため）-->
+<div id="backOv">
+  <div id="backCard">
+    <canvas id="backCv" width="640" height="420" aria-hidden="true"></canvas>
+    <div id="backT">おかえりなさい！</div>
+    <div id="backB"></div>
+    <button class="btn" id="backGo">つづきから ▶</button>
+    <button class="btn" id="backNew">さいしょから</button>
   </div>
 </div>
 
@@ -12703,11 +12743,138 @@ function closeTitle(){
    ボタンを 1秒ごとに 書きかえる（armLifeButton）ので、止めてから
    プレゼントを 出し、受け取った あとに もどします
    ——もどさないと「最初からやり直す」も「続きから」も 押せなくなります */
+/* ==========================================================
+   おかえりなさい（表紙の つぎ）
+   とちゅうの セーブが ある人にだけ 出して、つづきか さいしょかを えらぶ。
+
+   絵は **コードで えがきます**（このシリーズの きまり。例外は 表紙だけ）。
+   まじょと スターを、盤面とは **ちがう すがた**で 出します ——
+   盤面では 2人とも マスの中で じっと 立っているので、ここでは
+   ほうきで ななめに とぶ まじょ と、はねる スターに しました。
+   スターの 顔は ここで えがきなおしています（ウインク＋大きい口）。
+   絵の 素材は 1つも ふえません。
+   ========================================================== */
+const backOv = $('backOv');
+let backRaf = 0, backT0 = 0, backWitch = null;
+/* まじょは 1回 焼いて、あとは かたむけて はるだけ。
+   毎フレーム drawGen を よぶと 重い（表紙で 学んだ のと 同じ） */
+function backBakeWitch(S){
+  const rc = GEN_LIST.find(o => o.name === 'まじょ');
+  if (!rc) return null;
+  const c = document.createElement('canvas');
+  c.width = c.height = Math.round(S);
+  const g = c.getContext('2d');
+  withCtx(g, () => drawGen(g, S, rc));
+  return c;
+}
+/* スター。盤面の ほしのクッキーと おなじ 星形だが、
+   **顔は ここだけの もの**（ウインクして 口を あけて わらう）*/
+function backStar(g, x, y, r, t){
+  const wob = Math.sin(t*2.2)*0.10;
+  g.save(); g.translate(x, y); g.rotate(wob);
+  g.shadowColor = 'rgba(255,199,64,.55)'; g.shadowBlur = r*0.5;
+  GBODY.star(g, r*2, 0, 0, r, '#ffd76e');
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(255,255,255,.45)';            // つや
+  g.beginPath(); g.ellipse(-r*0.26, -r*0.3, r*0.26, r*0.16, -0.5, 0, GTAU); g.fill();
+  g.fillStyle = 'rgba(255,150,190,.55)';            // ほっぺ
+  for (const sx of [-1, 1]){
+    g.beginPath(); g.ellipse(sx*r*0.42, r*0.18, r*0.16, r*0.11, 0, 0, GTAU); g.fill();
+  }
+  g.strokeStyle = '#8a5a2e'; g.lineWidth = r*0.075; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-r*0.46, -r*0.06);        // 左目：ウインク（への字）
+  g.quadraticCurveTo(-r*0.28, -r*0.20, -r*0.10, -r*0.06); g.stroke();
+  g.fillStyle = '#5a3a20';                          // 右目
+  g.beginPath(); g.ellipse(r*0.30, -r*0.06, r*0.085, r*0.115, 0, 0, GTAU); g.fill();
+  g.fillStyle = '#fff';
+  g.beginPath(); g.arc(r*0.33, -r*0.10, r*0.035, 0, GTAU); g.fill();
+  g.fillStyle = '#c9536f';                          // 口（あけて わらう）
+  g.beginPath(); g.ellipse(0, r*0.24, r*0.16, r*0.13, 0, 0, GTAU); g.fill();
+  g.restore();
+}
+function backPaint(t){
+  const cv = $('backCv'), g = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  if (!backWitch) backWitch = backBakeWitch(Math.round(H*0.86));
+  /* 空。カードの 中の 小さな 夜あけの 空 */
+  const sky = g.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#dcecfb'); sky.addColorStop(0.55, '#efe2f7'); sky.addColorStop(1, '#fbe3ef');
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  withCtx(g, () => {
+    for (let i = 0; i < 16; i++){                   // ゆっくり ながれる 粒
+      const p = (i*0.137 + t*0.02) % 1;
+      const x = ((i*97) % W) + Math.sin(t*0.6 + i)*10;
+      const y = H - p*H*1.1;
+      g.globalAlpha = 0.30 + 0.35*Math.sin(t + i);
+      sparkle(x, y, H*(0.012 + 0.010*((i*7)%3)/2), t*0.5 + i, '#fff');
+    }
+    g.globalAlpha = 1;
+  });
+  /* まじょ：ほうきで ななめに とぶ（盤面では 立っている）*/
+  if (backWitch){
+    /* **左右を うつして 右むきに する。**盤面では 左を むいて 立っているので、
+       ここでは スターの ほうへ とんでいく 向きに なる。
+       まじょは 絵（art/witch.png）なので 表情は 変えられない ——
+       向きと かたむきと 動きで ちがいを 出す */
+    const S = backWitch.width;
+    const wx = W*0.34, wy = H*0.52 + Math.sin(t*1.5)*H*0.045;
+    g.save(); g.translate(wx, wy);
+    g.rotate(-0.30 + Math.sin(t*1.5)*0.05); g.scale(-1, 1);
+    g.drawImage(backWitch, -S/2, -S/2);
+    g.restore();
+    withCtx(g, () => {                              // ほうきの あとの きらめき（うしろへ）
+      for (let i = 0; i < 6; i++){
+        const u = (i + (t*1.4 % 1)) / 6;
+        g.globalAlpha = (1 - u) * 0.85;
+        sparkle(wx - S*0.26 - u*W*0.26, wy + S*0.20 + u*H*0.12,
+                H*0.034*(1 - u*0.6), t*2 + i, i%2 ? '#ffe9a8' : '#ffd0ec');
+      }
+      g.globalAlpha = 1;
+    });
+  }
+  backStar(g, W*0.74, H*0.44 + Math.abs(Math.sin(t*2.0))*-H*0.10, H*0.155, t);
+}
+function backLoop(ts){
+  if (!backT0) backT0 = ts;
+  backPaint((ts - backT0)/1000);
+  backRaf = requestAnimationFrame(backLoop);
+}
+function openBack(){
+  /* ?dbg=1 は 検査どうぐの 入り口。全画面を おおうので 出さない */
+  if (location.search.includes('dbg=1')) return false;
+  let rn = null;
+  try{ rn = JSON.parse(localStorage.getItem('sweetTD.run') || 'null'); }catch(e){}
+  if (!rn) return false;            // はじめての人には「つづき」が ない
+  $('backB').innerHTML = 'ウェーブ <b>' + Math.max(1, rn.w | 0) + '</b> の とちゅうです<br>' +
+    '<span style="opacity:.72;font-size:.92em">さいしょからにすると<br>なかまと ⭐は 0に もどります</span>';
+  backOv.classList.add('on');
+  backT0 = 0;
+  if (!backRaf) backRaf = requestAnimationFrame(backLoop);
+  return true;
+}
+function closeBack(){
+  backOv.classList.remove('on');
+  if (backRaf){ cancelAnimationFrame(backRaf); backRaf = 0; }
+  resize();
+}
+$('backGo').onclick = () => {          // つづきから（tryResume が もう もどしている）
+  tapSel(); closeBack();
+};
+$('backNew').onclick = () => {         // さいしょから
+  tapSel(); clearRun(); reset(); syncHUD(); closeBack();
+};
+
 function afterTitle(){
   const rest = ov.classList.contains('on');
   if (rest && lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
-  if (!checkLogin()){ if (rest) armLifeButton(true); return; }
-  if (rest) ovBtn.onclick = () => { ov.classList.remove('on'); syncHUD(); checkLife(); };
+  /* 💗の 回復まちの 画面が 出ているときは「おかえりなさい」を 出さない。
+     あの画面が すでに「つづきから／最初からやり直す」を 持っているので、
+     おなじ えらびを 2回 させることに なる */
+  if (!checkLogin()){ if (rest) armLifeButton(true); else openBack(); return; }
+  ovBtn.onclick = rest
+    ? () => { ov.classList.remove('on'); syncHUD(); resize(); checkLife(); }
+    : () => { ov.classList.remove('on'); syncHUD(); resize(); openBack(); };
 }
 $('titleGo').onclick = () => {
   if (titleExit) return;                 // 2度おしで 演出が 重ならないように
