@@ -12756,17 +12756,16 @@ function closeTitle(){
    ========================================================== */
 const backOv = $('backOv');
 let backRaf = 0, backT0 = 0, backWitch = null;
-/* まじょは 1回 焼いて、あとは かたむけて はるだけ。
-   毎フレーム drawGen を よぶと 重い（表紙で 学んだ のと 同じ） */
-function backBakeWitch(S){
-  const rc = GEN_LIST.find(o => o.name === 'まじょ');
-  if (!rc) return null;
-  const c = document.createElement('canvas');
-  c.width = c.height = Math.round(S);
-  const g = c.getContext('2d');
-  withCtx(g, () => drawGen(g, S, rc));
-  return c;
-}
+/* まじょは この画面 だけの 絵（art/sprites/witch_fly.png）。
+   盤面の まじょ（art/witch.png）は **立って いて 表情も 変えられない**ので、
+   あれを かたむけて 貼っても 同じ絵が 2か所に 出るだけで、
+   お祝いの 画面に 見えない。だから ほうきで とんで ウインクして
+   手を ふっている ところを 別に 出した（tools/gen-art.mjs の「とぶまじょ」）。
+   おなじ子だと わかるよう、白い髪・黒い ハットバンド・すみ色の ほうきは
+   そのまま。**この絵は もう 右上へ 進む 向きに 描いてある**ので、
+   ここで 左右を うつしては いけない（うつすと 手を ふる 側が うしろに 回る）*/
+backWitch = new Image();
+backWitch.src = 'art/sprites/witch_fly.png';
 /* スター。盤面の ほしのクッキーと おなじ 星形だが、
    **顔は ここだけの もの**（ウインクして 口を あけて わらう）*/
 function backStar(g, x, y, r, t){
@@ -12796,7 +12795,6 @@ function backPaint(t){
   const cv = $('backCv'), g = cv.getContext('2d');
   const W = cv.width, H = cv.height;
   g.clearRect(0, 0, W, H);
-  if (!backWitch) backWitch = backBakeWitch(Math.round(H*0.86));
   /* 空。カードの 中の 小さな 夜あけの 空 */
   const sky = g.createLinearGradient(0, 0, 0, H);
   sky.addColorStop(0, '#dcecfb'); sky.addColorStop(0.55, '#efe2f7'); sky.addColorStop(1, '#fbe3ef');
@@ -12811,23 +12809,21 @@ function backPaint(t){
     }
     g.globalAlpha = 1;
   });
-  /* まじょ：ほうきで ななめに とぶ（盤面では 立っている）*/
-  if (backWitch){
-    /* **左右を うつして 右むきに する。**盤面では 左を むいて 立っているので、
-       ここでは スターの ほうへ とんでいく 向きに なる。
-       まじょは 絵（art/witch.png）なので 表情は 変えられない ——
-       向きと かたむきと 動きで ちがいを 出す */
-    const S = backWitch.width;
-    const wx = W*0.34, wy = H*0.52 + Math.sin(t*1.5)*H*0.045;
+  /* まじょ：ほうきで とぶ。絵が すでに 右上むきなので、
+     ここでは ふわふわ 上下に ゆらすだけ（`complete` を 見るのは、
+     読みこみ前に 描くと 何も 出ないため）*/
+  if (backWitch.complete && backWitch.naturalWidth){
+    const S = H*0.92;
+    const wx = W*0.36, wy = H*0.50 + Math.sin(t*1.5)*H*0.045;
     g.save(); g.translate(wx, wy);
-    g.rotate(-0.30 + Math.sin(t*1.5)*0.05); g.scale(-1, 1);
-    g.drawImage(backWitch, -S/2, -S/2);
+    g.rotate(Math.sin(t*1.5)*0.045);
+    g.drawImage(backWitch, -S/2, -S/2, S, S);
     g.restore();
-    withCtx(g, () => {                              // ほうきの あとの きらめき（うしろへ）
+    withCtx(g, () => {                              // ほうきの あとの きらめき（左下へ）
       for (let i = 0; i < 6; i++){
         const u = (i + (t*1.4 % 1)) / 6;
         g.globalAlpha = (1 - u) * 0.85;
-        sparkle(wx - S*0.26 - u*W*0.26, wy + S*0.20 + u*H*0.12,
+        sparkle(wx - S*0.30 - u*W*0.22, wy + S*0.22 + u*H*0.10,
                 H*0.034*(1 - u*0.6), t*2 + i, i%2 ? '#ffe9a8' : '#ffd0ec');
       }
       g.globalAlpha = 1;
