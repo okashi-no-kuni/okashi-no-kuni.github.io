@@ -89,53 +89,82 @@ const png = await p.evaluate(async (K) => {
       for (let k=0;k<3;k++) D[i+k] = Math.max(0, Math.min(255, Math.round(D[i+k] - d0[k]*w)));
     }
   }
-  /* --- 境めに 近づくほど **ぼかして、モノを 溶かす** ---
+  /* --- 境めの ちかくから **大きい モノだけ** 消す（粒は 残す）---
      モデルは 言っても 境めを またいで 描く（光のすじ・シャボン玉・雲）。
-     そこへ 原本を 戻すと、**すじが 途中で 切れ、玉が 半分に なる**
-     （実機の 報告。色を どれだけ 合わせても これは 消えない）。
+     原本を 戻すと **すじが 途中で 切れ、玉が 半分に なる**。
      形の 問題なので 色の 補正では 直らない。
 
-     境めから MELT px の あいだ、その 行（左右なら 列）を 横に ならした
-     ものへ だんだん 寄せる。すじも 玉の ふちも ならされて 消え、
-     境めでは なめらかな 帯に なる。**切れ目では なく 溶けて 終わる** */
-  /* MELT は **大きい 雲が 溶けきる 長さ**が 要る。56px では
-     足りず、境めの すぐ上の 大きな 雲が ばっさり 切れて 見えた（実機の 報告）。
-     200px かけて ゆっくり 溶かすと、地平ちかくの かすみのように 見える */
-  const MELT = 200, RB = 60;
-  const blurRow = (y, x0, x1) => {                    // 横に ならす
-    const out = new Float32Array((x1-x0)*3);
-    for (let x=x0; x<x1; x++){
-      const s2=[0,0,0]; let n=0;
-      for (let k=-RB;k<=RB;k++){ const xx=x+k; if(xx<0||xx>=K.MW) continue;
-        const i=at(D,K.MW,xx,y); s2[0]+=D[i]; s2[1]+=D[i+1]; s2[2]+=D[i+2]; n++; }
-      for (let c2=0;c2<3;c2++) out[(x-x0)*3+c2]=s2[c2]/n;
+     はじめは ただ ぼかした。切れは 直ったが、こんどは
+     **上だけ 曇って 下だけ 鮮明**に なった（実機の 報告）。
+     ぼかしは 大きい 雲も こまかい きらめきも いっしょに 消してしまう。
+
+     だから **帯域を えらんで 消す**。
+       こまかい ぼかし（半径6）  … 粒より 大きい ものを ひろう
+       おおきい ぼかし（半径120）… 雲より 大きい ものを ひろう
+     その さ（＝雲や すじの 大きさの 成分）だけを 引く。
+     粒（px − 小ぼかし）と 全体の グラデ（大ぼかし）は そのまま のこるので、
+     **鮮明さを 失わずに 大きい モノだけ 消える** */
+  /* **MELT は 0 が いちばん よい。**ぼかすと 切れは 直るが、こんどは
+     上だけ 曇って 下だけ 鮮明に なる（実機の 報告）。
+     正しい 直しかたは 絵がわ ——プロンプトで「上の 余白は 雲も すじもない
+     グラデ空だけ」と 書いて、切れる モノを そもそも 描かせない。
+     0 より 大きく すると 帯域を えらんで 大きい モノだけ 消す（保険）*/
+  const MELT = 0, R1 = 6, R2 = 120;
+  if (MELT > 0) {
+  const bx = (K.ML - MELT - R2 - 2), bx2 = (K.ML + K.IW + MELT + R2 + 2);
+  const X0 = Math.max(0, bx), X1 = Math.min(K.MW, bx2);
+  const Y0 = Math.max(0, K.MT - MELT - R2 - 2), Y1 = Math.min(K.MH, K.MT + K.IH + 2);
+  const BW = K.MW, BH2 = Y1 - Y0;
+  /* 箱ぼかし（走る合計）。よこ→たての 2段で 2次元に */
+  const boxBlur = (src, r) => {
+    const tmp = new Float32Array(BW*BH2*3), out = new Float32Array(BW*BH2*3);
+    for (let y=0;y<BH2;y++){
+      for (let c2=0;c2<3;c2++){
+        let sum=0, n=0;
+        for (let x=-r;x<=r;x++){ const xx=Math.min(BW-1,Math.max(0,x)); sum+=src[(y*BW+xx)*3+c2]; n++; }
+        for (let x=0;x<BW;x++){
+          tmp[(y*BW+x)*3+c2] = sum/n;
+          const ad=Math.min(BW-1,x+r+1), rm=Math.max(0,x-r);
+          sum += src[(y*BW+ad)*3+c2] - src[(y*BW+rm)*3+c2];
+        }
+      }
+    }
+    for (let x=0;x<BW;x++){
+      for (let c2=0;c2<3;c2++){
+        let sum=0, n=0;
+        for (let y=-r;y<=r;y++){ const yy=Math.min(BH2-1,Math.max(0,y)); sum+=tmp[(yy*BW+x)*3+c2]; n++; }
+        for (let y=0;y<BH2;y++){
+          out[(y*BW+x)*3+c2] = sum/n;
+          const ad=Math.min(BH2-1,y+r+1), rm=Math.max(0,y-r);
+          sum += tmp[(ad*BW+x)*3+c2] - tmp[(rm*BW+x)*3+c2];
+        }
+      }
     }
     return out;
   };
-  const blurCol = (x, y0, y1) => {                    // たてに ならす
-    const out = new Float32Array((y1-y0)*3);
-    for (let y=y0; y<y1; y++){
-      const s2=[0,0,0]; let n=0;
-      for (let k=-RB;k<=RB;k++){ const yy=y+k; if(yy<0||yy>=K.MH) continue;
-        const i=at(D,K.MW,x,yy); s2[0]+=D[i]; s2[1]+=D[i+1]; s2[2]+=D[i+2]; n++; }
-      for (let c2=0;c2<3;c2++) out[(y-y0)*3+c2]=s2[c2]/n;
-    }
-    return out;
+  const band = new Float32Array(BW*BH2*3);
+  for (let y=0;y<BH2;y++) for (let x=0;x<BW;x++){
+    const i=at(D,K.MW,x,Y0+y), j=(y*BW+x)*3;
+    band[j]=D[i]; band[j+1]=D[i+1]; band[j+2]=D[i+2];
+  }
+  const b1 = boxBlur(band, R1), b2 = boxBlur(band, R2);
+  /* 境めからの きょり（外がわだけ）*/
+  const wAt = (x,y) => {
+    if (x>=K.ML && x<K.ML+K.IW && y>=K.MT && y<K.MT+K.IH) return 0;
+    const cx=Math.min(K.ML+K.IW-1,Math.max(K.ML,x)), cy=Math.min(K.MT+K.IH-1,Math.max(K.MT,y));
+    const d0=Math.hypot(x-cx, y-cy);
+    return d0>=MELT ? 0 : ss(1 - d0/MELT);
   };
-  for (let y=Math.max(0,K.MT-MELT); y<K.MT; y++){     // 上
-    const w = ss(1 - (K.MT - y)/MELT), br = blurRow(y, 0, K.MW);
-    for (let x=0; x<K.MW; x++){ const i=at(D,K.MW,x,y);
-      for (let c2=0;c2<3;c2++) D[i+c2] = Math.round(D[i+c2]*(1-w) + br[x*3+c2]*w); }
+  for (let y=0;y<BH2;y++){
+    const gy=Y0+y;
+    for (let x=0;x<BW;x++){
+      const w=wAt(x,gy); if (w<=0) continue;
+      const i=at(D,K.MW,x,gy), j=(y*BW+x)*3;
+      for (let c2=0;c2<3;c2++)
+        D[i+c2] = Math.max(0, Math.min(255, Math.round(D[i+c2] - w*(b1[j+c2] - b2[j+c2]))));
+    }
   }
-  for (let x=Math.max(0,K.ML-MELT); x<K.ML; x++){     // 左
-    const w = ss(1 - (K.ML - x)/MELT), bc = blurCol(x, K.MT, K.MT+K.IH);
-    for (let y=K.MT; y<K.MT+K.IH; y++){ const i=at(D,K.MW,x,y);
-      for (let c2=0;c2<3;c2++) D[i+c2] = Math.round(D[i+c2]*(1-w) + bc[(y-K.MT)*3+c2]*w); }
-  }
-  for (let x=K.ML+K.IW; x<Math.min(K.MW,K.ML+K.IW+MELT); x++){   // 右
-    const w = ss(1 - (x - (K.ML+K.IW-1))/MELT), bc = blurCol(x, K.MT, K.MT+K.IH);
-    for (let y=K.MT; y<K.MT+K.IH; y++){ const i=at(D,K.MW,x,y);
-      for (let c2=0;c2<3;c2++) D[i+c2] = Math.round(D[i+c2]*(1-w) + bc[(y-K.MT)*3+c2]*w); }
+
   }
 
   /* 境めに 近い SKIP px を、SKIP px 外の 色で うめなおす。
