@@ -89,6 +89,52 @@ const png = await p.evaluate(async (K) => {
       for (let k=0;k<3;k++) D[i+k] = Math.max(0, Math.min(255, Math.round(D[i+k] - d0[k]*w)));
     }
   }
+  /* --- 境めに 近づくほど **ぼかして、モノを 溶かす** ---
+     モデルは 言っても 境めを またいで 描く（光のすじ・シャボン玉・雲）。
+     そこへ 原本を 戻すと、**すじが 途中で 切れ、玉が 半分に なる**
+     （実機の 報告。色を どれだけ 合わせても これは 消えない）。
+     形の 問題なので 色の 補正では 直らない。
+
+     境めから MELT px の あいだ、その 行（左右なら 列）を 横に ならした
+     ものへ だんだん 寄せる。すじも 玉の ふちも ならされて 消え、
+     境めでは なめらかな 帯に なる。**切れ目では なく 溶けて 終わる** */
+  const MELT = 56, RB = 40;
+  const blurRow = (y, x0, x1) => {                    // 横に ならす
+    const out = new Float32Array((x1-x0)*3);
+    for (let x=x0; x<x1; x++){
+      const s2=[0,0,0]; let n=0;
+      for (let k=-RB;k<=RB;k++){ const xx=x+k; if(xx<0||xx>=K.MW) continue;
+        const i=at(D,K.MW,xx,y); s2[0]+=D[i]; s2[1]+=D[i+1]; s2[2]+=D[i+2]; n++; }
+      for (let c2=0;c2<3;c2++) out[(x-x0)*3+c2]=s2[c2]/n;
+    }
+    return out;
+  };
+  const blurCol = (x, y0, y1) => {                    // たてに ならす
+    const out = new Float32Array((y1-y0)*3);
+    for (let y=y0; y<y1; y++){
+      const s2=[0,0,0]; let n=0;
+      for (let k=-RB;k<=RB;k++){ const yy=y+k; if(yy<0||yy>=K.MH) continue;
+        const i=at(D,K.MW,x,yy); s2[0]+=D[i]; s2[1]+=D[i+1]; s2[2]+=D[i+2]; n++; }
+      for (let c2=0;c2<3;c2++) out[(y-y0)*3+c2]=s2[c2]/n;
+    }
+    return out;
+  };
+  for (let y=Math.max(0,K.MT-MELT); y<K.MT; y++){     // 上
+    const w = ss(1 - (K.MT - y)/MELT), br = blurRow(y, 0, K.MW);
+    for (let x=0; x<K.MW; x++){ const i=at(D,K.MW,x,y);
+      for (let c2=0;c2<3;c2++) D[i+c2] = Math.round(D[i+c2]*(1-w) + br[x*3+c2]*w); }
+  }
+  for (let x=Math.max(0,K.ML-MELT); x<K.ML; x++){     // 左
+    const w = ss(1 - (K.ML - x)/MELT), bc = blurCol(x, K.MT, K.MT+K.IH);
+    for (let y=K.MT; y<K.MT+K.IH; y++){ const i=at(D,K.MW,x,y);
+      for (let c2=0;c2<3;c2++) D[i+c2] = Math.round(D[i+c2]*(1-w) + bc[(y-K.MT)*3+c2]*w); }
+  }
+  for (let x=K.ML+K.IW; x<Math.min(K.MW,K.ML+K.IW+MELT); x++){   // 右
+    const w = ss(1 - (x - (K.ML+K.IW-1))/MELT), bc = blurCol(x, K.MT, K.MT+K.IH);
+    for (let y=K.MT; y<K.MT+K.IH; y++){ const i=at(D,K.MW,x,y);
+      for (let c2=0;c2<3;c2++) D[i+c2] = Math.round(D[i+c2]*(1-w) + bc[(y-K.MT)*3+c2]*w); }
+  }
+
   /* 境めに 近い SKIP px を、SKIP px 外の 色で うめなおす。
      モデルが 残した 中間色の 帯を 消す */
   const cp = (dx,dy,sx,sy) => { const a=at(D,K.MW,dx,dy), b2=at(D,K.MW,sx,sy);
