@@ -13004,12 +13004,17 @@ function titleLogoLive(g, cx, top, w, t){
    `poster` は **1まいの 絵を まるごと 表紙に する** 特別あつかい。
    これが あると bg/castle/logo と コードの 絵は つかわれません。
    不透明なので JPEG/WebP で よい（1.9MBの PNG が 315KBに なった） */
-const TITLE_ART_FILES = { poster: 'title_full.webp' };
+const TITLE_ART_FILES = { poster: 'title_master.webp' };
 /* 絵の 中の きまった いち。**ボタンが 絵に 焼きこまれている**ので、
    DOM の ボタンを その上に かさねます（下の titleBakePoster）。
    絵を さしかえたら この4つも 直すこと */
-const TITLE_IW = 941, TITLE_IH = 1672;
-const TITLE_BTN = { x:180, y:1420, w:585, h:152 };
+/* いまの 素材は **外がわに 余白を 足した マスター**（1250x2100）。
+   もとの 絵 941x1672 は その (155,420) に そのまま 入っている。
+   余白が あるので 画面を うめる 倍率まで 拡大しても もとの 絵は 切れない。
+   おかげで **空を つぎたす 必要が なくなった**（継ぎ目の 出どころが 消えた）。
+   マスターの 作りかたは tools/title-recomposite.mjs と CLAUDE.md に */
+const TITLE_IW = 1250, TITLE_IH = 2100;
+const TITLE_BTN = { x:335, y:1840, w:585, h:152 };
 const TITLE_ART = {};
 for (const k in TITLE_ART_FILES){
   const im = new Image();
@@ -13109,29 +13114,31 @@ function titleBakePoster(G, g){
   const { W, H } = G;
   const im = TITLE_ART.poster;
   const btn = $('titleGo');
-  /* --- 倍率。よこは 1pxも 切らない ---
-     絵は 9:16、画面は もっと たて長なので 上に 150〜190px の すきまが 出る。
-     そこを どう うめるかで 4回 失敗した。記録として のこす。
+  /* --- 倍率。**画面を うめる ところまで 拡大する** ---
+     素材の 外がわには 余白（上420・左155・右154）が 足してあるので、
+     切れるのは その 余白だけ。もとの 絵 941x1672 には 届かない。
+
+     ここに たどりつくまでに 5回 失敗した。記録として のこす。
 
        ① 上端を たてに のばす      → 縦筋・光柱
        ② 100px かぶせて 溶かす      → にじが 横じまに つぶれる
        ③ 短く かぶせる              → 質感の さが 線に 見える
-       ④ 空を スライスして 伸ばす   → また 縦筋（伸ばせる 空が 足りない）
+       ④ 空を スライスして 伸ばす   → また 縦筋
+       ⑤ 余白なしで 画面を うめる   → よこが 1割 切れる
 
-     ④で 分かった のは、**この絵には 伸ばせる 空が ない**こと。
-     上から 7行目には もう きらめきと シャボン玉が あり（実測。上端の色から
-     ずれ48 に とどく のが 7行目）、必要な 追加は 369行ぶん。
-     何本に 分けても 平均 11倍の 引きのばしに なり、模様が 線に なる。
+     ①〜④は ぜんぶ「足りない 空を こちらで 作る」やりかたで、
+     **この絵には 伸ばせる 空が なかった**（上から7行目には もう
+     きらめきと シャボン玉が ある。実測）。だから どう しても 継ぎ目が 出た。
+     ⑤は 切れる。答えは「絵の 外がわに 余白を 足しておく」ことだった。
 
-     ①〜③に 共通する 本当の 原因は 色では なく **質感**だった。
-     空がわは なめらかな グラデ、元絵は きらめきが ぎっしり。
-     その「つるつる → ざらざら」の 変わり目が 線に 見えていた。
-     だから 色を どれだけ 合わせても 消えなかった。
-
-     いまの やりかたは **空がわにも 同じ 密度で きらめきと もやを 置く**。
-     伸ばさないので 縦筋は 出ず、質感が つながるので 変わり目も 出ない */
-  const s  = W / TITLE_IW;                 // よこ合わせ。**1pxも 切らない**
-  const iw = W, ih = TITLE_IH * s, ox = 0;
+     必要な 倍率は ボタンの いちから 逆算できる。
+       iy = H - PAD - s*(BTN.y + BTN.h)      ← これが 0 に なる s
+     PAD は ボタンの 下の 余白（CSS が セーフエリアこみで 決める）。
+     よこ合わせの ほうが 大きい ときは そちらを つかう（iy は より 負に なる）*/
+  const pad = Math.max(0, H - btn.offsetTop - btn.offsetHeight);
+  const s   = Math.max(W / TITLE_IW, (H - pad) / (TITLE_BTN.y + TITLE_BTN.h));
+  const iw = TITLE_IW * s, ih = TITLE_IH * s;
+  const ox = (W - iw) / 2;                 // よこは まん中ぞろえ
   /* 当たり判定を 絵の ボタンと 同じ 大きさに する。
      **先に 大きさを 決めてから いちを 読むこと**（flex-end なので
      高さが 変わると offsetTop も 動く）*/
@@ -13141,142 +13148,9 @@ function titleBakePoster(G, g){
   /* 絵の ボタンの まん中を、DOM の ボタンの まん中に そろえる */
   const iy = btnTop + bh/2 - (TITLE_BTN.y + TITLE_BTN.h/2) * s;
   g.drawImage(im, ox, iy, iw, ih);
-  /* ふちの 平均色を 実際に はかる（絵を 差しかえても 合うように） */
-  const avg = (yCss) => {
-    const yy = Math.max(0, Math.min(g.canvas.height - 1, Math.round(yCss*TDPR)));
-    const d = g.getImageData(0, yy, g.canvas.width, 1).data;
-    let r=0, gg=0, bb=0, n = g.canvas.width;
-    for (let x=0;x<n;x++){ r+=d[x*4]; gg+=d[x*4+1]; bb+=d[x*4+2]; }
-    return [Math.round(r/n), Math.round(gg/n), Math.round(bb/n)];
-  };
-  const mix = (c, w2, k) => c.map((v,i) => Math.round(v*(1-k) + w2[i]*k));
-  const rgb = c => 'rgb(' + c.join(',') + ')';
-  if (iy > 0){
-    const ss = u => u*u*(3 - 2*u);
+  /* **つぎたしの 空は もう 要らない。**余白ぶん 拡大するので iy <= 0 に なり、
+     上にも 下にも すきまが 出ない。継ぎ目の 出どころ そのものが 消えた */
 
-    /* ① 地の色。**元絵の 上端の 平均色を そのまま。**
-       drawImage の 縮小では 平均に なりません（941→1 で 実測 20 ずれ、
-       3段階に 分けても 同じ）。画素を 読んで 自分で 足す。
-       file:// では 絵を 読んだ canvas が よごれ扱いで 例外に なるので、
-       そのときは 実測ずみの 値で 進む（絵を 差しかえたら ここも 直す）*/
-    let topc = [174, 166, 221];
-    try {
-      const t = document.createElement('canvas');
-      t.width = TITLE_IW; t.height = 1;
-      const tg = t.getContext('2d');
-      tg.drawImage(im, 0, 0, TITLE_IW, 1, 0, 0, TITLE_IW, 1);
-      const td = tg.getImageData(0, 0, TITLE_IW, 1).data;
-      let r2 = 0, g2 = 0, b2 = 0;
-      for (let x = 0; x < TITLE_IW; x++){ r2 += td[x*4]; g2 += td[x*4+1]; b2 += td[x*4+2]; }
-      topc = [r2, g2, b2].map(v => Math.round(v / TITLE_IW));
-    } catch (err) { /* file:// では 読めない。決めうちで 進む */ }
-    g.fillStyle = 'rgb(' + topc.join(',') + ')';
-    g.fillRect(0, 0, W, iy + 1);          // **元絵には 1pxも かぶせない**
-
-    /* ② 上ほど 青むらさきを ひかえた ラベンダーへ。きまりが 2つ。
-       (a) 境め（iy）で 0 に する。元絵に はみ出すと そこだけ 抜けて 帯に 見える。
-       (b) 上を 元絵の 上端より 明るく しない。元絵は 上端から 下へ 明るく
-           なるので、上を 明るく すると 境めが「暗さの谷」に なり、
-           色の 段差が なくても うっすら 線に 見える（実測で 谷に なっていた）*/
-    const tint = g.createLinearGradient(0, iy, 0, 0);
-    for (let i = 0; i <= 10; i++) tint.addColorStop(i/10, 'rgba(168,152,206,' + (ss(i/10)*0.66).toFixed(3) + ')');
-    g.fillStyle = tint; g.fillRect(0, 0, W, iy + 1);
-
-    /* ③ ムラと きらめきは **べつの まく**に して、境めを またいで
-       ゆっくり 出入りさせる。
-
-       ここが 5回 やりなおした ところ。地の色を 合わせても 線が 消えないのは、
-       **上が 平らすぎる**から（実測の ばらつき 私3 : 元絵10）。だから ムラが 要る。
-       ところが ムラを 元絵の 上に かけて 途中で 切ると、こんどは その
-       切れ目が 線に なる（実機の 報告「紫の シールに 透かした ピンク」）。
-       かと いって 境めの 手まえで 消すと、また 上だけ 平らに なる。
-
-       なので **境めの 前後 FADE px かけて 出入りさせる**。
-       まくは 元絵の 上にも 薄く かかるが、終わりが なだらかなので 線に ならない */
-    const FADE = Math.max(8, Math.min(48, iy * 0.36));
-    const BH   = Math.round(iy + FADE);
-    const ob   = titleCanvas(W, BH), bg = ob.g;
-    bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
-
-    const blob = (x, y, r, c, a) => {
-      const gr = bg.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, 'rgba(' + c + ',' + a + ')'); gr.addColorStop(1, 'rgba(' + c + ',0)');
-      bg.fillStyle = gr; bg.fillRect(0, 0, W, BH);
-    };
-    /* **もやは 地の色から「上下 同じだけ」ずらす こと。**明るい色ばかりだと
-       ムラは 増えても 空ぜんぶが 明るくなり、こんどは 平均が ずれて
-       べつの 段差に なる（実測で 10〜11 ずれた）*/
-    const DEV = [[76, 36, 10], [-14, 50, 50], [70, 56, -6], [30, -10, 56], [50, 16, -30]];
-    for (let i = 0; i < 30; i++){
-      const d0 = DEV[(i >> 1) % DEV.length], sg = (i % 2) ? -1 : 1;
-      blob((0.02 + tRnd(i + 7100)*0.96) * W,
-           Math.pow(tRnd(i + 7300), 0.85) * BH,
-           W * (0.11 + tRnd(i + 7500)*0.22),
-           topc.map((v, k) => Math.max(0, Math.min(255, Math.round(v + sg*d0[k])))).join(','),
-           0.13 + tRnd(i + 7700)*0.24);
-    }
-    /* きらめきの 粉。下ほど 密に して 元絵に つなぐ */
-    for (let i = 0; i < 150; i++){
-      const d = 0.9 + tRnd(i + 4300)*1.8;
-      bg.globalAlpha = 0.20 + tRnd(i + 4500)*0.45;
-      bg.fillStyle = '#ffffff';
-      bg.fillRect(tRnd(i + 4700)*W - d/2, Math.pow(tRnd(i + 4100), 0.72)*BH - d/2, d, d);
-    }
-    bg.globalAlpha = 1;
-    const star = (x, y, r, a) => {
-      bg.save(); bg.translate(x, y); bg.globalAlpha = a;
-      bg.fillStyle = '#ffffff'; bg.beginPath();
-      bg.moveTo(0, -r); bg.quadraticCurveTo(r*0.16, -r*0.16, r, 0);
-      bg.quadraticCurveTo(r*0.16, r*0.16, 0, r);
-      bg.quadraticCurveTo(-r*0.16, r*0.16, -r, 0);
-      bg.quadraticCurveTo(-r*0.16, -r*0.16, 0, -r);
-      bg.fill(); bg.restore();
-    };
-    for (let i = 0; i < 9; i++)
-      star(tRnd(i + 5300)*W, Math.pow(tRnd(i + 5100), 0.70)*BH,
-           2.6 + tRnd(i + 5500)*3.4, 0.36 + tRnd(i + 5700)*0.34);
-    /* シャボン玉。元絵にも 浮いているので 少しだけ */
-    for (let i = 0; i < 4; i++){
-      const bx = (0.10 + tRnd(i + 6100)*0.82) * W;
-      const by = Math.pow(tRnd(i + 6300), 0.80) * BH;
-      const br = W*(0.017 + tRnd(i + 6500)*0.020);
-      const gr = bg.createRadialGradient(bx - br*0.3, by - br*0.3, br*0.1, bx, by, br);
-      gr.addColorStop(0.00, 'rgba(255,255,255,0.34)');
-      gr.addColorStop(0.62, 'rgba(226,238,255,0.10)');
-      gr.addColorStop(0.90, 'rgba(255,214,240,0.20)');
-      gr.addColorStop(1.00, 'rgba(255,255,255,0)');
-      bg.fillStyle = gr; bg.beginPath(); bg.arc(bx, by, br, 0, 6.2832); bg.fill();
-    }
-
-    /* ④ 境めの 前後 FADE で 出入りさせる マスク。
-       **destination-in は canvas ぜんぶに かかる**ので 1回で 塗ること */
-    /* **canvas ぜんぶを 1回で 塗ること。**destination-in は 塗った ところの
-       外がわも 消します。一部だけ 塗ると 上の ムラが まるごと 消えて、
-       残った ところが 帯に 見えました（実際に そう なりました）*/
-    const y0 = Math.max(0, iy - FADE), q0 = y0 / BH;
-    const mk = bg.createLinearGradient(0, 0, 0, BH);
-    mk.addColorStop(0, 'rgba(0,0,0,1)');
-    mk.addColorStop(q0, 'rgba(0,0,0,1)');
-    for (let i = 1; i <= 10; i++)
-      mk.addColorStop(q0 + (1 - q0)*(i/10), 'rgba(0,0,0,' + (1 - ss(i/10)).toFixed(3) + ')');
-    bg.globalCompositeOperation = 'destination-in';
-    bg.fillStyle = mk; bg.fillRect(0, 0, W, BH);
-    bg.globalCompositeOperation = 'source-over';
-
-    g.drawImage(ob.c, 0, 0, W, BH);
-  }
-
-  const seam = iy + ih;
-  if (seam < H){
-    const bot = avg(seam - 3);
-    const deep = mix(bot, [216,160,196], 0.30);         // 下は すこし こく
-    const gnd = g.createLinearGradient(0, seam - 1, 0, H);
-    gnd.addColorStop(0, rgb(bot)); gnd.addColorStop(1, rgb(deep));
-    g.fillStyle = gnd; g.fillRect(0, seam - 1, W, H - seam + 2);
-    const fe2 = g.createLinearGradient(0, seam + 1, 0, seam - 40);
-    fe2.addColorStop(0, rgb(bot)); fe2.addColorStop(1, 'rgba(' + bot.join(',') + ',0)');
-    g.fillStyle = fe2; g.fillRect(0, seam - 40, W, 42);
-  }
   return { iy, ih };
 }
 
@@ -13469,15 +13343,20 @@ function paintTitle(t){
        きらめきと 玉ボケと 流れ星だけ（絵を こわさない）--- */
     if (titleBake.poster){
       const PST = titleBake.poster;
-      /* 星は 上の つぎたしの 中だけ */
-      g.fillStyle = '#ffffff';
-      for (let i=0;i<26;i++){
-        const d = 1.4 + tRnd(i+1900)*2.6;
-        g.globalAlpha = 0.16 + 0.40*Math.abs(Math.sin(t*0.9 + i*1.7));
-        g.fillRect(tRnd(i+50)*W - d/2, tRnd(i+900)*Math.max(40, PST.iy)*0.98 - d/2, d, d);
+      /* きらめきと くもは **つぎたしの 空が あった ときの もの**。
+         いまの 素材は 外がわに 余白が あるので すきまが 出ず（iy <= 0）、
+         ここで 足すと 絵の 上に 白い 粒を まく だけに なる。
+         絵には もともと きらめきも 雲も 描いてあるので、すきまが ある
+         ときだけ 出す（古い 素材に もどした ときの ため のこす）*/
+      if (PST.iy > 40){
+        g.fillStyle = '#ffffff';
+        for (let i=0;i<26;i++){
+          const d = 1.4 + tRnd(i+1900)*2.6;
+          g.globalAlpha = 0.16 + 0.40*Math.abs(Math.sin(t*0.9 + i*1.7));
+          g.fillRect(tRnd(i+50)*W - d/2, tRnd(i+900)*PST.iy*0.98 - d/2, d, d);
+        }
+        g.globalAlpha = 1;
       }
-      g.globalAlpha = 1;
-      /* ながれる くも（上の つぎたしの 中だけ）。絵の 雲と けんかしない よわさで */
       if (PST.iy > 90){
         const CL2 = [[0.16,0.30,0.060,0.40],[0.70,0.14,0.048,0.32],[0.44,0.55,0.038,0.26]];
         CL2.forEach(([bx, by, br, a], i) => {
