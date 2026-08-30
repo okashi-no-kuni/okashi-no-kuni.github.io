@@ -238,6 +238,20 @@
   @media (prefers-reduced-motion:reduce){
     #titleGo,#titleGo::after{animation:none} }
   @media (max-height:620px){ #titleGo{height:48px} }
+  /* 1まいの 絵の モード。ボタンの 絵は 表紙に 焼きこまれているので、
+     DOM の ボタンは **当たり判定と 読みあげだけ** のこして すきとおらせる
+     （大きさと いちは titleBakePoster が 絵に 合わせて 入れます）。
+     ふわふわ（tBob）は 止めること —— 絵の ボタンは 動かないので、
+     DOM だけ 動くと 押せる ところが 絵から ずれます。
+     光のすべり（::after）は のこす。絵の ボタンの 上を すべって 見えるので、
+     これだけで 動きが 出て、ボタンだけの PNG（137KB）を 足さずに すむ */
+  #titleOv.poster #titleGo{
+    background:none;border:0;box-shadow:none;
+    color:transparent;text-shadow:none;animation:none}
+  /* すきとおっているので translateY では 押した ことが わからない。
+     白く さっと 光らせて 手ごたえを 出す */
+  #titleOv.poster #titleGo:active{
+    transform:none;background:rgba(255,255,255,.30);box-shadow:none}
 
   #ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:6;
     gap:12px;border-radius:20px;background:rgba(255,240,250,.9);backdrop-filter:blur(5px);text-align:center;padding:22px}
@@ -12989,8 +13003,13 @@ function titleLogoLive(g, cx, top, w, t){
    `tools/check-chars.mjs` の「JSエラー」に かぞえられます。
    `poster` は **1まいの 絵を まるごと 表紙に する** 特別あつかい。
    これが あると bg/castle/logo と コードの 絵は つかわれません。
-   不透明なので JPEG で よい（1.9MBの PNG が 182KBに なった） */
-const TITLE_ART_FILES = { poster: 'poster.jpg' };
+   不透明なので JPEG/WebP で よい（1.9MBの PNG が 315KBに なった） */
+const TITLE_ART_FILES = { poster: 'title_full.webp' };
+/* 絵の 中の きまった いち。**ボタンが 絵に 焼きこまれている**ので、
+   DOM の ボタンを その上に かさねます（下の titleBakePoster）。
+   絵を さしかえたら この4つも 直すこと */
+const TITLE_IW = 941, TITLE_IH = 1672;
+const TITLE_BTN = { x:180, y:1420, w:585, h:152 };
 const TITLE_ART = {};
 for (const k in TITLE_ART_FILES){
   const im = new Image();
@@ -13075,16 +13094,31 @@ function titleCloudSprite(r){
    毎フレームの 貼りつけが 1回で すみます（3回だと iPhone で おちる）。
    ながれる くもは 城より 上に しか 来ないので、あとから 上に のせて 平気 --- */
 /* 1まいの 絵を まるごと 貼る モード。
-   絵は ほぼ 正方形、画面は たて長なので、**足りない 上下は
+   絵は 9:16、画面は もっと たて長なので、**足りない 上下は
    ふちの色を はかって グラデで つぎたす**。継ぎ目は 40pxの ぼかしで つなぐ。
-   絵の 中の ボタンは 切り落としてあるので、ほんものの ボタンが その下に すわる */
+
+   ボタンは **絵の中に 焼きこまれている**。だから DOM の ボタンを
+   その上に ぴったり かさねて、見た目は 絵・タップは DOM に する。
+   canvas に 当たり判定を 持たせない のは、DOM なら :active も
+   セーフエリアも --fs も ただで ついてくるから（CLAUDE.md の「UIはDOM」）。
+
+   **いちを 決めるのは DOM がわ。絵を そこへ 合わせる。**
+   逆にすると、下の余白を CSS で 持てなくなって 実機の
+   ホームバーに ボタンが かぶります */
 function titleBakePoster(G, g){
   const { W, H } = G;
   const im = TITLE_ART.poster;
-  const ih = W * im.naturalHeight / im.naturalWidth;
+  const s  = W / TITLE_IW;
+  const ih = TITLE_IH * s;
   const btn = $('titleGo');
+  /* 当たり判定を 絵の ボタンと 同じ 大きさに する。
+     **先に 大きさを 決めてから いちを 読むこと**（flex-end なので
+     高さが 変わると offsetTop も 動く）*/
+  const bw = TITLE_BTN.w * s, bh = TITLE_BTN.h * s;
+  btn.style.width = bw + 'px'; btn.style.height = bh + 'px';
   const btnTop = btn.offsetTop || H*0.86;
-  const iy = Math.max(0, btnTop - H*0.012 - ih);
+  /* 絵の ボタンの まん中を、DOM の ボタンの まん中に そろえる */
+  const iy = btnTop + bh/2 - (TITLE_BTN.y + TITLE_BTN.h/2) * s;
   g.drawImage(im, 0, iy, W, ih);
   /* ふちの 平均色を 実際に はかる（絵を 差しかえても 合うように） */
   const avg = (yCss) => {
@@ -13097,24 +13131,29 @@ function titleBakePoster(G, g){
   const mix = (c, w2, k) => c.map((v,i) => Math.round(v*(1-k) + w2[i]*k));
   const rgb = c => 'rgb(' + c.join(',') + ')';
   if (iy > 0){
-    const top = avg(iy + 2);
-    const far = mix(top, [255,255,255], 0.22);          // 上へ いくほど あかるく
-    const sky = g.createLinearGradient(0, 0, 0, iy + 1);
-    sky.addColorStop(0, rgb(far)); sky.addColorStop(1, rgb(top));
-    g.fillStyle = sky; g.fillRect(0, 0, W, iy + 1);
-    const fe = g.createLinearGradient(0, iy - 1, 0, iy + 40);
-    fe.addColorStop(0, rgb(top)); fe.addColorStop(1, 'rgba(' + top.join(',') + ',0)');
-    g.fillStyle = fe; g.fillRect(0, iy - 1, W, 42);
-    /* つぎたしの 空が のっぺりしないよう、ぼんやりした 色を 3つ */
-    const blob = (x, y, r, c, al) => {
-      const gr = g.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, 'rgba(' + c + ',' + al + ')');
-      gr.addColorStop(1, 'rgba(' + c + ',0)');
-      g.fillStyle = gr; g.fillRect(0, 0, W, iy + 20);
-    };
-    blob(W*0.20, iy*0.30, W*0.55, '255,214,236', 0.34);
-    blob(W*0.85, iy*0.14, W*0.48, '196,228,255', 0.30);
-    blob(W*0.55, iy*0.70, W*0.60, '255,240,214', 0.22);
+    /* **絵の いちばん上の ひとすじを、上へ ひきのばして 空に する。**
+       平らな グラデで うめると、絵は 色ゆたかなのに つぎたしだけ
+       のっぺりして、境めが 1本の 線に 見えます（実際に そう 見えました）。
+       ひきのばしなら 色も きらめきも そのまま 続くので 境めが 消える。
+       のばすのは **いちばん上の 2行だけ**。厚みを もたせると にじや 雲が
+       いっしょに のびて、二重の にじに 見えます（実際に そうなりました）。
+       2行なら 形は のびず、その列の 色だけが まっすぐ 上へ 続くので、
+       境めは 色が 完全に 一致して 消えます */
+    g.drawImage(im, 0, 0, TITLE_IW, 2, 0, 0, W, iy + 2);
+    /* のばした ぶんは たてに 甘くなるので、上ほど 白を のせて 空気を 出す */
+    const air = g.createLinearGradient(0, 0, 0, iy);
+    air.addColorStop(0, 'rgba(255,250,255,.42)');
+    air.addColorStop(1, 'rgba(255,250,255,0)');
+    g.fillStyle = air; g.fillRect(0, 0, W, iy + 1);
+    /* **ぼんやりした 光（radial）を ここに 置かないこと。**
+       つぎたしの ぶんだけを 塗ろうとして iy で 切ると、光が
+       まだ こい ところで 角切りに なって、境めに 線が 出ます。
+       のばした 空は もともと 絵の 上の 行の 色ムラを 持っているので、
+       たしても 見た目は ほとんど 変わりません（実際に そうでした）*/
+    /* **ここに ぼかしの 帯を 引かないこと。**
+       のばした 空は 境めで 絵と 色が 完全に 一致しているので、
+       つなぎの 帯は かえって 絵の 上 40px を 白く 濁らせ、
+       まさに 消したかった 1本の 線に 見えます（実際に そう なりました）*/
   }
   const seam = iy + ih;
   if (seam < H){
@@ -13135,11 +13174,13 @@ function titleBakeScene(G){
   const o = titleCanvas(W, H), g = o.g;
   if (TITLE_ART.poster){
     CASTLE_WINS = []; CASTLE_POP = null;
+    titleOv.classList.add('poster');     // ボタンの 見た目を 絵に ゆずる
     let pr = null;
     withCtx(g, () => { pr = titleBakePoster(G, g); });
     titleBake.poster = pr;
     return o.c;
   }
+  titleOv.classList.remove('poster');
   titleBake.poster = null;
   withCtx(g, () => {
     const blob = (x, y, r, rgb, al) => {
