@@ -248,7 +248,35 @@
      ——実測で 120画素 のこった。よぶんに 切っても 消えるのは 空だけ */
   #titleArtIm{display:block;width:100%;height:100%;
     border-radius:3.1% / 2.0667%;
+    /* **上はしだけ** すっと 消して、うしろの ぼかした 空から
+       そのまま つながって 見えるように する（「カードの上ふち」を 消す）。
+       左右と 下には かけないこと。
+       にじの てっぺんは y=210（13.7%）なので、2% までなら かからない */
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 2%);
+            mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,#000 2%);
     pointer-events:none;user-select:none;-webkit-user-drag:none}
+  /* **絵の 上に、絵じしんの 空の色を つづける。**
+     これが 上ふちの 線を 消す かなめです。うしろの ぼかした 1まいは
+     絵と ちがう ところを 写しているので、絵の 上はしだけ うすくしても
+     「青い 空が いきなり 始まる」線が のこりました（実機の 見え方と同じ）。
+     絵の いちばん上（y=26..90）の 色を 列ごとに 平均して、その 横の
+     グラデを そのまま 上へ のばし、上へ 行くほど 消します。
+     **よこに 大きく ならしてから 拾うこと**（±110px）。生の 値を
+     つかうと、雲や キラキラの 明るい 点が **たての すじ**に なります
+     （実際に 60% あたりに 白い 帯が 出ました）。
+     色を 決めうちに するのは ここだけ ——絵を さしかえたら はかりなおすこと */
+  /* **絵の 下に もぐりこませる**こと（bottom:97%・z-index:-1）。
+     絵の 上はしで ぴたり 止めると、うすくした ところの うしろが
+     ぼかした1まいの ままに なり、そこだけ 明るい すじが 出ます
+     （実測で となりの行と 17も ちがった）*/
+  #titleArt::before{content:'';position:absolute;left:0;right:0;bottom:97%;height:30%;
+    z-index:-1;
+    background:linear-gradient(to right,
+      #bad6f1 0%,#bad7f2 12.5%,#c0d8f1 25%,#cadaed 37.5%,#d9dfea 50%,
+      #e1e0e5 62.5%,#dfd9dc 75%,#e1d9da 87.5%,#e2d9da 100%);
+    -webkit-mask-image:linear-gradient(to top,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+            mask-image:linear-gradient(to top,#000 0,#000 12%,rgba(0,0,0,0) 100%);
+    pointer-events:none}
   /* 「はじめる」の 絵は 表紙に 焼きこまれています。
      DOM がわは **当たり判定と 読みあげだけ**。見た目は 作りません。
      いちは 1024x1536 の 原画から はかった 値の 百分率
