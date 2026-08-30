@@ -193,7 +193,11 @@ const png = await p.evaluate(async (K) => {
      境めの 手まえ KEEP px は さわらない（そこは 元絵と 合わせてある）。
      そこから RAMP px かけて 効きを 上げるので、境めに 段差は 出ない */
   {
-    const KEEP = 16, RAMP = 124, RV = 90, RD = 12;
+    /* RAMP は 短い ほうが 帯が よく 消える。124 だと 境めの 上
+       80〜120px に すじの 名ごりが 見えた（実機の 報告）。
+       短くすると 角で 元絵との 横ムラが 合わなく なるが、そこは
+       title-sky-decor.mjs の 雲が おおう 前提 */
+    const KEEP = 12, RAMP = 70, RV = 90, RD = 12;
     const mrow = [];
     for (let y = 0; y < K.MT; y++){
       const t = [0,0,0];
