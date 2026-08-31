@@ -918,10 +918,16 @@
   /* ---------- まもり神（#gdOv）----------
      1プレイに 1回きりなので、**バーの タップでは 出しません**。
      この画面の「よぶ」を おしてはじめて 発動します */
+  /* **スクロールするのは 中みだけ。**ぜんたいを スクロールわくに すると、
+     12体 そろった とき「よぶ」も ✕も 画面の 外へ 出て 押せなく なります
+     （長い画面の 見出しを sticky に した のと 同じ 失敗）*/
   #gdOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
-    background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:6}
+    background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow:hidden;z-index:6}
   #gdOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #gdBody{flex:1 1 auto}
+  #gdHead{flex:0 0 auto}
+  /* `min-height:0` が ないと flex の 子は 中みの 高さで つっぱって
+     スクロールせず、下が はみ出したまま 切れます */
+  #gdBody{flex:1 1 auto;overflow-y:auto;min-height:0}
   .gdNo,.gdNow{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:14px;
     padding:10px;text-align:center;font-size:calc(11.5px * var(--fs));line-height:1.6;color:var(--ink)}
   .gdNow b{font-size:calc(13.5px * var(--fs));color:var(--pink-d)}
@@ -1031,7 +1037,7 @@
     <!-- まもり神（つれていく 伝説）。**盤面だけを おおう**ので、
          下の ボタンは 見えたまま。だから ✕ 1つで じゅうぶん -->
     <div id="gdOv">
-      <div style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
+      <div id="gdHead" style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
         <div style="flex:1">✨ まもり神</div>
         <button class="mini gray" id="gdClose" aria-label="閉じる">✕</button>
       </div>
