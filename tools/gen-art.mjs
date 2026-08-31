@@ -136,7 +136,104 @@ const SCENES = {
     + 'Everyone is roughly the same height in the row so no one is hidden. Warm, '
     + 'peaceful and welcoming - nobody is fighting. No text, no letters, no captions, '
     + 'no logo, no watermark, no frame or border.' },
+  /* 伝説との 1対1の 背景。**キャラは 入れない**（あとから canvas で
+     まじょや 伝説を 上に えがくため）。まん中が すいている 構図に して、
+     左右に 2体 立てる 場所を あける。
+     色は THEMES の その国の 値を そのまま 文に して、盤面と つながって
+     見えるように する（ちがう 色で 出すと 別の 国に 見える）*/
+  /* --- 12の国 ぜんぶ ぶん。**その国だと ひとめで わかる 目じるしを
+     1つ 決めて、それを 主役に する。**「砂漠」だけでは どこも 同じ
+     すな色に なるので、さばくのくには **ピラミッドと スフィンクス**、
+     キャラメルのさばくは **あめ色の 岩と サバンナの 木** で 分ける
+     （CLAUDE.md の「同じあめ色にすると 見わけられない」と 同じ考え）*/
+  duel_sugar: { file:'duel_sugar', aspect:'3:2', p: duelBg(
+    'シュガーガーデン', 'a bright sugar garden',
+    'A wide mint-green meadow (#d9f7e6) with rows of candy flowers and lollipop stems. '
+    + 'A cream-coloured brick path (#f0c9a0) winds through it, low hedges of green jelly, '
+    + 'and round topiary made of pastel gumdrops. Sunny and gentle.') },
+  duel_berry: { file:'duel_berry', aspect:'3:2', p: duelBg(
+    'いちごのおかしばたけ', 'a strawberry sweets field',
+    'Wide fields of pink strawberry cream (#ffe4ef) laid out in neat rows like farmland, '
+    + 'with giant ripe strawberries growing out of them and little white cream blossoms. '
+    + 'A biscuit-brown farm track (#c98a5e) runs between the rows. A small barn made of '
+    + 'shortcake stands in the distance.') },
+  duel_forest: { file:'duel_forest', aspect:'3:2', p: duelBg(
+    'マカロンのもり', 'a soft green macaron forest',
+    'Rolling pastel-green hills (#c8e6c0) with tall trees whose canopies are giant '
+    + 'pastel macarons in pink, cream and lavender. A winding cocoa-brown path (#8a5a34) '
+    + 'runs across the middle distance. Toadstools made of cream and berries dot the grass.') },
+  duel_snow: { file:'duel_snow', aspect:'3:2', p: duelBg(
+    'ゆきのケーキやま', 'a snowy cake mountain',
+    'A pale blue-white snowfield (#f2f4fa) under a soft winter sky. Behind it rise '
+    + 'mountains shaped like tiered cakes with thick white cream snow on top and pale '
+    + 'blue icing (#a8c4e6) running down the sides. Sugar snowflakes drift in the air, '
+    + 'and little snowdrifts of whipped cream sit in the foreground.') },
+  duel_choco: { file:'duel_choco', aspect:'3:2', p: duelBg(
+    'チョコレートのたに', 'a chocolate valley',
+    'A deep valley whose walls are layered chocolate cliffs in milk and cocoa brown '
+    + '(#8a5a34, #b07d4e), with rivers of melted chocolate running along the bottom and '
+    + 'waterfalls of chocolate pouring from ledges. Beige biscuit ground (#eed9c2) in '
+    + 'front, and wafer bridges crossing high above.') },
+  duel_ice: { file:'duel_ice', aspect:'3:2', p: duelBg(
+    'こおりのくに', 'a land of ice',
+    'A pale blue frozen land (#e2f3fc) of clear ice. Tall translucent ice crystals and '
+    + 'pillars like sugar candy rise out of a frozen mirror-smooth lake, and a palace of '
+    + 'blue ice glitters far in the distance. Everything sparkles faintly.') },
+  duel_sea: { file:'duel_sea', aspect:'3:2', p: duelBg(
+    'ソーダのうみべ', 'a soda seaside',
+    'A pale cream sand beach (#e8c49a) in the foreground meeting a bright aqua soda sea '
+    + '(#d3f2f5) full of rising bubbles, with soft foam like whipped cream at the water '
+    + 'line. Beach umbrellas made of striped candy and a few shells lie on the sand.') },
+  duel_caramel: { file:'duel_caramel', aspect:'3:2', p: duelBg(
+    'キャラメルのさばく', 'a caramel desert savanna',
+    'A warm amber caramel desert (#f5dfb0) of rolling dunes that look like poured '
+    + 'caramel, with tall flat-topped savanna trees whose canopies are golden brittle, '
+    + 'and big rounded caramel rocks (#b5722f). Warm afternoon light.') },
+  duel_egypt: { file:'duel_egypt', aspect:'3:2', p: duelBg(
+    'さばくのくに', 'an ancient desert kingdom',
+    'A pale cookie-coloured desert (#f9ead6) of fine sand. **Behind it stand three great '
+    + 'PYRAMIDS built of stacked biscuit blocks**, and beside them a big stone SPHINX '
+    + 'carved out of sandy-beige nougat. Rows of sandstone pillars carved with simple '
+    + 'shapes, a tall obelisk, and a few date palms with candy fronds. Clearly ancient '
+    + 'Egypt, but made of sweets and drawn in a soft cute pastel style, never realistic '
+    + 'or dusty.') },
+  duel_fire: { file:'duel_fire', aspect:'3:2', p: duelBg(
+    'ひのくに', 'a warm land of fire',
+    'A warm coral-pink ground (#f6dcd8) with rivers of glowing caramel lava in soft '
+    + 'coral and apricot (#c96a4a, #ffb07a) - **warm and glowing, never harsh red**. '
+    + 'Behind it stand gentle volcano hills topped with cream, and floating embers that '
+    + 'look like tiny golden sugar sparks drift up through the air.') },
+  duel_night: { file:'duel_night', aspect:'3:2', p: duelBg(
+    'よぞらのくに', 'a night-sky land',
+    'A soft lavender night land (#ded4f6) under a deep starry sky. Hills of dark violet '
+    + 'jelly, glowing golden stars scattered across the ground like dropped candy, a big '
+    + 'pale crescent moon low on the horizon, and a path of gold sugar (#d9b96a) leading '
+    + 'towards it. Dreamy, calm and sparkling - never gloomy or dark.') },
+  duel_rainbow: { file:'duel_rainbow', aspect:'3:2', p: duelBg(
+    'にじのてんくう', 'a rainbow sky kingdom',
+    'Floating islands of pastel cloud and cotton candy high in a bright sky, joined by '
+    + 'wide rainbow bridges. Golden sugar railings (#d9a54e), drifting clouds like '
+    + 'whipped cream, and a soft lilac-to-pink gradient sky (#eadcf8, #f6d9ee) with '
+    + 'sunbeams. Airy and magical.') },
 };
+
+/* 対戦の 背景は どれも 同じ 作りに する。ちがうのは 景色だけ。
+   1つ1つ 文を 書くと 構図が バラバラに なって、同じ ゲームの
+   画面に 見えなく なる */
+function duelBg(jp, what, scene){
+  return 'A wide background illustration for a one-on-one boss battle screen in a cute '
+    + 'pastel candy tower-defense game. This is ' + what + ' called "' + jp + '".\n\n'
+    + scene + '\n\n'
+    + 'IMPORTANT: this is scenery only. **Draw no characters, no creatures, no people, '
+    + 'no faces and no eyes anywhere.** Leave the middle and lower half of the picture '
+    + 'open and uncluttered, because two characters will be drawn on top of it later - '
+    + 'one on the left and one on the right. Keep the detail in the upper half and the '
+    + 'far distance; keep the foreground simple.\n'
+    + 'Soft pastel palette mixed with white, never neon. Rounded shapes only, no sharp '
+    + 'corners. Simple flat vector style with soft gradient shading, the same storybook '
+    + 'look as a cute mobile game. Slightly dreamy and magical, as if something special '
+    + 'is about to happen. No text, no letters, no logo, no watermark, no frame.';
+}
 
 /* わくの 中での 大きさ。長辺で そろえる。
    高さで そろえると、しっぽが 横に 流れる おばけが 横に はみ出す。
@@ -400,6 +497,58 @@ const ART = {
     + 'rainbow candy, a small black top hat sitting on its head, and it is holding a '
     + 'slim pale gold flute up to its mouth with both hands, playing it happily with its '
     + 'eyes closed in two happy curves.' },
+  /* --- 伝説（特別ウェーブの ボス）。国ごとに 1体。
+     **ふつうの子より 少し 大きく・かざりを 多めに。**ならべたとき
+     「この子は 特別だ」と ひとめで わかる ように する。
+     すでに いる子と かぶらない シルエットを えらぶこと
+     （ユニコーン・りゅう・くじゃく・スフィンクス・ひのとり・にんぎょ・
+      てんし・ゆきおんな・ゆきのじょおう は もう いる）--- */
+  あめのきのせい: { key:'candytree',
+    p:'A grand legendary tree spirit shaped like a small candy tree standing on two '
+    + 'root-like legs. Its trunk is a swirled stick of pastel candy, its round canopy is '
+    + 'made of clustered pink, mint and lavender gumdrops, and lollipops hang from it '
+    + 'like fruit. A small gentle face on the trunk, and a thin gold circlet of sugar '
+    + 'resting on the canopy.' },
+  いちごのじょおう: { key:'berryqueen',
+    p:'A legendary strawberry queen: a girl with soft pink hair wearing a wide gown whose '
+    + 'skirt is a giant ripe strawberry with cream frills at the hem, a tall gold crown '
+    + 'set with a strawberry, a short cream cape, and a slender gold sceptre topped with '
+    + 'a strawberry. Calm and noble.' },
+  ショコラのきし: { key:'chocoknight',
+    p:'A legendary chocolate knight standing tall in rounded armour moulded from glossy '
+    + 'milk chocolate, with cream trim at the shoulders and a wafer shield held at its '
+    + 'side. A plume of whipped cream rises from its helmet, and a friendly face shows '
+    + 'through the open visor. Sturdy and heroic, still soft and rounded.' },
+  ひょうがのマンモス: { key:'mammoth',
+    p:'A legendary mammoth made of ice and cream: a big rounded body covered in pale '
+    + 'blue-white shaggy fur like whipped cream, two long curved tusks of clear sugar '
+    + 'ice, a short trunk, small ears, and a crown of frost crystals over its brow. '
+    + 'Gentle eyes. Stands facing the viewer.' },
+  あわのクラーケン: { key:'kraken',
+    p:'A legendary soda kraken: a large rounded head like a translucent aqua soda bubble '
+    + 'with a friendly face, and eight thick rounded tentacles curling outward below it, '
+    + 'each tipped with pale foam. Small bubbles float around it and a little crown of '
+    + 'sea-glass sits on its head. Bright and bubbly, not scary.' },
+  キャラメルのぞう: { key:'elephant',
+    p:'A legendary desert elephant made of caramel: a big rounded body in warm amber '
+    + 'caramel, large soft ears, a raised curling trunk, short tusks of pale nougat, and '
+    + 'a decorated saddle blanket of striped candy on its back with small gold bells. '
+    + 'Calm and kind, standing facing the viewer.' },
+  ほむらのきゅうび: { key:'kyubi',
+    p:'A legendary nine-tailed fox of flame: a rounded fox with coral and apricot fur, '
+    + 'big ears with cream inner fur, and NINE long fluffy tails fanned out behind it '
+    + 'like soft flames in coral, apricot and gold. A small gold flame mark on its brow. '
+    + 'Warm and glowing, never harsh red. Sitting and facing the viewer.' },
+  つきのうさぎ: { key:'moonrabbit',
+    p:'A legendary moon rabbit: a plump pale-cream rabbit with long upright ears edged in '
+    + 'pale gold, standing beside a small round mortar of pale stone with a wooden '
+    + 'pestle, pounding mochi. A soft crescent moon glows behind its shoulders and tiny '
+    + 'gold stars float around it.' },
+  にじのペガサス: { key:'pegasus',
+    p:'A legendary winged horse with a pastel cream coat, a flowing rainbow mane and '
+    + 'tail, and two large feathered wings spread wide. **It has no horn on its head.** '
+    + 'Small gold hoof cuffs and a soft rainbow arc of light behind it. Standing facing '
+    + 'the viewer, noble and gentle.' },
   まじょ: { key:'witch', p:'A small chibi witch girl standing, purple dress and a wide pointed purple hat, holding a wooden broom.' },
   /* 「おかえりなさい」の 画面 だけの 1体。盤面の まじょ（witch）は 立って いて
      表情も 変えられない ので、あの 画面に そのまま 貼ると 同じ絵が 2か所に

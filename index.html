@@ -483,6 +483,73 @@
     font-size:calc(16px * var(--fs));border-radius:16px}
   #backNew{background:linear-gradient(180deg,#d7c2ff,#b394f0);box-shadow:0 4px 0 #8b6ad0}
   #backNew:active{box-shadow:0 1px 0 #8b6ad0}
+  /* ============ 伝説との たいけつ（#duOv） ============
+     ウェーブ60・120・200 の「なにかが おきる」。1対1で たたかって、
+     かてば なかまに なる。**まけても 取り上げない** ——記録を のばせば
+     また 会える（CLAUDE.md の「待てば無料」）。
+     背景は その国の 絵（art/screens/duel_*.webp）。キャラは 上に えがく */
+  #duOv{position:fixed;inset:0;z-index:41;display:none;
+    width:100vw;height:100vh;height:100dvh;overflow-y:auto;box-sizing:border-box;
+    padding:calc(env(safe-area-inset-top) + 12px) 12px
+            calc(env(safe-area-inset-bottom) + 14px);
+    align-items:center;justify-content:center;
+    background:linear-gradient(to bottom,#1d1430 0%,#3b2450 45%,#5a2f52 100%)}
+  #duOv.on{display:flex;animation:tFade .4s ease}
+  #duCard{width:min(100%,430px);margin:auto;border-radius:24px;text-align:center;
+    padding:10px 14px 14px;
+    background:linear-gradient(180deg,rgba(255,252,254,.97),rgba(255,244,251,.95));
+    box-shadow:0 14px 44px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.9);
+    animation:pop .42s cubic-bezier(.2,1.4,.5,1)}
+  #duT{font-size:calc(18px * var(--fs));color:var(--pink-d);line-height:1.3;margin:2px 0 6px}
+  /* たたかいの ばしょ。背景の 絵の 上に canvas を かさねる。
+     たてよこ比は 原画（3:2）そのまま */
+  #duArena{position:relative;width:100%;aspect-ratio:3 / 2;border-radius:16px;
+    overflow:hidden;background:#e8dcf0}
+  #duBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  #duCv{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* HPの おび。**2本とも おなじ 形に する** ——色だけで どちらか わかるように */
+  .duHp{display:flex;align-items:center;gap:6px;margin-top:5px;
+    font-size:calc(10.5px * var(--fs));font-weight:800}
+  .duHp .nm{width:6.6em;text-align:left;overflow:hidden;white-space:nowrap}
+  .duHp .br{flex:1;height:11px;border-radius:99px;background:rgba(180,150,190,.22);overflow:hidden}
+  .duHp .br i{display:block;height:100%;border-radius:99px;transition:width .12s linear}
+  #duHpMe .br i{background:linear-gradient(90deg,#8fe3c4,#4fb392)}
+  #duHpFoe .br i{background:linear-gradient(90deg,#ffa7d0,#e05f9e)}
+  /* ワザの ゲージ。たまると じどうで 出る */
+  #duSkill{height:8px;border-radius:99px;margin-top:5px;
+    background:rgba(180,150,190,.22);overflow:hidden}
+  #duSkill i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,#ffe9a8,#ffd76e);transition:width .1s linear}
+  #duMsg{font-size:calc(12px * var(--fs));line-height:1.6;margin:7px 0 4px;min-height:3em}
+  #duMsg b{color:var(--pink-d)}
+  /* なかまの ならび。もっている子だけ。★の 大きい順 */
+  #duPick{display:none;grid-template-columns:repeat(4,1fr);gap:6px;
+    max-height:38vh;overflow-y:auto;margin:6px 0 2px;padding:2px}
+  #duPick.on{display:grid}
+  .duCh{border:0;padding:4px 2px 5px;border-radius:13px;cursor:pointer;font:inherit;
+    background:linear-gradient(180deg,#fff,#fff2f8);
+    box-shadow:0 2px 0 rgba(224,95,158,.22), inset 0 0 0 2px rgba(255,255,255,.9)}
+  .duCh.sel{background:linear-gradient(180deg,#ffe0ef,#ffc9e2);
+    box-shadow:0 2px 0 #e893c0, inset 0 0 0 2px #fff}
+  .duCh canvas{display:block;margin:0 auto;width:46px;height:46px}
+  .duCh .n{font-size:calc(9px * var(--fs));font-weight:800;color:var(--ink);
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .duCh .s{font-size:calc(8.5px * var(--fs));color:var(--pink-d);font-weight:800}
+  #duOv .btn{width:100%;height:auto;min-height:50px;margin-top:8px;
+    font-size:calc(16px * var(--fs));border-radius:15px}
+  #duSub{background:linear-gradient(180deg,#e6d8f5,#cbb6ea);box-shadow:0 4px 0 #9d84c4}
+  #duSub:active{box-shadow:0 1px 0 #9d84c4}
+  /* もらった たまご。3こ ならべて 1つずつ ひらく */
+  #duEggs{display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 2px}
+  #duEggs.on{display:grid}
+  .duEgg{border:0;border-radius:14px;padding:8px 4px;cursor:pointer;font:inherit;
+    background:linear-gradient(180deg,#eef7ff,#dbeeff);
+    box-shadow:0 3px 0 #a9cfe8, inset 0 0 0 2px rgba(255,255,255,.9);
+    font-size:calc(9.5px * var(--fs));font-weight:800;color:#3f7fa8}
+  .duEgg .em{font-size:30px;display:block;line-height:1.1}
+  .duEgg.done{background:linear-gradient(180deg,#fff,#fff2f8);box-shadow:0 3px 0 #e893c0;
+    color:var(--pink-d)}
+  .duEgg canvas{display:block;margin:0 auto;width:44px;height:44px}
   /* ============ ともだちに おしえる（#invOv） ============
      LINE・インスタ・TikTok の 3つは **あつかいが ちがいます**。
      - LINE と X … リンクを わたす web の 口が あるので 1タップで 送れる
@@ -1083,6 +1150,24 @@
 
 <!-- おかえりなさい。表紙の つぎ（プレゼントが ある日は その あと）。
      #app の 外に 置く（position:fixed で 画面ぜんぶを おおうため）-->
+<div id="duOv">
+  <div id="duCard">
+    <div id="duT">✨ 伝説が あらわれた ✨</div>
+    <div id="duArena">
+      <img id="duBg" src="" alt="" aria-hidden="true">
+      <canvas id="duCv" width="720" height="480" aria-hidden="true"></canvas>
+    </div>
+    <div class="duHp" id="duHpFoe"><span class="nm"></span><span class="br"><i></i></span></div>
+    <div class="duHp" id="duHpMe"><span class="nm"></span><span class="br"><i></i></span></div>
+    <div id="duSkill"><i></i></div>
+    <div id="duMsg"></div>
+    <div id="duPick"></div>
+    <div id="duEggs"></div>
+    <button class="btn" id="duGo">たたかう ⚔</button>
+    <button class="btn" id="duSub">あとにする</button>
+  </div>
+</div>
+
 <div id="invOv">
   <div id="invCard">
     <img id="invArt" src="art/screens/ogp.jpg" width="1200" height="630"
@@ -1369,12 +1454,15 @@ const LAP_HP = 1.35;
    ウェーブ57で 上のせが 出そろう ようにした。
    止めどきが ある のは 前と 同じ ——そこから先は レベル上限では なく
    ⭐が 足りなくなるので、止めないと かべが 手前に 来すぎる */
-const MID_FROM = 12, MID_SPAN = 45, MID_MAX = 2.5;
+const MID_FROM = 12, MID_SPAN = 45, MID_MAX = 3.0;
 const MID_STEP = Math.pow(MID_MAX, 1 / MID_SPAN);
 const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.020, Math.max(0, n-25))
                    * Math.pow(MID_STEP, Math.min(Math.max(0, n - MID_FROM), MID_SPAN))
                    * Math.pow(LAP_HP, lapOf(n));
-const goldWave = n => Math.pow(1.004, Math.max(0, n-30));
+/* ⭐の のび。HPより ゆっくりに して、じわじわ おいつかれる ようにする。
+   **1.004 → 1.0037 に さげた**（実機の 報告：⭐が たまりすぎる）。
+   小さく 見えるが 複利なので、ウェーブ200では 1.16倍 → 1.13倍 の さに なる */
+const goldWave = n => Math.pow(1.0037, Math.max(0, n-30));
 // （ベリーおうじが なかまだと さらに +10%）
 const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04) * goldWave(wave) * (hasCh('prince') ? 1.1 : 1) * (buffs.gold > 0 ? 2 : 1) * (wmod && wmod.gold ? wmod.gold : 1));
 
@@ -1669,21 +1757,95 @@ const DEX_ENEMIES = Object.keys(ENEMIES).filter(k => !DEX_HIDE_EN.includes(k))
 /* ==========================================================
    でんせつのなかま：とうたつウェーブで出会えて、永続の「しゅくふく」をくれる
    ========================================================== */
+/* 背景は **その とき いる 国から えらぶ**（DUEL_BG）。`bg` は その 予備。
+   国で えらぶので、伝説の ウェーブを 動かしても 絵が ずれません。
+   まだ 絵の ない 国は 予備の 1枚を つかいます。
+   `hp`・`atk` は 1対1の たたかいの 数字で、ENEMIES とは 別もの ——
+   あちらは 何十体も 出るが、こちらは 1体だけなので けたが ちがう */
+/* 特別ウェーブ（伝説との たいけつ）は **国ごとに 1つ**。
+   その国の 15ウェーブめ ——つまり `ステージ番号 × 20 − 5` に 置きます。
+
+     15  シュガーガーデン      95  こおりのくに        175 さばくのくに
+     35  いちごのおかしばたけ 115  ゆきのケーキやま    195 ひのくに
+     55  マカロンのもり       135  ソーダのうみべ      215 よぞらのくに
+     75  チョコレートのたに   155  キャラメルのさばく  235 にじのてんくう
+
+   **なぜ 15ウェーブめか。**20の 倍数は ステージクリア＋ボーナスウェーブで
+   すでに こんでいます。5の 倍数には 中ボスが 出ます。15なら その国の
+   おわりかけで、クリアの お祝いとも ぶつかりません。
+   国が かわるたびに 1回 来るので、リズムも そろいます。
+
+   **いま 立っているのは 3つだけ**（55・115・175）です。
+   ならびは つよさの 順で、はじめの1体に W175 まで 待たせない ため。
+   のこり9つの わくには、あとで ボスを 入れます。そのときは
+   ようがんのりゅうを ひのくに（195）へ、ぎんがのくじゃくを
+   よぞらのくに（215）へ うつすと 景色と 合います。
+   ——**ウェーブを 動かしたら 背景は ついてきます**（DUEL_BG が
+   その とき いる 国から えらぶ ため）。
+
+   `tease` は 書かずに `wave` から 作ること。数字を 2か所に 書くと ずれます */
 const LEGENDS = [
-  { id:'whale',   name:'ぎんがのくじゃく',   title:'星空の伝説', wave:60,
-    fx:'祝福：はじまりのハート+2',                 tease:'ウェーブ60で なにかが おきる…' },
-  { id:'phoenix', name:'ようがんのりゅう',   title:'炎の伝説',   wave:120,
-    fx:'祝福：1プレイに1回 ハート0でふみとどまる', tease:'ウェーブ120で なにかが おきる…' },
-  { id:'chronos', name:'えいえんのスフィンクス', title:'時の伝説', wave:200,
-    fx:'祝福：早よびの待ち時間+3秒',         tease:'ウェーブ200で なにかが おきる…' },
+  { id:'candytree',  name:'あめのきのせい',   title:'はじまりの伝説', wave:15,
+    fx:'祝福：はじまりの ⭐+100' },
+  { id:'berryqueen', name:'いちごのじょおう', title:'みのりの伝説',   wave:35,
+    fx:'祝福：たまごが 5%やすい' },
+  { id:'whale',      name:'ぎんがのくじゃく', title:'星空の伝説',     wave:55,
+    fx:'祝福：今日のプレゼントの 💎+1' },
+  { id:'chocoknight',name:'ショコラのきし',   title:'たにの伝説',     wave:75,
+    fx:'祝福：かけら交換が 20%やすい' },
+  { id:'mammoth',    name:'ひょうがのマンモス', title:'こおりの伝説', wave:95,
+    fx:'祝福：ダブりの かけら+1' },
+  { id:'phoenix',    name:'ようがんのりゅう', title:'炎の伝説',       wave:115,
+    fx:'祝福：たまごから にじの子が 出やすい' },
+  { id:'kraken',     name:'あわのクラーケン', title:'うみの伝説',     wave:135,
+    fx:'祝福：アイテムの ドロップ+2%' },
+  { id:'elephant',   name:'キャラメルのぞう', title:'さばくの伝説',   wave:155,
+    fx:'祝福：💗の 回復が 1分 はやい' },
+  { id:'chronos',    name:'えいえんのスフィンクス', title:'時の伝説', wave:175,
+    fx:'祝福：早よびの待ち時間+3秒' },
+  { id:'kyubi',      name:'ほむらのきゅうび', title:'ほのおの伝説',   wave:195,
+    fx:'祝福：早よびの ⭐+10%' },
+  { id:'moonrabbit', name:'つきのうさぎ',     title:'つきの伝説',     wave:215,
+    fx:'祝福：今日のプレゼントの ⭐+50' },
+  { id:'pegasus',    name:'にじのペガサス',   title:'にじの伝説',     wave:235,
+    fx:'祝福：ボーナスの おかしが 3こ 少ない' },
 ];
+/* つよさは **ウェーブから 式で 出す**。1体ずつ 手で 書くと、
+   ならべたとき 前後で 逆転していても 気づけません。
+   ねらいは「その国に とどく ころの ★の子で ぎりぎり 勝てる」*/
+for (const l of LEGENDS){
+  l.hp   = 900 + l.wave * 14;
+  l.atk  = Math.round(6 + l.wave * 0.055);
+  l.ivl  = +(1.6 - l.wave * 0.0015).toFixed(2);
+  l.bg   = 'duel_forest';                    // 予備。ふだんは DUEL_BG が えらぶ
+  l.tease = 'ウェーブ' + l.wave + 'で なにかが おきる…';
+}
 const hasLg = id => !!dex['lg_' + id];
+/* 国 → たいけつの 背景。**その国だと ひとめで わかる 目じるし**を 1つずつ
+   入れて 出してある（さばくのくに＝ピラミッドと スフィンクス、
+   キャラメルのさばく＝あめ色の岩と サバンナの木）。
+   ここに 無い 国は 予備（LEGENDS の bg）に なるので、
+   絵を 足したら **ここに 1行 書くこと** */
+const DUEL_BG = {
+  'シュガーガーデン':     'duel_sugar',    // あめの木と れんがの道
+  'いちごのおかしばたけ': 'duel_berry',    // いちご畑の うね
+  'マカロンのもり':       'duel_forest',   // マカロンの木
+  'チョコレートのたに':   'duel_choco',    // チョコの がけと たき
+  'こおりのくに':         'duel_ice',      // すきとおった 氷の柱
+  'ゆきのケーキやま':     'duel_snow',     // ケーキの山に クリームの雪
+  'ソーダのうみべ':       'duel_sea',      // ソーダの海と あわ
+  'キャラメルのさばく':   'duel_caramel',  // あめ色の 岩と サバンナの木
+  'さばくのくに':         'duel_egypt',    // ピラミッド・スフィンクス
+  'ひのくに':             'duel_fire',     // クリームの火山と キャラメルの溶岩
+  'よぞらのくに':         'duel_night',    // 三日月と 地面に おちた星
+  'にじのてんくう':       'duel_rainbow',  // 雲の島と にじの橋
+};
 /* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
    たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
-const maxHearts = () => 20 + (hasLg('whale') ? 2 : 0);
+const maxHearts = () => 20;
 const maxLife   = () => (weekly && weekly.life) ? weekly.life
-  : 20 + (hasLg('whale') ? 2 : 0);   // クジラの しゅくふく：はじまりのハート+2
+  : 20;
 /* ごほうびでもらう💗は上限をこえてためておける。ためすぎないように99でとめる */
 const HEART_STOCK_MAX = 99;
 /* かいふくワザや ステージクリアの ごほうびは、そのプレイの げんきを もどす */
@@ -1691,7 +1853,10 @@ const healHearts = n => { life = Math.max(life, Math.min(maxLife(), life + n)); 
 /* 💗をつかいきったら、時間で少しずつ回復するライフ制。
    REGEN_MIN分ごとに💗1こ、maxHearts()まで（ふつう20こ→100分で満タン）。
    1こでもたまれば「つづきから」で再開できる。回復ペースはここだけ変えればOK */
-const REGEN_MIN = 5, REGEN_MS = REGEN_MIN*60*1000;
+const REGEN_MIN = 5;
+/* ぞうの しゅくふくで 1分 はやい。**関数に すること** ——
+   図鑑にも 出るので、決めうちだと 表示だけ 古くなる */
+const REGEN_MS = () => (REGEN_MIN - (hasLg('elephant') ? 1 : 0)) * 60 * 1000;
 /* localStorage 'sweetTD.lifeAt' は「つぎの💗が回復する時刻」を表す */
 function nextHeartAt(){ try{ return +localStorage.getItem('sweetTD.lifeAt') || 0; }catch(e){ return 0; } }
 function setNextHeartAt(t){ try{ t ? localStorage.setItem('sweetTD.lifeAt', String(t)) : localStorage.removeItem('sweetTD.lifeAt'); }catch(e){} }
@@ -1710,7 +1875,7 @@ function applyRegen(){
   let changed = false;
   while (at && Date.now() >= at && hearts < cap){
     hearts++; changed = true;
-    at = (hearts < cap) ? at + REGEN_MS : 0;   // 満タンなら回復おわり(0)
+    at = (hearts < cap) ? at + REGEN_MS() : 0;   // 満タンなら回復おわり(0)
   }
   if (changed){ setNextHeartAt(at); saveRest(); }
   return changed;
@@ -1814,7 +1979,6 @@ function vib(pat){
   try{ navigator.vibrate(pat); }catch(e){}
 }
 let paraders = [];            // 応援パレード中のなかま
-let phoenixUsed = false;      // ふしちょうのごかご（1プレイ1回）
 let continueUsed = false;     // このプレイで「つづきから」を使ったか（2回目からはライフ制）
 let lifeTimer = null;         // 回復までのカウントダウン表示
 let flyer = null, flyT = 12;  // そらをとぶでんせつ（sil=影のときは予告）
@@ -2345,8 +2509,13 @@ function applyLayout(w){
 
 function reset(){
   towers = []; enemies = []; shots = []; parts = []; floats = []; rings = [];
+  /* 伝説との たいけつの のこり回数は **この周の ぶん**。
+     新しく はじめたら 3回に もどす ——これが「待てば無料」の 本体で、
+     ここを 消し忘れると 1回 まけたら 一生 会えなく なります */
+  duelSt = {}; saveDuel();
   WAY = FIRST_WAY;
-  hearts = maxHearts(); life = maxLife(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
+  hearts = maxHearts(); life = maxLife();
+  stars = 250 + todayStartStars() + (hasLg('candytree') ? 100 : 0); wave = 0;   // ログインボーナスぶんを上のせ
   selTool = null; selTower = null; running = false; over = false;
   spawnQ = []; spawnT = 0; speed = 1; flash = 0; nextT = 0;
   btnSpd.textContent = '1x';
@@ -2354,7 +2523,7 @@ function reset(){
   for (const k in skCd) skCd[k] = 0;
   for (const k in buffs) buffs[k] = 0;
   gifts = []; paraders = []; celebT = 0; wflash = 0;
-  phoenixUsed = false; flyer = null; flyT = 10; bonus = null; bonusWait = 0;
+  flyer = null; flyT = 10; bonus = null; bonusWait = 0;
   continueUsed = false;
   if (lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
   ovBtn.disabled = false;
@@ -2429,6 +2598,10 @@ function buildShop(){
    ⭐は あそんで ためるもの、💎は 買うもの。両方 のこすのは、
    💎だけに すると あそんで 集められなくなり、⭐だけに すると
    はじめたばかりの人が いつまでも 1人も 増やせないため */
+/* たまごの ⭐。いちごのじょおうの しゅくふくで 5%やすい。
+   **関数に すること** ——ならびの 表示にも つかうので、決めうちだと
+   ねだんだけ 古くなる */
+const eggCost = e => Math.round(e.cost * (hasLg('berryqueen') ? 0.95 : 1));
 const EGGS = [
   { id:'e13', name:'ふつうの たまご',   lv:[1,2,3], cost:400,  gem:5,  c1:'#fff0f7', c2:'#ff8fc4' },
   { id:'e45', name:'きらきら たまご',   lv:[4,5],   cost:1200, gem:12, c1:'#eef7ff', c2:'#9ed8ff' },
@@ -2437,6 +2610,9 @@ const EGGS = [
 /* ダブりが 出たときに もらえる かけら と、かけらで 交換するのに いる数 */
 const SHARD_GET  = { 1:1, 2:1, 3:1, 4:2, 5:2, 6:4 };
 const SHARD_COST = { 1:5, 2:5, 3:5, 4:12, 5:12, 6:30 };
+/* きしの しゅくふくで 20%やすい。**関数に すること** ——
+   ひつような 数は 画面にも 出るので、決めうちだと 表示だけ 古くなる */
+const shardCost = lv => Math.max(1, Math.round(SHARD_COST[lv] * (hasLg('chocoknight') ? 0.8 : 1)));
 
 let shards = 0;
 try{ shards = +localStorage.getItem('sweetTD.shards') || 0; }catch(e){}
@@ -2533,7 +2709,10 @@ const hasGen  = o => !!dex[o.id];
 /* にじの わく（DEX_LEGEND）の子は「運が よければ」の あつかい。
    たまごの 中で あわせて 5% しか 出ない。かくりつ表示（eggRates）と
    ここの 数字は かならず そろえること（Apple 3.1.1／景品表示法） */
-const LEG_RATE  = 0.05;
+/* にじの子が たまごから 出る かくりつ。りゅうの しゅくふくで 1%上がる。
+   **関数に すること** ——eggOdds（えらぶ側）も かくりつ表示も ここを 見るので、
+   決めうちだと 表示だけ ずれる。かくりつ表示は Apple 3.1.1／景表法で 必須 */
+const LEG_RATE = () => 0.05 + (hasLg('phoenix') ? 0.01 : 0);
 /* 金の わく（DEX_GOLD）は にじの 下、銀の 上。にじを のぞいた のこりの 20%。
    **この数字は 金の 人数で 変わる。**きらきら たまごは にじ2人・金6人なので、
    15% だと 金ひとりが 2.4%、にじ ひとりが 2.5% で **金の ほうが めずらしく**
@@ -2555,7 +2734,7 @@ function eggOdds(pool){
   const leg  = pool.filter(o =>  DEX_LEGEND.has(artKeyOf(o)));
   const gold = pool.filter(o => !DEX_LEGEND.has(artKeyOf(o)) &&  DEX_GOLD.has(artKeyOf(o)));
   const norm = pool.filter(o => !DEX_LEGEND.has(artKeyOf(o)) && !DEX_GOLD.has(artKeyOf(o)));
-  const pL = leg.length ? (gold.length || norm.length ? LEG_RATE : 1) : 0;
+  const pL = leg.length ? (gold.length || norm.length ? LEG_RATE() : 1) : 0;
   const rest = 1 - pL;
   const pG = !gold.length ? 0 : norm.length ? rest * GOLD_RATE : rest;
   return { leg, gold, norm, pL, pG, pN: rest - pG };
@@ -2577,7 +2756,7 @@ function eggDraw(e){
     return { o, dup: false };
   }
   const o = eggPick(pool);
-  const n = SHARD_GET[o.lv] || 1;
+  const n = (SHARD_GET[o.lv] || 1) + (hasLg('mammoth') ? 1 : 0);   // マンモスの しゅくふく
   shards += n; saveShards();
   return { o, dup: true, shard: n };
 }
@@ -2659,8 +2838,8 @@ function buildEggScreen(){
       '<div class="egN">' + e.name + '</div>' +
       '<div class="egX">★' + e.lv.join('・') + '　残り ' + left + '人</div>' +
       '<div class="egB">' +
-      '<button class="egPay egStar"' + (weekly || stars < e.cost ? ' disabled' : '') +
-        '>⭐' + fmtN(e.cost) + '</button>' +
+      '<button class="egPay egStar"' + (weekly || stars < eggCost(e) ? ' disabled' : '') +
+        '>⭐' + fmtN(eggCost(e)) + '</button>' +
       '<button class="egPay egGem"' + (weekly || gems < e.gem ? ' disabled' : '') +
         '>💎' + e.gem + '</button>' +
       '</div>' +
@@ -2703,7 +2882,7 @@ function buildShardBox(){
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;justify-content:center';
   for (const lv of [1,2,3,4,5,6]){
-    const need = SHARD_COST[lv];
+    const need = shardCost(lv);
     const left = GEN_LIST.filter(o => o.side === 'ch' && o.lv === lv && !hasGen(o)).length;
     const b = document.createElement('button');
     b.className = 'mini' + (shards < need || !left ? ' gray' : '');
@@ -2737,8 +2916,9 @@ function buyEgg(e, pay){
   if (pay === 'gem'){
     if (!payGems(e.gem)){ no('💎が足りません（💎' + e.gem + '）'); return; }
   } else {
-    if (stars < e.cost){ no('おほしさまが足りません（⭐' + fmtN(e.cost) + '）'); return; }
-    stars -= e.cost;
+    const c = eggCost(e);
+    if (stars < c){ no('おほしさまが足りません（⭐' + fmtN(c) + '）'); return; }
+    stars -= c;
     /* ⭐は saveRun でしか のこらない。ここで 書かないと、
        開いたあと 読みこみ直すだけで ⭐が もどってくる（仲間は 残る）*/
     saveRun();
@@ -3205,7 +3385,7 @@ function closeInfo(){
 const RATE_LV = 8;
 const spdLv   = t => Math.min(t.lv - 1, RATE_LV - 1);
 /* t.rb は にじいろの秘薬をのんだ しるし。そのプレイの あいだ こうげき2倍 */
-const dmgOf   = t => TOWERS[t.k].dmg   * (t.rb ? 2 : 1) * Math.pow(1.6, t.lv-1) * Math.pow(1/0.9, (t.lv-1) - spdLv(t)) * (hasCh('king')  ? 1.1  : 1) * (buffs.dmg > 0 ? 2   : 1);
+const dmgOf   = t => TOWERS[t.k].dmg   * (t.rb ? (t.rbx || 2) : 1) * Math.pow(1.6, t.lv-1) * Math.pow(1/0.9, (t.lv-1) - spdLv(t)) * (hasCh('king')  ? 1.1  : 1) * (buffs.dmg > 0 ? 2   : 1);
 const rangeOf = t => TOWERS[t.k].range * Math.pow(1.12, t.lv-1) * (hasCh('fairy') ? 1.05 : 1) * (buffs.rng > 0 ? 1.4 : 1);
 const rateOf  = t => TOWERS[t.k].rate  * Math.pow(0.9, spdLv(t))  * (hasCh('taffy') ? 0.93 : 1) * (buffs.spd > 0 ? 0.5 : 1);
 const sellOf  = t => {
@@ -3301,9 +3481,9 @@ function boardTap(px, py){
   if (bonus) lastTap.why = 'bonus';
   const hit = towerAt(c, r);
   // にじいろの秘薬を えらんでいる あいだは、仲間を タップ＝かける
-  if (aimItem === 'elixir'){
-    if (hit && !hit.rb){ applyElixir(hit); return; }
-    if (hit){ floatTx(tcx(hit), tcy(hit) - CELL, 'もう にじいろです', '#b98ae0'); return; }
+  if (aimItem === 'elixir' || aimItem === 'elixir3'){
+    if (hit && !hit.rb){ applyElixir(hit, aimItem); return; }
+    if (hit){ floatTx(tcx(hit), tcy(hit) - CELL, 'もう 秘薬を のんでいます', '#b98ae0'); return; }
     aimItem = null; syncSkills();
     floatTx(px, py, 'やめました', '#b98ae0');
     return;
@@ -3356,7 +3536,8 @@ const NEXT_WAIT = 10;          // つぎのウェーブが自動ではじまる�
 /* 早よびの ボーナス⭐。**式は ここ1か所**（3か所に 散っていた）。
    tools/sim.mjs も ここを 読む ——早よびを 数に 入れないと、
    いつも 早よびする人の 収入を **半分に 見あやまる** */
-const earlyBonus = (w, t) => Math.ceil((t === undefined ? NEXT_WAIT : t) * (2 + w*0.2));
+const earlyBonus = (w, t) => Math.ceil((t === undefined ? NEXT_WAIT : t) * (2 + w*0.2)
+                             * (hasLg('kyubi') ? 1.1 : 1));   // きゅうびの しゅくふく
 function startWave(early){
   if (running || over) return;
   if (early && nextT > 0 && wave > 0){
@@ -3523,7 +3704,8 @@ function celebrate(o){
    ========================================================== */
 const BONUS_EMO = ['🍬','🍩','🍪','🧁','🍓','🍭','🍰','🍮'];
 function startBonus(){
-  bonus = { spawnLeft: 30, total: 30, spT: 0.4, items: [], got: 0 };
+  const nB = 30 - (hasLg('pegasus') ? 3 : 0);   // ペガサスの しゅくふく
+  bonus = { spawnLeft: nB, total: nB, spT: 0.4, items: [], got: 0 };
   btnWave.disabled = true;
   waveBtn('🎁 ボーナスタイム！<br>お菓子をタップ！');
   floatTx(COLS*CELL/2, ROWS*CELL*0.35, '🎁 ボーナスウェーブ！', '#ff8fc4');
@@ -3757,16 +3939,12 @@ function update(dt){
       }
       life -= (e.k === 'boss' ? 5 : 1);
       flash = 1; beep(200,.28,'sawtooth',.06,.5);
-      if (life <= 0){
-        // ふしちょうのしゅくふく：1プレイに1回だけふみとどまる
-        if (hasLg('phoenix') && !phoenixUsed){
-          phoenixUsed = true; life = 1;
-          celebrate({ conf: 50, rings: true, fanfare: 1 });
-          floatTx(COLS*CELL/2, ROWS*CELL/2, 'ふしちょうの ごかご！🔥', '#ff8a3a');
-        } else {
-          syncHUD(); gameOver(); return;
-        }
-      }
+      /* **しゅくふくで ふみとどまらせない。**むかしは りゅうの しゅくふくで
+         1プレイに1回 生きのこれたが、あれは「負けにくさ」を 直に 上げる ——
+         しかも tools/sim.mjs は「時間内に たおしきれるか」しか 見ていないので、
+         **モデルには 何も 見えないまま 難易度だけ 下がる**。
+         祝福は 難易度に さわらない ものだけに した */
+      if (life <= 0){ syncHUD(); gameOver(); return; }
       syncHUD();
     }
   }
@@ -3969,6 +4147,40 @@ function killEnemy(e, px, py){
   syncHUD();
 }
 
+/* ==========================================================
+   まけた とき「何が 足りなかったか」を 出す
+   ----------------------------------------------------------
+   ただ まけると「なんか むりだった」で 終わります。
+   **言葉に できると、人は つぎを 始めます。**
+   だから のばせる ところを 1つだけ、名ざしで 出します。
+
+   見るのは この順（上から 効く もの）。
+     1. まだ おける ますが ある      → まず ならべる
+     2. 強化の 上限まで 育っていない  → ⭐を ためて 育てる
+     3. 上限まで 育っている          → もっと 強い なかまに 入れかえる
+   3つ目まで 来たら、こだいの秘薬（ウェーブ200から）にも ふれます */
+function overHint(){
+  if (!towers.length) return '<br>';
+  const cap = maxLv();
+  const lo  = Math.min(...towers.map(t => t.lv));
+  const hi  = Math.max(...towers.map(t => t.lv));
+  const used = towers.reduce((n, t) => n + tSpan(t) * tSpan(t), 0);
+  const free = COLS * ROWS - pathCells.size - used;
+  const box = t => '<br><span style="display:inline-block;background:rgba(255,255,255,.7);' +
+    'border:2px solid #ffd9ec;border-radius:14px;padding:6px 12px;margin:6px 0;' +
+    'font-size:calc(11.5px * var(--fs));line-height:1.6;color:#8a6a83">' + t + '</span><br>';
+  if (free >= 3)
+    return box('つぎは <b>あと' + free + 'マス</b> なかまを おけるよ<br>' +
+               'ならべる ほど 火力が 上がります');
+  if (lo < cap)
+    return box('なかまは <b>Lv' + lo + '〜' + hi + '</b>、いまの 上限は <b>Lv' + cap + '</b><br>' +
+               '⭐を ためて <b>上限まで</b> 育ててみよう');
+  return box('もう <b>上限（Lv' + cap + '）まで</b> 育ててる！<br>' +
+             'つぎは <b>もっと ★の 大きい なかま</b>に 入れかえてみよう' +
+             (wave >= 150
+               ? '<br>ウェーブ<b>200</b>からは ⚗️<b>こだいの秘薬</b>（攻撃3倍）も 落ちるよ'
+               : ''));
+}
 function gameOver(){
   if (weekly) return weeklyOver();   // おだいは 別の結果画面（自己ベストを 動かさない）
   over = true; running = false;
@@ -3984,7 +4196,8 @@ function gameOver(){
     (newRec
       ? '<span style="' + badge + ';animation:blink .5s infinite alternate">✨ 新記録！ ウェーブ' + rec.bw + ' ✨</span>'
       : '<span style="' + badge + '">🏆 自己ベスト ウェーブ' + rec.bw + '</span>') +
-    '<br><span style="opacity:.7">倒した数：' + rec.kills + '　ランキング：上位' + rankPct() + '%くらい（目安）</span><br>' +
+    '<br><span style="opacity:.7">倒した数：' + rec.kills + '　ランキング：上位' + rankPct() + '%くらい（目安）</span>' +
+    overHint() +
     'もう一度 挑戦してみよう ✨';
   // 💗は「あと なんかい あそべるか」。まけた ときに 1こだけ つかう。
   // てきが ゴールに 入っても へらない（へるのは げんきのバー）
@@ -3997,7 +4210,7 @@ function gameOver(){
     ovB.innerHTML += '<br><span style="opacity:.75">💗を1こ使いました（残り ' + hearts + '）</span>';
   } else {
     // つかいきったら、時間で少しずつ回復。1こでもたまれば再開できる
-    if (!nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
+    if (!nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS());
     ovB.innerHTML += '<br><span style="opacity:.75">💗を使いきりました…！ ' + REGEN_MIN + '分ごとに1こずつ回復（最大' + maxHearts() + '）</span>';
   }
   armLifeButton(false);
@@ -7125,6 +7338,10 @@ const DEX_ART = {
   apple:'futaba',  queen:'sunadokei', king:'taiyou',    rpurin:'nagareboshi',
   kagero:'kagero',
   whale:'kujaku',  phoenix:'ryu',    chronos:'sphinx',
+  /* 特別ウェーブの 伝説 9体（国ごとに 1体）。id と 絵の キーは そろえてある */
+  candytree:'candytree', berryqueen:'berryqueen', chocoknight:'chocoknight',
+  mammoth:'mammoth',     kraken:'kraken',         elephant:'elephant',
+  kyubi:'kyubi',         moonrabbit:'moonrabbit', pegasus:'pegasus',
 };
 
 /* どの 絵を つかうかを 決める キー。
@@ -8358,7 +8575,8 @@ function stageClear(){
   /* アイテムも 1こ。はじめての人が つかいかたを おぼえられるように、
      たまごと ちがって かならず もらえる形に する */
   {
-    const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP);
+    /* `late` を もつ アイテムは その ウェーブから しか 出ない */
+    const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP && (!it.late || wave >= it.late));
     if (pool.length){
       const it = pool[(Math.random()*pool.length)|0];
       giveItem(it.id, 1);
@@ -8408,9 +8626,416 @@ function stageClear(){
 /* とうたつ記録が条件をこえていたら、でんせつが降臨する（1体ずつ） */
 function checkLegends(){
   if (over || ov.classList.contains('on')) return;
-  const L = LEGENDS.find(l => rec.bw >= l.wave && !dex['lg_' + l.id]);
-  if (L) legendArrival(L);
+  /* **見るのは いまの ウェーブ。自己ベストでは ない。**
+     ベストで 見ると、記録が 60ある人は 新しい周の **ウェーブ1で** 出てしまう
+     （背景は ウェーブ60の 国なので ちぐはぐに なる）。
+     いまの ウェーブに すると「ウェーブ60で なにかが おきる」の 予告どおりに なり、
+     ⭐も じゅうぶん たまっている */
+  const L = LEGENDS.find(l => wave >= l.wave && !dex['lg_' + l.id] && duelTriesOf(l) > 0);
+  if (L) openDuel(L);
 }
+/* ==========================================================
+   伝説との たいけつ（1対1）
+   ----------------------------------------------------------
+   ウェーブ60・120・200 の「なにかが おきる」。むかしは 出会うだけで
+   自動的に 仲間に なっていたが、**たたかって かちとる**形に した。
+
+   **まけても 取り上げない。**3回 まけたら その場は 終わりだが、
+   記録を あと20ウェーブ のばせば また 3回 もらえる。
+   💎は「いますぐ もう一度」の 時短だけ ——ここを
+   「💎を 払わないと 一生 手に 入らない」に しては いけません。
+   コレクションを 課金で 閉じる 形は、CLAUDE.md の
+   「強さそのものは 売らない／待てば無料」と 正面から ぶつかります。
+
+   のこり回数は localStorage に もつ。
+     { whale:{ n:のこり, at:つぎに 3回 もらえる rec.bw } }
+   ========================================================== */
+const DUEL_TRIES = 3;                  // 1回の 出会いで たたかえる 数
+const DUEL_STAR  = w => 100 + w * 6;   // 2回目からの ⭐（そのウェーブなら 払える額）
+const DUEL_GEM   = 3;                  // 4回目からの「いますぐ もう一度」
+
+/* のこり回数。**この周の ぶん**だけ。つかいきったら その周は 終わりで、
+   つぎに あそんで また その ウェーブへ とどけば 3回 もどる（reset で 消す）。
+   保存するのは 「とちゅうで 読みこみ直して 回数を 増やす」のを ふせぐため */
+let duelSt = {};
+try{ duelSt = JSON.parse(localStorage.getItem('sweetTD.duel') || '{}') || {}; }catch(e){}
+function saveDuel(){ try{ localStorage.setItem('sweetTD.duel', JSON.stringify(duelSt)); }catch(e){} }
+function duelTriesOf(L){
+  if (duelSt[L.id] === undefined) return DUEL_TRIES;   // この周は まだ 会っていない
+  return duelSt[L.id];
+}
+
+/* いま たたかっている ぶんの 状態。画面を とじると null に もどす */
+let duS = null, duRaf = 0, duPrev = 0;
+const duOv = $('duOv'), duCard = $('duCard'), duCv = $('duCv');
+const duMsg = $('duMsg'), duPickEl = $('duPick'), duEggsEl = $('duEggs');
+const duGo = $('duGo'), duSub = $('duSub'), duArena = $('duArena');
+
+/* なかまの つよさ。★が そのまま ものさし。
+   ここを ENEMIES や TOWERS から 引かないのは、あちらが「何十体で けずる」
+   前提の 数字で、1対1では けたが 合わないため */
+const duAllyHp  = lv => 70 + lv * 30;
+const duAllyDmg = lv => 7  + lv * 5;
+
+function duSay(html){ duMsg.innerHTML = html; }
+function duBar(id, now, max){
+  const el = $(id);
+  el.querySelector('i').style.width = Math.max(0, Math.min(100, now / max * 100)) + '%';
+}
+function duShowBars(on){
+  for (const id of ['duHpFoe','duHpMe']) $(id).style.visibility = on ? '' : 'hidden';
+  $('duSkill').style.visibility = on ? '' : 'hidden';
+}
+
+function openDuel(L){
+  closePanels();
+  if (duelSt[L.id] === undefined){ duelSt[L.id] = DUEL_TRIES; saveDuel(); }
+  duS = { L, ally: null, phase: 'intro' };
+  $('duBg').src = 'art/screens/' + (DUEL_BG[themeOf(wave).name] || L.bg) + '.webp';
+  duOv.classList.add('on');
+  duIntro();
+  celebrate({ rays: 3, conf: 60, flash: true, fanfare: 1 });
+  vib([30, 60, 30]);
+}
+function closeDuel(){
+  duOv.classList.remove('on');
+  if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
+  duS = null;
+  duPickEl.classList.remove('on'); duEggsEl.classList.remove('on');
+  resize();
+}
+
+/* ---- ① よこく ---- */
+function duIntro(){
+  const L = duS.L;
+  duS.phase = 'intro';
+  $('duT').innerHTML = '✨ 伝説が あらわれた ✨';
+  duShowBars(false);
+  duPickEl.classList.remove('on'); duEggsEl.classList.remove('on');
+  duPaintIdle();
+  duSay('<b>' + L.name + '</b>（' + L.title + '）が<br>' +
+        'ゆくてを ふさいでいる…！<br>' +
+        '<span style="opacity:.72;font-size:.92em">なかまを 1人 えらんで たたかおう'
+        + '（のこり <b>' + duelSt[L.id] + '</b> 回）</span>');
+  duGo.style.display = ''; duGo.textContent = 'なかまを えらぶ ▶';
+  duGo.onclick = () => { tapSel(); duPick(); };
+  duSub.style.display = ''; duSub.textContent = 'あとにする';
+  duSub.onclick = () => { tapSel(); closeDuel(); };
+}
+
+/* ---- ② なかまを えらぶ ---- */
+function duPick(){
+  duS.phase = 'pick';
+  $('duT').textContent = 'だれと たたかう？';
+  duShowBars(false);
+  duEggsEl.classList.remove('on');
+  /* もっている子だけ。★の 大きい順（つよい子が 上に 来る）*/
+  const list = GEN_LIST.filter(o => o.side === 'ch' && dex[o.id])
+                       .sort((a, b) => b.lv - a.lv);
+  duPickEl.innerHTML = '';
+  if (!list.length){
+    duSay('まだ なかまが いません…<br>たまごを ひらいて なかまを つくろう');
+    duGo.style.display = 'none';
+    duSub.textContent = '閉じる';
+    return;
+  }
+  for (const o of list){
+    const b = document.createElement('button');
+    b.className = 'duCh';
+    const th = genThumb(o, 46);
+    b.append(th);
+    b.insertAdjacentHTML('beforeend',
+      '<div class="n">' + o.name + '</div><div class="s">★' + o.lv + '</div>');
+    b.onclick = () => {
+      tapSel();
+      duS.ally = o;
+      for (const x of duPickEl.children) x.classList.toggle('sel', x === b);
+      duSay('<b>' + o.name + '</b>（★' + o.lv + '）<br>' +
+            'げんき ' + duAllyHp(o.lv) + '　こうげき ' + duAllyDmg(o.lv));
+      duGo.style.display = ''; duGo.textContent = 'この子で たたかう ⚔';
+    };
+    duPickEl.append(b);
+  }
+  duPickEl.classList.add('on');
+  duSay('なかまを タップして えらんでね');
+  duGo.style.display = 'none';
+  duGo.onclick = () => { if (duS.ally){ tapSel(); duFightStart(); } };
+  duSub.style.display = ''; duSub.textContent = 'もどる';
+  duSub.onclick = () => { tapSel(); duIntro(); };
+}
+
+/* ---- ③ たたかい ----
+   タップで こうげき。伝説は 時間で こうげきしてくる。
+   タップが たまると ワザが 出る（じどう）。
+   むずかしさは ★で 決まる ——★1では とどかず、★4なら 勝てる */
+function duFightStart(){
+  const L = duS.L, a = duS.ally;
+  duS.phase = 'fight';
+  duS.myMax = duAllyHp(a.lv); duS.myHp = duS.myMax;
+  duS.foeMax = L.hp;          duS.foeHp = L.foeHp || L.hp;
+  duS.foeHp = L.hp;
+  duS.dmg = duAllyDmg(a.lv);
+  duS.gauge = 0; duS.foeT = L.ivl; duS.cd = 0; duS.t = 0;
+  duS.hitMe = 0; duS.hitFoe = 0; duS.fx = [];
+  duS.foeIm = null; duBake();
+  $('duT').textContent = 'タップして こうげき！';
+  duPickEl.classList.remove('on');
+  duShowBars(true);
+  $('duHpFoe').querySelector('.nm').textContent = L.name.slice(0, 7);
+  $('duHpMe').querySelector('.nm').textContent  = a.name.slice(0, 7);
+  duSyncBars();
+  duSay('画面を <b>れんだ</b>して こうげき！<br>' +
+        '<span style="opacity:.72;font-size:.92em">ゲージが たまると ワザが 出る</span>');
+  duGo.style.display = 'none';
+  duSub.style.display = ''; duSub.textContent = 'にげる';
+  duSub.onclick = () => { tapSel(false); duLose(true); };
+  duArena.onpointerdown = duTap;
+  duPrev = 0;
+  if (!duRaf) duRaf = requestAnimationFrame(duLoop);
+}
+function duSyncBars(){
+  duBar('duHpFoe', duS.foeHp, duS.foeMax);
+  duBar('duHpMe',  duS.myHp,  duS.myMax);
+  $('duSkill').querySelector('i').style.width = (duS.gauge * 100) + '%';
+}
+function duTap(){
+  if (!duS || duS.phase !== 'fight' || duS.cd > 0) return;
+  duS.cd = 0.10;
+  duHitFoe(duS.dmg, false);
+  duS.gauge = Math.min(1, duS.gauge + 0.05);
+  if (duS.gauge >= 1){          // ワザ！
+    duS.gauge = 0;
+    duHitFoe(duS.dmg * 6, true);
+    playSnd([[880,.09,'triangle',.05,1.6],[1320,.14,'triangle',.05,1.8,70]]);
+    vib([18, 30, 26]);
+  } else {
+    beep(560 + Math.random()*120, .04, 'triangle', .025);
+  }
+}
+function duHitFoe(d, big){
+  duS.foeHp = Math.max(0, duS.foeHp - d);
+  duS.hitFoe = big ? 0.45 : 0.18;
+  duS.fx.push({ x: 0.72, y: 0.52, t: big ? 0.7 : 0.35, big, d: Math.round(d) });
+  duSyncBars();
+  if (duS.foeHp <= 0) duWin();
+}
+function duLoop(ts){
+  if (!duS || duS.phase !== 'fight'){ duRaf = 0; return; }
+  if (!duPrev) duPrev = ts;
+  const dt = Math.min(0.05, (ts - duPrev) / 1000); duPrev = ts;
+  duS.t += dt;
+  if (duS.cd > 0) duS.cd -= dt;
+  if (duS.hitMe  > 0) duS.hitMe  -= dt;
+  if (duS.hitFoe > 0) duS.hitFoe -= dt;
+  duS.foeT -= dt;
+  if (duS.foeT <= 0){
+    duS.foeT = duS.L.ivl;
+    duS.myHp = Math.max(0, duS.myHp - duS.L.atk);
+    duS.hitMe = 0.3;
+    duS.fx.push({ x: 0.28, y: 0.52, t: 0.4, foe: true, d: duS.L.atk });
+    beep(200, .12, 'sawtooth', .045, .7);
+    vib([22]);
+    duSyncBars();
+    if (duS.myHp <= 0){ duLose(false); return; }
+  }
+  for (let i = duS.fx.length - 1; i >= 0; i--){
+    duS.fx[i].t -= dt; if (duS.fx[i].t <= 0) duS.fx.splice(i, 1);
+  }
+  duPaint();
+  duRaf = requestAnimationFrame(duLoop);
+}
+
+/* 絵。背景は <img>、この canvas には 2体と こうげきの あとだけ */
+/* **2体とも 1枚に 焼く。**毎フレーム drawGen / drawPortrait を よぶと
+   45fps に 落ちた（実測）。まじょの オーラと 同じ 失敗なので、
+   ここでも 焼いて 貼るだけに する。伝説の 金の オーラも 焼きこむ */
+function duBake(){
+  const H = duCv.height;
+  const foe = document.createElement('canvas');
+  const pad = Math.round(H * 0.60 * 0.30);
+  foe.width = foe.height = Math.round(H * 0.60) + pad * 2;
+  {
+    const g = foe.getContext('2d'), S = Math.round(H * 0.60);
+    const c = document.createElement('canvas'); c.width = c.height = 192;
+    drawPortrait(c.getContext('2d'), duS.L.id, 192);
+    g.shadowColor = 'rgba(255,214,110,.65)'; g.shadowBlur = S * 0.16;
+    g.drawImage(c, pad, pad, S, S);
+    g.shadowBlur = S * 0.30; g.drawImage(c, pad, pad, S, S);
+    g.shadowBlur = 0;        g.drawImage(c, pad, pad, S, S);
+  }
+  duS.foeIm = foe;
+  if (duS.ally){
+    const a = document.createElement('canvas');
+    a.width = a.height = Math.round(H * 0.50);
+    drawGen(a.getContext('2d'), a.width, duS.ally);
+    duS.allyIm = a;
+  }
+}
+function duPaintIdle(){
+  const g = duCv.getContext('2d'), W = duCv.width, H = duCv.height;
+  g.clearRect(0, 0, W, H);
+  if (!duS.foeIm) duBake();
+  duDrawFoe(g, W, H, 0, 0);
+}
+function duDrawFoe(g, W, H, t, shake){
+  const im = duS.foeIm; if (!im) return;
+  const S = im.width;
+  const x = W * 0.72 + (shake ? (Math.random()-.5) * H * 0.10 : 0);
+  const y = H * 0.56 + Math.sin(t * 1.6) * H * 0.02;
+  g.drawImage(im, x - S/2, y - S/2);
+}
+function duPaint(){
+  const g = duCv.getContext('2d'), W = duCv.width, H = duCv.height;
+  g.clearRect(0, 0, W, H);
+  /* なかま（左）。焼いた 1枚を 貼るだけ */
+  const ac = duS.allyIm;
+  if (ac){
+    const S = ac.width;
+    const ax = W * 0.28 + (duS.hitMe > 0 ? (Math.random()-.5) * S * 0.25 : 0);
+    const ay = H * 0.58 + Math.sin(duS.t * 3) * H * 0.015;
+    g.save(); g.translate(ax, ay);
+    if (duS.cd > 0.05) g.scale(1.08, 0.94);        // こうげきの ぐっと
+    g.drawImage(ac, -S/2, -S/2);
+    g.restore();
+  }
+  duDrawFoe(g, W, H, duS.t, duS.hitFoe > 0);
+  /* あたった ところの きらめきと 数字 */
+  g.textAlign = 'center';
+  for (const f of duS.fx){
+    const u = 1 - f.t / (f.big ? 0.7 : f.foe ? 0.4 : 0.35);
+    g.save(); g.globalAlpha = Math.max(0, 1 - u);
+    const x = W * f.x, y = H * f.y - u * H * 0.16;
+    /* **sparkle() は モジュールの ctx に えがく。**この canvas に 出したいので
+       withCtx で 差しかえること ——そのまま よぶと 盤面に えがかれる */
+    if (!f.foe) withCtx(g, () =>
+      sparkle(x, y, H * (f.big ? 0.14 : 0.07), duS.t * 4, f.big ? '#ffd76e' : '#fff'));
+    g.fillStyle = f.foe ? '#ff6f8a' : (f.big ? '#ffb43f' : '#fff');
+    g.font = "800 " + Math.round(H * (f.big ? 0.13 : 0.085)) + "px 'Hiragino Maru Gothic ProN',sans-serif";
+    g.strokeStyle = 'rgba(90,60,90,.55)'; g.lineWidth = H * 0.012;
+    g.strokeText('-' + f.d, x, y); g.fillText('-' + f.d, x, y);
+    g.restore();
+  }
+}
+
+/* ---- ④ かった ---- */
+function duWin(){
+  duS.phase = 'win';
+  duArena.onpointerdown = null;
+  if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
+  const L = duS.L;
+  unlock('lg_' + L.id);
+  dex['lg_' + L.id].w = L.wave;
+  saveDex();
+  duelSt[L.id] = 0; saveDuel();       // もう 会わない（ずかんに 入ったので）
+  $('duT').innerHTML = '🎉 おめでとう 🎉';
+  duShowBars(false);
+  duPaintIdle();
+  duSay('<b>' + L.name + '</b>が なかまに なった！<br>' +
+        '<span style="display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
+        'border:2px solid #ffd76e;border-radius:999px;padding:5px 13px;margin:5px 0;' +
+        'color:#c9821e;font-size:.94em">' + L.fx + '</span><br>' +
+        'ごほうびに <b>きらきら たまご 3こ</b>！');
+  duGo.style.display = ''; duGo.textContent = 'たまごを ひらく 🥚';
+  duGo.onclick = () => { tapSel(); duEggs(); };
+  duSub.style.display = 'none';
+  celebrate({ rays: 4, conf: 240, rings: true, flash: true, fanfare: 2 });
+  vib([30, 50, 30, 50, 70]);
+  syncHUD();
+}
+
+/* ---- ⑤ たまご3こ。1つずつ タップして ひらく ---- */
+function duEggs(){
+  duS.phase = 'egg';
+  const E = EGGS[1];                       // きらきら たまご（★4〜5）
+  $('duT').textContent = '🥚 ' + E.name + ' × 3';
+  duEggsEl.innerHTML = '';
+  duS.got = []; duS.left = 3;
+  for (let i = 0; i < 3; i++){
+    const b = document.createElement('button');
+    b.className = 'duEgg';
+    b.innerHTML = '<span class="em">🥚</span>タップ';
+    b.onclick = () => {
+      if (b.classList.contains('done')) return;
+      tapSel();
+      const r = eggDraw(E);                // ダブりは かけらに なる（既存のしくみ）
+      b.classList.add('done'); b.innerHTML = '';
+      b.append(genThumb(r.o, 44));
+      b.insertAdjacentHTML('beforeend',
+        '<div>' + (r.dup ? '🩷かけら' : r.o.name) + '</div>');
+      duS.got.push(r);
+      duS.left--;
+      playSnd([[660,.09,'triangle',.05,1.5],[990,.14,'triangle',.05,1.7,80]]);
+      celebrate({ conf: 40, fanfare: 1 });
+      if (duS.left <= 0) duDone();
+    };
+    duEggsEl.append(b);
+  }
+  duEggsEl.classList.add('on');
+  duSay('たまごを タップして ひらこう！');
+  duGo.style.display = 'none';
+  duSub.style.display = 'none';
+}
+/* ---- ⑥ ずかんに 何が 増えたか ---- */
+function duDone(){
+  duS.phase = 'done';
+  const news = duS.got.filter(r => !r.dup);
+  const dups = duS.got.length - news.length;
+  $('duT').textContent = '📖 ずかんに くわわりました';
+  duSay(
+    '<b>' + duS.L.name + '</b><br>' +
+    (news.length ? news.map(r => '<b>' + r.o.name + '</b>（★' + r.o.lv + '）').join('<br>') + '<br>' : '') +
+    (dups ? '<span style="opacity:.72;font-size:.92em">ダブり ' + dups + 'こは 🩷かけらに なりました</span><br>' : '') +
+    '<span style="opacity:.72;font-size:.92em">👑ずかんで 見られます</span>');
+  duGo.style.display = ''; duGo.textContent = 'ゲームに もどる ▶';
+  duGo.onclick = () => { tapSel(); closeDuel(); parade(); };
+  duSub.style.display = 'none';
+  saveRun(); syncHUD(); buildShop();
+}
+
+/* ---- ⑦ まけた ---- */
+function duLose(ranAway){
+  duS.phase = 'lose';
+  duArena.onpointerdown = null;
+  if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
+  const L = duS.L;
+  duelSt[L.id] = Math.max(0, duelSt[L.id] - 1); saveDuel();
+  const left = duelSt[L.id];
+  duShowBars(false);
+  duPaintIdle();
+  beep(300,.2,'sine',.05,.7); setTimeout(()=>beep(220,.28,'sine',.05,.7),170);
+  if (left > 0){
+    /* まだ のこっている。2回目からは ⭐（安く）*/
+    const cost = DUEL_STAR(L.wave);
+    $('duT').innerHTML = ranAway ? 'にげた…' : 'ざんねん… おしい！';
+    duSay('あと <b>' + left + '</b> 回 たたかえる<br>' +
+          '<span style="opacity:.72;font-size:.92em">つよい子に かえて みよう</span>');
+    duGo.style.display = ''; duGo.textContent = 'もう一度 ⭐' + fmtN(cost);
+    duGo.onclick = () => {
+      if (stars < cost){ tapSel(false); duSay('おほしさまが たりません（⭐' + fmtN(cost) + '）'); return; }
+      tapSel(); stars -= cost; saveRun(); syncHUD();
+      duPick();
+    };
+    duSub.style.display = ''; duSub.textContent = 'あとにする';
+    duSub.onclick = () => { tapSel(); closeDuel(); };
+    return;
+  }
+  /* 3回 つかいきった。**ここで 取り上げない。**
+     つぎに あそんで また この ウェーブまで 行けば、また 3回。
+     💎は「いますぐ」の 時短だけ ——ここを「払わないと 一生 手に 入らない」に
+     しては いけません */
+  $('duT').innerHTML = 'よく がんばったね！';
+  duSay('きょうは ここまで。<br>' +
+        'つぎに <b>ウェーブ ' + L.wave + '</b> まで 行けたら<br>' +
+        'また <b>' + DUEL_TRIES + '回</b> ちょうせん できるよ ✨');
+  duGo.style.display = ''; duGo.textContent = 'いますぐ もう一度 💎' + DUEL_GEM;
+  duGo.onclick = () => {
+    if (!payGems(DUEL_GEM)){ tapSel(false); duSay('💎が たりません（💎' + DUEL_GEM + '）'); return; }
+    tapSel(); duelSt[L.id] = 1; saveDuel(); syncHUD(); duPick();
+  };
+  duSub.style.display = ''; duSub.textContent = 'また 今度';
+  duSub.onclick = () => { tapSel(); closeDuel(); };
+}
+
 function legendArrival(L, preview){
   if (!preview){
     unlock('lg_' + L.id);              // 撮影プレビューでは図鑑にとうろくしない
@@ -8544,7 +9169,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'berryqueen', 'candytree', 'chocoknight', 'elephant', 'kraken', 'kyubi', 'mammoth', 'moonrabbit', 'pegasus', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -9001,6 +9626,18 @@ const ITEMS = [
     snd:[[600,.10,'triangle',.05,1.4,0], [800,.10,'triangle',.05,1.4,100],
          [1000,.24,'triangle',.06,1.5,200]],
     desc:'仲間を1人 にじいろに して 攻撃2倍', note:'そのプレイの おわりまで つづく' },
+  /* **ウェーブ200から しか 出ません**（ITEM_LATE）。かべの 正体は
+     「⭐が 足りなくなる」ことなので、⭐を つかわずに 火力を 足せる ものだけが
+     かべを 動かせます。ただし 中盤に 出すと、せっかく 締めた よゆうが
+     もどってしまう ——だから **後半だけ**。坂では なく 階段に する ため。
+     **ショップには 置かないこと。**強さそのものは 売らない（CLAUDE.md） */
+  { id:'elixir3', name:'こだいの秘薬', sn:'こだい',   ic:'⚗️', col:'#ffd76e', need:false, late:200,
+    art:'it_elixir', vib:[26,40,26,40,26,40,80],
+    /* にじいろの秘薬と おなじ「上がる」形だが、**1つ 多くて 低く 始まる**。
+       目を つぶっても どちらを つかったか 分かるように する（CLAUDE.md）*/
+    snd:[[440,.10,'triangle',.05,1.4,0],  [590,.10,'triangle',.05,1.4,95],
+         [790,.10,'triangle',.05,1.4,190],[1180,.30,'triangle',.06,1.6,285]],
+    desc:'仲間を1人 きんいろに して 攻撃3倍', note:'ウェーブ200から 敵が おとす' },
   { id:'freeze', name:'こおりのつぼ',   sn:'こおり',   ic:'🧊', col:'#9ed8ff', need:true,
     art:'it_freeze', vib:[80],
     snd:[[1480,.07,'sine',.05,.9,0], [990,.12,'sine',.05,.85,80],
@@ -9101,10 +9738,13 @@ let gifts = [];
 /* アイテムが 落ちる わりあい。ワザより ずっと めずらしい。
    これが 主な 入手ルート＝あそんでいれば ためられる。
    「待てば無料」を くずさないために、ここを 0 に しないこと */
-const ITEM_DROP = 0.08;
+/* アイテムの ドロップ。クラーケンの しゅくふくで +2%。
+   **関数に すること** ——2か所（落とす所と ショップの 説明）で つかうので、
+   決めうちだと 片方だけ 古くなる */
+const ITEM_DROP = () => 0.08 + (hasLg('kraken') ? 0.02 : 0);
 function spawnGift(x, y){
   // ときどき ワザでは なく アイテムが 落ちる
-  if (Math.random() < ITEM_DROP){
+  if (Math.random() < ITEM_DROP()){
     const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP);
     if (pool.length){
       const it = pool[(Math.random()*pool.length)|0];
@@ -9254,18 +9894,18 @@ function useItem(it){
   const W = COLS*CELL, H = ROWS*CELL;
 
   // 秘薬だけは「だれに かけるか」を えらんでから へらす
-  if (it.id === 'elixir'){
+  if (it.id === 'elixir' || it.id === 'elixir3'){
     const able = towers.filter(t => !t.rb);
     if (!able.length){
-      floatTx(W/2, H*0.45, 'にじいろに できる仲間が いません', '#b98ae0');
+      floatTx(W/2, H*0.45, '秘薬を のめる仲間が いません', '#b98ae0');
       tapSel(false); return;
     }
-    aimItem = (aimItem === 'elixir') ? null : 'elixir';
+    aimItem = (aimItem === it.id) ? null : it.id;
     selTool = null; selTower = null; closeInfo(); syncShop(); syncSkills();
     /* かける相手を えらぶ モードに 入った／出た。まだ 秘薬は へっていないので、
        つかった ときの 音とは 分ける（えらんだ だけ、と 分かるように）*/
     if (aimItem){
-      floatTx(W/2, H*0.42, 'にじいろに する仲間を タップ！', '#b98ae0');
+      floatTx(W/2, H*0.42, '秘薬を のませる仲間を タップ！', '#b98ae0');
       beep(880,.07,'triangle',.04); setTimeout(()=>beep(1180,.09,'triangle',.04),70);
       vib([12,40,12]);
     } else { beep(520,.06,'triangle',.03); vib(10); }
@@ -9335,18 +9975,26 @@ function hexRgb(h){
   return ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255);
 }
 /* 秘薬を 1人に かける */
-function applyElixir(t){
-  if (!t || t.rb || gear.elixir < 1) return false;
-  gear.elixir--; saveGear();
-  t.rb = true;
+/* 秘薬は 2しゅるい。にじいろ（×2）と こだい（×3）。
+   **1人に かけられるのは 1回だけ**（かさねると 一気に こわれる）。
+   `t.rbx` に ばい率を のこす ——古いセーブには 無いので、
+   `t.rb ? (t.rbx || 2) : 1` で 前の セーブは ×2の まま 動く */
+function applyElixir(t, id){
+  id = id || 'elixir';
+  const IT = ITEM_BY_ID[id], mul = id === 'elixir3' ? 3 : 2;
+  if (!t || t.rb || gear[id] < 1) return false;
+  gear[id]--; saveGear();
+  t.rb = true; t.rbx = mul;
   aimItem = null;
   const x = tcx(t), y = tcy(t);
-  iflash = 1; iSweep = 1; iflashCol = hexRgb(ITEM_BY_ID.elixir.col);
-  vib(ITEM_BY_ID.elixir.vib);
-  ring(x, y, '#8fe3c4', CELL*3);
+  iflash = 1; iSweep = 1; iflashCol = hexRgb(IT.col);
+  vib(IT.vib);
+  ring(x, y, mul === 3 ? '#ffd76e' : '#8fe3c4', CELL*3);
   for (let i=0;i<26;i++) mote(x, y, ['#ff9ec9','#ffd76e','#8fe3c4','#9ed8ff','#c9a7ff'][i%5]);
-  floatTx(x, y - CELL*0.9, TOWERS[t.k].name + ' が にじいろに！ 攻撃2倍', '#b98ae0');
-  playSnd(ITEM_BY_ID.elixir.snd);
+  floatTx(x, y - CELL*0.9,
+    TOWERS[t.k].name + (mul === 3 ? ' が きんいろに！ 攻撃3倍' : ' が にじいろに！ 攻撃2倍'),
+    mul === 3 ? '#e0a52e' : '#b98ae0');
+  playSnd(IT.snd);
   saveRun(); syncSkills(); syncHUD();
   return true;
 }
@@ -9454,7 +10102,7 @@ function saveRun(w){
       w: (w !== undefined ? w : wave), st: stars, hp: hearts, lf: life,
       cu: continueUsed ? 1 : 0,
       tw: towers.map(t => {
-        return t.rb ? { k:t.k, c:t.c, r:t.r, lv:t.lv, rb:1 }
+        return t.rb ? { k:t.k, c:t.c, r:t.r, lv:t.lv, rb:1, rbx:(t.rbx || 2) }
                         : { k:t.k, c:t.c, r:t.r, lv:t.lv };
       }),
     }));
@@ -9520,6 +10168,8 @@ function tryResume(){
   towers = (rn.tw || [])
     .filter(t => TOWERS[t.k] && !pathCells.has(key(t.c, t.r)))
     .map(t => ({ k:t.k, c:t.c, r:t.r, lv:Math.min(5, Math.max(1, t.lv|0)), rb:!!t.rb,
+                 /* 古いセーブには rbx が ない。その ときは ×2（にじいろ）*/
+                 rbx: t.rb ? (t.rbx || 2) : 0,
                  cd:0, ang:-Math.PI/2, pulse:0, ph:Math.random()*6.3 }));
   continueUsed = !!rn.cu;
   floatTx(COLS*CELL/2, ROWS*CELL/2, '続きから再開！', '#b98ae0');
@@ -9537,7 +10187,7 @@ function continueRun(refill, keepWave){
   continueUsed = true;
   setNextHeartAt(0);   // 再開したら回復タイマーは止める
   ovBtn.disabled = false;
-  phoenixUsed = false; nextT = 0;
+  nextT = 0;
   for (const k in skCd) skCd[k] = 0;
   for (const k in buffs) buffs[k] = 0;
   ov.classList.remove('on');
@@ -9576,8 +10226,9 @@ function todayStartStars(){
 function applyLoginReward(day){
   // 毎日 💎を すこしだけ。買えないうちも ショップが 動くようにしておく。
   // 課金を つないだら、ここの数は 見なおすこと
-  gems += 2; saveGems();
-  const addStart = n => {
+  gems += 2 + (hasLg('whale') ? 1 : 0); saveGems();   // くじゃくの しゅくふく
+  const addStart = n0 => {
+    const n = n0 + (hasLg('moonrabbit') ? 50 : 0);   // つきのうさぎの しゅくふく
     try{ localStorage.setItem('sweetTD.todayStars', JSON.stringify({ d: dateStr(), n })); }catch(e){}
     stars += n;                          // いま遊んでいるぶんにもすぐ足す
     return '今日は スタートおほしさま <b>+' + n + '</b>！';
@@ -10005,7 +10656,7 @@ function buildHelp(){
     '<b>図鑑にいる子だけ 盤面に おけます</b>ので、集めるほど 戦いかたが ふえます。</p>' +
     '<p style="margin-top:5px"><b>わくの色＝手に入りにくさ</b>です。' +
     'ならびも 上から この順です。</p><ul style="margin-top:4px">' +
-    '<li>🌈 <b>にじ</b>（伝説）：運まかせ。たまごでは あわせて' + (LEG_RATE*100) + '%、' +
+    '<li>🌈 <b>にじ</b>（伝説）：運まかせ。たまごでは あわせて' + (LEG_RATE()*100) + '%、' +
     'たおしても ときどきしか 図鑑に入りません（にげてしまいます）</li>' +
     '<li>🥇 <b>金</b>（レア）：たまごでも たおしたときでも 出にくい子</li>' +
     '<li>🥈 <b>銀</b>／🩷 <b>ピンク</b>：ふつうに 集まります</li></ul>' +
@@ -10056,7 +10707,7 @@ function buildHelp(){
     '<li><b>ウェーブに終わりはありません</b>。' + STAGE_WAVES + 'ウェーブごとに 国が かわり、' +
     THEMES.length + 'の国を ひとまわりする <b>' + LAP_WAVES + 'ウェーブごとに 道の形が 変わります</b>。' +
     '敵は少しずつ強くなるので、どこまで潜れるかが記録になります</li>' +
-    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説の仲間に会えるらしい…✨</li></ul></div>';
+    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、きらきらたまごも 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li></ul></div>';
   h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、' +
     '<b>👑図鑑をひらいて、いちばん上の「🔑合言葉」</b>から入れてください。' +
@@ -10386,7 +11037,7 @@ const SHOP_ITEMS = [
      セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
   { id:'it_set', sec:'あそぶ', ic:'🎒', name:'おたすけセット',
     desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×1こずつ',
-    note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP*100) + '%）。' +
+    note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP()*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
     cost: 20,
     can:  () => itDay.set !== dayKey(),
@@ -10593,7 +11244,7 @@ function weeklyOver(){
   saveWeekRec(r);
   hearts = Math.max(0, hearts - 1);
   life = maxLife();
-  if (hearts < 1 && !nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
+  if (hearts < 1 && !nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS());
   syncHUD();
   const badge = 'display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
     'border:2px solid #ffd76e;border-radius:999px;padding:7px 16px;margin:7px 0;color:#c9821e';
@@ -13227,6 +13878,12 @@ window.__chk = {
   openEgg: () => openEggScreen(''),
   artKeys: () => ART_KEYS,
   themeOfStage, chars: () => CHARS.map(c => c.name),
+  /* 12国ぜんぶに たいけつの 背景が あるか。1つでも 抜けると
+     その国だけ よその 絵が 出る（気づきにくい）*/
+  duelBg: () => THEMES.map(t => ({ 国:t.name, 絵:DUEL_BG[t.name] || null })),
+  legends: () => LEGENDS.map(l => ({ w:l.wave, 名:l.name, 祝福:l.fx })),
+  duelWaves: () => LEGENDS.map(l => ({ w:l.wave, 名:l.name,
+                     国: THEMES[(Math.max(0,Math.ceil(l.wave/STAGE_WAVES)-1))%THEMES.length].name })),
   // アバターも キャラなので おなじ検査に かける。
   // ぜんぶの くみあわせは 何万とおりも あるので、各こうもくを もれなく 1回は とおす数だけ 作る
   avatarSamples: () => {
@@ -13281,6 +13938,36 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return c.toDataURL('image/png');
   },
   setWave: w => { wave = w; syncHUD(); },
+  /* 伝説との たいけつを その場で ひらく。ふつうは ウェーブ60まで
+     行かないと 出ないので、検査では ここから 呼ぶ */
+  duel: i => { duelSt = {}; saveDuel(); delete dex['lg_' + LEGENDS[i].id];
+               openDuel(LEGENDS[i]); return LEGENDS[i].name; },
+  duelState: () => ({ phase: duS && duS.phase, my: duS && duS.myHp,
+                      foe: duS && duS.foeHp, tries: JSON.parse(JSON.stringify(duelSt)) }),
+  duelTap: n => { for (let k = 0; k < n; k++){ if (duS) duS.cd = 0; duTap(); } },
+  duelHurt: () => { if (duS && duS.phase === 'fight') duS.myHp = 1; },
+  setStars: n => { stars = n; syncHUD(); },
+  /* まけた ときの ヒントを 3つの ばあいで たしかめる */
+  overHint: () => overHint(),
+  /* まけた ときの ヒントを 3つの ばあいで ためす。
+     n体を lv で ならべて、ウェーブ w の ときの 文を かえす */
+  hintCase: (n, lv, w) => {
+    wave = w; towers.length = 0;
+    let c = 0, r = 0;
+    for (let i = 0; i < n; i++){
+      while (r < ROWS && (pathCells.has(key(c, r)) || towerAt(c, r))){
+        c++; if (c >= COLS){ c = 0; r++; }
+      }
+      if (r >= ROWS) break;
+      towers.push({ k:'candy', c, r, lv, cd:0, ang:-Math.PI/2, pulse:0, ph:0 });
+      c++; if (c >= COLS){ c = 0; r++; }
+    }
+    return { おいた: towers.length, 上限: maxLv(),
+             文: overHint().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() };
+  },
+  items: () => ITEMS.map(i => ({ id:i.id, name:i.name, late:i.late || 0 })),
+  gear: () => JSON.parse(JSON.stringify(gear)),
+  dropPool: w => ITEMS.filter(it => !it.late || w >= it.late).map(i => i.id),
   /* クリア画面の 見た目を たしかめる。ステージNまで あそばずに 出せる */
   stageClear: n => { wave = n * STAGE_WAVES; stageClear(); },
   /* ワザを 1つ ためす。バーは 7こまでなので、はっていない子は 押せない */

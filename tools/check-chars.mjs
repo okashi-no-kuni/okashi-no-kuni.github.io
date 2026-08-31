@@ -59,6 +59,7 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
      ずれると、絵を もったまま コードで えがかれる。じっさい 66体が そうだった。
      はみ出し検査は どちらで えがいても とおるので、ここで 見るしか ない */
   const artKeys = api.artKeys ? api.artKeys() : null;
+  const duelBg = api.duelBg ? api.duelBg() : null;
   if (api.artKeyOf && api.artHas)
     for (const o of R){
       if (o.rainbow) continue;
@@ -170,7 +171,7 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     if (pN !== null && pL !== null && pL >= pN)
       eggBad.push(e.name + '[にじ' + pc(pL) + '≧ふつう' + pc(pN) + ']');
   }
-  return { artLost, enGhost, chGhost, artKeys, n: R.length, nav: AV.length, over, small, off, dupName, dupId, eggBad };
+  return { artLost, enGhost, chGhost, artKeys, duelBg, n: R.length, nav: AV.length, over, small, off, dupName, dupId, eggBad };
 }, { MIN_BIG, MAX_OFF });
 await b.close();
 
@@ -196,6 +197,17 @@ if (rep.artKeys && existsSync(spriteDir)){
     .filter(k => !have.has(k) && !SCREEN_ART.has(k));
 }
 
+/* たいけつの 背景が 12国ぜんぶ そろっているか。
+   1つ 抜けると **その国だけ よその国の 絵**が 出る ——
+   絵は ちゃんと 出るので 目では 気づけない */
+let bgMiss = [];
+if (rep.duelBg){
+  const dir = resolve(target, '..', 'art/screens');
+  bgMiss = rep.duelBg
+    .filter(r => !r.絵 || !existsSync(resolve(dir, r.絵 + '.webp')))
+    .map(r => r.国 + (r.絵 ? '(' + r.絵 + '.webp が ない)' : '(DUEL_BG に 無い)'));
+}
+
 const line = (label, arr) =>
   console.log(('  ' + label).padEnd(16),
     arr.length ? '✗ ' + arr.length + '件  ' + arr.join(' ') : 'なし ✅');
@@ -211,10 +223,12 @@ line('絵の とりこぼし', [...(rep.artLost || []), ...keyMiss.map(k => k + 
 line('出ない てき', rep.enGhost || []);
 line('出ない なかま', rep.chGhost || []);
 line('たまごの ならび', rep.eggBad || []);
+line('たいけつの背景', bgMiss);
 
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
-         + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length;
+         + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
+         + bgMiss.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);
