@@ -136,7 +136,47 @@ const SCENES = {
     + 'Everyone is roughly the same height in the row so no one is hidden. Warm, '
     + 'peaceful and welcoming - nobody is fighting. No text, no letters, no captions, '
     + 'no logo, no watermark, no frame or border.' },
+  /* 伝説との 1対1の 背景。**キャラは 入れない**（あとから canvas で
+     まじょや 伝説を 上に えがくため）。まん中が すいている 構図に して、
+     左右に 2体 立てる 場所を あける。
+     色は THEMES の その国の 値を そのまま 文に して、盤面と つながって
+     見えるように する（ちがう 色で 出すと 別の 国に 見える）*/
+  duel_forest: { file:'duel_forest', aspect:'3:2', p: duelBg(
+    'マカロンのもり', 'a soft green macaron forest',
+    'Rolling pastel-green hills (#c8e6c0) with tall trees whose canopies are giant '
+    + 'pastel macarons in pink, cream and lavender. A winding cocoa-brown path (#8a5a34) '
+    + 'runs across the middle distance. Toadstools made of cream and berries dot the grass.') },
+  duel_snow: { file:'duel_snow', aspect:'3:2', p: duelBg(
+    'ゆきのケーキやま', 'a snowy cake mountain',
+    'A pale blue-white snowfield (#f2f4fa) under a soft winter sky. Behind it rise '
+    + 'mountains shaped like tiered cakes with thick white cream snow on top and pale '
+    + 'blue icing (#a8c4e6) running down the sides. Sugar snowflakes drift in the air, '
+    + 'and little snowdrifts of whipped cream sit in the foreground.') },
+  duel_fire: { file:'duel_fire', aspect:'3:2', p: duelBg(
+    'ひのくに', 'a warm land of fire',
+    'A warm coral-pink ground (#f6dcd8) with rivers of glowing caramel lava in soft '
+    + 'coral and apricot (#c96a4a, #ffb07a) - **warm and glowing, never harsh red**. '
+    + 'Behind it stand gentle volcano hills topped with cream, and floating embers that '
+    + 'look like tiny golden sugar sparks drift up through the air.') },
 };
+
+/* 対戦の 背景は どれも 同じ 作りに する。ちがうのは 景色だけ。
+   1つ1つ 文を 書くと 構図が バラバラに なって、同じ ゲームの
+   画面に 見えなく なる */
+function duelBg(jp, what, scene){
+  return 'A wide background illustration for a one-on-one boss battle screen in a cute '
+    + 'pastel candy tower-defense game. This is ' + what + ' called "' + jp + '".\n\n'
+    + scene + '\n\n'
+    + 'IMPORTANT: this is scenery only. **Draw no characters, no creatures, no people, '
+    + 'no faces and no eyes anywhere.** Leave the middle and lower half of the picture '
+    + 'open and uncluttered, because two characters will be drawn on top of it later - '
+    + 'one on the left and one on the right. Keep the detail in the upper half and the '
+    + 'far distance; keep the foreground simple.\n'
+    + 'Soft pastel palette mixed with white, never neon. Rounded shapes only, no sharp '
+    + 'corners. Simple flat vector style with soft gradient shading, the same storybook '
+    + 'look as a cute mobile game. Slightly dreamy and magical, as if something special '
+    + 'is about to happen. No text, no letters, no logo, no watermark, no frame.';
+}
 
 /* わくの 中での 大きさ。長辺で そろえる。
    高さで そろえると、しっぽが 横に 流れる おばけが 横に はみ出す。

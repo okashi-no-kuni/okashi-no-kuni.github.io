@@ -483,6 +483,73 @@
     font-size:calc(16px * var(--fs));border-radius:16px}
   #backNew{background:linear-gradient(180deg,#d7c2ff,#b394f0);box-shadow:0 4px 0 #8b6ad0}
   #backNew:active{box-shadow:0 1px 0 #8b6ad0}
+  /* ============ 伝説との たいけつ（#duOv） ============
+     ウェーブ60・120・200 の「なにかが おきる」。1対1で たたかって、
+     かてば なかまに なる。**まけても 取り上げない** ——記録を のばせば
+     また 会える（CLAUDE.md の「待てば無料」）。
+     背景は その国の 絵（art/screens/duel_*.webp）。キャラは 上に えがく */
+  #duOv{position:fixed;inset:0;z-index:41;display:none;
+    width:100vw;height:100vh;height:100dvh;overflow-y:auto;box-sizing:border-box;
+    padding:calc(env(safe-area-inset-top) + 12px) 12px
+            calc(env(safe-area-inset-bottom) + 14px);
+    align-items:center;justify-content:center;
+    background:linear-gradient(to bottom,#1d1430 0%,#3b2450 45%,#5a2f52 100%)}
+  #duOv.on{display:flex;animation:tFade .4s ease}
+  #duCard{width:min(100%,430px);margin:auto;border-radius:24px;text-align:center;
+    padding:10px 14px 14px;
+    background:linear-gradient(180deg,rgba(255,252,254,.97),rgba(255,244,251,.95));
+    box-shadow:0 14px 44px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.9);
+    animation:pop .42s cubic-bezier(.2,1.4,.5,1)}
+  #duT{font-size:calc(18px * var(--fs));color:var(--pink-d);line-height:1.3;margin:2px 0 6px}
+  /* たたかいの ばしょ。背景の 絵の 上に canvas を かさねる。
+     たてよこ比は 原画（3:2）そのまま */
+  #duArena{position:relative;width:100%;aspect-ratio:3 / 2;border-radius:16px;
+    overflow:hidden;background:#e8dcf0}
+  #duBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  #duCv{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* HPの おび。**2本とも おなじ 形に する** ——色だけで どちらか わかるように */
+  .duHp{display:flex;align-items:center;gap:6px;margin-top:5px;
+    font-size:calc(10.5px * var(--fs));font-weight:800}
+  .duHp .nm{width:6.6em;text-align:left;overflow:hidden;white-space:nowrap}
+  .duHp .br{flex:1;height:11px;border-radius:99px;background:rgba(180,150,190,.22);overflow:hidden}
+  .duHp .br i{display:block;height:100%;border-radius:99px;transition:width .12s linear}
+  #duHpMe .br i{background:linear-gradient(90deg,#8fe3c4,#4fb392)}
+  #duHpFoe .br i{background:linear-gradient(90deg,#ffa7d0,#e05f9e)}
+  /* ワザの ゲージ。たまると じどうで 出る */
+  #duSkill{height:8px;border-radius:99px;margin-top:5px;
+    background:rgba(180,150,190,.22);overflow:hidden}
+  #duSkill i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,#ffe9a8,#ffd76e);transition:width .1s linear}
+  #duMsg{font-size:calc(12px * var(--fs));line-height:1.6;margin:7px 0 4px;min-height:3em}
+  #duMsg b{color:var(--pink-d)}
+  /* なかまの ならび。もっている子だけ。★の 大きい順 */
+  #duPick{display:none;grid-template-columns:repeat(4,1fr);gap:6px;
+    max-height:38vh;overflow-y:auto;margin:6px 0 2px;padding:2px}
+  #duPick.on{display:grid}
+  .duCh{border:0;padding:4px 2px 5px;border-radius:13px;cursor:pointer;font:inherit;
+    background:linear-gradient(180deg,#fff,#fff2f8);
+    box-shadow:0 2px 0 rgba(224,95,158,.22), inset 0 0 0 2px rgba(255,255,255,.9)}
+  .duCh.sel{background:linear-gradient(180deg,#ffe0ef,#ffc9e2);
+    box-shadow:0 2px 0 #e893c0, inset 0 0 0 2px #fff}
+  .duCh canvas{display:block;margin:0 auto;width:46px;height:46px}
+  .duCh .n{font-size:calc(9px * var(--fs));font-weight:800;color:var(--ink);
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .duCh .s{font-size:calc(8.5px * var(--fs));color:var(--pink-d);font-weight:800}
+  #duOv .btn{width:100%;height:auto;min-height:50px;margin-top:8px;
+    font-size:calc(16px * var(--fs));border-radius:15px}
+  #duSub{background:linear-gradient(180deg,#e6d8f5,#cbb6ea);box-shadow:0 4px 0 #9d84c4}
+  #duSub:active{box-shadow:0 1px 0 #9d84c4}
+  /* もらった たまご。3こ ならべて 1つずつ ひらく */
+  #duEggs{display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 2px}
+  #duEggs.on{display:grid}
+  .duEgg{border:0;border-radius:14px;padding:8px 4px;cursor:pointer;font:inherit;
+    background:linear-gradient(180deg,#eef7ff,#dbeeff);
+    box-shadow:0 3px 0 #a9cfe8, inset 0 0 0 2px rgba(255,255,255,.9);
+    font-size:calc(9.5px * var(--fs));font-weight:800;color:#3f7fa8}
+  .duEgg .em{font-size:30px;display:block;line-height:1.1}
+  .duEgg.done{background:linear-gradient(180deg,#fff,#fff2f8);box-shadow:0 3px 0 #e893c0;
+    color:var(--pink-d)}
+  .duEgg canvas{display:block;margin:0 auto;width:44px;height:44px}
   /* ============ ともだちに おしえる（#invOv） ============
      LINE・インスタ・TikTok の 3つは **あつかいが ちがいます**。
      - LINE と X … リンクを わたす web の 口が あるので 1タップで 送れる
@@ -1083,6 +1150,24 @@
 
 <!-- おかえりなさい。表紙の つぎ（プレゼントが ある日は その あと）。
      #app の 外に 置く（position:fixed で 画面ぜんぶを おおうため）-->
+<div id="duOv">
+  <div id="duCard">
+    <div id="duT">✨ 伝説が あらわれた ✨</div>
+    <div id="duArena">
+      <img id="duBg" src="" alt="" aria-hidden="true">
+      <canvas id="duCv" width="720" height="480" aria-hidden="true"></canvas>
+    </div>
+    <div class="duHp" id="duHpFoe"><span class="nm"></span><span class="br"><i></i></span></div>
+    <div class="duHp" id="duHpMe"><span class="nm"></span><span class="br"><i></i></span></div>
+    <div id="duSkill"><i></i></div>
+    <div id="duMsg"></div>
+    <div id="duPick"></div>
+    <div id="duEggs"></div>
+    <button class="btn" id="duGo">たたかう ⚔</button>
+    <button class="btn" id="duSub">あとにする</button>
+  </div>
+</div>
+
 <div id="invOv">
   <div id="invCard">
     <img id="invArt" src="art/screens/ogp.jpg" width="1200" height="630"
@@ -1669,12 +1754,19 @@ const DEX_ENEMIES = Object.keys(ENEMIES).filter(k => !DEX_HIDE_EN.includes(k))
 /* ==========================================================
    でんせつのなかま：とうたつウェーブで出会えて、永続の「しゅくふく」をくれる
    ========================================================== */
+/* `bg` は art/screens/ の 背景。その ウェーブの 国に そろえてある
+   （60=マカロンのもり／120=ゆきのケーキやま／200=ひのくに）。
+   `hp`・`atk` は 1対1の たたかいの 数字で、ENEMIES とは 別もの ——
+   あちらは 何十体も 出るが、こちらは 1体だけなので けたが ちがう */
 const LEGENDS = [
   { id:'whale',   name:'ぎんがのくじゃく',   title:'星空の伝説', wave:60,
+    bg:'duel_forest', hp:1600, atk:10, ivl:1.55,
     fx:'祝福：はじまりのハート+2',                 tease:'ウェーブ60で なにかが おきる…' },
   { id:'phoenix', name:'ようがんのりゅう',   title:'炎の伝説',   wave:120,
+    bg:'duel_snow',   hp:2600, atk:14, ivl:1.45,
     fx:'祝福：1プレイに1回 ハート0でふみとどまる', tease:'ウェーブ120で なにかが おきる…' },
   { id:'chronos', name:'えいえんのスフィンクス', title:'時の伝説', wave:200,
+    bg:'duel_fire',   hp:3600, atk:18, ivl:1.35,
     fx:'祝福：早よびの待ち時間+3秒',         tease:'ウェーブ200で なにかが おきる…' },
 ];
 const hasLg = id => !!dex['lg_' + id];
@@ -2345,6 +2437,10 @@ function applyLayout(w){
 
 function reset(){
   towers = []; enemies = []; shots = []; parts = []; floats = []; rings = [];
+  /* 伝説との たいけつの のこり回数は **この周の ぶん**。
+     新しく はじめたら 3回に もどす ——これが「待てば無料」の 本体で、
+     ここを 消し忘れると 1回 まけたら 一生 会えなく なります */
+  duelSt = {}; saveDuel();
   WAY = FIRST_WAY;
   hearts = maxHearts(); life = maxLife(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
   selTool = null; selTower = null; running = false; over = false;
@@ -8408,9 +8504,416 @@ function stageClear(){
 /* とうたつ記録が条件をこえていたら、でんせつが降臨する（1体ずつ） */
 function checkLegends(){
   if (over || ov.classList.contains('on')) return;
-  const L = LEGENDS.find(l => rec.bw >= l.wave && !dex['lg_' + l.id]);
-  if (L) legendArrival(L);
+  /* **見るのは いまの ウェーブ。自己ベストでは ない。**
+     ベストで 見ると、記録が 60ある人は 新しい周の **ウェーブ1で** 出てしまう
+     （背景は ウェーブ60の 国なので ちぐはぐに なる）。
+     いまの ウェーブに すると「ウェーブ60で なにかが おきる」の 予告どおりに なり、
+     ⭐も じゅうぶん たまっている */
+  const L = LEGENDS.find(l => wave >= l.wave && !dex['lg_' + l.id] && duelTriesOf(l) > 0);
+  if (L) openDuel(L);
 }
+/* ==========================================================
+   伝説との たいけつ（1対1）
+   ----------------------------------------------------------
+   ウェーブ60・120・200 の「なにかが おきる」。むかしは 出会うだけで
+   自動的に 仲間に なっていたが、**たたかって かちとる**形に した。
+
+   **まけても 取り上げない。**3回 まけたら その場は 終わりだが、
+   記録を あと20ウェーブ のばせば また 3回 もらえる。
+   💎は「いますぐ もう一度」の 時短だけ ——ここを
+   「💎を 払わないと 一生 手に 入らない」に しては いけません。
+   コレクションを 課金で 閉じる 形は、CLAUDE.md の
+   「強さそのものは 売らない／待てば無料」と 正面から ぶつかります。
+
+   のこり回数は localStorage に もつ。
+     { whale:{ n:のこり, at:つぎに 3回 もらえる rec.bw } }
+   ========================================================== */
+const DUEL_TRIES = 3;                  // 1回の 出会いで たたかえる 数
+const DUEL_STAR  = w => 100 + w * 6;   // 2回目からの ⭐（そのウェーブなら 払える額）
+const DUEL_GEM   = 3;                  // 4回目からの「いますぐ もう一度」
+
+/* のこり回数。**この周の ぶん**だけ。つかいきったら その周は 終わりで、
+   つぎに あそんで また その ウェーブへ とどけば 3回 もどる（reset で 消す）。
+   保存するのは 「とちゅうで 読みこみ直して 回数を 増やす」のを ふせぐため */
+let duelSt = {};
+try{ duelSt = JSON.parse(localStorage.getItem('sweetTD.duel') || '{}') || {}; }catch(e){}
+function saveDuel(){ try{ localStorage.setItem('sweetTD.duel', JSON.stringify(duelSt)); }catch(e){} }
+function duelTriesOf(L){
+  if (duelSt[L.id] === undefined) return DUEL_TRIES;   // この周は まだ 会っていない
+  return duelSt[L.id];
+}
+
+/* いま たたかっている ぶんの 状態。画面を とじると null に もどす */
+let duS = null, duRaf = 0, duPrev = 0;
+const duOv = $('duOv'), duCard = $('duCard'), duCv = $('duCv');
+const duMsg = $('duMsg'), duPickEl = $('duPick'), duEggsEl = $('duEggs');
+const duGo = $('duGo'), duSub = $('duSub'), duArena = $('duArena');
+
+/* なかまの つよさ。★が そのまま ものさし。
+   ここを ENEMIES や TOWERS から 引かないのは、あちらが「何十体で けずる」
+   前提の 数字で、1対1では けたが 合わないため */
+const duAllyHp  = lv => 70 + lv * 30;
+const duAllyDmg = lv => 7  + lv * 5;
+
+function duSay(html){ duMsg.innerHTML = html; }
+function duBar(id, now, max){
+  const el = $(id);
+  el.querySelector('i').style.width = Math.max(0, Math.min(100, now / max * 100)) + '%';
+}
+function duShowBars(on){
+  for (const id of ['duHpFoe','duHpMe']) $(id).style.visibility = on ? '' : 'hidden';
+  $('duSkill').style.visibility = on ? '' : 'hidden';
+}
+
+function openDuel(L){
+  closePanels();
+  if (duelSt[L.id] === undefined){ duelSt[L.id] = DUEL_TRIES; saveDuel(); }
+  duS = { L, ally: null, phase: 'intro' };
+  $('duBg').src = 'art/screens/' + L.bg + '.webp';
+  duOv.classList.add('on');
+  duIntro();
+  celebrate({ rays: 3, conf: 60, flash: true, fanfare: 1 });
+  vib([30, 60, 30]);
+}
+function closeDuel(){
+  duOv.classList.remove('on');
+  if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
+  duS = null;
+  duPickEl.classList.remove('on'); duEggsEl.classList.remove('on');
+  resize();
+}
+
+/* ---- ① よこく ---- */
+function duIntro(){
+  const L = duS.L;
+  duS.phase = 'intro';
+  $('duT').innerHTML = '✨ 伝説が あらわれた ✨';
+  duShowBars(false);
+  duPickEl.classList.remove('on'); duEggsEl.classList.remove('on');
+  duPaintIdle();
+  duSay('<b>' + L.name + '</b>（' + L.title + '）が<br>' +
+        'ゆくてを ふさいでいる…！<br>' +
+        '<span style="opacity:.72;font-size:.92em">なかまを 1人 えらんで たたかおう'
+        + '（のこり <b>' + duelSt[L.id] + '</b> 回）</span>');
+  duGo.style.display = ''; duGo.textContent = 'なかまを えらぶ ▶';
+  duGo.onclick = () => { tapSel(); duPick(); };
+  duSub.style.display = ''; duSub.textContent = 'あとにする';
+  duSub.onclick = () => { tapSel(); closeDuel(); };
+}
+
+/* ---- ② なかまを えらぶ ---- */
+function duPick(){
+  duS.phase = 'pick';
+  $('duT').textContent = 'だれと たたかう？';
+  duShowBars(false);
+  duEggsEl.classList.remove('on');
+  /* もっている子だけ。★の 大きい順（つよい子が 上に 来る）*/
+  const list = GEN_LIST.filter(o => o.side === 'ch' && dex[o.id])
+                       .sort((a, b) => b.lv - a.lv);
+  duPickEl.innerHTML = '';
+  if (!list.length){
+    duSay('まだ なかまが いません…<br>たまごを ひらいて なかまを つくろう');
+    duGo.style.display = 'none';
+    duSub.textContent = '閉じる';
+    return;
+  }
+  for (const o of list){
+    const b = document.createElement('button');
+    b.className = 'duCh';
+    const th = genThumb(o, 46);
+    b.append(th);
+    b.insertAdjacentHTML('beforeend',
+      '<div class="n">' + o.name + '</div><div class="s">★' + o.lv + '</div>');
+    b.onclick = () => {
+      tapSel();
+      duS.ally = o;
+      for (const x of duPickEl.children) x.classList.toggle('sel', x === b);
+      duSay('<b>' + o.name + '</b>（★' + o.lv + '）<br>' +
+            'げんき ' + duAllyHp(o.lv) + '　こうげき ' + duAllyDmg(o.lv));
+      duGo.style.display = ''; duGo.textContent = 'この子で たたかう ⚔';
+    };
+    duPickEl.append(b);
+  }
+  duPickEl.classList.add('on');
+  duSay('なかまを タップして えらんでね');
+  duGo.style.display = 'none';
+  duGo.onclick = () => { if (duS.ally){ tapSel(); duFightStart(); } };
+  duSub.style.display = ''; duSub.textContent = 'もどる';
+  duSub.onclick = () => { tapSel(); duIntro(); };
+}
+
+/* ---- ③ たたかい ----
+   タップで こうげき。伝説は 時間で こうげきしてくる。
+   タップが たまると ワザが 出る（じどう）。
+   むずかしさは ★で 決まる ——★1では とどかず、★4なら 勝てる */
+function duFightStart(){
+  const L = duS.L, a = duS.ally;
+  duS.phase = 'fight';
+  duS.myMax = duAllyHp(a.lv); duS.myHp = duS.myMax;
+  duS.foeMax = L.hp;          duS.foeHp = L.foeHp || L.hp;
+  duS.foeHp = L.hp;
+  duS.dmg = duAllyDmg(a.lv);
+  duS.gauge = 0; duS.foeT = L.ivl; duS.cd = 0; duS.t = 0;
+  duS.hitMe = 0; duS.hitFoe = 0; duS.fx = [];
+  duS.foeIm = null; duBake();
+  $('duT').textContent = 'タップして こうげき！';
+  duPickEl.classList.remove('on');
+  duShowBars(true);
+  $('duHpFoe').querySelector('.nm').textContent = L.name.slice(0, 7);
+  $('duHpMe').querySelector('.nm').textContent  = a.name.slice(0, 7);
+  duSyncBars();
+  duSay('画面を <b>れんだ</b>して こうげき！<br>' +
+        '<span style="opacity:.72;font-size:.92em">ゲージが たまると ワザが 出る</span>');
+  duGo.style.display = 'none';
+  duSub.style.display = ''; duSub.textContent = 'にげる';
+  duSub.onclick = () => { tapSel(false); duLose(true); };
+  duArena.onpointerdown = duTap;
+  duPrev = 0;
+  if (!duRaf) duRaf = requestAnimationFrame(duLoop);
+}
+function duSyncBars(){
+  duBar('duHpFoe', duS.foeHp, duS.foeMax);
+  duBar('duHpMe',  duS.myHp,  duS.myMax);
+  $('duSkill').querySelector('i').style.width = (duS.gauge * 100) + '%';
+}
+function duTap(){
+  if (!duS || duS.phase !== 'fight' || duS.cd > 0) return;
+  duS.cd = 0.10;
+  duHitFoe(duS.dmg, false);
+  duS.gauge = Math.min(1, duS.gauge + 0.05);
+  if (duS.gauge >= 1){          // ワザ！
+    duS.gauge = 0;
+    duHitFoe(duS.dmg * 6, true);
+    playSnd([[880,.09,'triangle',.05,1.6],[1320,.14,'triangle',.05,1.8,70]]);
+    vib([18, 30, 26]);
+  } else {
+    beep(560 + Math.random()*120, .04, 'triangle', .025);
+  }
+}
+function duHitFoe(d, big){
+  duS.foeHp = Math.max(0, duS.foeHp - d);
+  duS.hitFoe = big ? 0.45 : 0.18;
+  duS.fx.push({ x: 0.72, y: 0.52, t: big ? 0.7 : 0.35, big, d: Math.round(d) });
+  duSyncBars();
+  if (duS.foeHp <= 0) duWin();
+}
+function duLoop(ts){
+  if (!duS || duS.phase !== 'fight'){ duRaf = 0; return; }
+  if (!duPrev) duPrev = ts;
+  const dt = Math.min(0.05, (ts - duPrev) / 1000); duPrev = ts;
+  duS.t += dt;
+  if (duS.cd > 0) duS.cd -= dt;
+  if (duS.hitMe  > 0) duS.hitMe  -= dt;
+  if (duS.hitFoe > 0) duS.hitFoe -= dt;
+  duS.foeT -= dt;
+  if (duS.foeT <= 0){
+    duS.foeT = duS.L.ivl;
+    duS.myHp = Math.max(0, duS.myHp - duS.L.atk);
+    duS.hitMe = 0.3;
+    duS.fx.push({ x: 0.28, y: 0.52, t: 0.4, foe: true, d: duS.L.atk });
+    beep(200, .12, 'sawtooth', .045, .7);
+    vib([22]);
+    duSyncBars();
+    if (duS.myHp <= 0){ duLose(false); return; }
+  }
+  for (let i = duS.fx.length - 1; i >= 0; i--){
+    duS.fx[i].t -= dt; if (duS.fx[i].t <= 0) duS.fx.splice(i, 1);
+  }
+  duPaint();
+  duRaf = requestAnimationFrame(duLoop);
+}
+
+/* 絵。背景は <img>、この canvas には 2体と こうげきの あとだけ */
+/* **2体とも 1枚に 焼く。**毎フレーム drawGen / drawPortrait を よぶと
+   45fps に 落ちた（実測）。まじょの オーラと 同じ 失敗なので、
+   ここでも 焼いて 貼るだけに する。伝説の 金の オーラも 焼きこむ */
+function duBake(){
+  const H = duCv.height;
+  const foe = document.createElement('canvas');
+  const pad = Math.round(H * 0.60 * 0.30);
+  foe.width = foe.height = Math.round(H * 0.60) + pad * 2;
+  {
+    const g = foe.getContext('2d'), S = Math.round(H * 0.60);
+    const c = document.createElement('canvas'); c.width = c.height = 192;
+    drawPortrait(c.getContext('2d'), duS.L.id, 192);
+    g.shadowColor = 'rgba(255,214,110,.65)'; g.shadowBlur = S * 0.16;
+    g.drawImage(c, pad, pad, S, S);
+    g.shadowBlur = S * 0.30; g.drawImage(c, pad, pad, S, S);
+    g.shadowBlur = 0;        g.drawImage(c, pad, pad, S, S);
+  }
+  duS.foeIm = foe;
+  if (duS.ally){
+    const a = document.createElement('canvas');
+    a.width = a.height = Math.round(H * 0.50);
+    drawGen(a.getContext('2d'), a.width, duS.ally);
+    duS.allyIm = a;
+  }
+}
+function duPaintIdle(){
+  const g = duCv.getContext('2d'), W = duCv.width, H = duCv.height;
+  g.clearRect(0, 0, W, H);
+  if (!duS.foeIm) duBake();
+  duDrawFoe(g, W, H, 0, 0);
+}
+function duDrawFoe(g, W, H, t, shake){
+  const im = duS.foeIm; if (!im) return;
+  const S = im.width;
+  const x = W * 0.72 + (shake ? (Math.random()-.5) * H * 0.10 : 0);
+  const y = H * 0.56 + Math.sin(t * 1.6) * H * 0.02;
+  g.drawImage(im, x - S/2, y - S/2);
+}
+function duPaint(){
+  const g = duCv.getContext('2d'), W = duCv.width, H = duCv.height;
+  g.clearRect(0, 0, W, H);
+  /* なかま（左）。焼いた 1枚を 貼るだけ */
+  const ac = duS.allyIm;
+  if (ac){
+    const S = ac.width;
+    const ax = W * 0.28 + (duS.hitMe > 0 ? (Math.random()-.5) * S * 0.25 : 0);
+    const ay = H * 0.58 + Math.sin(duS.t * 3) * H * 0.015;
+    g.save(); g.translate(ax, ay);
+    if (duS.cd > 0.05) g.scale(1.08, 0.94);        // こうげきの ぐっと
+    g.drawImage(ac, -S/2, -S/2);
+    g.restore();
+  }
+  duDrawFoe(g, W, H, duS.t, duS.hitFoe > 0);
+  /* あたった ところの きらめきと 数字 */
+  g.textAlign = 'center';
+  for (const f of duS.fx){
+    const u = 1 - f.t / (f.big ? 0.7 : f.foe ? 0.4 : 0.35);
+    g.save(); g.globalAlpha = Math.max(0, 1 - u);
+    const x = W * f.x, y = H * f.y - u * H * 0.16;
+    /* **sparkle() は モジュールの ctx に えがく。**この canvas に 出したいので
+       withCtx で 差しかえること ——そのまま よぶと 盤面に えがかれる */
+    if (!f.foe) withCtx(g, () =>
+      sparkle(x, y, H * (f.big ? 0.14 : 0.07), duS.t * 4, f.big ? '#ffd76e' : '#fff'));
+    g.fillStyle = f.foe ? '#ff6f8a' : (f.big ? '#ffb43f' : '#fff');
+    g.font = "800 " + Math.round(H * (f.big ? 0.13 : 0.085)) + "px 'Hiragino Maru Gothic ProN',sans-serif";
+    g.strokeStyle = 'rgba(90,60,90,.55)'; g.lineWidth = H * 0.012;
+    g.strokeText('-' + f.d, x, y); g.fillText('-' + f.d, x, y);
+    g.restore();
+  }
+}
+
+/* ---- ④ かった ---- */
+function duWin(){
+  duS.phase = 'win';
+  duArena.onpointerdown = null;
+  if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
+  const L = duS.L;
+  unlock('lg_' + L.id);
+  dex['lg_' + L.id].w = L.wave;
+  saveDex();
+  duelSt[L.id] = 0; saveDuel();       // もう 会わない（ずかんに 入ったので）
+  $('duT').innerHTML = '🎉 おめでとう 🎉';
+  duShowBars(false);
+  duPaintIdle();
+  duSay('<b>' + L.name + '</b>が なかまに なった！<br>' +
+        '<span style="display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
+        'border:2px solid #ffd76e;border-radius:999px;padding:5px 13px;margin:5px 0;' +
+        'color:#c9821e;font-size:.94em">' + L.fx + '</span><br>' +
+        'ごほうびに <b>きらきら たまご 3こ</b>！');
+  duGo.style.display = ''; duGo.textContent = 'たまごを ひらく 🥚';
+  duGo.onclick = () => { tapSel(); duEggs(); };
+  duSub.style.display = 'none';
+  celebrate({ rays: 4, conf: 240, rings: true, flash: true, fanfare: 2 });
+  vib([30, 50, 30, 50, 70]);
+  syncHUD();
+}
+
+/* ---- ⑤ たまご3こ。1つずつ タップして ひらく ---- */
+function duEggs(){
+  duS.phase = 'egg';
+  const E = EGGS[1];                       // きらきら たまご（★4〜5）
+  $('duT').textContent = '🥚 ' + E.name + ' × 3';
+  duEggsEl.innerHTML = '';
+  duS.got = []; duS.left = 3;
+  for (let i = 0; i < 3; i++){
+    const b = document.createElement('button');
+    b.className = 'duEgg';
+    b.innerHTML = '<span class="em">🥚</span>タップ';
+    b.onclick = () => {
+      if (b.classList.contains('done')) return;
+      tapSel();
+      const r = eggDraw(E);                // ダブりは かけらに なる（既存のしくみ）
+      b.classList.add('done'); b.innerHTML = '';
+      b.append(genThumb(r.o, 44));
+      b.insertAdjacentHTML('beforeend',
+        '<div>' + (r.dup ? '🩷かけら' : r.o.name) + '</div>');
+      duS.got.push(r);
+      duS.left--;
+      playSnd([[660,.09,'triangle',.05,1.5],[990,.14,'triangle',.05,1.7,80]]);
+      celebrate({ conf: 40, fanfare: 1 });
+      if (duS.left <= 0) duDone();
+    };
+    duEggsEl.append(b);
+  }
+  duEggsEl.classList.add('on');
+  duSay('たまごを タップして ひらこう！');
+  duGo.style.display = 'none';
+  duSub.style.display = 'none';
+}
+/* ---- ⑥ ずかんに 何が 増えたか ---- */
+function duDone(){
+  duS.phase = 'done';
+  const news = duS.got.filter(r => !r.dup);
+  const dups = duS.got.length - news.length;
+  $('duT').textContent = '📖 ずかんに くわわりました';
+  duSay(
+    '<b>' + duS.L.name + '</b><br>' +
+    (news.length ? news.map(r => '<b>' + r.o.name + '</b>（★' + r.o.lv + '）').join('<br>') + '<br>' : '') +
+    (dups ? '<span style="opacity:.72;font-size:.92em">ダブり ' + dups + 'こは 🩷かけらに なりました</span><br>' : '') +
+    '<span style="opacity:.72;font-size:.92em">👑ずかんで 見られます</span>');
+  duGo.style.display = ''; duGo.textContent = 'ゲームに もどる ▶';
+  duGo.onclick = () => { tapSel(); closeDuel(); parade(); };
+  duSub.style.display = 'none';
+  saveRun(); syncHUD(); buildShop();
+}
+
+/* ---- ⑦ まけた ---- */
+function duLose(ranAway){
+  duS.phase = 'lose';
+  duArena.onpointerdown = null;
+  if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
+  const L = duS.L;
+  duelSt[L.id] = Math.max(0, duelSt[L.id] - 1); saveDuel();
+  const left = duelSt[L.id];
+  duShowBars(false);
+  duPaintIdle();
+  beep(300,.2,'sine',.05,.7); setTimeout(()=>beep(220,.28,'sine',.05,.7),170);
+  if (left > 0){
+    /* まだ のこっている。2回目からは ⭐（安く）*/
+    const cost = DUEL_STAR(L.wave);
+    $('duT').innerHTML = ranAway ? 'にげた…' : 'ざんねん… おしい！';
+    duSay('あと <b>' + left + '</b> 回 たたかえる<br>' +
+          '<span style="opacity:.72;font-size:.92em">つよい子に かえて みよう</span>');
+    duGo.style.display = ''; duGo.textContent = 'もう一度 ⭐' + fmtN(cost);
+    duGo.onclick = () => {
+      if (stars < cost){ tapSel(false); duSay('おほしさまが たりません（⭐' + fmtN(cost) + '）'); return; }
+      tapSel(); stars -= cost; saveRun(); syncHUD();
+      duPick();
+    };
+    duSub.style.display = ''; duSub.textContent = 'あとにする';
+    duSub.onclick = () => { tapSel(); closeDuel(); };
+    return;
+  }
+  /* 3回 つかいきった。**ここで 取り上げない。**
+     つぎに あそんで また この ウェーブまで 行けば、また 3回。
+     💎は「いますぐ」の 時短だけ ——ここを「払わないと 一生 手に 入らない」に
+     しては いけません */
+  $('duT').innerHTML = 'よく がんばったね！';
+  duSay('きょうは ここまで。<br>' +
+        'つぎに <b>ウェーブ ' + L.wave + '</b> まで 行けたら<br>' +
+        'また <b>' + DUEL_TRIES + '回</b> ちょうせん できるよ ✨');
+  duGo.style.display = ''; duGo.textContent = 'いますぐ もう一度 💎' + DUEL_GEM;
+  duGo.onclick = () => {
+    if (!payGems(DUEL_GEM)){ tapSel(false); duSay('💎が たりません（💎' + DUEL_GEM + '）'); return; }
+    tapSel(); duelSt[L.id] = 1; saveDuel(); syncHUD(); duPick();
+  };
+  duSub.style.display = ''; duSub.textContent = 'また 今度';
+  duSub.onclick = () => { tapSel(); closeDuel(); };
+}
+
 function legendArrival(L, preview){
   if (!preview){
     unlock('lg_' + L.id);              // 撮影プレビューでは図鑑にとうろくしない
@@ -10056,7 +10559,7 @@ function buildHelp(){
     '<li><b>ウェーブに終わりはありません</b>。' + STAGE_WAVES + 'ウェーブごとに 国が かわり、' +
     THEMES.length + 'の国を ひとまわりする <b>' + LAP_WAVES + 'ウェーブごとに 道の形が 変わります</b>。' +
     '敵は少しずつ強くなるので、どこまで潜れるかが記録になります</li>' +
-    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説の仲間に会えるらしい…✨</li></ul></div>';
+    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、きらきらたまごも 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li></ul></div>';
   h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、' +
     '<b>👑図鑑をひらいて、いちばん上の「🔑合言葉」</b>から入れてください。' +
@@ -13281,6 +13784,15 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return c.toDataURL('image/png');
   },
   setWave: w => { wave = w; syncHUD(); },
+  /* 伝説との たいけつを その場で ひらく。ふつうは ウェーブ60まで
+     行かないと 出ないので、検査では ここから 呼ぶ */
+  duel: i => { duelSt = {}; saveDuel(); delete dex['lg_' + LEGENDS[i].id];
+               openDuel(LEGENDS[i]); return LEGENDS[i].name; },
+  duelState: () => ({ phase: duS && duS.phase, my: duS && duS.myHp,
+                      foe: duS && duS.foeHp, tries: JSON.parse(JSON.stringify(duelSt)) }),
+  duelTap: n => { for (let k = 0; k < n; k++){ if (duS) duS.cd = 0; duTap(); } },
+  duelHurt: () => { if (duS && duS.phase === 'fight') duS.myHp = 1; },
+  setStars: n => { stars = n; syncHUD(); },
   /* クリア画面の 見た目を たしかめる。ステージNまで あそばずに 出せる */
   stageClear: n => { wave = n * STAGE_WAVES; stageClear(); },
   /* ワザを 1つ ためす。バーは 7こまでなので、はっていない子は 押せない */
