@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffd9ec">
+<title>まほうの おかしの国 ｜ ともだちからの しょうたい</title>
+
+<!-- ===== SNSに はったときの プレビュー（OGP）=====
+     **ここが 紹介の いのちです。**これが 無いと、LINEに はっても
+     絵の 出ない ただの URLに なります（実際 そうでした）。
+     ・URLは かならず 絵ぜんぶ 書く（相対パスだと 出ません）
+     ・絵は 1200x630 に **こちらで 切って**おく。むこうに 切らせると
+       どこが 残るか 分からない（art/screens/ogp.jpg）
+     ・WebPでは なく JPEG。webp を 読めない SNSが まだ あります -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="まほうの おかしの国">
+<meta property="og:title"       content="まほうの おかしの国をまもって">
+<meta property="og:description" content="魔法にかけられた おかしの国を 救いに行こう！ かわいい なかまを 128体 あつめる タワーディフェンス。ダウンロードなしで すぐ あそべます。">
+<meta property="og:url"         content="https://okashi-no-kuni.github.io/invite.html">
+<meta property="og:image"       content="https://okashi-no-kuni.github.io/art/screens/ogp.jpg">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="ja_JP">
+<meta name="twitter:card"       content="summary_large_image">
+<meta name="twitter:title"      content="まほうの おかしの国をまもって">
+<meta name="twitter:description" content="魔法にかけられた おかしの国を 救いに行こう！ ダウンロードなしで すぐ あそべます。">
+<meta name="twitter:image"      content="https://okashi-no-kuni.github.io/art/screens/ogp.jpg">
+<meta name="description"        content="魔法にかけられた おかしの国を 救いに行こう！ かわいい なかまを 128体 あつめる タワーディフェンス。">
+
+<!-- **「128体」は 3か所に あります**（og:description・description・本文）。
+     キャラを 足したら ここも 直すこと。ゲーム本体の ガイドは 変数から
+     出していますが、この ページは 1まいの HTMLなので 手で 書いてあります。
+     数は `node tools/check-chars.mjs` の「キャラ数」で 見られます -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  :root{
+    --pink:#ff8fc4; --pink-d:#e05f9e; --lav:#c9a7ff; --mint:#8fe3c4; --cream:#fff6e9;
+    --ink:#6b4a63; --fs:1.10;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Hiragino Maru Gothic ProN','Hiragino Maru Gothic Pro','Yu Gothic',
+                'Rounded Mplus 1c',sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.75), rgba(255,255,255,0) 60%),
+      linear-gradient(to bottom,#cfe7fa 0%,#eee0f4 45%,#f4d8e7 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    padding:calc(env(safe-area-inset-top) + 16px) 14px
+            calc(env(safe-area-inset-bottom) + 28px);
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:430px;margin:0 auto}
+  .card{
+    border-radius:26px;padding:10px 16px 18px;text-align:center;
+    background:linear-gradient(180deg,rgba(255,252,254,.96),rgba(255,244,251,.94));
+    box-shadow:0 14px 40px rgba(180,130,175,.30), inset 0 0 0 3px rgba(255,255,255,.9);
+  }
+  /* たてよこ比は 原画（1200x896）そのまま。ここが ずれると 絵が ゆがむ */
+  .hero{display:block;width:100%;height:auto;aspect-ratio:1200 / 896;border-radius:20px}
+  h1{font-size:calc(21px * var(--fs));color:var(--pink-d);line-height:1.35;margin:10px 0 2px}
+  .sub{font-size:calc(12px * var(--fs));opacity:.8;line-height:1.7;margin:6px 0 0}
+  .sub b{color:var(--pink-d)}
+  .btn{
+    display:block;width:100%;border:0;cursor:pointer;
+    font:inherit;font-size:calc(17px * var(--fs));font-weight:800;color:#fff;
+    padding:15px 12px;margin-top:14px;border-radius:16px;text-decoration:none;
+    background:linear-gradient(180deg,#ffa7d0,var(--pink));
+    box-shadow:0 4px 0 #d94f8e, 0 8px 18px rgba(224,95,158,.28);
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #d94f8e}
+  .note{
+    margin-top:18px;border-radius:18px;padding:12px 14px;text-align:left;
+    background:rgba(255,255,255,.66);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.9);
+  }
+  .note h2{font-size:calc(13px * var(--fs));color:var(--pink-d);margin:0 0 6px}
+  .note p, .note li{font-size:calc(11.5px * var(--fs));line-height:1.75;margin:0}
+  .note ol{margin:4px 0 0;padding-left:1.2em}
+  .soon{
+    margin-top:12px;border-radius:16px;padding:13px 12px;text-align:center;
+    background:rgba(255,255,255,.55);color:#9a86a4;
+    font-size:calc(12px * var(--fs));font-weight:800;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.8);
+  }
+  .foot{margin-top:16px;text-align:center;font-size:calc(10.5px * var(--fs));opacity:.55}
+  .foot a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <img class="hero" src="art/screens/welcome.webp" width="1200" height="896"
+         alt="おかしの国の おしろの まえに あつまった 王さま・王妃さま・おうじさま・おひめさま・なかまたち">
+    <h1>魔法にかけられた<br>おかしの国を 救いに行こう！</h1>
+    <p class="sub">
+      かわいい なかまを <b>128体</b> あつめる<br>
+      タワーディフェンス。<br>
+      <b>ダウンロードなし</b>で すぐ あそべます。
+    </p>
+
+    <a class="btn" href="index.html">いますぐ あそぶ ▶</a>
+
+    <div class="note">
+      <h2>📱 アプリみたいに あそぶには</h2>
+      <p>ホーム画面に ついか すると、アイコンから ひらけて 画面も 広くなります。</p>
+      <ol>
+        <li>iPhone … 下の <b>共有</b> ボタン → <b>ホーム画面に追加</b></li>
+        <li>Android … 右上の <b>⋮</b> → <b>アプリをインストール</b></li>
+      </ol>
+    </div>
+
+    <!-- App Store に 出したら、この div を まるごと リンクつきの
+         バッジに さしかえる。さしかえるのは ここ 1か所だけ。
+           <a class="btn" href="https://apps.apple.com/app/idXXXXXXXXX">App Store</a>
+         それまでは「準備中」を 出しておく ——ボタンの 形で 置いて
+         押せないと、こわれていると 思われるため -->
+    <div class="soon">🍎 App Store版は じゅんび中です</div>
+
+    <p class="foot">
+      <a href="https://okashi-no-kuni.github.io/">okashi-no-kuni.github.io</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>
