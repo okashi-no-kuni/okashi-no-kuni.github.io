@@ -915,6 +915,38 @@
   #pwOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
   #pwBody{background:rgba(255,255,255,.8);border:2px solid #ffd9ec;border-radius:14px;padding:11px}
 
+  /* ---------- まもり神（#gdOv）----------
+     1プレイに 1回きりなので、**バーの タップでは 出しません**。
+     この画面の「よぶ」を おしてはじめて 発動します */
+  /* **スクロールするのは 中みだけ。**ぜんたいを スクロールわくに すると、
+     12体 そろった とき「よぶ」も ✕も 画面の 外へ 出て 押せなく なります
+     （長い画面の 見出しを sticky に した のと 同じ 失敗）*/
+  #gdOv{position:absolute;inset:0;display:none;flex-direction:column;gap:9px;border-radius:20px;
+    background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow:hidden;z-index:6}
+  #gdOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
+  #gdHead{flex:0 0 auto}
+  /* `min-height:0` が ないと flex の 子は 中みの 高さで つっぱって
+     スクロールせず、下が はみ出したまま 切れます */
+  #gdBody{flex:1 1 auto;overflow-y:auto;min-height:0}
+  .gdNo,.gdNow{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:14px;
+    padding:10px;text-align:center;font-size:calc(11.5px * var(--fs));line-height:1.6;color:var(--ink)}
+  .gdNow b{font-size:calc(13.5px * var(--fs));color:var(--pink-d)}
+  .gdNow span{color:#c9821e;font-weight:800}
+  .gdD{margin-top:4px;font-size:calc(10.5px * var(--fs));opacity:.85}
+  /* えらぶ カードは 3れつ。ふえても たてに のびるだけで はみ出しません */
+  .gdList{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}
+  .gdC{border:0;cursor:pointer;font:inherit;border-radius:14px;padding:7px 3px;
+    background:linear-gradient(180deg,#fff,#fff2f8);box-shadow:0 3px 0 #f0c8de;
+    display:flex;flex-direction:column;align-items:center;gap:2px}
+  /* **えらんでいる ものは 色を 分ける**こと。おなじ こさだと どれを
+     つれていくのか 分かりません（図鑑の タブと 同じ 考え）*/
+  .gdC.sel{background:linear-gradient(180deg,#ffe9f4,#ffd4e9);box-shadow:0 3px 0 #e893c0}
+  .gdC canvas{display:block}
+  .gdN{font-size:calc(9px * var(--fs));font-weight:800;color:var(--pink-d);line-height:1.2}
+  .gdU{font-size:calc(8px * var(--fs));opacity:.72;line-height:1.2}
+  /* バーの まもり神は 金の ふちで 目立たせる（1プレイ1回の 切りふだ）*/
+  .sk.gd{box-shadow:0 3px 0 #e0b45e, inset 0 0 0 2px #ffd76e}
+
   /* ---------- 遊びかたガイド ---------- */
   #helpOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
     background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:3}
@@ -1001,6 +1033,16 @@
         <div style="flex:1">🔑 合言葉・着せかえ</div>
       </div>
       <div id="pwBody"></div>
+    </div>
+    <!-- まもり神（つれていく 伝説）。**盤面だけを おおう**ので、
+         下の ボタンは 見えたまま。だから ✕ 1つで じゅうぶん -->
+    <div id="gdOv">
+      <div id="gdHead" style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
+        <div style="flex:1">✨ まもり神</div>
+        <button class="mini gray" id="gdClose" aria-label="閉じる">✕</button>
+      </div>
+      <div id="gdBody"></div>
+      <button class="btn" id="gdGo" style="flex:0 0 auto">よぶ ✨</button>
     </div>
     <div id="helpOv">
       <div id="colHeadH" style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
@@ -1820,6 +1862,49 @@ for (const l of LEGENDS){
   l.bg   = 'duel_forest';                    // 予備。ふだんは DUEL_BG が えらぶ
   l.tease = 'ウェーブ' + l.wave + 'で なにかが おきる…';
 }
+/* ============ まもり神（伝説の 必殺）============
+   伝説は ながいあいだ「図鑑に かざるだけ」でした。祝福（永久パッシブ）も
+   空を とぶ 影も、**見えているのに 手で さわれない**ので 集める はりあいが
+   出ません。だから **1体を つれていって、1プレイに 1回だけ よべる**ように
+   しました。12体 あつめると えらべる 手が 12とおりに なります。
+
+   **効きめは 12体とも 別のもの。**同じ 効きめで 名前だけ ちがうと、
+   どれを つれていっても おなじで、集める 意味が なくなります。
+
+   バランス：**1スロット・1プレイ1回**に しばってあります。かべ（W250）は
+   「そのウェーブを たおしきれるか」＝ **つづく 火力**で 決まるので、
+   一発の 必殺が まるごと 1ウェーブを 肩がわりしても、敵HPの 複利は
+   1ウェーブで 2%しか のびない ぶん、かべは 1〜2ウェーブしか 動きません。
+   **ここに「げんき」や「ハート」を さわる ものを 入れない**こと ——
+   tools/sim.mjs は たおす速さしか 見ておらず、通してよい 数が 変わっても
+   数字の上では 何も 起きないためです（祝福で 一度 やった 失敗）。
+
+   つかえる ことば（足すときは この中で 組む）
+     kill:'all'        画面の敵を ぜんぶ たおす
+     kill:{head:n}     先頭から n体を たおす
+     kill:{hard:n}     HPの 多い n体を たおす
+     cut: 0..1         全体の 最大HPの わりあいを けずる
+     stun: びょう      止める
+     push: マス        道を もどす
+     star: 倍          ⭐（ウェーブの かせぎに 合わせる。決めうちに しない）
+     buff:{k,t}        buffs（dmg/spd/rng/gold）を t びょう
+     cdReset:true      なかまの ワザの クールダウンを ぜんぶ 消す           */
+const GUARD_ULT = {
+  candytree:  { name:'あめの木よ しげれ！', col:'#ffc0dd', stun:10, cut:0.35 },
+  berryqueen: { name:'いちごの みのり！',   col:'#ff7fa8', buff:{k:'gold',t:20}, star:6 },
+  whale:      { name:'星の はね！',         col:'#a9d8ff', kill:'all' },
+  chocoknight:{ name:'チョコの とつげき！', col:'#a5713f', kill:{head:6}, cut:0.30 },
+  mammoth:    { name:'氷河の ふみしめ！',   col:'#bfe8ff', stun:14, cut:0.25 },
+  phoenix:    { name:'ようがんの ブレス！', col:'#ff8f5e', cut:0.75 },
+  kraken:     { name:'あわの うず！',       col:'#8fe3c4', stun:9, push:3 },
+  elephant:   { name:'あまい つきもどし！', col:'#f0c48f', push:7, cut:0.20 },
+  chronos:    { name:'時よ とまれ！',       col:'#d9c6ff', stun:12, cdReset:true },
+  kyubi:      { name:'九つの ひのたま！',   col:'#ffb36e', kill:{hard:9} },
+  moonrabbit: { name:'もちつき！',          col:'#fff0b8', cut:0.50, star:4 },
+  pegasus:    { name:'にじの かけぬけ！',   col:'#c9a7ff', kill:'all', buff:{k:'dmg',t:30} },
+};
+for (const l of LEGENDS) l.ult = GUARD_ULT[l.id];
+
 const hasLg = id => !!dex['lg_' + id];
 /* 国 → たいけつの 背景。**その国だと ひとめで わかる 目じるし**を 1つずつ
    入れて 出してある（さばくのくに＝ピラミッドと スフィンクス、
@@ -1915,7 +2000,7 @@ const skillBar = $('skillBar'), colHint = $('colHint');
    ひらく前に ほかの画面を とじる。
    下のボタンは もういちど おすと とじる（いま開いている画面は光る）。
    要素は あとの行で 作られるので、$() で そのつど 引く（TDZ よけ） */
-const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv','invOv'];
+const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv','invOv','gdOv'];
 const panelOpen = id => $(id).classList.contains('on');
 function syncNav(){
   $('btnCol').classList.toggle('on',  panelOpen('colOv'));
@@ -2524,6 +2609,7 @@ function reset(){
   for (const k in buffs) buffs[k] = 0;
   gifts = []; paraders = []; celebT = 0; wflash = 0;
   flyer = null; flyT = 10; bonus = null; bonusWait = 0;
+  guardUsed = false; gdFly = null;   // まもり神は 1プレイに 1回。周が かわれば また よべる
   continueUsed = false;
   if (lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
   ovBtn.disabled = false;
@@ -2605,7 +2691,12 @@ const eggCost = e => Math.round(e.cost * (hasLg('berryqueen') ? 0.95 : 1));
 const EGGS = [
   { id:'e13', name:'ふつうの たまご',   lv:[1,2,3], cost:400,  gem:5,  c1:'#fff0f7', c2:'#ff8fc4' },
   { id:'e45', name:'きらきら たまご',   lv:[4,5],   cost:1200, gem:12, c1:'#eef7ff', c2:'#9ed8ff' },
-  { id:'e6',  name:'伝説の たまご', lv:[6],     cost:3000, gem:25, c1:'#fff8e4', c2:'#ffd76e' },
+  /* ★6。**にじの わくの子が 出る ゆいいつの たまご**なので「にじの」。
+     むかしは「伝説の たまご」でしたが、伝説は いま **たいけつの ボス**の
+     名前なので、同じ言葉が 2つの ものを 指して いました。
+     idは e6 のまま ——セーブも かくりつ表示も idで つながっています */
+  { id:'e6',  name:'にじの たまご', lv:[6],     cost:3000, gem:25, c1:'#ffe9f4', c2:'#c9a7ff',
+    cs:['#ffd7ea','#ffe9c6','#d8f5e2','#cfe8ff','#d9c6ff'] },
 ];
 /* ダブりが 出たときに もらえる かけら と、かけらで 交換するのに いる数 */
 const SHARD_GET  = { 1:1, 2:1, 3:1, 4:2, 5:2, 6:4 };
@@ -2728,7 +2819,7 @@ const GOLD_KEEP = 0.60;
    これを 見るので、数字が ずれようが ない（Apple 3.1.1／景品表示法で
    表示が ずれるのは いちばん まずい）。
    にじが まず 5% を とり、のこりを 金と ふつうで 分ける。
-   ふつうが 1人も いない たまご（伝説のたまご＝★6は 金3人＋にじ1人）では
+   ふつうが 1人も いない たまご（にじのたまご＝★6は 金3人＋にじ1人）では
    金が のこり ぜんぶを とる ——にじを 増やして しまわない ため */
 function eggOdds(pool){
   const leg  = pool.filter(o =>  DEX_LEGEND.has(artKeyOf(o)));
@@ -2777,7 +2868,11 @@ function eggThumb(e, size, cracked){
   g.bezierCurveTo(M - R*1.02, M + R*0.72, M - R*0.98, M - R*0.66, M, M - R*1.28);
   g.closePath();
   const gr = g.createRadialGradient(M - R*0.34, M - R*0.5, R*0.1, M, M, R*1.3);
-  gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.45, e.c1); gr.addColorStop(1, e.c2);
+  gr.addColorStop(0, '#ffffff');
+  /* cs（色の ならび）が あれば にじ。**止まりは 等間かくで 連続させる**こと
+     ——同じ色の 止まりを 2つ ならべると そこで 傾きが 変わって すじに 見える */
+  if (e.cs) e.cs.forEach((col, i) => gr.addColorStop(0.30 + i * (0.70 / (e.cs.length - 1)), col));
+  else { gr.addColorStop(0.45, e.c1); gr.addColorStop(1, e.c2); }
   g.fillStyle = gr; g.fill();
   // もよう
   g.save(); g.clip();
@@ -3876,6 +3971,12 @@ function update(dt){
   } else {
     flyer.x += flyer.dir * flyer.v * dt;
     if (flyer.x < -CELL*3 || flyer.x > COLS*CELL + CELL*3) flyer = null;
+  }
+  // まもり神が よこぎる（よんだ ときの 演出）
+  if (gdFly){
+    gdFly.x += gdFly.dir * gdFly.v * dt;
+    gdFly.t -= dt;
+    if (gdFly.t <= 0) gdFly = null;
   }
 
   // なかまワザのクールダウンと一時バフ（表示は1秒きざみで十分）
@@ -8925,6 +9026,10 @@ function duWin(){
   const L = duS.L;
   unlock('lg_' + L.id);
   dex['lg_' + L.id].w = L.wave;
+  /* はじめての 1体は こちらで えらんで おく。空っぽの スロットを 見せると
+     「何か 足りない」だけで 終わり、つかい方に 気づいてもらえません */
+  if (!guard){ guard = L.id; saveGuard(); }
+  buildSkillBar();
   saveDex();
   duelSt[L.id] = 0; saveDuel();       // もう 会わない（ずかんに 入ったので）
   $('duT').innerHTML = '🎉 おめでとう 🎉';
@@ -8934,7 +9039,7 @@ function duWin(){
         '<span style="display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
         'border:2px solid #ffd76e;border-radius:999px;padding:5px 13px;margin:5px 0;' +
         'color:#c9821e;font-size:.94em">' + L.fx + '</span><br>' +
-        'ごほうびに <b>きらきら たまご 3こ</b>！');
+        'ごほうびに <b>' + EGGS[2].name + ' 3こ</b>！');
   duGo.style.display = ''; duGo.textContent = 'たまごを ひらく 🥚';
   duGo.onclick = () => { tapSel(); duEggs(); };
   duSub.style.display = 'none';
@@ -8946,7 +9051,10 @@ function duWin(){
 /* ---- ⑤ たまご3こ。1つずつ タップして ひらく ---- */
 function duEggs(){
   duS.phase = 'egg';
-  const E = EGGS[1];                       // きらきら たまご（★4〜5）
+  /* **にじの たまご（★6）**。にじの わくの子が 出るのは この たまごだけ ですが、
+     それでも 出るのは 5%（LEG_RATE）なので、伝説を 引きあてる 近道には
+     なりません。のこり 95% は 金の わくの ★6です */
+  const E = EGGS[2];
   $('duT').textContent = '🥚 ' + E.name + ' × 3';
   duEggsEl.innerHTML = '';
   duS.got = []; duS.left = 3;
@@ -8985,7 +9093,8 @@ function duDone(){
     '<b>' + duS.L.name + '</b><br>' +
     (news.length ? news.map(r => '<b>' + r.o.name + '</b>（★' + r.o.lv + '）').join('<br>') + '<br>' : '') +
     (dups ? '<span style="opacity:.72;font-size:.92em">ダブり ' + dups + 'こは 🩷かけらに なりました</span><br>' : '') +
-    '<span style="opacity:.72;font-size:.92em">👑ずかんで 見られます</span>');
+    '<span style="opacity:.72;font-size:.92em">👑ずかんで 見られます</span><br>' +
+    '<span style="font-size:.94em;color:var(--pink-d)">✨ワザバーの いちばん左から <b>まもり神</b>として よべます（1プレイに 1回）</span>');
   duGo.style.display = ''; duGo.textContent = 'ゲームに もどる ▶';
   duGo.onclick = () => { tapSel(); closeDuel(); parade(); };
   duSub.style.display = 'none';
@@ -9999,11 +10108,175 @@ function applyElixir(t, id){
   return true;
 }
 
+/* ==========================================================
+   まもり神を よぶ
+   ========================================================== */
+/* えらんだ まもり神は **プレイを またいで のこす**（好みなので）。
+   よんだ かどうかは **そのプレイだけ**なので saveRun に 入れます
+   ——「続きから」で よみ直すたび 1回ずつ ふえては 意味が ありません */
+let guard = '', guardUsed = false, gdFly = null;
+/* 盤面では CELL*2.1（60〜80px）で えがくので、portraitOf の 44px だと
+   ぼけます。よぶ 演出ぶんだけ 大きく 焼いておく */
+const gdPcache = {};
+const gdPortrait = pid => gdPcache[pid] || (gdPcache[pid] = charThumb({ pid }, 128));
+try{ guard = localStorage.getItem('sweetTD.guard') || ''; }catch(e){}
+function saveGuard(){ try{ localStorage.setItem('sweetTD.guard', guard); }catch(e){} }
+/* あつめた まもり神。まだ 1体も いなければ ボタンごと 出しません */
+const guardList = () => LEGENDS.filter(l => hasLg(l.id));
+const guardOf = () => LEGENDS.find(l => l.id === guard && hasLg(l.id)) || null;
+
+/* 音は **役わりで 形を 分ける**（SKILLS と 同じ 考え）。
+   たおす＝上へ かけ上がる／止める＝下がる／けずる＝低い 一発／
+   バフ＝明るく のびる。どれも 頭に まもり神の ファンファーレが つきます */
+function gdSnd(u){
+  const head = [[523,.10,'triangle',.05,1.4],[784,.12,'triangle',.05,1.5,70],
+                [1046,.18,'triangle',.05,1.6,150]];
+  if (u.kill)      return head.concat([[1318,.10,'square',.045,1.6,300],[1568,.22,'square',.05,1.8,380]]);
+  if (u.stun)      return head.concat([[880,.16,'sine',.05,.6,300],[440,.34,'sine',.05,.5,430]]);
+  if (u.buff)      return head.concat([[1046,.14,'triangle',.05,1.7,300],[1568,.30,'triangle',.05,1.9,420]]);
+  return head.concat([[220,.26,'sawtooth',.05,.7,300]]);
+}
+
+function useGuard(){
+  const L = guardOf();
+  if (over || !L || guardUsed){ tapSel(false); return false; }
+  /* だれも いないのに つかわせない。**1プレイに 1回きり**なので、
+     から うちが いちばん こまります */
+  if (!enemies.length){ tapSel(false); return false; }
+  const u = L.ult, W = COLS*CELL, H = ROWS*CELL;
+  guardUsed = true; saveRun();
+  iflash = 1; iSweep = 1; iflashCol = hexRgb(u.col);
+  playSnd(gdSnd(u)); vib([30,50,30,50,90]);
+  /* 画面を よこぎる 演出。**ぼかしは かけない**こと
+     ——毎フレームの shadowBlur は 60fps を 44 まで 落とします（実測ずみ）*/
+  gdFly = { pid: L.id, dir: 1, x: -CELL*2, y: H*0.34, v: (W + CELL*4)/1.4, t: 1.5, col: u.col };
+
+  const hit = (e) => { const q = posAt(e.d); for (let i=0;i<5;i++) puff(q.x, q.y, u.col); return q; };
+  if (u.kill === 'all'){
+    for (const e of [...enemies]){ const q = hit(e); killEnemy(e, q.x, q.y); }
+  } else if (u.kill && u.kill.head){
+    // 先頭＝道を いちばん すすんだ子。ゴールに 近い 順に たおす
+    const list = [...enemies].sort((a,b) => b.d - a.d).slice(0, u.kill.head);
+    for (const e of list){ const q = hit(e); killEnemy(e, q.x, q.y); }
+  } else if (u.kill && u.kill.hard){
+    const list = [...enemies].sort((a,b) => b.hp - a.hp).slice(0, u.kill.hard);
+    for (const e of list){ const q = hit(e); killEnemy(e, q.x, q.y); }
+  }
+  if (u.cut){
+    // わりあいで けずるので、後半の かたい敵にも おなじだけ 効く
+    for (const e of [...enemies]){
+      const q = hit(e);
+      e.hp -= e.max * u.cut;
+      if (e.hp <= 0) killEnemy(e, q.x, q.y);
+    }
+  }
+  if (u.stun) for (const e of enemies){ e.stun = u.stun; const q = posAt(e.d); mote(q.x, q.y, u.col); }
+  if (u.push) for (const e of enemies){ e.d = Math.max(0, e.d - CELL*u.push); }
+  if (u.buff) buffs[u.buff.k] = u.buff.t;
+  if (u.cdReset) for (const k in skCd) skCd[k] = 0;
+  if (u.star){
+    // ⭐は そのウェーブの かせぎに 合わせる（決めうちだと 後半で ごみに なる）
+    const gain = Math.max(150, goldOf('golem') * u.star);
+    stars += gain;
+    floatTx(W/2, H*0.52, '⭐+' + fmtN(gain), '#e0a52e');
+  }
+  ring(W/2, H*0.4, u.col, H*0.95);
+  ring(W/2, H*0.4, '#ffffff', H*0.6);
+  for (let i=0;i<34;i++) mote(Math.random()*W, Math.random()*H, u.col);
+  floatTx(W/2, H*0.34, u.name, '#e05f9e');
+  celebrate({ conf: 90, rings: true });
+  buildSkillBar(); syncHUD();
+  return true;
+}
+
+/* ---- まもり神を えらぶ／よぶ 画面（#gdOv）----
+   **たたく だけで 出ないように します。**1プレイに 1回きりなので、
+   バーを うっかり さわって 消えると とりかえしが つきません。
+   だから バーの ボタンは この画面を ひらくだけ、発動は 中の「よぶ」で */
+function buildGuard(){
+  const list = guardList();
+  const cur = guardOf();
+  let h = '';
+  if (!list.length){
+    h = '<div class="gdNo">まだ 伝説に 会っていません。<br>' +
+        'ウェーブ <b>' + LEGENDS[0].wave + '</b> から 1対1の たいけつが 始まります</div>';
+  } else {
+    h += '<div class="gdNow">' +
+      (cur ? '<b>' + cur.name + '</b><br><span>' + cur.ult.name + '</span>' +
+             '<div class="gdD">' + guardDesc(cur) + '</div>'
+           : 'つれていく まもり神を えらんでね') + '</div>';
+    h += '<div class="gdList">';
+    for (const l of list){
+      h += '<button class="gdC' + (l.id === guard ? ' sel' : '') + '" data-g="' + l.id + '">' +
+           '<div class="gdIc"></div><div class="gdN">' + l.name + '</div>' +
+           '<div class="gdU">' + l.ult.name + '</div></button>';
+    }
+    h += '</div>';
+  }
+  gdBody.innerHTML = h;
+  for (const b of gdBody.querySelectorAll('.gdC')){
+    b.querySelector('.gdIc').append(charThumb({ pid: b.dataset.g }, 38));
+    b.onclick = () => { tapSel(); guard = b.dataset.g; saveGuard(); buildGuard(); buildSkillBar(); };
+  }
+  const can = cur && !guardUsed && !over;
+  gdGo.style.display = list.length ? '' : 'none';
+  gdGo.disabled = !can;
+  gdGo.textContent = !cur ? 'まもり神を えらんでね'
+                   : guardUsed ? 'このプレイでは もう よんだ'
+                   : 'よぶ ✨';
+}
+/* 効きめの 文は **ult から 組みたてる**こと。手で 書くと、
+   数字を 変えたときに 説明だけ 古くなります */
+function guardDesc(l){
+  const u = l.ult, out = [];
+  if (u.kill === 'all') out.push('画面の 敵を <b>ぜんぶ たおす</b>');
+  else if (u.kill && u.kill.head) out.push('先頭の <b>' + u.kill.head + '体</b>を たおす');
+  else if (u.kill && u.kill.hard) out.push('かたい <b>' + u.kill.hard + '体</b>を たおす');
+  if (u.cut)  out.push('ぜんぶの HPを <b>' + Math.round(u.cut*100) + '%</b> けずる');
+  if (u.stun) out.push('<b>' + u.stun + '秒</b> 止める');
+  if (u.push) out.push('道を <b>' + u.push + 'マス</b> もどす');
+  if (u.buff) out.push({ dmg:'攻撃2倍', spd:'速度2倍', rng:'範囲UP', gold:'⭐2倍' }[u.buff.k] +
+                       ' <b>' + u.buff.t + '秒</b>');
+  if (u.cdReset) out.push('ワザの まちじかんを <b>ぜんぶ 回復</b>');
+  if (u.star) out.push('<b>⭐</b>が どっさり');
+  return out.join('・');
+}
+const gdOv = $('gdOv'), gdBody = $('gdBody'), gdGo = $('gdGo');
+$('gdClose').onclick = () => { tapSel(); closePanels(); };
+gdGo.onclick = () => {
+  /* 敵が いない ときは **とじない**。とじてしまうと「押したのに
+     何も おきなかった」に 見えて、つかい切ったのかと 思われます */
+  if (!enemies.length && !over){
+    const n = gdBody.querySelector('.gdNow');
+    if (n) n.insertAdjacentHTML('beforeend',
+      '<div class="gdD" style="color:var(--pink-d)">敵が いる ときに よんでね</div>');
+    tapSel(false); return;
+  }
+  gdOv.classList.remove('on'); syncNav(); useGuard();
+};
+function openGuard(){ openPanel('gdOv', buildGuard); }
+
 function buildSkillBar(){
   // つかいきったなかまはバーからはずれる（この整理では1こへらさない）
   const alive = pins.filter(ch => SKILLS.some(s => s.ch === ch) && hasCh(ch) && skStock[ch] > 0);
   if (alive.length !== pins.length){ pins = alive; savePins(); }
   skillBar.innerHTML = '';
+  /* まもり神は **いちばん 左**。1プレイに 1回きりの 切りふだなので、
+     横スクロールしなくても かならず 見える ところに 置きます。
+     1体も 会っていない うちは 出しません（押せない ボタンは 不具合に 見える）*/
+  if (guardList().length){
+    const L = guardOf();
+    const b = document.createElement('button');
+    b.className = 'sk gd' + (guardUsed || !L ? ' off' : '');
+    b.dataset.gd = '1';
+    if (L) b.append(charThumb({ pid: L.id }, 38));
+    else   b.insertAdjacentHTML('beforeend', '<div style="font-size:21px;line-height:38px">✨</div>');
+    b.insertAdjacentHTML('beforeend',
+      '<div class="skN">' + (L ? 'まもり神' : 'えらぶ') + '</div>' +
+      '<div class="skC">' + (guardUsed ? 'つかった' : L ? '1回だけ' : '伝説から') + '</div>');
+    b.onclick = () => { tapSel(); openGuard(); };
+    skillBar.append(b);
+  }
   /* 持っている アイテムを 左はしに 出す。バーは 横スクロールなので
      高さは ふえない（下のボタンが 画面の外に 出ない） */
   for (const it of ITEMS){
@@ -10070,6 +10343,7 @@ function buildSkillBar(){
 }
 function syncSkills(){
   for (const b of skillBar.children){
+    if (b.dataset.gd){ b.classList.toggle('off', over || guardUsed || !guardOf()); continue; }
     if (b.dataset.it){
       const it = ITEM_BY_ID[b.dataset.it];
       b.querySelector('.skC').textContent = '×' + gear[it.id];
@@ -10101,6 +10375,7 @@ function saveRun(w){
     localStorage.setItem('sweetTD.run', JSON.stringify({
       w: (w !== undefined ? w : wave), st: stars, hp: hearts, lf: life,
       cu: continueUsed ? 1 : 0,
+      gu: guardUsed ? 1 : 0,          // まもり神を もう よんだか（読み直しで 戻らない ため）
       tw: towers.map(t => {
         return t.rb ? { k:t.k, c:t.c, r:t.r, lv:t.lv, rb:1, rbx:(t.rbx || 2) }
                         : { k:t.k, c:t.c, r:t.r, lv:t.lv };
@@ -10172,6 +10447,7 @@ function tryResume(){
                  rbx: t.rb ? (t.rbx || 2) : 0,
                  cd:0, ang:-Math.PI/2, pulse:0, ph:Math.random()*6.3 }));
   continueUsed = !!rn.cu;
+  guardUsed = !!rn.gu;            // 古いセーブには 無い＝まだ よんでいない
   floatTx(COLS*CELL/2, ROWS*CELL/2, '続きから再開！', '#b98ae0');
   syncHUD();
 }
@@ -10707,7 +10983,8 @@ function buildHelp(){
     '<li><b>ウェーブに終わりはありません</b>。' + STAGE_WAVES + 'ウェーブごとに 国が かわり、' +
     THEMES.length + 'の国を ひとまわりする <b>' + LAP_WAVES + 'ウェーブごとに 道の形が 変わります</b>。' +
     '敵は少しずつ強くなるので、どこまで潜れるかが記録になります</li>' +
-    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、きらきらたまごも 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li></ul></div>';
+    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、<b>' + EGGS[2].name + '</b>も 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li>' +
+    '<li>かちとった 伝説は <b>まもり神</b>として 1体 つれていけます。ワザバーの いちばん左（✨）から えらんで、<b>1プレイに 1回だけ</b> よべる 切りふだ。' + LEGENDS.length + '体 ぜんぶ 効きめが ちがいます</li></ul></div>';
   h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、' +
     '<b>👑図鑑をひらいて、いちばん上の「🔑合言葉」</b>から入れてください。' +
@@ -10972,7 +11249,7 @@ const shopOv = $('shopOv'), shopBody = $('shopBody'), shopGem = $('shopGem');
    ⭐は 単品で 売らない。後半は 1ウェーブで 何万も 手に入るので、
    買った ⭐が すぐ 値うちを なくして「損した」に なるため。
    ⭐は はじめてパックの 中身としてだけ 出す */
-const PACK_STARS = 3000;              // 伝説のたまご 1こぶん。はじめの 1歩として ちょうどいい
+const PACK_STARS = 3000;              // にじのたまご 1こぶん。はじめの 1歩として ちょうどいい
 const PACK_LV    = 4;                 // わたす なかまの ★
 /* きょうの 日づけ（端末のローカル）。アイテムセットの 1日1回に つかう */
 const dayKey = () => { const d = new Date();
@@ -12388,6 +12665,21 @@ function drawBoardOverlay(){
       ctx.globalAlpha = 1;
       sparkle(flyer.x - flyer.dir*CELL*0.75, fy, CELL*0.09, time*5, '#ffffff');
     }
+  }
+
+  /* よんだ まもり神。**ぼかしは かけない**こと ——毎フレームの
+     shadowBlur は 60fps を 44 まで 落とします（まじょのオーラで 実測）。
+     かわりに 大きめの 絵と キラキラの 尾で 見せます */
+  if (gdFly){
+    const S = CELL*2.6, gy = gdFly.y + Math.sin(time*7)*CELL*0.14;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, gdFly.t*3.2);
+    for (let i=1;i<=5;i++)  // 尾。うしろへ 行くほど うすく・小さく
+      sparkle(gdFly.x - gdFly.dir*CELL*(0.7 + i*0.55), gy + Math.sin(time*6 + i)*CELL*0.18,
+              CELL*(0.20 - i*0.026), time*4 + i, gdFly.col);
+    ctx.drawImage(gdPortrait(gdFly.pid), gdFly.x - S/2, gy - S/2, S, S);
+    sparkle(gdFly.x + gdFly.dir*CELL*0.5, gy - CELL*0.3, CELL*0.22, time*6, '#ffffff');
+    ctx.restore();
   }
 
   // 置ける場所のうっすらしたガイド
@@ -13947,6 +14239,14 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   duelTap: n => { for (let k = 0; k < n; k++){ if (duS) duS.cd = 0; duTap(); } },
   duelHurt: () => { if (duS && duS.phase === 'fight') duS.myHp = 1; },
   setStars: n => { stars = n; syncHUD(); },
+  /* まもり神。ふつうは 伝説に 勝たないと つかえないので、検査では ここから */
+  guardGive: id => { unlock('lg_' + id); guard = id; saveGuard(); guardUsed = false;
+                     buildSkillBar(); return guardOf() && guardOf().name; },
+  guardState: () => ({ えらんだ: guard, つかった: guardUsed,
+                       もっている: guardList().map(l => l.name) }),
+  guardUse: () => { useGuard(); return { つかった: guardUsed, のこり敵: enemies.length }; },
+  guardDescs: () => LEGENDS.map(l => ({ 名: l.name, ワザ: l.ult.name,
+                       効き: guardDesc(l).replace(/<[^>]+>/g, '') })),
   /* まけた ときの ヒントを 3つの ばあいで たしかめる */
   overHint: () => overHint(),
   /* まけた ときの ヒントを 3つの ばあいで ためす。
