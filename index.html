@@ -1255,9 +1255,13 @@ function waveList(n){
     if (n >= 4  && i%6 === 5) t = 'tank';
     if (n >= 9  && i%7 === 2) t = 'crystal';
     if (n >= 16 && i%5 === 4) t = 'bat';
-    if (n >= 28 && i%9 === 8) t = 'golem';
+    if (n >= 18 && i%9 === 8) t = 'golem';
     out.push(t);
   }
+  /* **10の倍数だけ ボスだと、5・15・25… が がくんと ゆるみます。**
+     実測で ウェーブ25の よゆうが 5.6倍（ウェーブ10は 2.6倍）に なっていました。
+     5ウェーブごとに 目じるしが 来る リズムにも なるので、あいだにも 1体 入れます */
+  if (n % 5 === 0 && n % 10 !== 0 && n >= 15) out.push('boss');
   if (n % 10 === 0) out.push('boss');
   if (n % 10 === 0 && n >= 40) out.push('boss');
   return out;
@@ -1273,15 +1277,17 @@ function waveList(n){
    自動で すすむ」時間が ながく つづくので、周の かわりめで がくんと 上げる。
    この数字を さわったら かならず node tools/sim.mjs を かけ直すこと */
 const LAP_HP = 1.35;
-/* 中盤（ウェーブ20〜100）だけ 坂を きつくする。
-   ここは タワーの レベル上限が 10ウェーブごとに 上がる 区間で、
-   1レベルで こうげきが ×1.78 のびる。敵は ×1.02 しか のびないので、
-   ほうっておくと **よゆうが 2倍 → 6倍 に ふくらんで**、
-   てきが 入口で ぜんぶ たおれる（実機の 報告）。80ウェーブかけて ×2.5 上のせして
-   よゆうを 2.5倍あたりに ならす。
-   100をこえたら 上のせは 止める ——そこから先は レベル上限では なく
+/* 中盤だけ 坂を きつくする。ここは タワーの レベル上限が 10ウェーブごとに
+   上がる 区間で、1レベルで こうげきが ×1.78 のびる。敵は ×1.02 しか
+   のびないので、ほうっておくと よゆうが ふくらみつづける。
+
+   **はじめは 20から 80ウェーブ かけて いた。**それだと ウェーブ50の 時点で
+   まだ ×1.41 しか かかっておらず、「50ウェーブまでが かんたんすぎる」と
+   報告が 来た（実測 3.2〜5.6倍）。12から 45ウェーブに つめて、
+   ウェーブ57で 上のせが 出そろう ようにした。
+   止めどきが ある のは 前と 同じ ——そこから先は レベル上限では なく
    ⭐が 足りなくなるので、止めないと かべが 手前に 来すぎる */
-const MID_FROM = 20, MID_SPAN = 80, MID_MAX = 2.5;
+const MID_FROM = 12, MID_SPAN = 45, MID_MAX = 2.5;
 const MID_STEP = Math.pow(MID_MAX, 1 / MID_SPAN);
 const hpScale = n => (1 + (n-1)*0.30) * Math.pow(1.020, Math.max(0, n-25))
                    * Math.pow(MID_STEP, Math.min(Math.max(0, n - MID_FROM), MID_SPAN))
@@ -3265,10 +3271,14 @@ function boardTap(px, py){
    ========================================================== */
 /* ウェーブ開始。early=true なら「はやよび」で、のこり秒数ぶんのボーナス⭐ */
 const NEXT_WAIT = 10;          // つぎのウェーブが自動ではじまるまでの秒数
+/* 早よびの ボーナス⭐。**式は ここ1か所**（3か所に 散っていた）。
+   tools/sim.mjs も ここを 読む ——早よびを 数に 入れないと、
+   いつも 早よびする人の 収入を **半分に 見あやまる** */
+const earlyBonus = (w, t) => Math.ceil((t === undefined ? NEXT_WAIT : t) * (2 + w*0.2));
 function startWave(early){
   if (running || over) return;
   if (early && nextT > 0 && wave > 0){
-    const b = Math.ceil(nextT * (2 + wave*0.4));
+    const b = earlyBonus(wave, nextT);
     stars += b;
     floatTx(COLS*CELL/2, CELL*1.4, '早よび +⭐' + fmtN(b), '#ffb43f');
   }
@@ -3497,6 +3507,12 @@ function failBonus(x, y){
 function endBonus(){
   const perfect = bonus.got >= bonus.total;
   bonus = null;
+  /* **文字だけ もどしては だめ。**startBonus が ボタンを 止めているので、
+     ここで 戻さないと「次のウェーブ」と 書いてあるのに うすいまま 押せない。
+     カウントダウン（nextT）が 生きていれば 10びょうで 勝手に 始まるが、
+     0の ときは そこで 止まって **ゲームが 進められなくなる**（報告あり）。
+     文字と disabled は かならず 対で 動かすこと */
+  btnWave.disabled = false;
   waveBtn('次のウェーブ ' + PLAY);   // カウントダウン表示がすぐ引きつぐ
   if (perfect){
     hearts = Math.min(HEART_STOCK_MAX, hearts + 1);   // ごほうびはいつもの上限をこえてためられる
@@ -3616,7 +3632,7 @@ function update(dt){
       startWave(false);
     } else if ((time*4|0) !== wvTick){
       wvTick = time*4|0;
-      const b = Math.ceil(nextT * (2 + wave*0.4));
+      const b = earlyBonus(wave, nextT);
       waveBtn(PLAY + ' 早よび +⭐' + fmtN(b) + '<br>あと' + Math.ceil(nextT) + 'びょう');
     }
   }
@@ -13041,6 +13057,7 @@ window.__chk = {
   drawAvatar, portraitShade,
   /* つりあいの 検査（tools/sim.mjs）用。数字を いじったら かならず かけなおす */
   bal: { hpScale, goldWave, upMul, waveList, waveMod, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10),
+         earlyBonus,
          makeWay, wayMeasure, LAP_WAVES },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };

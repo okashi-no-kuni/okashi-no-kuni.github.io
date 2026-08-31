@@ -59,6 +59,10 @@ const out = await p.evaluate(() => {
                reward: Math.round((20 + n*4) * B.goldWave(n)),
                hp1: Math.round(B.ENEMIES.slime.hp * B.hpScale(n)) };
     stars += Math.round((20 + n*4) * B.goldWave(n));
+    /* **早よびの ⭐も 数える。**入れていなかった あいだ、いつも 早よびする人の
+       収入を **半分に 見あやまって**いた（ウェーブ50で 早よび+220 ＝ ウェーブ報酬と 同額）。
+       そのせいで「50ウェーブまでが かんたんすぎる」に 気づけなかった */
+    stars += B.earlyBonus ? B.earlyBonus(n) : 0;
     for (const k of q) stars += Math.round(B.ENEMIES[k].gold * (1 + Math.max(0, n-30)*0.04) * B.goldWave(n));
   }
   return { wall: '>5000' };
