@@ -1906,6 +1906,23 @@ const GUARD_ULT = {
 for (const l of LEGENDS) l.ult = GUARD_ULT[l.id];
 
 const hasLg = id => !!dex['lg_' + id];
+/* 予告の 黒い影を とばすか。**1か所に まとめる**こと ——検査の
+   __dbg.flyerTest も ここを 見ます（2か所に 書くと ずれる）。
+
+   **ウェーブ0から とばしては いけません。**むかしは
+   「wave >= つぎの伝説.wave - 15」でした。1体目が ウェーブ60の ころは
+   W45からで よかったのですが、12国に そろえて **1体目が W15に なった
+   とたん W0 から** 条件が 立ち、ゲームを 始めた とたん 黒い影が
+   よこぎるように なりました（実機の 報告：3回 出た）。
+
+   だから 2つ しばります。
+     ・ウェーブ6より前は 出さない        …始めた とたんに 出さない
+     ・その伝説の 6ウェーブ前から、その ウェーブまで
+                                        …来る 直前の 期待だけ 作る
+   上を しばるのは、3回 まけて つかい切った あとに その伝説が
+   **その周では もう 出てこない**のに、影だけ 一生 とびつづける ため */
+const silNear = next => !!next && wave >= 6 &&
+                        wave >= next.wave - 6 && wave <= next.wave;
 /* 国 → たいけつの 背景。**その国だと ひとめで わかる 目じるし**を 1つずつ
    入れて 出してある（さばくのくに＝ピラミッドと スフィンクス、
    キャラメルのさばく＝あめ色の岩と サバンナの木）。
@@ -3949,10 +3966,7 @@ function update(dt){
       const owned = LEGENDS.filter(l => dex['lg_' + l.id]);
       const next = LEGENDS.find(l => !dex['lg_' + l.id]);
       let pick = null, sil = false;
-      // 予告の影は「いまの プレイで ちかづいたとき」だけ 出す。
-      // 自己ベストで はんていすると、あたらしく はじめた ウェーブ1から
-      // クジラの影が とんでしまい、ウェーブ60の おどろきが なくなる
-      const near = next && wave >= next.wave - 15;
+      const near = silNear(next);
       // あつめた でんせつは ごほうびとして そらを とぶが、
       // はじまってすぐは 画面を しずかに しておく
       const canOwned = owned.length && wave >= 5;
@@ -14339,10 +14353,11 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   setTool: k => { selTool = k; },
   towers: () => towers.map(t => ({ k:t.k, c:t.c, r:t.r, sp:tSpan(t), lv:t.lv })),
   friendWave: () => friendWave,
+  legendWaves: () => LEGENDS.map(l => l.wave),
   flyerTest: () => {   // どの でんせつが とぶか（見た目の たしかめ用）
     const owned = LEGENDS.filter(l => dex['lg_' + l.id]);
     const next = LEGENDS.find(l => !dex['lg_' + l.id]);
-    const near = next && wave >= next.wave - 15;
+    const near = silNear(next);
     const canOwned = owned.length && wave >= 5;
     if (canOwned) return '所持ずみ';
     if (near) return next.name + 'の影';
