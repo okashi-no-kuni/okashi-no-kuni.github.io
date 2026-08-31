@@ -1787,13 +1787,13 @@ const LEGENDS = [
   { id:'berryqueen', name:'いちごのじょおう', title:'みのりの伝説',   wave:35,
     fx:'祝福：たまごが 5%やすい' },
   { id:'whale',      name:'ぎんがのくじゃく', title:'星空の伝説',     wave:55,
-    fx:'祝福：はじまりのハート+2' },
+    fx:'祝福：今日のプレゼントの 💎+1' },
   { id:'chocoknight',name:'ショコラのきし',   title:'たにの伝説',     wave:75,
-    fx:'祝福：はじまりの げんき+5' },
+    fx:'祝福：かけら交換が 20%やすい' },
   { id:'mammoth',    name:'ひょうがのマンモス', title:'こおりの伝説', wave:95,
     fx:'祝福：ダブりの かけら+1' },
   { id:'phoenix',    name:'ようがんのりゅう', title:'炎の伝説',       wave:115,
-    fx:'祝福：1プレイに1回 ハート0でふみとどまる' },
+    fx:'祝福：たまごから にじの子が 出やすい' },
   { id:'kraken',     name:'あわのクラーケン', title:'うみの伝説',     wave:135,
     fx:'祝福：アイテムの ドロップ+2%' },
   { id:'elephant',   name:'キャラメルのぞう', title:'さばくの伝説',   wave:155,
@@ -1840,9 +1840,9 @@ const DUEL_BG = {
 /* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
    たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
-const maxHearts = () => 20 + (hasLg('whale') ? 2 : 0);
+const maxHearts = () => 20;
 const maxLife   = () => (weekly && weekly.life) ? weekly.life
-  : 20 + (hasLg('whale') ? 2 : 0) + (hasLg('chocoknight') ? 5 : 0);   // しゅくふく
+  : 20;
 /* ごほうびでもらう💗は上限をこえてためておける。ためすぎないように99でとめる */
 const HEART_STOCK_MAX = 99;
 /* かいふくワザや ステージクリアの ごほうびは、そのプレイの げんきを もどす */
@@ -1976,7 +1976,6 @@ function vib(pat){
   try{ navigator.vibrate(pat); }catch(e){}
 }
 let paraders = [];            // 応援パレード中のなかま
-let phoenixUsed = false;      // ふしちょうのごかご（1プレイ1回）
 let continueUsed = false;     // このプレイで「つづきから」を使ったか（2回目からはライフ制）
 let lifeTimer = null;         // 回復までのカウントダウン表示
 let flyer = null, flyT = 12;  // そらをとぶでんせつ（sil=影のときは予告）
@@ -2521,7 +2520,7 @@ function reset(){
   for (const k in skCd) skCd[k] = 0;
   for (const k in buffs) buffs[k] = 0;
   gifts = []; paraders = []; celebT = 0; wflash = 0;
-  phoenixUsed = false; flyer = null; flyT = 10; bonus = null; bonusWait = 0;
+  flyer = null; flyT = 10; bonus = null; bonusWait = 0;
   continueUsed = false;
   if (lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
   ovBtn.disabled = false;
@@ -2608,6 +2607,9 @@ const EGGS = [
 /* ダブりが 出たときに もらえる かけら と、かけらで 交換するのに いる数 */
 const SHARD_GET  = { 1:1, 2:1, 3:1, 4:2, 5:2, 6:4 };
 const SHARD_COST = { 1:5, 2:5, 3:5, 4:12, 5:12, 6:30 };
+/* きしの しゅくふくで 20%やすい。**関数に すること** ——
+   ひつような 数は 画面にも 出るので、決めうちだと 表示だけ 古くなる */
+const shardCost = lv => Math.max(1, Math.round(SHARD_COST[lv] * (hasLg('chocoknight') ? 0.8 : 1)));
 
 let shards = 0;
 try{ shards = +localStorage.getItem('sweetTD.shards') || 0; }catch(e){}
@@ -2704,7 +2706,10 @@ const hasGen  = o => !!dex[o.id];
 /* にじの わく（DEX_LEGEND）の子は「運が よければ」の あつかい。
    たまごの 中で あわせて 5% しか 出ない。かくりつ表示（eggRates）と
    ここの 数字は かならず そろえること（Apple 3.1.1／景品表示法） */
-const LEG_RATE  = 0.05;
+/* にじの子が たまごから 出る かくりつ。りゅうの しゅくふくで 1%上がる。
+   **関数に すること** ——eggOdds（えらぶ側）も かくりつ表示も ここを 見るので、
+   決めうちだと 表示だけ ずれる。かくりつ表示は Apple 3.1.1／景表法で 必須 */
+const LEG_RATE = () => 0.05 + (hasLg('phoenix') ? 0.01 : 0);
 /* 金の わく（DEX_GOLD）は にじの 下、銀の 上。にじを のぞいた のこりの 20%。
    **この数字は 金の 人数で 変わる。**きらきら たまごは にじ2人・金6人なので、
    15% だと 金ひとりが 2.4%、にじ ひとりが 2.5% で **金の ほうが めずらしく**
@@ -2726,7 +2731,7 @@ function eggOdds(pool){
   const leg  = pool.filter(o =>  DEX_LEGEND.has(artKeyOf(o)));
   const gold = pool.filter(o => !DEX_LEGEND.has(artKeyOf(o)) &&  DEX_GOLD.has(artKeyOf(o)));
   const norm = pool.filter(o => !DEX_LEGEND.has(artKeyOf(o)) && !DEX_GOLD.has(artKeyOf(o)));
-  const pL = leg.length ? (gold.length || norm.length ? LEG_RATE : 1) : 0;
+  const pL = leg.length ? (gold.length || norm.length ? LEG_RATE() : 1) : 0;
   const rest = 1 - pL;
   const pG = !gold.length ? 0 : norm.length ? rest * GOLD_RATE : rest;
   return { leg, gold, norm, pL, pG, pN: rest - pG };
@@ -2874,7 +2879,7 @@ function buildShardBox(){
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;justify-content:center';
   for (const lv of [1,2,3,4,5,6]){
-    const need = SHARD_COST[lv];
+    const need = shardCost(lv);
     const left = GEN_LIST.filter(o => o.side === 'ch' && o.lv === lv && !hasGen(o)).length;
     const b = document.createElement('button');
     b.className = 'mini' + (shards < need || !left ? ' gray' : '');
@@ -3931,16 +3936,12 @@ function update(dt){
       }
       life -= (e.k === 'boss' ? 5 : 1);
       flash = 1; beep(200,.28,'sawtooth',.06,.5);
-      if (life <= 0){
-        // ふしちょうのしゅくふく：1プレイに1回だけふみとどまる
-        if (hasLg('phoenix') && !phoenixUsed){
-          phoenixUsed = true; life = 1;
-          celebrate({ conf: 50, rings: true, fanfare: 1 });
-          floatTx(COLS*CELL/2, ROWS*CELL/2, 'ふしちょうの ごかご！🔥', '#ff8a3a');
-        } else {
-          syncHUD(); gameOver(); return;
-        }
-      }
+      /* **しゅくふくで ふみとどまらせない。**むかしは りゅうの しゅくふくで
+         1プレイに1回 生きのこれたが、あれは「負けにくさ」を 直に 上げる ——
+         しかも tools/sim.mjs は「時間内に たおしきれるか」しか 見ていないので、
+         **モデルには 何も 見えないまま 難易度だけ 下がる**。
+         祝福は 難易度に さわらない ものだけに した */
+      if (life <= 0){ syncHUD(); gameOver(); return; }
       syncHUD();
     }
   }
@@ -10125,7 +10126,7 @@ function continueRun(refill, keepWave){
   continueUsed = true;
   setNextHeartAt(0);   // 再開したら回復タイマーは止める
   ovBtn.disabled = false;
-  phoenixUsed = false; nextT = 0;
+  nextT = 0;
   for (const k in skCd) skCd[k] = 0;
   for (const k in buffs) buffs[k] = 0;
   ov.classList.remove('on');
@@ -10164,7 +10165,7 @@ function todayStartStars(){
 function applyLoginReward(day){
   // 毎日 💎を すこしだけ。買えないうちも ショップが 動くようにしておく。
   // 課金を つないだら、ここの数は 見なおすこと
-  gems += 2; saveGems();
+  gems += 2 + (hasLg('whale') ? 1 : 0); saveGems();   // くじゃくの しゅくふく
   const addStart = n0 => {
     const n = n0 + (hasLg('moonrabbit') ? 50 : 0);   // つきのうさぎの しゅくふく
     try{ localStorage.setItem('sweetTD.todayStars', JSON.stringify({ d: dateStr(), n })); }catch(e){}
@@ -10594,7 +10595,7 @@ function buildHelp(){
     '<b>図鑑にいる子だけ 盤面に おけます</b>ので、集めるほど 戦いかたが ふえます。</p>' +
     '<p style="margin-top:5px"><b>わくの色＝手に入りにくさ</b>です。' +
     'ならびも 上から この順です。</p><ul style="margin-top:4px">' +
-    '<li>🌈 <b>にじ</b>（伝説）：運まかせ。たまごでは あわせて' + (LEG_RATE*100) + '%、' +
+    '<li>🌈 <b>にじ</b>（伝説）：運まかせ。たまごでは あわせて' + (LEG_RATE()*100) + '%、' +
     'たおしても ときどきしか 図鑑に入りません（にげてしまいます）</li>' +
     '<li>🥇 <b>金</b>（レア）：たまごでも たおしたときでも 出にくい子</li>' +
     '<li>🥈 <b>銀</b>／🩷 <b>ピンク</b>：ふつうに 集まります</li></ul>' +
@@ -13819,6 +13820,7 @@ window.__chk = {
   /* 12国ぜんぶに たいけつの 背景が あるか。1つでも 抜けると
      その国だけ よその 絵が 出る（気づきにくい）*/
   duelBg: () => THEMES.map(t => ({ 国:t.name, 絵:DUEL_BG[t.name] || null })),
+  legends: () => LEGENDS.map(l => ({ w:l.wave, 名:l.name, 祝福:l.fx })),
   duelWaves: () => LEGENDS.map(l => ({ w:l.wave, 名:l.name,
                      国: THEMES[(Math.max(0,Math.ceil(l.wave/STAGE_WAVES)-1))%THEMES.length].name })),
   // アバターも キャラなので おなじ検査に かける。
