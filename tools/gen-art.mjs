@@ -497,6 +497,58 @@ const ART = {
     + 'rainbow candy, a small black top hat sitting on its head, and it is holding a '
     + 'slim pale gold flute up to its mouth with both hands, playing it happily with its '
     + 'eyes closed in two happy curves.' },
+  /* --- 伝説（特別ウェーブの ボス）。国ごとに 1体。
+     **ふつうの子より 少し 大きく・かざりを 多めに。**ならべたとき
+     「この子は 特別だ」と ひとめで わかる ように する。
+     すでに いる子と かぶらない シルエットを えらぶこと
+     （ユニコーン・りゅう・くじゃく・スフィンクス・ひのとり・にんぎょ・
+      てんし・ゆきおんな・ゆきのじょおう は もう いる）--- */
+  あめのきのせい: { key:'candytree',
+    p:'A grand legendary tree spirit shaped like a small candy tree standing on two '
+    + 'root-like legs. Its trunk is a swirled stick of pastel candy, its round canopy is '
+    + 'made of clustered pink, mint and lavender gumdrops, and lollipops hang from it '
+    + 'like fruit. A small gentle face on the trunk, and a thin gold circlet of sugar '
+    + 'resting on the canopy.' },
+  いちごのじょおう: { key:'berryqueen',
+    p:'A legendary strawberry queen: a girl with soft pink hair wearing a wide gown whose '
+    + 'skirt is a giant ripe strawberry with cream frills at the hem, a tall gold crown '
+    + 'set with a strawberry, a short cream cape, and a slender gold sceptre topped with '
+    + 'a strawberry. Calm and noble.' },
+  ショコラのきし: { key:'chocoknight',
+    p:'A legendary chocolate knight standing tall in rounded armour moulded from glossy '
+    + 'milk chocolate, with cream trim at the shoulders and a wafer shield held at its '
+    + 'side. A plume of whipped cream rises from its helmet, and a friendly face shows '
+    + 'through the open visor. Sturdy and heroic, still soft and rounded.' },
+  ひょうがのマンモス: { key:'mammoth',
+    p:'A legendary mammoth made of ice and cream: a big rounded body covered in pale '
+    + 'blue-white shaggy fur like whipped cream, two long curved tusks of clear sugar '
+    + 'ice, a short trunk, small ears, and a crown of frost crystals over its brow. '
+    + 'Gentle eyes. Stands facing the viewer.' },
+  あわのクラーケン: { key:'kraken',
+    p:'A legendary soda kraken: a large rounded head like a translucent aqua soda bubble '
+    + 'with a friendly face, and eight thick rounded tentacles curling outward below it, '
+    + 'each tipped with pale foam. Small bubbles float around it and a little crown of '
+    + 'sea-glass sits on its head. Bright and bubbly, not scary.' },
+  キャラメルのぞう: { key:'elephant',
+    p:'A legendary desert elephant made of caramel: a big rounded body in warm amber '
+    + 'caramel, large soft ears, a raised curling trunk, short tusks of pale nougat, and '
+    + 'a decorated saddle blanket of striped candy on its back with small gold bells. '
+    + 'Calm and kind, standing facing the viewer.' },
+  ほむらのきゅうび: { key:'kyubi',
+    p:'A legendary nine-tailed fox of flame: a rounded fox with coral and apricot fur, '
+    + 'big ears with cream inner fur, and NINE long fluffy tails fanned out behind it '
+    + 'like soft flames in coral, apricot and gold. A small gold flame mark on its brow. '
+    + 'Warm and glowing, never harsh red. Sitting and facing the viewer.' },
+  つきのうさぎ: { key:'moonrabbit',
+    p:'A legendary moon rabbit: a plump pale-cream rabbit with long upright ears edged in '
+    + 'pale gold, standing beside a small round mortar of pale stone with a wooden '
+    + 'pestle, pounding mochi. A soft crescent moon glows behind its shoulders and tiny '
+    + 'gold stars float around it.' },
+  にじのペガサス: { key:'pegasus',
+    p:'A legendary winged horse with a pastel cream coat, a flowing rainbow mane and '
+    + 'tail, and two large feathered wings spread wide. **It has no horn on its head.** '
+    + 'Small gold hoof cuffs and a soft rainbow arc of light behind it. Standing facing '
+    + 'the viewer, noble and gentle.' },
   まじょ: { key:'witch', p:'A small chibi witch girl standing, purple dress and a wide pointed purple hat, holding a wooden broom.' },
   /* 「おかえりなさい」の 画面 だけの 1体。盤面の まじょ（witch）は 立って いて
      表情も 変えられない ので、あの 画面に そのまま 貼ると 同じ絵が 2か所に

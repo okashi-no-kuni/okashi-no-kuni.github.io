@@ -1782,17 +1782,41 @@ const DEX_ENEMIES = Object.keys(ENEMIES).filter(k => !DEX_HIDE_EN.includes(k))
 
    `tease` は 書かずに `wave` から 作ること。数字を 2か所に 書くと ずれます */
 const LEGENDS = [
-  { id:'whale',   name:'ぎんがのくじゃく',   title:'星空の伝説', wave:55,
-    bg:'duel_forest', hp:1600, atk:10, ivl:1.55,
+  { id:'candytree',  name:'あめのきのせい',   title:'はじまりの伝説', wave:15,
+    fx:'祝福：はじまりの ⭐+100' },
+  { id:'berryqueen', name:'いちごのじょおう', title:'みのりの伝説',   wave:35,
+    fx:'祝福：たまごが 5%やすい' },
+  { id:'whale',      name:'ぎんがのくじゃく', title:'星空の伝説',     wave:55,
     fx:'祝福：はじまりのハート+2' },
-  { id:'phoenix', name:'ようがんのりゅう',   title:'炎の伝説',   wave:115,
-    bg:'duel_snow',   hp:2600, atk:14, ivl:1.45,
+  { id:'chocoknight',name:'ショコラのきし',   title:'たにの伝説',     wave:75,
+    fx:'祝福：はじまりの げんき+5' },
+  { id:'mammoth',    name:'ひょうがのマンモス', title:'こおりの伝説', wave:95,
+    fx:'祝福：ダブりの かけら+1' },
+  { id:'phoenix',    name:'ようがんのりゅう', title:'炎の伝説',       wave:115,
     fx:'祝福：1プレイに1回 ハート0でふみとどまる' },
-  { id:'chronos', name:'えいえんのスフィンクス', title:'時の伝説', wave:175,
-    bg:'duel_egypt',  hp:3600, atk:18, ivl:1.35,
+  { id:'kraken',     name:'あわのクラーケン', title:'うみの伝説',     wave:135,
+    fx:'祝福：アイテムの ドロップ+2%' },
+  { id:'elephant',   name:'キャラメルのぞう', title:'さばくの伝説',   wave:155,
+    fx:'祝福：💗の 回復が 1分 はやい' },
+  { id:'chronos',    name:'えいえんのスフィンクス', title:'時の伝説', wave:175,
     fx:'祝福：早よびの待ち時間+3秒' },
+  { id:'kyubi',      name:'ほむらのきゅうび', title:'ほのおの伝説',   wave:195,
+    fx:'祝福：早よびの ⭐+10%' },
+  { id:'moonrabbit', name:'つきのうさぎ',     title:'つきの伝説',     wave:215,
+    fx:'祝福：今日のプレゼントの ⭐+50' },
+  { id:'pegasus',    name:'にじのペガサス',   title:'にじの伝説',     wave:235,
+    fx:'祝福：ボーナスの おかしが 3こ 少ない' },
 ];
-for (const l of LEGENDS) l.tease = 'ウェーブ' + l.wave + 'で なにかが おきる…';
+/* つよさは **ウェーブから 式で 出す**。1体ずつ 手で 書くと、
+   ならべたとき 前後で 逆転していても 気づけません。
+   ねらいは「その国に とどく ころの ★の子で ぎりぎり 勝てる」*/
+for (const l of LEGENDS){
+  l.hp   = 900 + l.wave * 14;
+  l.atk  = Math.round(6 + l.wave * 0.055);
+  l.ivl  = +(1.6 - l.wave * 0.0015).toFixed(2);
+  l.bg   = 'duel_forest';                    // 予備。ふだんは DUEL_BG が えらぶ
+  l.tease = 'ウェーブ' + l.wave + 'で なにかが おきる…';
+}
 const hasLg = id => !!dex['lg_' + id];
 /* 国 → たいけつの 背景。**その国だと ひとめで わかる 目じるし**を 1つずつ
    入れて 出してある（さばくのくに＝ピラミッドと スフィンクス、
@@ -1818,7 +1842,7 @@ const DUEL_BG = {
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
 const maxHearts = () => 20 + (hasLg('whale') ? 2 : 0);
 const maxLife   = () => (weekly && weekly.life) ? weekly.life
-  : 20 + (hasLg('whale') ? 2 : 0);   // クジラの しゅくふく：はじまりのハート+2
+  : 20 + (hasLg('whale') ? 2 : 0) + (hasLg('chocoknight') ? 5 : 0);   // しゅくふく
 /* ごほうびでもらう💗は上限をこえてためておける。ためすぎないように99でとめる */
 const HEART_STOCK_MAX = 99;
 /* かいふくワザや ステージクリアの ごほうびは、そのプレイの げんきを もどす */
@@ -1826,7 +1850,10 @@ const healHearts = n => { life = Math.max(life, Math.min(maxLife(), life + n)); 
 /* 💗をつかいきったら、時間で少しずつ回復するライフ制。
    REGEN_MIN分ごとに💗1こ、maxHearts()まで（ふつう20こ→100分で満タン）。
    1こでもたまれば「つづきから」で再開できる。回復ペースはここだけ変えればOK */
-const REGEN_MIN = 5, REGEN_MS = REGEN_MIN*60*1000;
+const REGEN_MIN = 5;
+/* ぞうの しゅくふくで 1分 はやい。**関数に すること** ——
+   図鑑にも 出るので、決めうちだと 表示だけ 古くなる */
+const REGEN_MS = () => (REGEN_MIN - (hasLg('elephant') ? 1 : 0)) * 60 * 1000;
 /* localStorage 'sweetTD.lifeAt' は「つぎの💗が回復する時刻」を表す */
 function nextHeartAt(){ try{ return +localStorage.getItem('sweetTD.lifeAt') || 0; }catch(e){ return 0; } }
 function setNextHeartAt(t){ try{ t ? localStorage.setItem('sweetTD.lifeAt', String(t)) : localStorage.removeItem('sweetTD.lifeAt'); }catch(e){} }
@@ -1845,7 +1872,7 @@ function applyRegen(){
   let changed = false;
   while (at && Date.now() >= at && hearts < cap){
     hearts++; changed = true;
-    at = (hearts < cap) ? at + REGEN_MS : 0;   // 満タンなら回復おわり(0)
+    at = (hearts < cap) ? at + REGEN_MS() : 0;   // 満タンなら回復おわり(0)
   }
   if (changed){ setNextHeartAt(at); saveRest(); }
   return changed;
@@ -2485,7 +2512,8 @@ function reset(){
      ここを 消し忘れると 1回 まけたら 一生 会えなく なります */
   duelSt = {}; saveDuel();
   WAY = FIRST_WAY;
-  hearts = maxHearts(); life = maxLife(); stars = 250 + todayStartStars(); wave = 0;   // ログインボーナスぶんを上のせ
+  hearts = maxHearts(); life = maxLife();
+  stars = 250 + todayStartStars() + (hasLg('candytree') ? 100 : 0); wave = 0;   // ログインボーナスぶんを上のせ
   selTool = null; selTower = null; running = false; over = false;
   spawnQ = []; spawnT = 0; speed = 1; flash = 0; nextT = 0;
   btnSpd.textContent = '1x';
@@ -2568,6 +2596,10 @@ function buildShop(){
    ⭐は あそんで ためるもの、💎は 買うもの。両方 のこすのは、
    💎だけに すると あそんで 集められなくなり、⭐だけに すると
    はじめたばかりの人が いつまでも 1人も 増やせないため */
+/* たまごの ⭐。いちごのじょおうの しゅくふくで 5%やすい。
+   **関数に すること** ——ならびの 表示にも つかうので、決めうちだと
+   ねだんだけ 古くなる */
+const eggCost = e => Math.round(e.cost * (hasLg('berryqueen') ? 0.95 : 1));
 const EGGS = [
   { id:'e13', name:'ふつうの たまご',   lv:[1,2,3], cost:400,  gem:5,  c1:'#fff0f7', c2:'#ff8fc4' },
   { id:'e45', name:'きらきら たまご',   lv:[4,5],   cost:1200, gem:12, c1:'#eef7ff', c2:'#9ed8ff' },
@@ -2716,7 +2748,7 @@ function eggDraw(e){
     return { o, dup: false };
   }
   const o = eggPick(pool);
-  const n = SHARD_GET[o.lv] || 1;
+  const n = (SHARD_GET[o.lv] || 1) + (hasLg('mammoth') ? 1 : 0);   // マンモスの しゅくふく
   shards += n; saveShards();
   return { o, dup: true, shard: n };
 }
@@ -2798,8 +2830,8 @@ function buildEggScreen(){
       '<div class="egN">' + e.name + '</div>' +
       '<div class="egX">★' + e.lv.join('・') + '　残り ' + left + '人</div>' +
       '<div class="egB">' +
-      '<button class="egPay egStar"' + (weekly || stars < e.cost ? ' disabled' : '') +
-        '>⭐' + fmtN(e.cost) + '</button>' +
+      '<button class="egPay egStar"' + (weekly || stars < eggCost(e) ? ' disabled' : '') +
+        '>⭐' + fmtN(eggCost(e)) + '</button>' +
       '<button class="egPay egGem"' + (weekly || gems < e.gem ? ' disabled' : '') +
         '>💎' + e.gem + '</button>' +
       '</div>' +
@@ -2876,8 +2908,9 @@ function buyEgg(e, pay){
   if (pay === 'gem'){
     if (!payGems(e.gem)){ no('💎が足りません（💎' + e.gem + '）'); return; }
   } else {
-    if (stars < e.cost){ no('おほしさまが足りません（⭐' + fmtN(e.cost) + '）'); return; }
-    stars -= e.cost;
+    const c = eggCost(e);
+    if (stars < c){ no('おほしさまが足りません（⭐' + fmtN(c) + '）'); return; }
+    stars -= c;
     /* ⭐は saveRun でしか のこらない。ここで 書かないと、
        開いたあと 読みこみ直すだけで ⭐が もどってくる（仲間は 残る）*/
     saveRun();
@@ -3495,7 +3528,8 @@ const NEXT_WAIT = 10;          // つぎのウェーブが自動ではじまる�
 /* 早よびの ボーナス⭐。**式は ここ1か所**（3か所に 散っていた）。
    tools/sim.mjs も ここを 読む ——早よびを 数に 入れないと、
    いつも 早よびする人の 収入を **半分に 見あやまる** */
-const earlyBonus = (w, t) => Math.ceil((t === undefined ? NEXT_WAIT : t) * (2 + w*0.2));
+const earlyBonus = (w, t) => Math.ceil((t === undefined ? NEXT_WAIT : t) * (2 + w*0.2)
+                             * (hasLg('kyubi') ? 1.1 : 1));   // きゅうびの しゅくふく
 function startWave(early){
   if (running || over) return;
   if (early && nextT > 0 && wave > 0){
@@ -3662,7 +3696,8 @@ function celebrate(o){
    ========================================================== */
 const BONUS_EMO = ['🍬','🍩','🍪','🧁','🍓','🍭','🍰','🍮'];
 function startBonus(){
-  bonus = { spawnLeft: 30, total: 30, spT: 0.4, items: [], got: 0 };
+  const nB = 30 - (hasLg('pegasus') ? 3 : 0);   // ペガサスの しゅくふく
+  bonus = { spawnLeft: nB, total: nB, spT: 0.4, items: [], got: 0 };
   btnWave.disabled = true;
   waveBtn('🎁 ボーナスタイム！<br>お菓子をタップ！');
   floatTx(COLS*CELL/2, ROWS*CELL*0.35, '🎁 ボーナスウェーブ！', '#ff8fc4');
@@ -4136,7 +4171,7 @@ function gameOver(){
     ovB.innerHTML += '<br><span style="opacity:.75">💗を1こ使いました（残り ' + hearts + '）</span>';
   } else {
     // つかいきったら、時間で少しずつ回復。1こでもたまれば再開できる
-    if (!nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
+    if (!nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS());
     ovB.innerHTML += '<br><span style="opacity:.75">💗を使いきりました…！ ' + REGEN_MIN + '分ごとに1こずつ回復（最大' + maxHearts() + '）</span>';
   }
   armLifeButton(false);
@@ -7264,6 +7299,10 @@ const DEX_ART = {
   apple:'futaba',  queen:'sunadokei', king:'taiyou',    rpurin:'nagareboshi',
   kagero:'kagero',
   whale:'kujaku',  phoenix:'ryu',    chronos:'sphinx',
+  /* 特別ウェーブの 伝説 9体（国ごとに 1体）。id と 絵の キーは そろえてある */
+  candytree:'candytree', berryqueen:'berryqueen', chocoknight:'chocoknight',
+  mammoth:'mammoth',     kraken:'kraken',         elephant:'elephant',
+  kyubi:'kyubi',         moonrabbit:'moonrabbit', pegasus:'pegasus',
 };
 
 /* どの 絵を つかうかを 決める キー。
@@ -9090,7 +9129,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'berryqueen', 'candytree', 'chocoknight', 'elephant', 'kraken', 'kyubi', 'mammoth', 'moonrabbit', 'pegasus', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -9647,10 +9686,13 @@ let gifts = [];
 /* アイテムが 落ちる わりあい。ワザより ずっと めずらしい。
    これが 主な 入手ルート＝あそんでいれば ためられる。
    「待てば無料」を くずさないために、ここを 0 に しないこと */
-const ITEM_DROP = 0.08;
+/* アイテムの ドロップ。クラーケンの しゅくふくで +2%。
+   **関数に すること** ——2か所（落とす所と ショップの 説明）で つかうので、
+   決めうちだと 片方だけ 古くなる */
+const ITEM_DROP = () => 0.08 + (hasLg('kraken') ? 0.02 : 0);
 function spawnGift(x, y){
   // ときどき ワザでは なく アイテムが 落ちる
-  if (Math.random() < ITEM_DROP){
+  if (Math.random() < ITEM_DROP()){
     const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP);
     if (pool.length){
       const it = pool[(Math.random()*pool.length)|0];
@@ -10123,7 +10165,8 @@ function applyLoginReward(day){
   // 毎日 💎を すこしだけ。買えないうちも ショップが 動くようにしておく。
   // 課金を つないだら、ここの数は 見なおすこと
   gems += 2; saveGems();
-  const addStart = n => {
+  const addStart = n0 => {
+    const n = n0 + (hasLg('moonrabbit') ? 50 : 0);   // つきのうさぎの しゅくふく
     try{ localStorage.setItem('sweetTD.todayStars', JSON.stringify({ d: dateStr(), n })); }catch(e){}
     stars += n;                          // いま遊んでいるぶんにもすぐ足す
     return '今日は スタートおほしさま <b>+' + n + '</b>！';
@@ -10932,7 +10975,7 @@ const SHOP_ITEMS = [
      セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
   { id:'it_set', sec:'あそぶ', ic:'🎒', name:'おたすけセット',
     desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×1こずつ',
-    note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP*100) + '%）。' +
+    note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP()*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
     cost: 20,
     can:  () => itDay.set !== dayKey(),
@@ -11139,7 +11182,7 @@ function weeklyOver(){
   saveWeekRec(r);
   hearts = Math.max(0, hearts - 1);
   life = maxLife();
-  if (hearts < 1 && !nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS);
+  if (hearts < 1 && !nextHeartAt()) setNextHeartAt(Date.now() + REGEN_MS());
   syncHUD();
   const badge = 'display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
     'border:2px solid #ffd76e;border-radius:999px;padding:7px 16px;margin:7px 0;color:#c9821e';
