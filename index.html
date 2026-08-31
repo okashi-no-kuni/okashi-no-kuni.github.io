@@ -2605,7 +2605,12 @@ const eggCost = e => Math.round(e.cost * (hasLg('berryqueen') ? 0.95 : 1));
 const EGGS = [
   { id:'e13', name:'ふつうの たまご',   lv:[1,2,3], cost:400,  gem:5,  c1:'#fff0f7', c2:'#ff8fc4' },
   { id:'e45', name:'きらきら たまご',   lv:[4,5],   cost:1200, gem:12, c1:'#eef7ff', c2:'#9ed8ff' },
-  { id:'e6',  name:'伝説の たまご', lv:[6],     cost:3000, gem:25, c1:'#fff8e4', c2:'#ffd76e' },
+  /* ★6。**にじの わくの子が 出る ゆいいつの たまご**なので「にじの」。
+     むかしは「伝説の たまご」でしたが、伝説は いま **たいけつの ボス**の
+     名前なので、同じ言葉が 2つの ものを 指して いました。
+     idは e6 のまま ——セーブも かくりつ表示も idで つながっています */
+  { id:'e6',  name:'にじの たまご', lv:[6],     cost:3000, gem:25, c1:'#ffe9f4', c2:'#c9a7ff',
+    cs:['#ffd7ea','#ffe9c6','#d8f5e2','#cfe8ff','#d9c6ff'] },
 ];
 /* ダブりが 出たときに もらえる かけら と、かけらで 交換するのに いる数 */
 const SHARD_GET  = { 1:1, 2:1, 3:1, 4:2, 5:2, 6:4 };
@@ -2728,7 +2733,7 @@ const GOLD_KEEP = 0.60;
    これを 見るので、数字が ずれようが ない（Apple 3.1.1／景品表示法で
    表示が ずれるのは いちばん まずい）。
    にじが まず 5% を とり、のこりを 金と ふつうで 分ける。
-   ふつうが 1人も いない たまご（伝説のたまご＝★6は 金3人＋にじ1人）では
+   ふつうが 1人も いない たまご（にじのたまご＝★6は 金3人＋にじ1人）では
    金が のこり ぜんぶを とる ——にじを 増やして しまわない ため */
 function eggOdds(pool){
   const leg  = pool.filter(o =>  DEX_LEGEND.has(artKeyOf(o)));
@@ -2777,7 +2782,11 @@ function eggThumb(e, size, cracked){
   g.bezierCurveTo(M - R*1.02, M + R*0.72, M - R*0.98, M - R*0.66, M, M - R*1.28);
   g.closePath();
   const gr = g.createRadialGradient(M - R*0.34, M - R*0.5, R*0.1, M, M, R*1.3);
-  gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.45, e.c1); gr.addColorStop(1, e.c2);
+  gr.addColorStop(0, '#ffffff');
+  /* cs（色の ならび）が あれば にじ。**止まりは 等間かくで 連続させる**こと
+     ——同じ色の 止まりを 2つ ならべると そこで 傾きが 変わって すじに 見える */
+  if (e.cs) e.cs.forEach((col, i) => gr.addColorStop(0.30 + i * (0.70 / (e.cs.length - 1)), col));
+  else { gr.addColorStop(0.45, e.c1); gr.addColorStop(1, e.c2); }
   g.fillStyle = gr; g.fill();
   // もよう
   g.save(); g.clip();
@@ -8934,7 +8943,7 @@ function duWin(){
         '<span style="display:inline-block;background:linear-gradient(90deg,#ffe9b8,#ffd9ec);' +
         'border:2px solid #ffd76e;border-radius:999px;padding:5px 13px;margin:5px 0;' +
         'color:#c9821e;font-size:.94em">' + L.fx + '</span><br>' +
-        'ごほうびに <b>きらきら たまご 3こ</b>！');
+        'ごほうびに <b>' + EGGS[2].name + ' 3こ</b>！');
   duGo.style.display = ''; duGo.textContent = 'たまごを ひらく 🥚';
   duGo.onclick = () => { tapSel(); duEggs(); };
   duSub.style.display = 'none';
@@ -8946,7 +8955,10 @@ function duWin(){
 /* ---- ⑤ たまご3こ。1つずつ タップして ひらく ---- */
 function duEggs(){
   duS.phase = 'egg';
-  const E = EGGS[1];                       // きらきら たまご（★4〜5）
+  /* **にじの たまご（★6）**。にじの わくの子が 出るのは この たまごだけ ですが、
+     それでも 出るのは 5%（LEG_RATE）なので、伝説を 引きあてる 近道には
+     なりません。のこり 95% は 金の わくの ★6です */
+  const E = EGGS[2];
   $('duT').textContent = '🥚 ' + E.name + ' × 3';
   duEggsEl.innerHTML = '';
   duS.got = []; duS.left = 3;
@@ -10707,7 +10719,7 @@ function buildHelp(){
     '<li><b>ウェーブに終わりはありません</b>。' + STAGE_WAVES + 'ウェーブごとに 国が かわり、' +
     THEMES.length + 'の国を ひとまわりする <b>' + LAP_WAVES + 'ウェーブごとに 道の形が 変わります</b>。' +
     '敵は少しずつ強くなるので、どこまで潜れるかが記録になります</li>' +
-    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、きらきらたまごも 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li></ul></div>';
+    '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、<b>' + EGGS[2].name + '</b>も 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li></ul></div>';
   h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、' +
     '<b>👑図鑑をひらいて、いちばん上の「🔑合言葉」</b>から入れてください。' +
@@ -10972,7 +10984,7 @@ const shopOv = $('shopOv'), shopBody = $('shopBody'), shopGem = $('shopGem');
    ⭐は 単品で 売らない。後半は 1ウェーブで 何万も 手に入るので、
    買った ⭐が すぐ 値うちを なくして「損した」に なるため。
    ⭐は はじめてパックの 中身としてだけ 出す */
-const PACK_STARS = 3000;              // 伝説のたまご 1こぶん。はじめの 1歩として ちょうどいい
+const PACK_STARS = 3000;              // にじのたまご 1こぶん。はじめの 1歩として ちょうどいい
 const PACK_LV    = 4;                 // わたす なかまの ★
 /* きょうの 日づけ（端末のローカル）。アイテムセットの 1日1回に つかう */
 const dayKey = () => { const d = new Date();
