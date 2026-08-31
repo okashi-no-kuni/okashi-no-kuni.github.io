@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#ffd9ec">
 <title>まほうのおかしの国をまもって</title>
+<!-- SNSに はったときの プレビュー。**無いと 絵の 出ない ただのURLに なります。**
+     くわしくは invite.html（紹介ページ）の おなじ ところに 書いてあります。
+     絵は 1200x630 に こちらで 切ってある（art/screens/ogp.jpg）-->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="まほうの おかしの国">
+<meta property="og:title"       content="まほうのおかしの国をまもって">
+<meta property="og:description" content="魔法にかけられた おかしの国を 救いに行こう！ かわいい なかまを 128体 あつめる タワーディフェンス。">
+<meta property="og:url"         content="https://okashi-no-kuni.github.io/">
+<meta property="og:image"       content="https://okashi-no-kuni.github.io/art/screens/ogp.jpg">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="ja_JP">
+<meta name="twitter:card"       content="summary_large_image">
+<meta name="twitter:title"      content="まほうのおかしの国をまもって">
+<meta name="twitter:description" content="魔法にかけられた おかしの国を 救いに行こう！ ダウンロードなしで すぐ あそべます。">
+<meta name="twitter:image"      content="https://okashi-no-kuni.github.io/art/screens/ogp.jpg">
+<meta name="description"        content="魔法にかけられた おかしの国を 救いに行こう！ かわいい なかまを 128体 あつめる タワーディフェンス。">
 <!-- ホーム画面に 追加したときの アイコン。
      apple-touch-icon が ないと、iPhone は ページの 縮小画像を アイコンに してしまう。
      絵は tools/make-icons.mjs が 作る（手で 画像を 作らないこと）-->
@@ -466,6 +483,50 @@
     font-size:calc(16px * var(--fs));border-radius:16px}
   #backNew{background:linear-gradient(180deg,#d7c2ff,#b394f0);box-shadow:0 4px 0 #8b6ad0}
   #backNew:active{box-shadow:0 1px 0 #8b6ad0}
+  /* ============ ともだちに おしえる（#invOv） ============
+     LINE・インスタ・TikTok の 3つは **あつかいが ちがいます**。
+     - LINE と X … リンクを わたす web の 口が あるので 1タップで 送れる
+     - インスタと TikTok … **リンクを 送る web の 口が ありません。**
+       アプリを ひらく しか なく、貼りつけは 本人が やる。だから
+       「リンクを コピーしてから アプリを ひらく」に してあります
+     いちばん 楽なのは けいたいの 共有シート（navigator.share）で、
+     そこには 入れてある アプリが ぜんぶ 出ます。だから これを 主役に します */
+  #invOv{position:fixed;inset:0;z-index:39;display:none;
+    width:100vw;height:100vh;height:100dvh;overflow-y:auto;box-sizing:border-box;
+    padding:calc(env(safe-area-inset-top) + 12px) 14px
+            calc(env(safe-area-inset-bottom) + 16px);
+    align-items:center;justify-content:center;
+    background:linear-gradient(to bottom,#cfe7fa 0%,#eee0f4 45%,#f4d8e7 100%)}
+  #invOv.on{display:flex;animation:tFade .4s ease}
+  /* **`margin:auto` で まん中に すること。**`align-items:center` だけだと、
+     カードが 画面より 高い とき 上が 切れて スクロールしても 出てきません
+     （375x667 で 上が 19px 欠けた）*/
+  #invCard{width:min(100%,430px);margin:auto;border-radius:26px;text-align:center;
+    padding:9px 16px 16px;
+    background:linear-gradient(180deg,rgba(255,252,254,.96),rgba(255,244,251,.94));
+    box-shadow:0 14px 40px rgba(180,130,175,.30), inset 0 0 0 3px rgba(255,255,255,.9);
+    animation:pop .42s cubic-bezier(.2,1.4,.5,1)}
+  #invArt{display:block;width:100%;height:auto;aspect-ratio:1200 / 630;
+    object-fit:cover;border-radius:18px}
+  #invT{font-size:calc(19px * var(--fs));color:var(--pink-d);line-height:1.35;margin:8px 0 2px}
+  #invB{font-size:calc(12px * var(--fs));line-height:1.65;opacity:.82;margin:5px 0 10px}
+  #invOv .btn{width:100%;height:auto;min-height:50px;margin-bottom:8px;
+    font-size:calc(15px * var(--fs));border-radius:16px}
+  /* **色は その サービスの 色に そろえる。**ぜんぶ ピンクだと
+     どれが どれか わからず、押しまちがえます */
+  #invLine{background:linear-gradient(180deg,#5fd67a,#06c755);box-shadow:0 4px 0 #049e45}
+  #invLine:active{box-shadow:0 1px 0 #049e45}
+  #invIg{background:linear-gradient(120deg,#f9a03f,#e1306c 45%,#a833b9);box-shadow:0 4px 0 #8b2a97}
+  #invIg:active{box-shadow:0 1px 0 #8b2a97}
+  #invTt{background:linear-gradient(180deg,#4a4a58,#1c1c26);box-shadow:0 4px 0 #000}
+  #invTt:active{box-shadow:0 1px 0 #000}
+  #invCopy{background:linear-gradient(180deg,#d7c2ff,#b394f0);box-shadow:0 4px 0 #8b6ad0}
+  #invCopy:active{box-shadow:0 1px 0 #8b6ad0}
+  /* 「きろくを みせる」は 紹介とは 別ものなので、線で 区切って 下に おく */
+  #invSep{margin:12px 0 10px;border-top:2px dashed rgba(224,95,158,.28);
+    padding-top:10px;font-size:calc(11px * var(--fs));opacity:.7}
+  #invMsg{min-height:1.5em;font-size:calc(11.5px * var(--fs));color:var(--pink-d);
+    font-weight:800;margin:2px 0 6px}
   /* ============ はじめての人の 画面（#weOv） ============
      おかえりなさい（#backOv）と ならびは 同じだが、こちらは
      **1まいの 絵**（art/screens/welcome.webp）。canvas も rAF も 走らない。
@@ -895,7 +956,7 @@
         <button class="ctab" data-t="it">アイテム</button>
         <button class="ctab" data-t="fr">友だち</button>
         <button class="mini" id="colAv" aria-label="アバター">🎀</button>
-        <button class="mini" id="colShare" aria-label="記録をシェア">📤</button>
+        <button class="mini" id="colShare" aria-label="ともだちに おしえる">📤</button>
       </div>
       <div id="colStats"></div>
       <div id="colHint" style="display:none">📌 集めた仲間をタップすると ワザバーに貼ったり はがしたりできます（7こまで）</div>
@@ -1022,6 +1083,27 @@
 
 <!-- おかえりなさい。表紙の つぎ（プレゼントが ある日は その あと）。
      #app の 外に 置く（position:fixed で 画面ぜんぶを おおうため）-->
+<div id="invOv">
+  <div id="invCard">
+    <img id="invArt" src="art/screens/ogp.jpg" width="1200" height="630"
+         alt="おかしの国の なかまたち" draggable="false">
+    <div id="invT">ともだちに おしえる 💌</div>
+    <div id="invB">
+      リンクを おくると、ともだちは<br>
+      <b>ダウンロードなし</b>で すぐ あそべます
+    </div>
+    <div id="invMsg"></div>
+    <button class="btn" id="invShare">おくる 📤</button>
+    <button class="btn" id="invLine">LINE で おくる</button>
+    <button class="btn" id="invIg">Instagram に はる</button>
+    <button class="btn" id="invTt">TikTok に はる</button>
+    <button class="btn" id="invCopy">リンクを コピー 🔗</button>
+    <div id="invSep">じぶんの きろくを 見せたい ときは こちら</div>
+    <button class="btn" id="invScore">きろくを みせる 🏆</button>
+    <button class="btn" id="invClose" style="background:linear-gradient(180deg,#ffd9ec,#ffc2e0);color:var(--pink-d);box-shadow:0 4px 0 #f0a8cc">閉じる</button>
+  </div>
+</div>
+
 <div id="weOv">
   <div id="weCard">
     <img id="weArt" src="art/screens/welcome.webp" width="1200" height="896"
@@ -1668,7 +1750,7 @@ const skillBar = $('skillBar'), colHint = $('colHint');
    ひらく前に ほかの画面を とじる。
    下のボタンは もういちど おすと とじる（いま開いている画面は光る）。
    要素は あとの行で 作られるので、$() で そのつど 引く（TDZ よけ） */
-const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv'];
+const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv','invOv'];
 const panelOpen = id => $(id).classList.contains('on');
 function syncNav(){
   $('btnCol').classList.toggle('on',  panelOpen('colOv'));
@@ -9656,7 +9738,112 @@ async function shareScore(){
               '&url=' + encodeURIComponent(url), '_blank');
 }
 ovShare.onclick = shareScore;
-$('colShare').onclick = shareScore;   // 図鑑からもいつでもシェアできる
+
+/* ==========================================================
+   ともだちに おしえる
+   ----------------------------------------------------------
+   おくるのは **紹介ページ**（invite.html）で、ゲーム本体では ない。
+   いきなり 盤面が 出ても 何の ゲームか わからないし、
+   「ホーム画面に ついか」の やりかたも つたえられないため。
+
+   **App Store に 出す前でも ちゃんと はたらきます。**
+   web版が あるので、リンクを 開いた人は その場で あそべます。
+   ストアに 出たら invite.html の バッジを さしかえるだけ。
+
+   おくり先ごとに できることが ちがいます（2026-08 じてん）。
+
+     LINE       リンクを わたす web の 口が ある → 1タップで 送れる
+     X          おなじく ある
+     Instagram  **無い。**アプリを ひらく ことしか できない
+     TikTok     **無い。**おなじ
+
+   だから インスタと TikTok は「コピーしてから アプリを ひらく」。
+   貼るのは 本人（ストーリーの リンクスタンプ・プロフィール・
+   コメント）。ここを「送れます」と 書いては いけません ——
+   押しても 何も 起きないように 見えます。
+
+   いちばん 楽なのは けいたいの 共有シート（navigator.share）で、
+   入れてある アプリが ぜんぶ 出ます。だから これを いちばん上に。
+   ========================================================== */
+const INVITE_URL  = 'https://okashi-no-kuni.github.io/invite.html';
+const INVITE_TEXT = '魔法にかけられた おかしの国を いっしょに 救わない？🍰 '
+                  + 'ダウンロードなしで すぐ あそべるよ #おかしの国TD';
+const invOv = $('invOv'), invMsg = $('invMsg');
+
+function invSay(t){ invMsg.textContent = t; }
+/* コピーは 2とおり 用意する。navigator.clipboard は https と
+   localhost でしか うごかず、file:// で ひらいた ときに 落ちるため */
+async function invCopyLink(){
+  try{
+    await navigator.clipboard.writeText(INVITE_URL);
+    return true;
+  }catch(e){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = INVITE_URL;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+      document.body.append(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }catch(e2){ return false; }
+  }
+}
+/* アプリを ひらく。入っていない ときは 何も おきないので、
+   先に コピーを すませて、文で つたえてから ひらく */
+function invOpenApp(scheme, web){
+  const t = setTimeout(() => { window.open(web, '_blank', 'noopener'); }, 900);
+  /* もどって きたら（＝アプリが ひらいた）web版は ひらかない */
+  const back = () => { if (document.hidden) clearTimeout(t); };
+  document.addEventListener('visibilitychange', back, { once:true });
+  location.href = scheme;
+}
+function openInvite(){
+  closePanels('invOv');
+  invSay('');
+  invOv.classList.add('on');
+  /* けいたいの 共有シートが 無い ところ（パソコンの ブラウザ）では
+     出しっぱなしに しない。押しても 何も おきないボタンは 不具合に 見える */
+  $('invShare').style.display = navigator.share ? '' : 'none';
+  beep(700,.08,'triangle',.04);
+}
+function closeInvite(){ invOv.classList.remove('on'); resize(); }
+
+$('invShare').onclick = async () => {
+  tapSel();
+  try{ await navigator.share({ title:'まほうの おかしの国',
+                               text: INVITE_TEXT, url: INVITE_URL }); }
+  catch(e){ /* とじただけ。何も 言わない */ }
+};
+$('invLine').onclick = () => {
+  tapSel();
+  window.open('https://social-plugin.line.me/lineit/share?url='
+    + encodeURIComponent(INVITE_URL) + '&text=' + encodeURIComponent(INVITE_TEXT),
+    '_blank', 'noopener');
+};
+$('invIg').onclick = async () => {
+  tapSel();
+  const ok = await invCopyLink();
+  invSay(ok ? 'リンクを コピーしました。ストーリーの リンクスタンプか プロフィールに はってね'
+            : 'リンク: ' + INVITE_URL);
+  invOpenApp('instagram://app', 'https://www.instagram.com/');
+};
+$('invTt').onclick = async () => {
+  tapSel();
+  const ok = await invCopyLink();
+  invSay(ok ? 'リンクを コピーしました。プロフィールか コメントに はってね'
+            : 'リンク: ' + INVITE_URL);
+  invOpenApp('snssdk1233://', 'https://www.tiktok.com/');
+};
+$('invCopy').onclick = async () => {
+  tapSel();
+  const ok = await invCopyLink();
+  invSay(ok ? 'コピーしました 🔗 どこにでも はれます' : 'リンク: ' + INVITE_URL);
+};
+$('invScore').onclick = () => { tapSel(); shareScore(); };
+$('invClose').onclick = () => { tapSel(); closeInvite(); };
+
+$('colShare').onclick = openInvite;   // 図鑑の 📤 から
 
 /* すこし開いた本。絵文字の📕はとじていて、📖は開きすぎなので じぶんで描く。
    ページが手前にひらいて、中の紙が すこし見えている ぐらいの角度 */
