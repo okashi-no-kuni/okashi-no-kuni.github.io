@@ -1754,8 +1754,9 @@ const DEX_ENEMIES = Object.keys(ENEMIES).filter(k => !DEX_HIDE_EN.includes(k))
 /* ==========================================================
    でんせつのなかま：とうたつウェーブで出会えて、永続の「しゅくふく」をくれる
    ========================================================== */
-/* `bg` は art/screens/ の 背景。その ウェーブの 国に そろえてある
-   （60=マカロンのもり／120=ゆきのケーキやま／200=ひのくに）。
+/* 背景は **その とき いる 国から えらぶ**（DUEL_BG）。`bg` は その 予備。
+   国で えらぶので、伝説の ウェーブを 動かしても 絵が ずれません。
+   まだ 絵の ない 国は 予備の 1枚を つかいます。
    `hp`・`atk` は 1対1の たたかいの 数字で、ENEMIES とは 別もの ——
    あちらは 何十体も 出るが、こちらは 1体だけなので けたが ちがう */
 const LEGENDS = [
@@ -1770,6 +1771,17 @@ const LEGENDS = [
     fx:'祝福：早よびの待ち時間+3秒',         tease:'ウェーブ200で なにかが おきる…' },
 ];
 const hasLg = id => !!dex['lg_' + id];
+/* 国 → たいけつの 背景。**その国だと ひとめで わかる 目じるし**を 1つずつ
+   入れて 出してある（さばくのくに＝ピラミッドと スフィンクス、
+   キャラメルのさばく＝あめ色の岩と サバンナの木）。
+   ここに 無い 国は 予備（LEGENDS の bg）に なるので、
+   絵を 足したら **ここに 1行 書くこと** */
+const DUEL_BG = {
+  'マカロンのもり':   'duel_forest',
+  'ゆきのケーキやま': 'duel_snow',
+  'ひのくに':         'duel_fire',
+  'さばくのくに':     'duel_egypt',
+};
 /* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
    たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
@@ -8569,7 +8581,7 @@ function openDuel(L){
   closePanels();
   if (duelSt[L.id] === undefined){ duelSt[L.id] = DUEL_TRIES; saveDuel(); }
   duS = { L, ally: null, phase: 'intro' };
-  $('duBg').src = 'art/screens/' + L.bg + '.webp';
+  $('duBg').src = 'art/screens/' + (DUEL_BG[themeOf(wave).name] || L.bg) + '.webp';
   duOv.classList.add('on');
   duIntro();
   celebrate({ rays: 3, conf: 60, flash: true, fanfare: 1 });

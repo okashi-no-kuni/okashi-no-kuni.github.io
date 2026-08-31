@@ -141,6 +141,22 @@ const SCENES = {
      左右に 2体 立てる 場所を あける。
      色は THEMES の その国の 値を そのまま 文に して、盤面と つながって
      見えるように する（ちがう 色で 出すと 別の 国に 見える）*/
+  /* --- 12の国 ぜんぶ ぶん。**その国だと ひとめで わかる 目じるしを
+     1つ 決めて、それを 主役に する。**「砂漠」だけでは どこも 同じ
+     すな色に なるので、さばくのくには **ピラミッドと スフィンクス**、
+     キャラメルのさばくは **あめ色の 岩と サバンナの 木** で 分ける
+     （CLAUDE.md の「同じあめ色にすると 見わけられない」と 同じ考え）*/
+  duel_sugar: { file:'duel_sugar', aspect:'3:2', p: duelBg(
+    'シュガーガーデン', 'a bright sugar garden',
+    'A wide mint-green meadow (#d9f7e6) with rows of candy flowers and lollipop stems. '
+    + 'A cream-coloured brick path (#f0c9a0) winds through it, low hedges of green jelly, '
+    + 'and round topiary made of pastel gumdrops. Sunny and gentle.') },
+  duel_berry: { file:'duel_berry', aspect:'3:2', p: duelBg(
+    'いちごのおかしばたけ', 'a strawberry sweets field',
+    'Wide fields of pink strawberry cream (#ffe4ef) laid out in neat rows like farmland, '
+    + 'with giant ripe strawberries growing out of them and little white cream blossoms. '
+    + 'A biscuit-brown farm track (#c98a5e) runs between the rows. A small barn made of '
+    + 'shortcake stands in the distance.') },
   duel_forest: { file:'duel_forest', aspect:'3:2', p: duelBg(
     'マカロンのもり', 'a soft green macaron forest',
     'Rolling pastel-green hills (#c8e6c0) with tall trees whose canopies are giant '
@@ -152,12 +168,53 @@ const SCENES = {
     + 'mountains shaped like tiered cakes with thick white cream snow on top and pale '
     + 'blue icing (#a8c4e6) running down the sides. Sugar snowflakes drift in the air, '
     + 'and little snowdrifts of whipped cream sit in the foreground.') },
+  duel_choco: { file:'duel_choco', aspect:'3:2', p: duelBg(
+    'チョコレートのたに', 'a chocolate valley',
+    'A deep valley whose walls are layered chocolate cliffs in milk and cocoa brown '
+    + '(#8a5a34, #b07d4e), with rivers of melted chocolate running along the bottom and '
+    + 'waterfalls of chocolate pouring from ledges. Beige biscuit ground (#eed9c2) in '
+    + 'front, and wafer bridges crossing high above.') },
+  duel_ice: { file:'duel_ice', aspect:'3:2', p: duelBg(
+    'こおりのくに', 'a land of ice',
+    'A pale blue frozen land (#e2f3fc) of clear ice. Tall translucent ice crystals and '
+    + 'pillars like sugar candy rise out of a frozen mirror-smooth lake, and a palace of '
+    + 'blue ice glitters far in the distance. Everything sparkles faintly.') },
+  duel_sea: { file:'duel_sea', aspect:'3:2', p: duelBg(
+    'ソーダのうみべ', 'a soda seaside',
+    'A pale cream sand beach (#e8c49a) in the foreground meeting a bright aqua soda sea '
+    + '(#d3f2f5) full of rising bubbles, with soft foam like whipped cream at the water '
+    + 'line. Beach umbrellas made of striped candy and a few shells lie on the sand.') },
+  duel_caramel: { file:'duel_caramel', aspect:'3:2', p: duelBg(
+    'キャラメルのさばく', 'a caramel desert savanna',
+    'A warm amber caramel desert (#f5dfb0) of rolling dunes that look like poured '
+    + 'caramel, with tall flat-topped savanna trees whose canopies are golden brittle, '
+    + 'and big rounded caramel rocks (#b5722f). Warm afternoon light.') },
+  duel_egypt: { file:'duel_egypt', aspect:'3:2', p: duelBg(
+    'さばくのくに', 'an ancient desert kingdom',
+    'A pale cookie-coloured desert (#f9ead6) of fine sand. **Behind it stand three great '
+    + 'PYRAMIDS built of stacked biscuit blocks**, and beside them a big stone SPHINX '
+    + 'carved out of sandy-beige nougat. Rows of sandstone pillars carved with simple '
+    + 'shapes, a tall obelisk, and a few date palms with candy fronds. Clearly ancient '
+    + 'Egypt, but made of sweets and drawn in a soft cute pastel style, never realistic '
+    + 'or dusty.') },
   duel_fire: { file:'duel_fire', aspect:'3:2', p: duelBg(
     'ひのくに', 'a warm land of fire',
     'A warm coral-pink ground (#f6dcd8) with rivers of glowing caramel lava in soft '
     + 'coral and apricot (#c96a4a, #ffb07a) - **warm and glowing, never harsh red**. '
     + 'Behind it stand gentle volcano hills topped with cream, and floating embers that '
     + 'look like tiny golden sugar sparks drift up through the air.') },
+  duel_night: { file:'duel_night', aspect:'3:2', p: duelBg(
+    'よぞらのくに', 'a night-sky land',
+    'A soft lavender night land (#ded4f6) under a deep starry sky. Hills of dark violet '
+    + 'jelly, glowing golden stars scattered across the ground like dropped candy, a big '
+    + 'pale crescent moon low on the horizon, and a path of gold sugar (#d9b96a) leading '
+    + 'towards it. Dreamy, calm and sparkling - never gloomy or dark.') },
+  duel_rainbow: { file:'duel_rainbow', aspect:'3:2', p: duelBg(
+    'にじのてんくう', 'a rainbow sky kingdom',
+    'Floating islands of pastel cloud and cotton candy high in a bright sky, joined by '
+    + 'wide rainbow bridges. Golden sugar railings (#d9a54e), drifting clouds like '
+    + 'whipped cream, and a soft lilac-to-pink gradient sky (#eadcf8, #f6d9ee) with '
+    + 'sunbeams. Airy and magical.') },
 };
 
 /* 対戦の 背景は どれも 同じ 作りに する。ちがうのは 景色だけ。
