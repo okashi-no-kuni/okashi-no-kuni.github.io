@@ -466,6 +466,35 @@
     font-size:calc(16px * var(--fs));border-radius:16px}
   #backNew{background:linear-gradient(180deg,#d7c2ff,#b394f0);box-shadow:0 4px 0 #8b6ad0}
   #backNew:active{box-shadow:0 1px 0 #8b6ad0}
+  /* ============ はじめての人の 画面（#weOv） ============
+     おかえりなさい（#backOv）と ならびは 同じだが、こちらは
+     **1まいの 絵**（art/screens/welcome.webp）。canvas も rAF も 走らない。
+     絵は 切らずに ぜんぶ 見せる（表紙と 同じ考え。はしの タフィと
+     こうもりが 切れると「みんな ならんでいる」に 見えない）*/
+  #weOv{position:fixed;inset:0;z-index:39;display:none;
+    width:100vw;height:100vh;height:100dvh;overflow-y:auto;box-sizing:border-box;
+    padding:calc(env(safe-area-inset-top) + 12px) 14px
+            calc(env(safe-area-inset-bottom) + 16px);
+    align-items:center;justify-content:center;
+    background:linear-gradient(to bottom,#cfe7fa 0%,#eee0f4 45%,#f4d8e7 100%)}
+  #weOv.on{display:flex;animation:tFade .4s ease}
+  #weCard{width:min(100%,430px);border-radius:26px;text-align:center;
+    padding:9px 16px 16px;
+    background:linear-gradient(180deg,rgba(255,252,254,.96),rgba(255,244,251,.94));
+    box-shadow:0 14px 40px rgba(180,130,175,.30), inset 0 0 0 3px rgba(255,255,255,.9);
+    animation:pop .42s cubic-bezier(.2,1.4,.5,1)}
+  /* たてよこ比は 原画（1200x896）そのまま。ここを 変えると 絵が ゆがむ */
+  #weArt{display:block;width:100%;height:auto;aspect-ratio:1200 / 896;
+    border-radius:20px}
+  #weT{font-size:calc(19px * var(--fs));color:var(--pink-d);line-height:1.35;
+    margin:8px 0 2px}
+  /* 本文は 1行ずつ。**行の あいだを あけること** ——4つの ことを
+     つづけて 書くと、どれが「いま やること」か 分からない */
+  #weB{font-size:calc(13px * var(--fs));line-height:1.65;opacity:.82;
+    margin:6px 0 12px}
+  #weB b{color:var(--pink-d);font-weight:800}
+  #weOv .btn{width:100%;height:auto;min-height:52px;
+    font-size:calc(17px * var(--fs));border-radius:16px}
   /* 読みあげ用にだけ のこす 題字（見た目は 絵がわ）*/
   .tSr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
     clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -993,6 +1022,20 @@
 
 <!-- おかえりなさい。表紙の つぎ（プレゼントが ある日は その あと）。
      #app の 外に 置く（position:fixed で 画面ぜんぶを おおうため）-->
+<div id="weOv">
+  <div id="weCard">
+    <img id="weArt" src="art/screens/welcome.webp" width="1200" height="896"
+         alt="おかしの国の おしろの まえに あつまった なかまたち" draggable="false">
+    <div id="weT">魔法にかけられた<br>おかしの国を 救いに行こう！</div>
+    <div id="weB">
+      敵と戦って たくさん<b>仲間</b>を増やしてね<br>
+      遊びかたは <b>📕</b> のところにあるよ<br>
+      さあ　ゲームをはじめよう！
+    </div>
+    <button class="btn" id="weGo">ゲームを はじめる ▶</button>
+  </div>
+</div>
+
 <div id="backOv">
   <div id="backCard">
     <canvas id="backCv" width="640" height="420" aria-hidden="true"></canvas>
@@ -7205,6 +7248,8 @@ const CREATURES = [
   ['youkan',   'ようかん',   ['#5b3a4a','#8a5a6a','#3a2430'], 2,'ch'],
   // --- 洋菓子 ---
   ['candy',    'キャンディ', ['#ff8fc4','#ffd0e2','#e05f9e'], 1,'ch'],
+  /* にじいろの ねじりあめ。笛を ふく子。はじめての 画面（welcome）にも 出る */
+  ['candy',    'タフィ',     ['#ffb3d4','#a8e8d8','#ffd76e'], 3,'ch',{key:'taffy'}],
   ['cookie',   'クッキー',   ['#e0b878','#8a5a30','#c99a52'], 1,'ch'],
   ['donut',    'ドーナツ',   ['#e0a860','#ff9ec9','#c98a44'], 1,'ch'],
   ['purin',    'プリン',     ['#ffe08a','#c98a4a','#ffd05e'], 2,'ch'],
@@ -8401,7 +8446,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -12871,6 +12916,7 @@ function closeBack(){
   if (backRaf){ cancelAnimationFrame(backRaf); backRaf = 0; }
   resize();
 }
+$('weGo').onclick = () => { tapSel(); closeWelcome(); afterWelcome(); };
 $('backGo').onclick = () => {          // つづきから（tryResume が もう もどしている）
   tapSel(); closeBack();
 };
@@ -12878,7 +12924,39 @@ $('backNew').onclick = () => {         // さいしょから
   tapSel(); clearRun(); reset(); syncHUD(); closeBack();
 };
 
+/* ============ はじめての人の 画面 ============
+   「はじめる」の すぐ あと、**今日のプレゼントより 先**に 出す。
+   まだ 何も 持っていない人に いきなり プレゼントを 見せても、
+   何の ゲームか 分からないまま ⭐が ふえるだけに なるため。
+
+   出すのは **ほんとうに はじめての人だけ**。
+   - `sweetTD.welcomed` … 1回 見たら 二度と 出さない（📕の 光と 同じ 旗）
+   - `sweetTD.run` … つづきが ある＝もう あそんでいる
+   - `sweetTD.login` … 1回でも プレゼントを 受け取っている
+   下2つを 見るのは、**この版より 前から あそんでいる人**に 旗が
+   立っていないため。旗だけで 見ると あの人たちにも 出てしまう */
+const weOv = $('weOv');
+function openWelcome(){
+  if (location.search.includes('dbg=1')) return false;
+  try{
+    if (localStorage.getItem('sweetTD.welcomed')) return false;
+    if (localStorage.getItem('sweetTD.run'))      return false;
+    if (localStorage.getItem('sweetTD.login'))    return false;
+  }catch(e){ return false; }
+  weOv.classList.add('on');
+  return true;
+}
+function closeWelcome(){
+  weOv.classList.remove('on');
+  try{ localStorage.setItem('sweetTD.welcomed', dateStr()); }catch(e){}
+  resize();
+}
 function afterTitle(){
+  /* はじめての人には まず ようこその 画面。とじたら つづきを やる */
+  if (openWelcome()) return;
+  afterWelcome();
+}
+function afterWelcome(){
   const rest = ov.classList.contains('on');
   if (rest && lifeTimer){ clearInterval(lifeTimer); lifeTimer = null; }
   /* 💗の 回復まちの 画面が 出ているときは「おかえりなさい」を 出さない。

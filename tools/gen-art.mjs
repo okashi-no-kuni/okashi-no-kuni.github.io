@@ -97,6 +97,47 @@ const STYLE = [
    だから ART の エントリが `pose` を 持っていたら そちらを つかう */
 const POSE_FRONT = 'Front facing, whole body visible, centered, generous margin on all sides.';
 
+/* 画面の 絵。キャラでは ないので わくに そろえたり 切りぬいたり しない
+   （まわりの 景色まで ふくめて 1まいの 絵なので、切ると こわれる）。
+   出しかた: node tools/gen-art.mjs --scene welcome
+   出しさきは art/screens/。art/sprites/ に 入れると check-chars が
+   「ART_KEYS に 無い」と おこる */
+const SCENES = {
+  welcome: {
+    file: 'welcome',
+    aspect: '4:3',
+    /* 手本に 王さま・王妃さま・おうじさま・おひめさま・タフィを 入れる。
+       この5人は 図鑑にも 出るので、**別人に なると 気づかれる**。
+       まじょのときと 同じで、おなじ子を 出すなら 本人を 手本に 入れること */
+    refs: ['king', 'queen', 'prince', 'princess', 'taffy'],
+    p:'A wide storybook illustration for the opening screen of a cute pastel '
+    + 'tower-defense game, in the same art style as the attached characters.\n\n'
+    + 'SETTING: a sunny candy kingdom. In the background stands a big gingerbread and '
+    + 'biscuit castle with cream-swirled towers and little flags, gingerbread houses, '
+    + 'cotton-candy trees, lollipops and rolling pastel hills under a soft blue sky '
+    + 'with fluffy clouds.\n\n'
+    + 'FOREGROUND: all the characters stand together in one friendly row on the path in '
+    + 'front of the castle, facing the viewer, smiling and waving, as if posing for a '
+    + 'group photo. From left to right:\n'
+    + '1. The rainbow twisted taffy character in a small black top hat, playing a flute.\n'
+    + '2. A small round layered shortcake character with a cherry on top, waving.\n'
+    + '3. The KING - the tall character in the tall crown and the long fur-trimmed royal '
+    + 'robe covered in fruit and cream, with a big brown beard - shown here laughing '
+    + 'with his mouth open and one arm raised in a big welcoming wave.\n'
+    + '4. The QUEEN - the elegant lady with the tiara, curled brown hair and the pale '
+    + 'gown - shown here with her eyes closed in a warm smile, both hands clasped '
+    + 'together in front of her.\n'
+    + '5. The PRINCESS in the apple-red and cream gown with a flower crown.\n'
+    + '6. The PRINCE in the strawberry-green outfit with a small crown and a shield.\n'
+    + '7. A round donut character with sprinkles, wearing an apron.\n'
+    + '8. Standing right beside them as friends, not fighting: a big soft chocolate '
+    + 'golem, a pale green slime, a small spiky dark creature, and a little bat, all '
+    + 'smiling shyly and waving too.\n\n'
+    + 'Everyone is roughly the same height in the row so no one is hidden. Warm, '
+    + 'peaceful and welcoming - nobody is fighting. No text, no letters, no captions, '
+    + 'no logo, no watermark, no frame or border.' },
+};
+
 /* わくの 中での 大きさ。長辺で そろえる。
    高さで そろえると、しっぽが 横に 流れる おばけが 横に はみ出す。
    長辺なら どの 形でも わくに おさまり、まわりの あきも そろう */
@@ -350,6 +391,15 @@ const ART = {
   ゴーレム: { key:'golem', p:'A chunky golem built from rounded lavender grey stone blocks, thick short arms, a small head, standing on two stubby legs.' },
   まほうつかい: { key:'wizard', p:'A small chibi wizard standing, deep blue robe and a tall pointed blue hat, a long soft white beard, holding a wooden staff topped with a mint green gem.' },
   ゆきのじょおう: { key:'snowqueen', p:'A small chibi snow queen standing, pale ice blue gown, long white blue hair, a crown of pale ice crystals.' },
+  /* にじいろの ねじりあめ。おかしの国の 楽しい がわを 見せる 子なので、
+     笛を ふいている ところに する（立っているだけだと ただの あめに 見える）*/
+  タフィ: { key:'taffy',
+    p:'A cheerful taffy candy character standing on two legs. Its body is a long soft '
+    + 'twisted stick of taffy in rainbow stripes - pink, peach, yellow, mint and pale '
+    + 'blue - spiralling around the body. It has short rounded arms and legs in the same '
+    + 'rainbow candy, a small black top hat sitting on its head, and it is holding a '
+    + 'slim pale gold flute up to its mouth with both hands, playing it happily with its '
+    + 'eyes closed in two happy curves.' },
   まじょ: { key:'witch', p:'A small chibi witch girl standing, purple dress and a wide pointed purple hat, holding a wooden broom.' },
   /* 「おかえりなさい」の 画面 だけの 1体。盤面の まじょ（witch）は 立って いて
      表情も 変えられない ので、あの 画面に そのまま 貼ると 同じ絵が 2か所に
@@ -489,7 +539,7 @@ async function listModels(){
 
 /* 画像を 1枚 もらう。返事の どこに 画像が 入るかは モデルで ちがうので、
    inlineData を もつ part を さがす形にしてある */
-async function generate(model, prompt, refs = [], pose = ''){
+async function generate(model, prompt, refs = [], pose = '', aspect = '1:1'){
   /* 手本を さきに 置いて、そのあと 文。あとに 置くと 文の ほうが 弱まる */
   const reqParts = [];
   for (const k of refs){
@@ -500,7 +550,7 @@ async function generate(model, prompt, refs = [], pose = ''){
     + (refs.length ? '\n\n' + REF_LINE : '') + '\n\n' + prompt });
   const body = {
     contents: [{ role:'user', parts: reqParts }],
-    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } },
+    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: aspect } },
   };
   const j = await call(`models/${model}:generateContent`, {
     method: 'POST',
@@ -539,6 +589,32 @@ if (!args.length || args[0] === '--models'){ await listModels(); process.exit(0)
 /* ゲームに はる ぶんを 出す。art/ の 絵から 作るので、出しなおさない。
    もとの 絵（art/*.png）は 白い 背景の まま のこす。モデルが かえした
    ものに 近い ほうが、あとで 別の 抜きかたを 試せるため */
+if (args[0] === '--scene'){
+  const sc = SCENES[args[1]];
+  if (!sc) die('--scene の あとに ' + Object.keys(SCENES).join(' / ') + ' のどれかを');
+  if (!GEN_MODEL) die('GEMINI_IMAGE_MODEL が きまっていません');
+  const { buf, mime } = await generate(GEN_MODEL, sc.p, sc.refs || [], ' ', sc.aspect);
+  if (!EXT[mime]) die(`知らない 形式 ${mime}`);
+  const out = resolve(root, 'art/screens');
+  mkdirSync(out, { recursive: true });
+  const f = `${sc.file}_source.${EXT[mime]}`;
+  writeFileSync(resolve(out, f), buf);
+  console.log(`art/screens/${f} (${(buf.length/1024).toFixed(0)}KB) ✅`);
+  /* ゲームが 読むのは WebP。**大きさは 変えない**（表紙と 同じ考え。
+     ちぢめると 顔が つぶれる）。原画は のこす —— 出しなおすと
+     別の絵に なるので、あとから 品質だけ 変えたく なったとき 要る */
+  const webp = await withPage(page => page.evaluate(async src => {
+    const im = new Image(); im.src = src; await im.decode();
+    const c = document.createElement('canvas');
+    c.width = im.width; c.height = im.height;
+    c.getContext('2d').drawImage(im, 0, 0);
+    return c.toDataURL('image/webp', 0.92).split(',')[1];
+  }, 'data:' + mime + ';base64,' + buf.toString('base64')));
+  const wb = Buffer.from(webp, 'base64');
+  writeFileSync(resolve(out, `${sc.file}.webp`), wb);
+  console.log(`art/screens/${sc.file}.webp (${(wb.length/1024).toFixed(0)}KB) ✅`);
+  process.exit(0);
+}
 if (args[0] === '--sprites'){
   const dir = resolve(root, 'art'), out = resolve(root, 'art/sprites');
   mkdirSync(out, { recursive: true });
