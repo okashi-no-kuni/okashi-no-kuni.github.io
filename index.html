@@ -1095,52 +1095,123 @@
   .pkC{font-size:calc(10px * var(--fs));color:#e0a52e}
   .pkS{font-size:calc(9px * var(--fs));opacity:.6}
 
-  /* ---------- コレクション図鑑 ---------- */
-  #colOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
-    background:rgba(255,244,251,.96);backdrop-filter:blur(6px);padding:12px;overflow-y:auto;z-index:2}
+  /* ---------- コレクション図鑑（Design System v1） ----------
+     ねらいは「魔法の おかしの国の コレクションブック」。
+     ピンク 一色を やめて、**アイボリー を 地に、ピンク・ラベンダー・金を
+     さし色**に します。おおよその 見た目の わりあいは
+
+       アイボリー／白 65% ／ ピンク 15% ／ ラベンダー 10% ／ 金 7%
+
+     色は ここ 1か所（`#colOv` の 変数）で 決めます。**ほかの 画面には
+     ひびきません** ——`.mini` のような 共有の クラスも、かならず
+     `#colOv` の 中だけに しぼって 書いて あります */
+  #colOv{
+    /* 地 */
+    --dxIvory:#fffaf3;      /* パールアイボリー */
+    --dxWhite:#fffdfc;      /* パールホワイト */
+    --dxPaper:rgba(255,253,250,.72);
+    /* さし色 */
+    --dxPink:#ffd7e6;       /* パールピンク */
+    --dxPinkD:#c9457f;      /* こい ローズ（字に つかう）*/
+    --dxLav:#ded3f5;        /* ラベンダー */
+    --dxLavD:#8a72c8;       /* ソフトバイオレット（字に つかう）*/
+    --dxGold:#d9b871;       /* シャンパンゴールド */
+    --dxGoldL:#f4e4bd;
+    --dxGoldD:#a8813a;
+    /* 文字 */
+    --dxInk:#4a3550;        /* ディーププラム */
+    --dxInk2:#7a6580;
+    /* まだ いない子 */
+    --dxGray:#b3aac2;       /* ラベンダーグレー */
+    --dxGrayL:#e9e4f0;      /* パールグレー */
+    /* 線と かげ。**黒い かげは つかわない**（紫がかった やわらかい かげ）*/
+    --dxLine:rgba(180,160,205,.30);
+    --dxShadow:0 2px 6px rgba(150,110,170,.12);
+    --dxShadowUp:0 6px 18px rgba(150,110,170,.18);
+
+    position:absolute;inset:0;display:none;flex-direction:column;gap:8px;
+    border-radius:20px;padding:12px;overflow-y:auto;z-index:2;
+    /* アイボリー を 地に、上に ごく淡い ラベンダー、下に ごく淡い ピンク。
+       ほかの メニュー（.97）に そろえる */
+    background:
+      radial-gradient(120% 42% at 50% 0%,  rgba(222,211,245,.42), rgba(222,211,245,0) 70%),
+      radial-gradient(120% 40% at 50% 100%,rgba(255,215,230,.38), rgba(255,215,230,0) 72%),
+      rgba(255,250,243,.97);
+    backdrop-filter:blur(6px);
+    box-shadow:inset 0 0 0 1px rgba(217,184,113,.22)}
   #colOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
-  #colHead{display:flex;align-items:center;gap:6px;font-size:calc(14px * var(--fs));color:var(--pink-d)}
+  #colHead{display:flex;align-items:center;gap:6px;font-size:calc(14px * var(--fs));color:var(--dxInk)}
   /* 見出しは スクロールしても のこす。ずかんも ガイドも たてに 長いので、
      下まで スクロールすると 「閉じる」が 見えなくなっていた（実機の 報告）。
-     うわに 12px の padding があるので、top を -12px にして ぴたりと はりつける */
+     うわに 12px の padding があるので、top を -12px にして ぴたりと はりつける。
+     **この -12px は 親の padding と 対。理由を 知らずに 変えないこと** */
+  /* **`#colHeadH` は ガイド（📕）の 見出しです。**図鑑と 同じ 規則を つかって
+     いるので、ここを 書きかえると **ガイドの 見た目まで 変わります**
+     （じっさい 1.46% の 画素が 変わりました）。だから 位置の 話だけを
+     ここに のこして、色は 下の `#colOv #colHead` で かけます */
   #colHead, #colHeadH{position:sticky;top:-12px;z-index:4;
     background:rgba(255,244,251,.98);padding:12px 6px 8px;margin:-12px -6px 0;
     border-radius:0 0 12px 12px}
+  /* 図鑑の 見出しだけ アイボリーに して、下に 金の 細い 線を 1本。
+     スクロールで カードが もぐりこむ ことが 分かるように */
+  #colOv #colHead{
+    background:linear-gradient(180deg,rgba(255,253,250,.99),rgba(255,250,243,.97));
+    box-shadow:0 1px 0 rgba(217,184,113,.35), 0 6px 12px -6px rgba(150,110,170,.25)}
   /* 数は「そのタブの 中で いくつ 集めたか」なので、タブや 見出しの となりでは なく
      **かぞえている ならびの 真上**に 置く。タブを かえると 数も かわるため */
   /* たて方向の flex の中なので、ちぢませない（`flex:0 0 auto` が ないと
      高さ0に つぶれて **文字が まるごと 消える**。#colTabs と 同じ わな） */
-  #colTtl{flex:0 0 auto;font-size:calc(13px * var(--fs));color:var(--pink-d);font-weight:700;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
-  #colCount{font-size:calc(12px * var(--fs));opacity:.8}
+  #colTtl{flex:0 0 auto;font-size:calc(13px * var(--fs));color:var(--dxInk);font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;
+    letter-spacing:.02em;
+    /* 左右に 金の 細い 線を そえて「本の 見出し」に する */
+    display:flex;align-items:center;justify-content:center;gap:9px}
+  #colTtl::before,#colTtl::after{content:'';flex:1 1 0;max-width:52px;height:1px;
+    background:linear-gradient(90deg,rgba(217,184,113,0),rgba(217,184,113,.6))}
+  #colTtl::after{transform:scaleX(-1)}
+  #colCount{font-size:calc(12px * var(--fs));color:var(--dxPinkD);font-weight:800;
+    font-variant-numeric:tabular-nums}
   /* 見出しの 3つ（ショップ・おだい・合言葉）は **同じ幅**。flex:1 1 0 で
      のこりを 等分する。文字数が ちがっても はこの 大きさは そろう。
-     入りきらないときは fitHead が 名前を みじかくする */
-  #colHead .mini{flex:1 1 0;min-width:0;padding:0 4px;height:32px;
+     入りきらないときは fitHead が 名前を みじかくする。
+
+     **こい ピンクに しないこと。**ここは「行き先」を えらぶ ところで、
+     「押すと 何かが 買える」ボタンでは ありません。パールホワイトの 地に
+     細い 金の ふち、が Design System v1 の きまりです */
+  #colOv #colHead .mini{flex:1 1 0;min-width:0;padding:0 4px;height:32px;
     font-size:calc(11px * var(--fs));
-    display:inline-flex;align-items:center;justify-content:center;gap:2px;line-height:1;
-    white-space:nowrap;overflow:hidden}
-  /* ✕ の 大きさは 🎀📤 と そろえて --icoW（上で 決めうち）。
+    display:inline-flex;align-items:center;justify-content:center;gap:3px;line-height:1;
+    white-space:nowrap;overflow:hidden;
+    color:var(--dxInk);font-weight:700;
+    border:1px solid rgba(217,184,113,.55);border-radius:11px;
+    background:linear-gradient(180deg,var(--dxWhite),#fff4f8);
+    box-shadow:var(--dxShadow)}
+  #colOv #colHead .mini:active{transform:translateY(1px);box-shadow:none}
+  /* ✕ の 大きさは 🎀📤 と そろえて --icoW（下で 決めうち）。
      **実寸を 測って 合わせては いけない** ——ひらいた 直後は まだ はばが
      決まっておらず、6px ずれた（じっさいに そうなった）。
-     `#colHead .mini`（id+class）より 強く 書かないと 等分に 巻きこまれる */
-  #colHead #colClose{font-size:calc(15px * var(--fs))}
+     `#colHead .mini`（id+class）より 強く 書かないと 等分に 巻きこまれる。
+
+     ✕ は **見つけやすさ が いちばん だいじ**なので、ここだけ
+     ラベンダーの 地に して 「閉じる」だと ひとめで 分かるようにする */
+  #colOv #colHead #colClose{font-size:calc(15px * var(--fs));font-weight:800;
+    color:var(--dxLavD);
+    border-color:rgba(138,114,200,.45);
+    background:linear-gradient(180deg,#fbf8ff,var(--dxLav))}
   /* とても せまい 画面でも 見出しが 切れないように つめる */
   @media (max-width:359px){
     #colTtl{font-size:calc(12px * var(--fs))}
-    #colHead .mini{padding:0 2px}
+    #colOv #colHead .mini{padding:0 2px}
   }
-  /* タブが12こに ふえたので、はみ出したぶんは 横に スクロールさせる */
-  /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
-  /* **`overflow-x:auto` を つけないこと。**スクロールわく に なると
-     たてにも 切られて、🎀📤 の かげ（box-shadow:0 3px 0）が
-     下で ちょん切れます（実機の 報告）。
-     いまは タブが flex:1 1 0 で ちぢむので、はみ出すことは ありません */
-  #colTabs{display:flex;gap:5px;flex:0 0 auto}
   /* タブの行。**名前のタブ5つ（仲間〜友だち）だけを 等分**し、
      🎀📤 は 絵文字ボタンなので 等分には 入れない（下の --icoW の 四角）。
      「アイテム」は 4文字あって そのままでは 入らないので、
-     fitHead が --fsTab を さげて 入るまで 文字を 小さくする（fitStat と 同じ考え）*/
+     fitHead が --fsTab を さげて 入るまで 文字を 小さくする（fitStat と 同じ考え）。
+
+     **`overflow-x:auto` を つけないこと。**スクロールわく に なると
+     たてにも 切られて、🎀📤 の かげが 下で ちょん切れます（実機の 報告）*/
+  /* たて方向の flex の中では ちぢんで 消えてしまうので、ちぢませない */
+  #colTabs{display:flex;gap:5px;flex:0 0 auto}
   #colTabs > *{height:32px;border-radius:11px;padding:0 2px;
     display:inline-flex;align-items:center;justify-content:center;line-height:1;
     font-size:calc(11px * var(--fs) * var(--fsTab, 1));
@@ -1148,7 +1219,19 @@
   #colTabs .ctab{flex:1 1 0;min-width:0}
   /* 🎀📤 と ✕ は おなじ大きさの 四角。1か所（--icoW）で きめる */
   :root{--icoW:36px}
-  #colTabs .mini, #colHead #colClose{flex:0 0 var(--icoW);width:var(--icoW);padding:0}
+  /* `#colOv #colHead .mini`（0,2,1）より 強く 書かないと ✕ に 左右の padding が
+     ついて 中の字が よる。だから ここも #colOv から 書く */
+  #colOv #colTabs .mini, #colOv #colHead #colClose{flex:0 0 var(--icoW);width:var(--icoW);padding:0}
+  /* 🎀📤 は 見出しの ボタンと おなじ 作り（白＋金のふち）*/
+  #colOv #colTabs .mini{color:var(--dxInk);
+    border:1px solid rgba(217,184,113,.55);border-radius:11px;
+    background:linear-gradient(180deg,var(--dxWhite),#fff4f8);
+    box-shadow:var(--dxShadow)}
+  #colOv #colTabs .mini:active{transform:translateY(1px);box-shadow:none}
+  /* **`.ctab` は 図鑑だけの ものでは ありません** ——「仲間を選ぶ」（#pickOv）の
+     ★1〜★6 も 同じ クラスです。だから 素の 規則は そのまま のこして、
+     Design System v1 の 見た目は **`#colOv` の 中だけ**に かけます。
+     ここを まるごと 書きかえると、あちらのタブから 色も ふちも 消えます */
   .ctab{border:none;font:inherit;font-size:calc(11px * var(--fs) * var(--fsTab, 1));
     color:var(--ink);background:rgba(255,255,255,.65);cursor:pointer}
   /* えらんでいるタブは **うすいピンク**。ショップ・🎀📤 のような
@@ -1156,54 +1239,98 @@
      字は こいピンクに して、うすい 地でも 読めるようにする */
   .ctab.sel{background:linear-gradient(180deg,#ffe3f1,#ffcbe4);color:var(--pink-d);
     font-weight:700;box-shadow:0 2px 0 #f5b4d5}
-  #colDone{background:linear-gradient(90deg,#ffe9b8,#ffd9ec);border-radius:12px;padding:8px;
-    text-align:center;font-size:calc(12.5px * var(--fs))}
-  #colGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-  .cCard{background:rgba(255,255,255,.85);border:2px solid #ffd9ec;border-radius:14px;
-    padding:7px 3px 6px;text-align:center}
-  .cCard.no{opacity:.6;filter:grayscale(.7)}
+  /* ここから 下が 図鑑だけの 上書き ----
+     えらんでいないタブ ——パールホワイトに うすい ラベンダーの ふち */
+  /* **ふちは `border` では なく `inset` の かげで 引くこと。**
+     タブは flex:1 1 0 で 等分するので、1px の border を 足すと
+     **中に つかえる はばが 2px へって、字が よけいに 切れます**
+     （320px で 18px → 16px に なり、「アイテム」が さらに 欠けました）。
+     inset の かげなら 見た目は 同じで、はばを 1pxも 取りません */
+  #colOv .ctab{color:var(--dxInk);background:var(--dxWhite);font-weight:600;
+    box-shadow:inset 0 0 0 1px rgba(180,160,205,.38)}
+  /* えらんでいるタブは **ピンク〜ラベンダー**。金の 細い ふちを そえて、
+     いま どこを 見ているかを はっきりさせる */
+  #colOv .ctab.sel{
+    background:linear-gradient(180deg,#ffe7f1,#efe2fb);
+    color:var(--dxPinkD);font-weight:800;
+    box-shadow:inset 0 0 0 1.5px var(--dxGold), inset 0 2px 0 rgba(255,255,255,.9),
+               0 2px 0 rgba(217,184,113,.35)}
+  /* 完成の 帯 ——金を 主役に */
+  #colDone{background:linear-gradient(90deg,#fdf1d8,#ffe7f1);
+    border:1px solid rgba(217,184,113,.5);border-radius:12px;padding:8px;
+    text-align:center;font-size:calc(12.5px * var(--fs));color:var(--dxGoldD);font-weight:700;
+    box-shadow:var(--dxShadow)}
+  /* ---- ならび ----
+     **`repeat(3,1fr)` を やめました。**`1fr` は `minmax(auto,1fr)` なので
+     マスの 中みより 細くは ならず、320px では 3列が わくに 入りきらずに
+     **3列目が 右で 切れて いました**（実測：ならびの 幅 242px に 対して
+     わくは 192px）。`auto-fill`＋`minmax(92px,1fr)` に すると、
+
+       320px  わく192 → **2列**（92.5px ずつ・切れない）
+       375px  わく246 → **2列**（119.5px ずつ）
+       393px  わく345 → 3列（110px ずつ・**いままでと 同じ**）
+       430px  わく381 → 3列（122px ずつ・**いままでと 同じ**）
+
+     393px 以上は 1pxも 変わりません */
+  #colGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:7px}
+  /* ---- 1マス ----
+     キャラが 主役。地は パールホワイトに して、絵を いちばん 目立たせる */
+  .cCard{position:relative;
+    background:linear-gradient(180deg,var(--dxWhite),#fff7fa);
+    border:1.5px solid rgba(180,160,205,.30);border-radius:14px;
+    padding:7px 3px 6px;text-align:center;color:var(--dxInk);
+    box-shadow:var(--dxShadow)}
+  .cCard.no{opacity:.62;filter:grayscale(.7)}
   /* まだ いない子は うすく。ただし カードごと すけさせると わくが 消えて、
      字だけが 宙に うかんで 見える。わくは のこして 中身だけ うすくする */
-  .cCard.yet{background:rgba(255,255,255,.5);border-color:#f6e6f0;filter:grayscale(.45)}
+  .cCard.yet{background:linear-gradient(180deg,#fbf9fd,#f5f1f8);
+    border-color:var(--dxGrayL);filter:grayscale(.45);box-shadow:none}
   .cCard.yet canvas{opacity:.4}
-  .cCard.yet .cNm{font-weight:400;color:#b5a2b3}
-  .cCard.yet .cTt{color:#bdaaba;opacity:.85}
+  .cCard.yet .cNm{font-weight:500;color:var(--dxGray)}
+  .cCard.yet .cTt{color:var(--dxGray);opacity:.85}
   /* 強さの わく。角丸と グラデの ふちを 両立させるため、
-     border は とうめいに して background の 2枚がさねで ふちを ぬる */
+     border は とうめいに して background の 2枚がさねで ふちを ぬる
+     （表紙・導入画面の カードと おなじ 作り）*/
   /* まだ居ない子（.yet）は 全体が 白っぽく なるので、わくの 色まで
      消えないように 色ぬきを よわめ、わくは 3pxに 太らせる */
   .cCard.tGold.yet,.cCard.tSilv.yet,.cCard.tRain.yet{filter:grayscale(.15)}
   .cCard.tGold.no,.cCard.tSilv.no,.cCard.tRain.no{filter:grayscale(.15);opacity:.85}
-  .cCard.tGold,.cCard.tSilv,.cCard.tRain{border-width:3px}
+  .cCard.tGold,.cCard.tSilv,.cCard.tRain{border-width:2.5px;border-style:solid}
   .cCard.tGold{border-color:transparent;
-    background:linear-gradient(rgba(255,255,255,.88),rgba(255,255,255,.88)) padding-box,
-               linear-gradient(135deg,#e8b84a,#fff3c0 30%,#d9a63a 55%,#ffe9a0 80%,#e8b84a) border-box}
+    background:linear-gradient(180deg,var(--dxWhite),#fffaf0) padding-box,
+               linear-gradient(135deg,#c9a24e,#fdf0cd 28%,#d9b871 55%,#fff4d8 78%,#c9a24e) border-box;
+    box-shadow:0 2px 7px rgba(190,150,70,.20)}
   .cCard.tSilv{border-color:transparent;
-    background:linear-gradient(rgba(255,255,255,.88),rgba(255,255,255,.88)) padding-box,
-               linear-gradient(135deg,#aeb8c8,#f4f7fb 30%,#98a4b6 55%,#e8edf4 80%,#aeb8c8) border-box}
+    background:linear-gradient(180deg,var(--dxWhite),#f9fbff) padding-box,
+               linear-gradient(135deg,#a7b1c4,#f6f9fd 28%,#94a1b5 55%,#e6ecf5 78%,#a7b1c4) border-box;
+    box-shadow:0 2px 7px rgba(130,145,175,.20)}
   .cCard.tRain{border-color:transparent;
-    background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)) padding-box,
-               linear-gradient(135deg,#ff9ec9,#ffd76e 25%,#8fe3c4 50%,#9ed8ff 70%,#c9a7ff 90%,#ff9ec9) border-box;
-    box-shadow:0 0 10px rgba(201,167,255,.5)}
+    background:linear-gradient(180deg,var(--dxWhite),#fdf8ff) padding-box,
+               linear-gradient(135deg,#ff9ec9,#ffd76e 22%,#8fe3c4 45%,#9ed8ff 66%,#c9a7ff 86%,#ff9ec9) border-box;
+    box-shadow:0 0 12px rgba(180,140,240,.42), 0 2px 7px rgba(150,110,170,.18)}
   .cCard canvas{display:block;margin:0 auto}
-  .cNm{font-size:calc(11px * var(--fs));margin-top:2px}
-  .cTt{font-size:calc(9px * var(--fs));opacity:.6;line-height:1.3}
-  .cLv{font-size:calc(9px * var(--fs));color:#e0a52e;letter-spacing:.08em}
-  .cGet{font-size:calc(8.5px * var(--fs));opacity:.5;line-height:1.3;margin-top:1px}
-  .cWin{font-size:calc(10px * var(--fs));color:var(--pink-d);font-weight:700}
-  .cWin span{color:#8fb0d8}
-  .cMe{grid-column:1/-1;background:linear-gradient(90deg,#fff0f8,#f4ecff);
-    border:2px solid #ffd9ec;border-radius:14px;padding:8px;display:flex;
-    align-items:center;gap:8px;text-align:left}
+  .cNm{font-size:calc(11px * var(--fs));margin-top:3px;font-weight:700;line-height:1.35;
+    color:var(--dxInk)}
+  .cTt{font-size:calc(9px * var(--fs));color:var(--dxInk2);opacity:.85;line-height:1.35}
+  .cLv{font-size:calc(9px * var(--fs));color:var(--dxGoldD);letter-spacing:.08em;font-weight:700}
+  .cGet{font-size:calc(8.5px * var(--fs));color:var(--dxInk2);opacity:.62;line-height:1.3;margin-top:1px}
+  .cWin{font-size:calc(10px * var(--fs));color:var(--dxPinkD);font-weight:700}
+  .cWin span{color:var(--dxLavD)}
+  .cMe{grid-column:1/-1;
+    background:linear-gradient(100deg,#fff6fa,#f6f1fd);
+    border:1.5px solid rgba(217,184,113,.45);border-radius:14px;padding:8px;display:flex;
+    align-items:center;gap:8px;text-align:left;box-shadow:var(--dxShadow)}
   .cMe canvas{flex:0 0 auto}
   /* まん中を ちぢめられるように しないと、ボタンに 字が かぶる */
   .cMe>div:nth-child(2){min-width:0}
   .cMe .cNm,.cMe .cTt{text-align:left}
   .cMe button{flex:0 0 auto;white-space:nowrap;font-size:calc(11px * var(--fs));padding:7px 10px}
-  .cCard{position:relative}
-  .cPin{position:absolute;top:-7px;right:-5px;font-size:calc(15px * var(--fs));filter:drop-shadow(0 1px 1px rgba(120,90,120,.4))}
-  #colHint{text-align:center;font-size:calc(10px * var(--fs));color:#b98ae0;background:rgba(255,255,255,.55);
-    border-radius:10px;padding:5px 4px}
+  .cPin{position:absolute;top:-7px;right:-5px;font-size:calc(15px * var(--fs));
+    filter:drop-shadow(0 1px 2px rgba(150,110,170,.45))}
+  #colHint{text-align:center;font-size:calc(10px * var(--fs));color:var(--dxLavD);
+    background:var(--dxPaper);border:1px solid rgba(180,160,205,.28);
+    border-radius:10px;padding:5px 6px;line-height:1.5}
+  #colHint b{color:var(--dxPinkD)}
 
   /* ---------- おかしの国のパノラマ ---------- */
   #kingOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
@@ -1269,16 +1396,25 @@
   .hSec li{margin-bottom:4px}
   .hSec b{color:var(--pink-d)}
   #colTotal{text-align:center;font-size:calc(11px * var(--fs));opacity:.7;padding:2px 0 4px}
+  /* ---- じぶんの きろく（3枚）----
+     アイボリーの 地に 金の ふち。自己ベストだけ 金を 主役に して、
+     3枚の 中で どれが「いちばん」か ひとめで 分かるようにする */
   #colStats{display:flex;gap:6px}
-  .cst{flex:1;min-width:0;background:rgba(255,255,255,.8);border:2px solid rgba(255,255,255,.9);
-    border-radius:12px;padding:6px 2px;text-align:center;line-height:1.25}
-  .cst .ck{font-size:calc(9px * var(--fs));opacity:.6}
+  .cst{flex:1;min-width:0;
+    background:linear-gradient(180deg,var(--dxWhite,#fffdfc),#fdf8f3);
+    border:1px solid rgba(180,160,205,.30);
+    border-radius:12px;padding:6px 2px;text-align:center;line-height:1.25;
+    box-shadow:0 2px 6px rgba(150,110,170,.10)}
+  .cst .ck{font-size:calc(9px * var(--fs));color:var(--dxInk2,#7a6580);opacity:.75;font-weight:600}
   /* おりかえさせない。おりかえると その札だけ 数字が 下がる。
      入りきらないぶんは fitStat() が 文字を 小さくして あわせる */
-  .cst .cn{font-size:calc(15px * var(--fs));color:var(--pink-d);
+  .cst .cn{font-size:calc(15px * var(--fs));color:var(--dxPinkD,#c9457f);font-weight:800;
     font-variant-numeric:tabular-nums;white-space:nowrap}
-  .cst.best{background:linear-gradient(135deg,#fff3cf,#ffe2f0);border-color:#ffd76e}
-  .cst.best .cn{color:#c9821e}
+  .cst.best{background:linear-gradient(160deg,#fdf1d6,#fff8ec 55%,#ffeef4);
+    border-color:var(--dxGold,#d9b871);
+    box-shadow:0 2px 8px rgba(190,150,70,.22)}
+  .cst.best .ck{color:var(--dxGoldD,#a8813a);opacity:.9}
+  .cst.best .cn{color:var(--dxGoldD,#a8813a)}
 
   /* 行間を つめてある。ここが ひろいと いちばん下の1行が 画面から はみ出す。
      ばんめんの 大きさは いじりたくないので、下の 文字がわで つめる */
@@ -11600,7 +11736,11 @@ function showDiag(){
 
    見出し … 名前を 長い順に けずる（今週のおだい → おだい → 🏅だけ）
    タブ  … --fsTab を さげて、いちばん長い「アイテム」が 入るまで 小さくする */
-const FSTAB_MIN = 0.6;                    // これ以上は 小さくしない（320pxで ここまで 要る）
+/* 375px の「アイテム」は 0.6 では 2px はみ出す（実測 29 に 対して 31）。
+   0.56 まで さげられるように した。**320px は これでも 入りません**
+   ——あそこは タブの はこが 18px しか なく、4文字は 字の 大きさの 話では
+   ないため（🎀📤 の 36px×2 が 行の 37% を 取っている）*/
+const FSTAB_MIN = 0.56;
 function fitHead(){
   const head = $('colHead'), ov = $('colOv');
   if (!head || !ov) return;
