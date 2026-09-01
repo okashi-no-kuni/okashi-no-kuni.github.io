@@ -1,167 +1,140 @@
-/* ホーム画面の アイコンを 作る。
+/* アプリと web の アイコンを、支給された **1まいの 原画から** 切り出す。
  *
- * 絵は コードで 描く（CLAUDE.md）。画像を 手で 作ると、色を 変えたときに
- * 作りなおせなくなる。ここを 走らせれば いつでも 出しなおせる。
+ *   node tools/make-icons.mjs
  *
- * つかいかた:
- *   node tools/make-icons.mjs            （ICON で えらんだ 1案を 出す）
- *   node tools/make-icons.mjs --all      （見くらべ用に 全案を out/ へ）
+ * もとは これ 1つ だけ。**ここを 差しかえれば ぜんぶ 変わります。**
  *
- * 出すもの（リポジトリの いちばん上）:
- *   apple-touch-icon.png     180  iPhone の ホーム画面
- *   icon-192.png             192  Android・PWA
- *   icon-512.png             512  ストアや スプラッシュ
- *   icon-maskable-512.png    512  まわりを 切られても だいじょうぶな 版
- *   icon-1024.png           1024  App Store（アルファ なし・角丸なし）
+ *   art/icon/app_icon_source.png    1254x1254・RGB（アルファなし）
+ *
+ * 出るもの
+ *   icon-1024.png           1024  App Store（アルファなし・角丸なし）
  *   assets/icon.png         1024  Capacitor が iOS の アイコンを 切り出す もと
  *   assets/splash.png       2732  おなじく 起動画面の もと
+ *   apple-touch-icon.png     180  iPhone の ホーム画面
+ *   icon-192.png / icon-512.png   Android・PWA
+ *   icon-maskable-512.png    512  Android が すきな形に 切りぬく版
  *
- * **4〜5分 かかります。**2732x2732 は 750万画素 あって、GPUの ない
- * この環境では えがくのにも PNGに するのにも 時間が かかります。
- * 止まったように 見えても 待つこと（実測 約5分）。
+ * ---- ここで まちがえやすい ところ ----
  *
- * maskable は Android が すきな形に 切りぬくので、まん中の 8割の 円に
- * おさまるように 中身を 小さく している。ふつうの 版と 同じ 絵で 出すと
- * みみや ぼうが 切られる。
+ * **角を 自分で まるめないこと。**iOS も Android も 自分で 切りぬくので、
+ * 二重に なって すみに かけらが のこります。実際、はじめに もらった 原画は
+ * 角丸が 焼きこまれていて、iOS の マスクを かけると すみの 8.2% が
+ * 黒く のこりました（`art/icon/app_icon_source_rounded_v1.png`）。
+ * いまの 原画は **ふちまで 絵が つづいて いて 黒が 0** です。
+ *
+ * **App Store の 1024 は アルファを 持てません**（ITMS-90717）。
+ * canvas の `toDataURL()` は かならず RGBA で 出すので、生の 画素を
+ * もらって **カラータイプ2（RGB）の PNG を 自分で 焼いて**います。
+ *
+ * **生の画素を 配列で わたさないこと。**1024x1024 は 420万個の 数に なり、
+ * ブラウザから Node へ うつすだけで 2分 以上 かかりました。base64 の
+ * 文字列なら 一瞬です。
+ *
+ * **2732 の 起動画面は 4〜5分 かかります**（GPUの ない 環境なので）。
+ * 止まったように 見えても 待つこと。`--no-splash` で とばせます。
  */
-import { launch } from './_pw.mjs';
-import { writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { deflateSync } from 'zlib';
 import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { launch } from './_pw.mjs';
 
-/* どの案を 本番に つかうか。'swirl' か 'star' */
-const ICON = 'swirl';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC  = resolve(root, 'art/icon/app_icon_source.png');
+const noSplash = process.argv.includes('--no-splash');
 
-const ALL = process.argv.includes('--all');
-const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
+const srcB64 = readFileSync(SRC).toString('base64');
+console.log('もと: art/icon/app_icon_source.png');
 
 const b = await launch();
 const pg = await b.newPage();
 const errs = [];
 pg.on('pageerror', e => errs.push(e.message));
-await pg.goto('file://' + resolve(root, 'index.html'));
-await pg.waitForTimeout(700);
 
-const shots = await pg.evaluate(({ ALL, ICON }) => {
-  const api = window.__chk;
-  if (!api) return { err: 'window.__chk が 見つからない' };
+const out = await pg.evaluate(async ({ b64, noSplash }) => {
+  const im = new Image();
+  await new Promise((ok, ng) => { im.onload = ok; im.onerror = ng; im.src = 'data:image/png;base64,' + b64; });
+  const S0 = im.naturalWidth;
+  if (S0 !== im.naturalHeight) return { err: '原画が 正方形では ありません: ' + S0 + 'x' + im.naturalHeight };
 
-  /* キラキラ。ゲーム本体の gspark と 同じ形（4方向に とがった 星） */
-  const spark = (g, x, y, r, rot, col) => {
-    g.save(); g.translate(x, y); g.rotate(rot || 0); g.fillStyle = col || '#fff';
-    g.beginPath();
-    for (let i = 0; i < 4; i++){
-      const a = i * Math.PI / 2;
-      g.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-      g.quadraticCurveTo(0, 0, Math.cos(a + Math.PI/4) * r * 0.22, Math.sin(a + Math.PI/4) * r * 0.22);
-    }
-    g.closePath(); g.fill(); g.restore();
+  const cv = S => { const c = document.createElement('canvas'); c.width = c.height = S; return c; };
+
+  /* そのまま ちぢめる。**切らない・角を まるめない・色を 変えない** */
+  const plain = S => {
+    const c = cv(S), g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(im, 0, 0, S, S);
+    return c;
   };
 
-  /* 下じき。ふちまで 色を 塗る。角を まるめないのは、
-     iOS も Android も じぶんで 切りぬくから。こちらで まるめると 二重になる */
-  const ground = (g, S, c1, c2, c3) => {
-    const lg = g.createLinearGradient(0, 0, 0, S);
-    lg.addColorStop(0, c1); lg.addColorStop(0.55, c2); lg.addColorStop(1, c3);
+  /* Android の maskable。まわりを 切りぬかれても のこるよう 中みを 少し 小さくする。
+     あいた ところは **同じ絵を ぼかして** 敷く ——表紙（#titleBg）と 同じ手。
+     1色で うめると、絵の どの色を えらんでも どこかで うきます。
+
+     **小さくしすぎないこと。**むかしの コードで えがいた アイコンは
+     0.72 まで ちぢめていましたが、あれは ぼうや みみが 細くて 切れる
+     ためでした。いまの 原画は **お城が まん中に あって、大事な ところは
+     ぜんぶ 内がわ**なので、そこまで 縮める 必要が ありません。
+     縮めるほど 内がわの 四角い ふちが 目立って、額に 入れた 絵に 見えます */
+  const maskable = (S, k) => {
+    const c = cv(S), g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.filter = 'blur(' + Math.round(S * 0.05) + 'px) saturate(1.1)';
+    g.drawImage(im, -S * 0.06, -S * 0.06, S * 1.12, S * 1.12);   // ぼかしの ふちを 外へ 逃がす
+    g.filter = 'none';
+    const w = S * k, o = (S - w) / 2;
+    g.drawImage(im, o, o, w, w);
+    return c;
+  };
+
+  /* 起動画面。**まん中に 小さく**。大きくすると よこ持ちの 端末で はみ出す */
+  const splash = S => {
+    const c = cv(S), g = c.getContext('2d');
+    const t = document.createElement('canvas'); t.width = t.height = 8;
+    const tg = t.getContext('2d', { willReadFrequently: true });
+    tg.drawImage(im, 0, 0, 8, 8);
+    const d = tg.getImageData(0, 0, 8, 8).data;
+    const at = (x, y) => { const i = (y*8+x)*4; return `rgb(${d[i]},${d[i+1]},${d[i+2]})`; };
+    const lg = g.createLinearGradient(0, 0, 0, S);       // 原画の 上と 下の 色で つなぐ
+    lg.addColorStop(0, at(4, 0)); lg.addColorStop(1, at(4, 7));
     g.fillStyle = lg; g.fillRect(0, 0, S, S);
-    const rg = g.createRadialGradient(S*0.28, S*0.2, S*0.05, S*0.28, S*0.2, S*0.8);
-    rg.addColorStop(0, 'rgba(255,255,255,.75)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = rg; g.fillRect(0, 0, S, S);
-  };
-  const dust = (g, S, k) => {
-    for (const [x, y, r, a] of [[0.13,0.17,0.052,0.3],[0.87,0.19,0.043,0.6],
-                                [0.17,0.85,0.041,0.2],[0.85,0.83,0.049,0.5]])
-      spark(g, S*x, S*y, S*r*k, a, 'rgba(255,255,255,.95)');
+    g.imageSmoothingQuality = 'high';
+    const w = S * 0.30, o = (S - w) / 2;
+    g.drawImage(im, o, o, w, w);
+    return c;
   };
 
-  /* --- 案C：うずまきキャンディ（描きおろし）---
-     まるいので iOS の 角丸と 相性が よく、うずまきが 小さくても のこる */
-  const swirl = (g, S, k) => {
-    ground(g, S, '#ffe4f2', '#ffcfe6', '#cfc0ff');
-    dust(g, S, 1);
-    const cx = S*0.5, cy = S*0.46, r = S*0.31*k;
-    g.fillStyle = 'rgba(120,90,120,.16)';
-    g.beginPath(); g.ellipse(cx, cy + r*0.98, r*0.8, r*0.16, 0, 0, Math.PI*2); g.fill();
-    g.fillStyle = '#fff6e9'; g.strokeStyle = 'rgba(120,90,120,.2)'; g.lineWidth = S*0.008;
-    g.beginPath(); g.roundRect(cx - r*0.09, cy, r*0.18, r*1.35, r*0.09); g.fill(); g.stroke();
-    const rg = g.createRadialGradient(cx - r*0.35, cy - r*0.4, r*0.1, cx, cy, r*1.15);
-    rg.addColorStop(0, '#ffffff'); rg.addColorStop(0.5, '#ff9ec9'); rg.addColorStop(1, '#e05f9e');
-    g.fillStyle = rg; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI*2); g.fill();
-    g.save(); g.beginPath(); g.arc(cx, cy, r, 0, Math.PI*2); g.clip();
-    g.strokeStyle = 'rgba(255,255,255,.92)'; g.lineWidth = r*0.2; g.lineCap = 'round';
-    g.beginPath();
-    for (let a = 0; a < Math.PI*5; a += 0.06){
-      const rr = r*0.1 + a*r*0.058, x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
-      a === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
-    }
-    g.stroke(); g.restore();
-    g.fillStyle = '#4a3a4a';                       // 目
-    for (const s of [-1,1]){ g.beginPath(); g.ellipse(cx + s*r*0.3, cy + r*0.02, r*0.085, r*0.115, 0, 0, Math.PI*2); g.fill(); }
-    g.fillStyle = '#fff';                          // 目の ひかり
-    for (const s of [-1,1]){ g.beginPath(); g.arc(cx + s*r*0.3 - r*0.03, cy - r*0.03, r*0.032, 0, Math.PI*2); g.fill(); }
-    g.fillStyle = 'rgba(255,140,180,.5)';          // ほっぺ
-    for (const s of [-1,1]){ g.beginPath(); g.ellipse(cx + s*r*0.52, cy + r*0.2, r*0.11, r*0.075, 0, 0, Math.PI*2); g.fill(); }
-    g.strokeStyle = '#4a3a4a'; g.lineWidth = r*0.055; g.lineCap = 'round';
-    g.beginPath(); g.arc(cx, cy + r*0.12, r*0.14, 0.25, Math.PI - 0.25); g.stroke();
+  /* 生の画素を base64 で。配列に すると ブラウザ→Node の うけわたしで 何分も かかる */
+  const raw = c => {
+    const d = c.getContext('2d', { willReadFrequently: true })
+               .getImageData(0, 0, c.width, c.height).data;
+    let s = '';
+    for (let i = 0; i < d.length; i += 0x8000)
+      s += String.fromCharCode.apply(null, d.subarray(i, i + 0x8000));
+    return btoa(s);
   };
+  const png = c => c.toDataURL().slice(22);
 
-  /* --- 案B：ほしクッキー（ゲーム本体の 絵を そのまま つかう）--- */
-  const star = (g, S, k) => {
-    ground(g, S, '#e2d6fb', '#d4c4f5', '#ffd2e8');
-    dust(g, S, 1);
-    const o = api.buildRoster().find(x => x.name === 'ほしクッキー');
-    const t = document.createElement('canvas'); t.width = t.height = S;
-    const tg = t.getContext('2d');
-    api.drawGen(tg, S, o); api.portraitShade(tg, S);   // ゲーム内と おなじ つや
-    const w = S*1.1*k;
-    g.drawImage(t, S/2 - w/2, S*0.52 - w/2, w, w);
+  const r = {
+    srcSize: S0,
+    raw1024: raw(plain(1024)),
+    180: png(plain(180)),
+    192: png(plain(192)),
+    512: png(plain(512)),
+    mask: png(maskable(512, 0.88)),
   };
-
-  const DRAW = { swirl, star };
-  const make = (name, S, k) => {
-    const c = document.createElement('canvas'); c.width = c.height = S;
-    DRAW[name](c.getContext('2d'), S, k);
-    return c.toDataURL().slice(22);
-  };
-  /* 生の画素（RGBA）を ふつうの 配列で かえす。JSONで わたせる形にする */
-  const raw = (name, S, k) => {
-    const c = document.createElement('canvas'); c.width = c.height = S;
-    const g = c.getContext('2d');
-    DRAW[name](g, S, k === undefined ? 1 : k);
-    return Array.from(g.getImageData(0, 0, S, S).data);
-  };
-
-  /* k は 中身の 大きさ。maskable だけ 小さくして、切りぬかれても のこるようにする */
-  const out = {};
-  const names = ALL ? Object.keys(DRAW) : [ICON];
-  for (const n of names){
-    out[n] = {
-      180: make(n, 180, 1), 192: make(n, 192, 1), 512: make(n, 512, 1),
-      mask: make(n, 512, 0.72),
-      /* App Store の 1024 は **アルファ（すきとおり）を 持てない**。
-         toDataURL は かならず RGBA で 出すので、ここでは 生の 画素だけ
-         かえして、Node がわで 白と 合成してから RGB の PNG に 焼く */
-      raw1024: raw(n, 1024),
-      /* 起動画面（スプラッシュ）。Capacitor は 2732x2732 の 1まいから
-         ぜんぶの 機種ぶんを 切り出すので、**まん中に 小さく** 置く。
-         大きく すると よこ持ちの 端末で はみ出す */
-      rawSplash: raw(n, 2732, 0.30),
-    };
-  }
-  return { out };
-}, { ALL, ICON });
+  if (!noSplash) r.rawSplash = raw(splash(2732));
+  return r;
+}, { b64: srcB64, noSplash });
 
 await b.close();
-if (shots.err){ console.error(shots.err); process.exit(1); }
+if (out.err){ console.error('✗ ' + out.err); process.exit(1); }
 if (errs.length){ console.error('JSエラー:\n' + errs.join('\n')); process.exit(1); }
 
-const save = (p, b64) => writeFileSync(p, Buffer.from(b64, 'base64'));
-
 /* ---- アルファを 持たない PNG を 自分で 焼く ----
-   App Store の 1024x1024 は **アルファチャンネルを 持っていると はじかれます**
-   （ITMS-90717）。canvas の toDataURL は かならず RGBA で 出すので、
-   白と 合成してから カラータイプ2（RGB）で 書きだします。
-   ライブラリは いれません ——PNG は IHDR/IDAT/IEND の 3つだけで 作れます */
+   App Store の 1024x1024 は アルファチャンネルが あると はじかれます
+   （ITMS-90717）。ライブラリは いれません ——PNG は IHDR/IDAT/IEND の
+   3つだけで 作れます */
 const CRC = (() => {
   const t = new Int32Array(256);
   for (let n = 0; n < 256; n++){
@@ -181,14 +154,14 @@ function chunk(type, data){
   const crc = Buffer.alloc(4); crc.writeUInt32BE(CRC(body));
   return Buffer.concat([len, body, crc]);
 }
-function pngRGB(rgba, S){
-  // 白と 合成して アルファを 落とす（すきとおりが あっても 白で うまる）
+function pngRGB(b64, S){
+  const rgba = Buffer.from(b64, 'base64');
   const rows = Buffer.alloc(S * (S * 3 + 1));
   for (let y = 0; y < S; y++){
     let o = y * (S * 3 + 1);
     rows[o++] = 0;                       // フィルタ：なし
     for (let x = 0; x < S; x++){
-      const i = (y * S + x) * 4, a = rgba[i + 3] / 255;
+      const i = (y * S + x) * 4, a = rgba[i + 3] / 255;   // 白と 合成して アルファを 落とす
       rows[o++] = Math.round(rgba[i]     * a + 255 * (1 - a));
       rows[o++] = Math.round(rgba[i + 1] * a + 255 * (1 - a));
       rows[o++] = Math.round(rgba[i + 2] * a + 255 * (1 - a));
@@ -205,26 +178,21 @@ function pngRGB(rgba, S){
     chunk('IEND', Buffer.alloc(0)),
   ]);
 }
-if (ALL){
-  mkdirSync(resolve(root, 'tools/out'), { recursive: true });
-  for (const [n, s] of Object.entries(shots.out))
-    for (const [k, v] of Object.entries(s)) save(resolve(root, `tools/out/${n}-${k}.png`), v);
-  console.log('見くらべ用を tools/out/ に出しました');
-} else {
-  const s = shots.out[ICON];
-  save(resolve(root, 'apple-touch-icon.png'), s[180]);
-  save(resolve(root, 'icon-192.png'),         s[192]);
-  save(resolve(root, 'icon-512.png'),         s[512]);
-  save(resolve(root, 'icon-maskable-512.png'), s.mask);
-  /* App Store 用。**角を まるめない・アルファを 持たない・ちょうど1024** */
-  writeFileSync(resolve(root, 'icon-1024.png'), pngRGB(s.raw1024, 1024));
-  /* Capacitor（@capacitor/assets）が 読む ところ。ここに 置いておけば
-     iOS の アイコンと 起動画面が ぜんぶ 自動で 切り出される */
-  mkdirSync(resolve(root, 'assets'), { recursive: true });
-  writeFileSync(resolve(root, 'assets/icon.png'),   pngRGB(s.raw1024, 1024));
-  writeFileSync(resolve(root, 'assets/splash.png'), pngRGB(s.rawSplash, 2732));
-  console.log(`アイコン（${ICON}）を 出しました ✅`);
-  console.log('  icon-1024.png     … App Store 用（アルファ なし・角丸なし）');
-  console.log('  assets/icon.png   … アプリの アイコンの もと');
-  console.log('  assets/splash.png … 起動画面の もと（2732x2732）');
-}
+
+const save   = (p, b64) => writeFileSync(resolve(root, p), Buffer.from(b64, 'base64'));
+const saveRGB = (p, b64, S) => writeFileSync(resolve(root, p), pngRGB(b64, S));
+
+mkdirSync(resolve(root, 'assets'), { recursive: true });
+save('apple-touch-icon.png',    out[180]);
+save('icon-192.png',            out[192]);
+save('icon-512.png',            out[512]);
+save('icon-maskable-512.png',   out.mask);
+saveRGB('icon-1024.png',   out.raw1024, 1024);
+saveRGB('assets/icon.png', out.raw1024, 1024);
+if (out.rawSplash) saveRGB('assets/splash.png', out.rawSplash, 2732);
+
+console.log('原画 ' + out.srcSize + 'x' + out.srcSize + ' から 切り出しました ✅');
+console.log('  icon-1024.png / assets/icon.png … App Store（アルファなし・角丸なし）');
+console.log('  apple-touch-icon.png / icon-192 / icon-512 / icon-maskable-512');
+console.log(out.rawSplash ? '  assets/splash.png … 起動画面（2732）'
+                          : '  （起動画面は --no-splash で とばしました）');
