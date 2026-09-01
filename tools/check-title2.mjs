@@ -40,7 +40,7 @@ const INSET_B = 34;               // ホームバー（いちばん 大きい �
 const b = await launch();
 let bad = 0;
 
-console.log('画面        絵の いち          比      判定の中がボタン/外がボタン  黒すみ  あまり');
+console.log('画面        絵の いち          比      判定の中がボタン/外がボタン  食われ  あまり');
 console.log('─'.repeat(86));
 
 for (const [w, h] of SIZES){
@@ -128,6 +128,60 @@ for (const [w, h] of SIZES){
     return { inside: inHit / inAll, outside: outHit / outAll, corner };
   }, { png, dpr: 2, go: dom.go });
 
+  /* ---- 大事な ところを フェード／ぼかしで 食って いないか ----
+     **これが 無かったので、題字の 金の わくが 消えたのを 見のがしました。**
+     継ぎめの 段だけ 見て いると、2.5 で 合格に 見えて しまいます。
+
+     しらべかたは「**フェードを 外した 絵と くらべる**」。
+     大事な ところ（王冠・金の わく・題字・OKASHI NO KUNI・ボタン）で
+     どれだけ 変わったかを 測ります。基本の 2.5% ぶんは 393x852 でも
+     かかって いるので、**そこと 同じ ぐらい**なら 合格 */
+  const bare = await pg.evaluate(() => {
+    const st = document.createElement('style');
+    st.id = 'noFade';
+    st.textContent = '#titleArt2W{-webkit-mask-image:none!important;mask-image:none!important}';
+    document.head.appendChild(st);
+  }).then(() => pg.screenshot()).then(x => x.toString('base64'));
+  await pg.evaluate(() => { const e = document.getElementById('noFade'); if (e) e.remove(); });
+
+  const parts = await pg.evaluate(async ({ a, bare, art, dpr }) => {
+    const ld = x => new Promise(k => { const i = new Image(); i.onload = () => k(i); i.src = 'data:image/png;base64,' + x; });
+    const [A, B] = await Promise.all([ld(a), ld(bare)]);
+    const c = document.createElement('canvas'); c.width = A.width; c.height = A.height;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    const get = im => { g.clearRect(0,0,c.width,c.height); g.drawImage(im,0,0); return g.getImageData(0,0,c.width,c.height).data; };
+    const x1 = get(A), x2 = get(B);
+    /* 原画（853x1844）での いちを ぶんすうで。フェードは よこに かかるので
+       **左右の はしまで ふくめる** こと（まん中だけ 見ても 意味が ない）*/
+    /* **はしの 2.5% は のぞく。**あそこは 基本の フェードが かかる ところで、
+       393x852（正式採用ずみ）でも 同じ ぶんだけ かかって います。
+       見たいのは「**基本より 深く 食いこんで いないか**」なので、
+       2.5% の すぐ内がわ（3%）から しらべます。
+
+       金の わくは 原画の **左はしから 3.2%** の ところまで のびて
+       いるので、左右の 帯は そこを またぐ 3〜12% に とります */
+    const R = {
+      '王冠':     [0.42,  0.545, 0.58,  0.610],
+      '金わく左':  [0.030, 0.550, 0.120, 0.860],
+      '金わく右':  [0.880, 0.550, 0.970, 0.860],
+      '題字':     [0.13,  0.600, 0.87,  0.790],
+      'ローマ字':  [0.25,  0.793, 0.75,  0.832],
+      'ボタン':   [0.165, 0.829, 0.82,  0.915],
+    };
+    const out = {};
+    for (const [k, [fx0, fy0, fx1, fy1]] of Object.entries(R)){
+      const X0 = Math.round((art.l + (art.r-art.l)*fx0) * dpr), X1 = Math.round((art.l + (art.r-art.l)*fx1) * dpr);
+      const Y0 = Math.round((art.t + (art.b-art.t)*fy0) * dpr), Y1 = Math.round((art.t + (art.b-art.t)*fy1) * dpr);
+      let mx = 0;
+      for (let y = Y0; y < Y1; y += 2) for (let x = X0; x < X1; x += 2){
+        const i = (y*c.width + x)*4;
+        for (let n = 0; n < 3; n++) mx = Math.max(mx, Math.abs(x1[i+n] - x2[i+n]));
+      }
+      out[k] = mx;
+    }
+    return out;
+  }, { a: png, bare, art: dom.art, dpr: 2 });
+
   /* ③ ほんとうに 押せるか */
   const hit = await pg.evaluate(([x, y]) => {
     const e = document.elementFromPoint(x, y);
@@ -147,6 +201,10 @@ for (const [w, h] of SIZES){
   if (seen.inside < 0.92)  problems.push('当たり判定の 中に ボタンで ない ところが ある（' + (seen.inside*100).toFixed(0) + '%）');
   if (seen.outside > 0.30) problems.push('当たり判定が ボタンより 大きい（外の ' + (seen.outside*100).toFixed(0) + '% が まだ ボタン）');
   if (hit !== 'titleGo')   problems.push('まん中を おすと ' + hit + '（何かが かぶっている）');
+  /* はしの 2.5% を のぞいた ところは、**フェードが かかって いないので 0**
+     で なければ いけません。12% の 深い フェードの ときは 125 出ました */
+  for (const [k, v] of Object.entries(parts))
+    if (v > 8) problems.push(k + 'が フェード／ぼかしで 食われている（差 ' + v + '）');
 
   const ratio = dom.art.w / dom.art.h;
   if (Math.abs(ratio - AR) > 0.002) problems.push('比が ずれた ' + ratio.toFixed(4) + '（原画 ' + AR.toFixed(4) + '）');
@@ -164,7 +222,7 @@ for (const [w, h] of SIZES){
      dom.art.w.toFixed(0) + 'x' + dom.art.h.toFixed(0)).padEnd(18) +
     ratio.toFixed(4).padStart(7) + '   ' +
     gap.padEnd(20) +
-    String(seen.corner).padStart(5) + '   ' +
+    String(Math.max(...Object.values(parts))).padStart(5) + '   ' +
     ('上' + dom.art.t.toFixed(0) + ' 下' + (dom.H - dom.art.b).toFixed(0) +
      ' 横' + dom.art.l.toFixed(0)).padStart(14)
   );
@@ -176,6 +234,8 @@ for (const [w, h] of SIZES){
 
 await b.close();
 console.log('─'.repeat(86));
+console.log('食われ＝王冠・金わく・題字・ローマ字・ボタンが フェードなしの 絵から どれだけ 変わったか');
+console.log('        （はしの 2.5% は 基本の フェードなので のぞく。ここは 0 で なければ いけない）');
 console.log('中は 92%以上・外は 30%以下 が 合格。中＝当たり判定が ボタンに 乗っている');
 console.log('                          外＝12px 外が まだ ボタン なら 当たり判定が 小さすぎる');
 if (bad){ console.error('✗ ' + bad + '画面で 問題が ありました'); process.exit(1); }
