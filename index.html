@@ -614,7 +614,11 @@
     /* 下は ホームインジケーターの ぶん ＋ 18px。ボタンを 帯に 近づけない */
     padding:calc(env(safe-area-inset-top) + 12px) 14px
             calc(env(safe-area-inset-bottom) + 18px);
-    align-items:flex-start;justify-content:center;
+    /* たては 上下に **重みを つけて** 分ける（下の ::before / ::after）。
+       よこは align-items で まん中 */
+    flex-direction:column;align-items:center;justify-content:flex-start;
+    --weUp:36;   /* あまった たての 上の 取り分 */
+    --weDn:64;   /* 下の 取り分 */
     /* 上＝淡い スカイブルー、中＝ブルー〜ラベンダー、下＝ラベンダー〜パールピンク。
        **ピンク一色に しないこと**（子どもにも 大人にも、という ねらい）*/
     background:
@@ -622,11 +626,26 @@
       radial-gradient(90% 45% at 50% 100%, rgba(255,236,246,.6), rgba(255,236,246,0) 70%),
       linear-gradient(to bottom,#cfe6fb 0%,#d8dcf7 30%,#e4d9f5 56%,#f1ddee 80%,#fae1ea 100%)}
   #weOv.on{display:flex;animation:tFade .4s ease}
-  /* **`margin:auto` で まん中に すること。**`align-items:center` だけだと、
-     カードが 画面より 高いとき 上が 切れて、スクロールしても 出てきません
-     （375x667 で 上が 19px 欠けた）。flex の auto マージンは、
-     場所が 足りない ときは 0 に なるので 切れません */
-  #weCard{width:min(100%,420px);margin:auto;position:relative;
+  /* ---- あまった たては 上下に **36:64** で 分ける ----
+     まん中（50:50）に すると、たて長の 端末で 上の 空きが 大きく 見えて
+     カードが 沈んで 見えます（表紙の --titleUp:.40 と まったく 同じ話）。
+
+     やりかたは **flex の のびしろ を 持った から の 箱**を 上下に 置くこと。
+     `margin:auto` では 上下が かならず 半分ずつに なるので 重みが つけられず、
+     `margin-top` に 割合を 書くのも だめです ——% は margin では
+     「高さ」では なく **はば**を 指すためです（表紙で 一度 やった 失敗）。
+
+     **のびしろの 合計を 1未満に しないこと。**`.36` と `.64` に すると
+     あまりが ぜんぶ 配られず、カードが ねらいより 上に 行きます。
+     だから 36 と 64（合計100）で 書きます。
+
+     場所が 足りない ときは のびしろが 0の ままなので、カードは
+     いちばん上から 始まって **切れません**（375x667 で 上が 19px 欠けた
+     あの 失敗は 起きない）*/
+  #weOv::before,#weOv::after{content:'';flex-basis:0;min-height:0}
+  #weOv::before{flex-grow:var(--weUp)}
+  #weOv::after {flex-grow:var(--weDn)}
+  #weCard{width:min(100%,420px);flex:0 0 auto;position:relative;
     display:flex;flex-direction:column;gap:clamp(6px,1.5vh,11px);
     text-align:center;border-radius:28px;
     padding:clamp(10px,3.2vw,15px) clamp(12px,3.6vw,18px) clamp(13px,3.8vw,18px);
@@ -712,7 +731,9 @@
   /* たてが みじかい 端末（320x568 など）。**文字と ボタンは そのまま**、
      すき間・絵・かざり の 順に けずる */
   @media (max-height:660px){
-    #weOv{padding-top:calc(env(safe-area-inset-top) + 8px)}
+    /* みじかい 画面では **上に 寄せすぎない**こと。あまりが もともと
+       少ないので、たて長の 端末と 同じ 重みに すると 上が つまって 見えます */
+    #weOv{padding-top:calc(env(safe-area-inset-top) + 8px);--weUp:44;--weDn:56}
     #weCard{gap:5px}
     #weArtWrap{--weCap:clamp(120px,27vh,210px);--weCap:clamp(120px,27dvh,210px)}
     .weOrn.sm,.weOrn.dot{display:none}
