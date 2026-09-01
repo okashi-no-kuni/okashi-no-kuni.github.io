@@ -11435,6 +11435,12 @@ const noteSvg = (n, st) => {
    マイナスの余白を入れて、絵を大きくしても まわりの高さが のびないようにしてある */
 const ICO_BTN = 'display:block;margin:-4px auto';
 
+/* 文の中にならべる絵。まわりの行の高さを のばさないよう マイナスの余白つき。
+   **paintUiIcons() より 先に 置くこと** ——const は 巻きあがらないので、
+   あとに 置くと 呼ばれた しゅんかんに ReferenceError で 止まる（1回 やった）*/
+const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
+const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
+
 /* ==========================================================
    UIアイコン（art/ui/*.webp）
    ----------------------------------------------------------
@@ -11451,11 +11457,68 @@ const ICO_BTN = 'display:block;margin:-4px auto';
    **そのぶん 盤面が 縮みます**。em では なく px で 書くこと。
    ========================================================== */
 const UI_ICON = {};                       // 読めた 絵。まだなら 入っていない
-const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off'];
+const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
+                 'nav_shop', 'nav_week', 'nav_code', 'nav_avatar', 'nav_share'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
-   同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない */
-const UI_PX  = { btn:30, inline:22 };
+   同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
+
+   **em で 書かないこと。**アイコンが 行の 高さを 決められる 書きかたに すると、
+   下のUIが 高くなって そのぶん 盤面が 縮む */
+const UI_PX  = { btn:30, head:18, tab:20, inline:22 };
+
+/* 絵文字を 絵に さしかえる ところ。
+   [どこ, いまの 絵文字, 絵の キー, 大きさ]
+
+   **HTMLは 1文字も 変えません。**絵文字は そのまま 残して、読めた ときに
+   ここが 上から さしかえます。だから 絵が 読めない ときは
+   いままでの 絵文字が 出て、ボタンが 空っぽに なりません。
+
+   図鑑の 見出しの 3つ（🛍🏅🔑）は はこが 97x32 と せまいので 18px、
+   タブ行の 🎀📤 と 各画面の 見出しは 20px。
+   ここは どれも `position:absolute` の 画面の 中なので、
+   大きさが 変わっても **盤面の 高さには ひびきません**（resize() は 数えない）*/
+const UI_SPOT = [
+  ['#btnShop',                '🛍', 'nav_shop',   'head'],
+  ['#btnWk',                  '🏅', 'nav_week',   'head'],
+  ['#colAv',                  '🎀', 'nav_avatar', 'tab'],
+  ['#colShare',               '📤', 'nav_share',  'tab'],
+  ['#shopHead > div',         '🛍', 'nav_shop',   'tab'],
+  ['#wkHead > div',           '🏅', 'nav_week',   'tab'],
+  ['#pwOv > div:first-child', '🔑', 'nav_code',   'tab'],
+  ['#avHead > div',           '🎀', 'nav_avatar', 'tab'],
+  ['#ovShare',                '📤', 'nav_share',  'head'],
+  ['#kingShare',              '📤', 'nav_share',  'tab'],
+  ['#avShare',                '📤', 'nav_share',  'head'],
+  ['#invShare',               '📤', 'nav_share',  'tab'],
+];
+/* 絵文字の ある **文字ノードだけ**を さしかえる。
+   `innerHTML` を 丸ごと 書きかえると 中の <span class="pwTx"> が 作りなおされ、
+   fitHead() が 出し引きした 状態が 消える。だから 文字ノードを 分けて 差しこむ */
+function swapSpot(sel, em, key, px){
+  if (!UI_ICON[key]) return;
+  for (const root of document.querySelectorAll(sel)){
+    const st = [root];
+    while (st.length){
+      const n = st.pop();
+      for (const c of [...n.childNodes]){
+        if (c.nodeType === 3){
+          let t = c, i;
+          while ((i = t.nodeValue.indexOf(em)) >= 0){
+            const after = t.splitText(i);
+            after.nodeValue = after.nodeValue.slice(em.length);
+            const im = new Image(px, px);
+            im.src = UI_ICON[key].src; im.alt = '';
+            im.style.cssText = 'display:inline-block;vertical-align:middle;flex:0 0 auto;' +
+                               'width:' + px + 'px;height:' + px + 'px';
+            t.parentNode.insertBefore(im, after);
+            t = after;
+          }
+        } else if (c.nodeType === 1 && c.tagName !== 'IMG') st.push(c);
+      }
+    }
+  }
+}
 const uiImg = (k, px, st) =>
   '<img src="' + UI_ICON[k].src + '" alt="" width="' + px + '" height="' + px +
   '" style="' + st + '">';
@@ -11474,6 +11537,14 @@ function paintUiIcons(){
   }
   btnCol.innerHTML = UI_ICON.nav_dex ? uiImg('nav_dex', UI_PX.btn, B) : crownSvg(25, ICO_BTN);
   syncSndIcon();
+  /* 合言葉。絵が 読めるまでは これまでの 鍵の SVG */
+  $('btnPw').innerHTML = (UI_ICON.nav_code
+      ? uiImg('nav_code', UI_PX.head, 'display:inline-block;vertical-align:middle;flex:0 0 auto')
+      : keySvg(19, INLINE)) + '<span class="pwTx">合言葉</span>';
+  for (const [sel, em, key, sz] of UI_SPOT) swapSpot(sel, em, key, UI_PX[sz]);
+  /* 見出しの 幅が 変わるので、名前の 出し引きを やり直す。
+     絵文字の 幅は 端末の フォントまかせだったが、絵なら px で 決まる */
+  if (typeof fitHead === 'function') fitHead();
 }
 /* 音の ボタンだけは ON と OFF で 絵が ちがう。
    むかしは opacity を さげる だけ だったので、**OFF は 新しく 足した もの**。
@@ -11492,11 +11563,8 @@ for (const k of UI_KEYS){
   im.onload = () => { UI_ICON[k] = im; paintUiIcons(); };
   im.src = 'art/ui/' + k + '.webp';
 }
-/* 文の中にならべる絵。まわりの行の高さを のばさないよう マイナスの余白つき */
-const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
-const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
-// 見出しに 3つ ならぶので、名前は .pwTx（fitHead が はばに あわせて 出し引きする）
-$('btnPw').innerHTML = keySvg(19, INLINE) + '<span class="pwTx">合言葉</span>';
+// 見出しに 3つ ならぶので、名前は .pwTx（fitHead が はばに あわせて 出し引きする）。
+// 中みは paintUiIcons() が 入れる（絵が 読めたら 鍵の 絵に さしかわる）
 
 /* ==========================================================
    遊びかたガイド（本のボタン）
