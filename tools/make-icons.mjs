@@ -12,13 +12,21 @@
  *   icon-192.png             192  Android・PWA
  *   icon-512.png             512  ストアや スプラッシュ
  *   icon-maskable-512.png    512  まわりを 切られても だいじょうぶな 版
+ *   icon-1024.png           1024  App Store（アルファ なし・角丸なし）
+ *   assets/icon.png         1024  Capacitor が iOS の アイコンを 切り出す もと
+ *   assets/splash.png       2732  おなじく 起動画面の もと
+ *
+ * **4〜5分 かかります。**2732x2732 は 750万画素 あって、GPUの ない
+ * この環境では えがくのにも PNGに するのにも 時間が かかります。
+ * 止まったように 見えても 待つこと（実測 約5分）。
  *
  * maskable は Android が すきな形に 切りぬくので、まん中の 8割の 円に
  * おさまるように 中身を 小さく している。ふつうの 版と 同じ 絵で 出すと
  * みみや ぼうが 切られる。
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { launch } from './_pw.mjs';
 import { writeFileSync, mkdirSync } from 'fs';
+import { deflateSync } from 'zlib';
 import { resolve, dirname } from 'path';
 
 /* どの案を 本番に つかうか。'swirl' か 'star' */
@@ -27,7 +35,7 @@ const ICON = 'swirl';
 const ALL = process.argv.includes('--all');
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
 
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const b = await launch();
 const pg = await b.newPage();
 const errs = [];
 pg.on('pageerror', e => errs.push(e.message));
@@ -115,6 +123,13 @@ const shots = await pg.evaluate(({ ALL, ICON }) => {
     DRAW[name](c.getContext('2d'), S, k);
     return c.toDataURL().slice(22);
   };
+  /* 生の画素（RGBA）を ふつうの 配列で かえす。JSONで わたせる形にする */
+  const raw = (name, S, k) => {
+    const c = document.createElement('canvas'); c.width = c.height = S;
+    const g = c.getContext('2d');
+    DRAW[name](g, S, k === undefined ? 1 : k);
+    return Array.from(g.getImageData(0, 0, S, S).data);
+  };
 
   /* k は 中身の 大きさ。maskable だけ 小さくして、切りぬかれても のこるようにする */
   const out = {};
@@ -123,6 +138,14 @@ const shots = await pg.evaluate(({ ALL, ICON }) => {
     out[n] = {
       180: make(n, 180, 1), 192: make(n, 192, 1), 512: make(n, 512, 1),
       mask: make(n, 512, 0.72),
+      /* App Store の 1024 は **アルファ（すきとおり）を 持てない**。
+         toDataURL は かならず RGBA で 出すので、ここでは 生の 画素だけ
+         かえして、Node がわで 白と 合成してから RGB の PNG に 焼く */
+      raw1024: raw(n, 1024),
+      /* 起動画面（スプラッシュ）。Capacitor は 2732x2732 の 1まいから
+         ぜんぶの 機種ぶんを 切り出すので、**まん中に 小さく** 置く。
+         大きく すると よこ持ちの 端末で はみ出す */
+      rawSplash: raw(n, 2732, 0.30),
     };
   }
   return { out };
@@ -133,6 +156,55 @@ if (shots.err){ console.error(shots.err); process.exit(1); }
 if (errs.length){ console.error('JSエラー:\n' + errs.join('\n')); process.exit(1); }
 
 const save = (p, b64) => writeFileSync(p, Buffer.from(b64, 'base64'));
+
+/* ---- アルファを 持たない PNG を 自分で 焼く ----
+   App Store の 1024x1024 は **アルファチャンネルを 持っていると はじかれます**
+   （ITMS-90717）。canvas の toDataURL は かならず RGBA で 出すので、
+   白と 合成してから カラータイプ2（RGB）で 書きだします。
+   ライブラリは いれません ——PNG は IHDR/IDAT/IEND の 3つだけで 作れます */
+const CRC = (() => {
+  const t = new Int32Array(256);
+  for (let n = 0; n < 256; n++){
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c;
+  }
+  return buf => {
+    let c = -1;
+    for (let i = 0; i < buf.length; i++) c = t[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ -1) >>> 0;
+  };
+})();
+function chunk(type, data){
+  const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+  const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
+  const crc = Buffer.alloc(4); crc.writeUInt32BE(CRC(body));
+  return Buffer.concat([len, body, crc]);
+}
+function pngRGB(rgba, S){
+  // 白と 合成して アルファを 落とす（すきとおりが あっても 白で うまる）
+  const rows = Buffer.alloc(S * (S * 3 + 1));
+  for (let y = 0; y < S; y++){
+    let o = y * (S * 3 + 1);
+    rows[o++] = 0;                       // フィルタ：なし
+    for (let x = 0; x < S; x++){
+      const i = (y * S + x) * 4, a = rgba[i + 3] / 255;
+      rows[o++] = Math.round(rgba[i]     * a + 255 * (1 - a));
+      rows[o++] = Math.round(rgba[i + 1] * a + 255 * (1 - a));
+      rows[o++] = Math.round(rgba[i + 2] * a + 255 * (1 - a));
+    }
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(S, 0); ihdr.writeUInt32BE(S, 4);
+  ihdr[8] = 8;    // 8ビット
+  ihdr[9] = 2;    // カラータイプ2＝RGB（アルファ なし）
+  return Buffer.concat([
+    Buffer.from([0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(rows, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
 if (ALL){
   mkdirSync(resolve(root, 'tools/out'), { recursive: true });
   for (const [n, s] of Object.entries(shots.out))
@@ -144,5 +216,15 @@ if (ALL){
   save(resolve(root, 'icon-192.png'),         s[192]);
   save(resolve(root, 'icon-512.png'),         s[512]);
   save(resolve(root, 'icon-maskable-512.png'), s.mask);
-  console.log(`アイコン（${ICON}）を 4つ 出しました ✅`);
+  /* App Store 用。**角を まるめない・アルファを 持たない・ちょうど1024** */
+  writeFileSync(resolve(root, 'icon-1024.png'), pngRGB(s.raw1024, 1024));
+  /* Capacitor（@capacitor/assets）が 読む ところ。ここに 置いておけば
+     iOS の アイコンと 起動画面が ぜんぶ 自動で 切り出される */
+  mkdirSync(resolve(root, 'assets'), { recursive: true });
+  writeFileSync(resolve(root, 'assets/icon.png'),   pngRGB(s.raw1024, 1024));
+  writeFileSync(resolve(root, 'assets/splash.png'), pngRGB(s.rawSplash, 2732));
+  console.log(`アイコン（${ICON}）を 出しました ✅`);
+  console.log('  icon-1024.png     … App Store 用（アルファ なし・角丸なし）');
+  console.log('  assets/icon.png   … アプリの アイコンの もと');
+  console.log('  assets/splash.png … 起動画面の もと（2732x2732）');
 }

@@ -1,5 +1,5 @@
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
-const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium', args:['--allow-file-access-from-files'] });
+import { launch } from './_pw.mjs';
+const b = await launch({ args:['--allow-file-access-from-files'] });
 for (const dsf of [2,3]){
   const p = await b.newPage({ viewport:{width:402,height:874}, deviceScaleFactor:dsf });
   await p.goto('file://' + process.cwd() + '/index.html');

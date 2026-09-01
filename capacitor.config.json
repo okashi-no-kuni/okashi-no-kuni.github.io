@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.okashinokuni.sweetkingdom",
+  "appName": "おかしの国",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#ffd9ec",
+    "limitsNavigationsToAppBoundDomains": true
+  },
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  }
+}

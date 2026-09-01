@@ -26,7 +26,7 @@
  * だから **明るさの ばらつき** も くらべます。
  * ばらつきが ちがう＝ もようの ある子と 無い子で、見わけられます。
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { launch } from './_pw.mjs';
 import { readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -42,7 +42,7 @@ const dir = resolve('art/sprites');
 const files = readdirSync(dir).filter(n => /\.png$/i.test(n));
 if (!files.length){ console.error('✗ art/sprites/ に 絵が ありません'); process.exit(1); }
 
-const b = await chromium.launch();
+const b = await launch();
 const pg = await b.newPage();
 const data = files.map(n => 'data:image/png;base64,' + readFileSync(resolve(dir, n)).toString('base64'));
 const masks = await pg.evaluate(async ({ data, N }) => {

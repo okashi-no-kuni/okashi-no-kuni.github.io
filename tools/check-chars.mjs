@@ -23,7 +23,7 @@
  * 直しかた: からだの 形を いじると おなじ型を つかう別の子まで くずれる。
  *           1体ごとの ずらし（dx/dy）と 大きさ（sc）で 合わせること。
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { launch } from './_pw.mjs';
 import { resolve } from 'path';
 import { readdirSync, existsSync } from 'fs';
 
@@ -35,8 +35,7 @@ const target = resolve(process.argv[2] || 'index.html');
    canvas が よごれて getImageData が SecurityError に なる。
    キャラを 画像に さしかえた 子が いるので この 旗が いる。
    本番（GitHub Pages）は http なので おきない。ここだけの 話 */
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium',
-  args: ['--allow-file-access-from-files'] });
+const b = await launch({ args: ['--allow-file-access-from-files'] });
 const pg = await b.newPage();
 const errs = [];
 pg.on('pageerror', e => errs.push(e.message));

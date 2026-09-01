@@ -15,15 +15,14 @@
  *   ④ 60fps 近く 出ているか（平均 50fps 以上・わるい1フレーム 34ms 以下）
  *   ⑤ 「はじめる」で とじて 盤面に 入れるか
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { launch } from './_pw.mjs';
 import { resolve } from 'path';
 
 const FILE = resolve(process.argv[2] || 'index.html');
 const SIZES = [[320,690],[375,667],[393,852],[402,874],[430,932]];
 const ng = [];
 
-const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium',
-                                  args:['--allow-file-access-from-files'] });
+const b = await launch({ args:['--allow-file-access-from-files'] });
 for (const [w, h] of SIZES){
   const p = await b.newPage({ viewport:{ width:w, height:h }, deviceScaleFactor:3,
                               reducedMotion:'no-preference' });

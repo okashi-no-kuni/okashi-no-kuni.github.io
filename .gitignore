@@ -1,1 +1,4 @@
 tools/out/
+node_modules/
+# アプリに つつむ ぶんは tools/build-www.mjs が 作りなおすので 置かない
+www/

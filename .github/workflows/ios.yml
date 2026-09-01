@@ -1,0 +1,157 @@
+# iOS のアプリを 組んで App Store Connect へ 送る。
+#
+# **Mac は いりません。**GitHub の macOS ランナーで 組みます。
+# このリポジトリは 公開なので、macOS の 時間も 無料わくで つかえます。
+#
+# 手で 走らせる ときだけ 動きます（workflow_dispatch）。
+# push のたびに 走らせないのは、審査に 出すのは 数週間に 1回で、
+# 1回 20〜30分 かかるためです。
+#
+# ---- はじめる前に 用意する もの ----
+#
+# ① Apple Developer Program に 入る（年 ¥14,800）
+# ② App Store Connect で アプリを 作る
+#      バンドルID  io.github.okashinokuni.sweetkingdom
+#      （capacitor.config.json と ios/App/App.xcodeproj の 両方に あります）
+# ③ App Store Connect → ユーザとアクセス → 統合 → App Store Connect API
+#      で キーを 作り、.p8 ファイルを ダウンロードする
+#      （**1回しか ダウンロードできません**）
+# ④ このリポジトリの Settings → Secrets and variables → Actions に 4つ 入れる
+#
+#      APPSTORE_ISSUER_ID    キーの ページの いちばん上に ある UUID
+#      APPSTORE_KEY_ID       キーの ID（10文字）
+#      APPSTORE_PRIVATE_KEY  .p8 の 中みを そのまま（-----BEGIN ... も 入れる）
+#      APPLE_TEAM_ID         メンバーシップの ページの Team ID（10文字）
+#
+# **鍵を リポジトリに 置かないこと。**公開リポジトリなので、
+# コミットした 時点で だれでも つかえて しまいます（CLAUDE.md の きまり）。
+#
+# ---- 1回目は かならず 1〜2回 こけます ----
+# 署名まわりは 実機の Apple アカウントが 無いと 検証できないので、
+# この ワークフローは **ためしていません**。最初の 失敗の ログを 見て
+# 直すのが 前提です。よく ある のは この3つ。
+#   ・バンドルIDが App Store Connect の ものと ちがう
+#   ・Xcode の 版が 古い／新しい（下の xcode-version を 合わせる）
+#   ・CocoaPods の 取得に 失敗（もう一度 走らせると 通ることが 多い）
+
+name: iOS を 組んで App Store へ 送る
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'バージョン（例 1.0.0）。App Store に 出る 数字'
+        required: true
+        default: '1.0.0'
+      upload:
+        description: 'App Store Connect へ 送る（false なら 組むだけ）'
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # Xcode の 版を そろえる。ランナーの 既定が 上がると 急に
+      # こわれるので、ここで 決めうちに しておく
+      - name: Xcode をえらぶ
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
+      - name: 中みの 検査（絵・道・ボタン・かべ）
+        run: |
+          npm ci
+          npx playwright install chromium
+          node tools/check-chars.mjs
+          node tools/check-path.mjs
+          node tools/check-btn.mjs
+          node tools/check-flyer.mjs
+          node tools/sim.mjs
+
+      - name: アプリに つつむ ぶんを あつめる
+        run: node tools/build-www.mjs
+
+      - name: Capacitor を そろえる
+        run: |
+          npx cap sync ios
+          npx capacitor-assets generate --ios
+
+      # バージョンは 入力から。ビルド番号は 実行番号を つかう。
+      # **ビルド番号は 一度 送ったら 二度と 同じ数字を つかえません**
+      - name: バージョンと ビルド番号を 入れる
+        run: |
+          cd ios/App
+          agvtool new-marketing-version "${{ inputs.version }}"
+          agvtool new-version -all "${{ github.run_number }}"
+
+      - name: App Store Connect の 鍵を 置く
+        env:
+          KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$KEY" > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
+
+      - name: 組む（archive）
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -configuration Release -sdk iphoneos \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -destination 'generic/platform=iOS' \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.APPSTORE_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }} \
+            DEVELOPMENT_TEAM="$TEAM" \
+            archive
+
+      - name: .ipa に 書きだす
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          sed "s/TEAM_ID_PLACEHOLDER/$TEAM/" ios/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/out" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.APPSTORE_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.APPSTORE_ISSUER_ID }}
+
+      # 送らない ときでも .ipa は のこす。手もとの Transporter からでも 出せる
+      - name: .ipa を のこす
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa-${{ inputs.version }}-${{ github.run_number }}
+          path: ${{ runner.temp }}/out/*.ipa
+          retention-days: 14
+
+      - name: App Store Connect へ 送る
+        if: ${{ inputs.upload }}
+        run: |
+          xcrun altool --upload-app -f "$RUNNER_TEMP"/out/*.ipa -t ios \
+            --apiKey ${{ secrets.APPSTORE_KEY_ID }} \
+            --apiIssuer ${{ secrets.APPSTORE_ISSUER_ID }}
+
+      - name: スクリーンショットも 出しておく
+        if: always()
+        run: node tools/shots.mjs || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shots-${{ github.run_number }}
+          path: tools/out/shots
+          retention-days: 14

@@ -17,11 +17,11 @@
  * 目では 見つけられない ——影は「そういう 演出」に 見えるので、
  * 早すぎるのか どうかが 分からない。だから 機械で しらべる。
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { launch } from './_pw.mjs';
 import { resolve } from 'path';
 
 const FILE = resolve(process.argv[2] || 'index.html');
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const b = await launch();
 const c = await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2 });
 const p = await c.newPage();
 const errs = [];

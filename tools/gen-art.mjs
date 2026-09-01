@@ -726,8 +726,8 @@ const GEN_MODEL = process.env.GEMINI_IMAGE_MODEL || '';
 /* Chromium は 大きさを そろえる ためだけに つかう（canvas が ほしい）。
    check-chars.mjs と 同じ 置き場所。--models では 立ちあげない */
 async function withPage(fn){
-  const { chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs');
-  const b = await chromium.launch();
+  const { launch } = await import('./_pw.mjs');
+  const b = await launch();
   try { return await fn(await b.newPage()); } finally { await b.close(); }
 }
 

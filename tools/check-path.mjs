@@ -13,8 +13,8 @@
  * 色を きめうちに すると 国ごとに ちがうので まちがえます
  * （こおりのくには 道が 水色で、じめんより 青い）。
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
-const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium', args:['--allow-file-access-from-files'] });
+import { launch } from './_pw.mjs';
+const b = await launch({ args:['--allow-file-access-from-files'] });
 const pg = await b.newPage({ viewport:{ width:393, height:852 }, deviceScaleFactor:3 });
 const errs=[]; pg.on('pageerror',e=>errs.push(e.message));
 await pg.goto('file://' + process.cwd() + '/index.html?dbg=1');

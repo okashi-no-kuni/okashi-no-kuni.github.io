@@ -11003,6 +11003,19 @@ function buildHelp(){
     '<p>とくべつな「合言葉」を手に入れたら、' +
     '<b>👑図鑑をひらいて、いちばん上の「🔑合言葉」</b>から入れてください。' +
     '限定の着せかえテーマが届きます🎁</p></div>';
+  /* ---- けんりと あんしん ----
+     **クレジット表記が いる 素材を つかったら ここに 書くこと**
+     （このリポジトリの きまり）。Phaser は MIT なので、著作権の 一文を
+     いっしょに くばる 義務が あります（vendor/phaser-LICENSE.txt）。
+     プライバシーポリシーは App Store で 必須。アプリの 中からも
+     行けるように しておくと、審査でも 見つけてもらいやすい */
+  h += '<div class="hSec"><h3>📄 権利と あんしん</h3><ul>' +
+    '<li><b>個人情報は あつめません。</b>すすみぐあいは この端末の中だけに のこります' +
+    '（<a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>）</li>' +
+    '<li>こまったときは <a href="support.html" target="_blank" rel="noopener">サポート</a>へ</li>' +
+    '<li>ゲームエンジン：<b>Phaser ' + (window.Phaser ? Phaser.VERSION : '3') + '</b>' +
+    '（MIT License, © 2024 Richard Davey, Phaser Studio Inc.）</li>' +
+    '<li>絵・音楽・プログラムは ぜんぶ このゲームのために 作ったものです</li></ul></div>';
   /* 配信の日づけ。document.lastModified は サーバーが かえす
      Last-Modified なので、手で 書きかえなくても デプロイごとに かわる。
      「直したはずが 直っていない」ときに、まず ここを 見てもらえば
@@ -11368,6 +11381,20 @@ const SHOP_ITEMS = [
       return '「' + SP_THEMES[id].th.name + '」に着せかえました！';
     } })),
 ];
+/* ============ 課金を 出すか（IAP_ON）============
+   **1.0（さいしょの リリース）は 課金なし**で 出します。StoreKit の 実装も
+   銀行口座・税務情報の 登録も 要らないので、審査が いちばん 早く 通ります。
+
+   そのとき **¥320 などの ねだんを 画面に 出したまま には できません。**
+   買えないのに ねだんが 出ていると、Apple の 2.3.1（かくれた 機能）と
+   3.1.1 に かかります。だから この旗ひとつで
+   **💎パック・復元ボタン・年齢と上限**を まとめて 引っこめます。
+
+   中みの コード（payGems・canPayYen・recordYen・receiptOwned・
+   restorePurchases）は **消しません**。1.1 で ここを true に して
+   StoreKit を つなぐだけに して あります */
+const IAP_ON = false;
+
 /* 💎の パック。ねだんは App Store に 出すときに 決めるので、
    ここでは 目やすとして 出しておく。買うのは payYen() を とおす */
 const GEM_PACKS = [
@@ -11376,6 +11403,13 @@ const GEM_PACKS = [
   { id:'g3', gems:550, yen:2500, ic:'💎' },
 ];
 function buildGemSection(){
+  /* 課金が 無い あいだは **ねだんを 1つも 出さない**。
+     もらいかたは 出す ——出さないと 💎が どこから 来るのか 分からない */
+  if (!IAP_ON)
+    return '<div class="spSec">💎ジュエル</div>' +
+      '<div class="spSoon">💎は <b>毎日の ログインボーナス</b>で もらえます。' +
+      'ステージクリアや 伝説との たいけつでも 手に入ります。<br>' +
+      '<b>お金で 買う ことは できません。</b></div>';
   const a = ageBand(), left = spendLeft();
   let h = '<div class="spSec">💎ジュエル</div>';
   for (const g of GEM_PACKS)
@@ -11432,8 +11466,8 @@ function buildShopScreen(){
   h += buildGemSection();
   h += '<div id="shopMsg" style="font-size:calc(12px * var(--fs));color:var(--pink-d);text-align:center;min-height:18px"></div>';
   shopBody.innerHTML = h;
-  // 買ったものの 復元
-  $('restoreBtn').onclick = () => {
+  // 買ったものの 復元。課金が 無い あいだは ボタンごと 出ない
+  if ($('restoreBtn')) $('restoreBtn').onclick = () => {
     const r = restorePurchases();
     buildShopScreen();                 // ✓の つきかたを 出しなおす
     const got = [];
@@ -14253,6 +14287,31 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   duelTap: n => { for (let k = 0; k < n; k++){ if (duS) duS.cd = 0; duTap(); } },
   duelHurt: () => { if (duS && duS.phase === 'fight') duS.myHp = 1; },
   setStars: n => { stars = n; syncHUD(); },
+  /* ---- スクリーンショット（tools/shots.mjs）用 ----
+     「見ばえのする 場面」を 手で 作らずに 出せるように しておく。
+     手で 撮ると、画面を 直すたびに 撮りなおしが 出て、しかも
+     どの状態だったかが のこらない */
+  place: (c, r, k, lv) => {
+    if (pathCells.has(key(c, r)) || towerAt(c, r)) return false;
+    towers.push({ k: k || 'candy', c, r, lv: lv || 3, cd:0,
+                  ang:-Math.PI/2, pulse:0, ph:Math.random()*6.3 });
+    syncHUD(); return true;
+  },
+  pin: ch => {                          // ワザバーに はる（スクショの ため）
+    if (!hasCh(ch)) return false;
+    skStock[ch] = Math.max(1, skStock[ch] || 0); saveSkStock();
+    if (!pins.includes(ch) && pins.length < PIN_MAX){ pins.push(ch); savePins(); }
+    buildSkillBar(); return pins.includes(ch);
+  },
+  fillDex: t => {                       // ずかんを t（0〜1）の わりあいだけ うめる
+    const all = dexList();
+    all.slice(0, Math.round(all.length * t)).forEach(o => unlock(o.id));
+    /* 「おかしの国 完成！」の お祝いは 出さない。検査でも スクショでも
+       盤面の 前に かぶさって じゃまに なるだけ（お祝いは 本物の
+       プレイで 見せる もの）*/
+    pendingComplete = false;
+    return Object.keys(dex).length;
+  },
   /* まもり神。ふつうは 伝説に 勝たないと つかえないので、検査では ここから */
   guardGive: id => { unlock('lg_' + id); guard = id; saveGuard(); guardUsed = false;
                      buildSkillBar(); return guardOf() && guardOf().name; },

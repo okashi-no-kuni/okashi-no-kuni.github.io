@@ -10,13 +10,13 @@
  * じっさいの プレイの 再現では ない。カーブどうしを くらべる ものさし。
  * ゲーム本体から 数字を 読むので、index.html を いじれば ここも ついてくる。
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { launch } from './_pw.mjs';
 import { resolve } from 'path';
 
 const FILE = resolve(process.argv[2] || 'index.html');
 const LOW = 250, HIGH = 550;      // ここに 入っていれば 合格
 
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const b = await launch();
 const p = await b.newPage();
 const errs = [];
 p.on('pageerror', e => errs.push(e.message));
