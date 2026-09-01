@@ -23,6 +23,7 @@ StoreKit も 銀行口座も 要らないので、審査で 止まるところ�
 | スクリーンショット | `tools/out/shots/` に 6まい・1320x2868 |
 | プライバシーポリシー | https://okashi-no-kuni.github.io/privacy.html |
 | サポート | https://okashi-no-kuni.github.io/support.html |
+| 問い合わせ先 | `okashinokuni.game@gmail.com`（このアプリ専用） |
 
 ---
 
@@ -30,10 +31,10 @@ StoreKit も 銀行口座も 要らないので、審査で 止まるところ�
 
 1. **Apple Developer Program に 入る**（年 ¥14,800／個人）
    審査に 出せるように なるまで 数日 かかることが あります。
-2. **サポートページの 連絡先を 埋める**
-   `support.html` の `REPLACE-ME@example.com` を 実在する アドレスに。
-   **ふだんの 個人アドレスは おすすめしません**（公開されます）。
-   このアプリ用に 1つ 作るのが 安全です。
+2. ~~サポートページの 連絡先を 埋める~~ **すみ**
+   `okashinokuni.game@gmail.com`（このアプリ専用に 作った もの）。
+   **ふだんの 個人アドレスを 書かないこと** ——公開ページなので
+   迷惑メール業者に かならず 拾われます。
 3. **App Store Connect で アプリを 作る**
    バンドルID は 上の とおり。プラットフォームは iOS。
 4. **API キーを 作って GitHub の Secrets に 入れる**
@@ -126,6 +127,17 @@ https://okashi-no-kuni.github.io/privacy.html
 | サポートURL | `https://okashi-no-kuni.github.io/support.html` |
 | マーケティングURL | `https://okashi-no-kuni.github.io/invite.html` |
 | プライバシーポリシーURL | `https://okashi-no-kuni.github.io/privacy.html` |
+
+### 連絡先（3か所とも おなじ）
+
+| どこ | 何を 入れるか |
+|---|---|
+| App 情報 → サポートの連絡先 | `okashinokuni.game@gmail.com` |
+| App Review に関する情報 → 連絡先 | `okashinokuni.game@gmail.com`（＋電話番号） |
+| `support.html` の お問い合わせ | 同上（もう 入れてあります） |
+
+Apple からの **審査結果の 通知**は ここでは なく、
+**Apple Developer アカウントの アドレス**に 届きます。
 
 ### カテゴリ
 
@@ -254,7 +266,7 @@ node tools/build-www.mjs        # アプリに 入る 絵の 読みおとし
 node tools/shots.mjs            # スクリーンショット
 ```
 
-- [ ] `support.html` の 連絡先を 埋めた
+- [x] `support.html` の 連絡先を 埋めた（`okashinokuni.game@gmail.com`）
 - [ ] ショップに **金額が 1つも 出ていない**（`IAP_ON = false`）
 - [ ] `privacy.html` と 実物が 合っている（分析ツールを 足していない）
 - [ ] スクショ 6まいが 1320x2868 ちょうど
