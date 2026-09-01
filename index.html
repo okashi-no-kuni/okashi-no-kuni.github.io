@@ -10104,7 +10104,8 @@ function buildColGrid(){
   colHint.style.display = (colTab === 'ch') ? '' : 'none';
   /* ワザを もつ子は ならびの 中に ちらばる（精霊は 銀、お菓子タワーは わくなし）
      ので、ばしょでは なく 見た目（✨の行）で さがしてもらう */
-  colHint.innerHTML = '📌 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>ワザをもつ子には <b>✨</b> がついています';
+  colHint.innerHTML = uiOr('nav_pin', UI_PX.text, '📌') +
+    ' 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>ワザをもつ子には <b>✨</b> がついています';
   colDone.style.display = CHARS.every(c => dex['ch_'+c.id]) ? '' : 'none';
   colGrid.innerHTML = '';
   /* わくの 3段階。レアアイテム＝金・つよい子（★5〜6）＝銀・ふつう＝いまのまま。
@@ -10146,7 +10147,8 @@ function buildColGrid(){
       d.insertAdjacentHTML('beforeend', html);
       // なかまはタップでワザバーに はる／はがす。0こなら おほしさまで買い足せる
       if (isSk){
-        if (pins.includes(o.pid)) d.insertAdjacentHTML('beforeend', '<div class="cPin">📌</div>');
+        if (pins.includes(o.pid))
+          d.insertAdjacentHTML('beforeend', '<div class="cPin">' + uiOr('nav_pin', UI_PX.pin, '📌') + '</div>');
         d.style.cursor = 'pointer';
         d.onclick = () => {
           const sDef = SKILLS.find(s => s.ch === o.pid);
@@ -11458,14 +11460,18 @@ const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」な
    ========================================================== */
 const UI_ICON = {};                       // 読めた 絵。まだなら 入っていない
 const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
-                 'nav_shop', 'nav_week', 'nav_code', 'nav_avatar', 'nav_share'];
+                 'nav_shop', 'nav_week', 'nav_code', 'nav_avatar', 'nav_share',
+                 'nav_pin', 'nav_close', 'nav_egg', 'nav_guard'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
 
    **em で 書かないこと。**アイコンが 行の 高さを 決められる 書きかたに すると、
    下のUIが 高くなって そのぶん 盤面が 縮む */
-const UI_PX  = { btn:30, head:18, tab:20, inline:22 };
+/* 閉じるだけ 大きめ（24px）。CLAUDE.md の きまりで
+   「✕ は 見つけやすさ が いちばん だいじ」。20px だと わくの 中の ✕ が
+   小さくて、いまの 文字の ✕ より 見つけにくく なった（見くらべて 決めた）*/
+const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14 };
 
 /* 絵文字を 絵に さしかえる ところ。
    [どこ, いまの 絵文字, 絵の キー, 大きさ]
@@ -11491,7 +11497,23 @@ const UI_SPOT = [
   ['#kingShare',              '📤', 'nav_share',  'tab'],
   ['#avShare',                '📤', 'nav_share',  'head'],
   ['#invShare',               '📤', 'nav_share',  'tab'],
+  ['#colClose',               '✕', 'nav_close',  'close'],
+  ['#gdClose',                '✕', 'nav_close',  'close'],
+  ['#helpClose',              '✕', 'nav_close',  'tab'],
+  ['#gdHead > div',           '✨', 'nav_guard',  'tab'],
+  ['#gdGo',                   '✨', 'nav_guard',  'tab'],
+  ['#eggHead > div',          '🥚', 'nav_egg',    'tab'],
 ];
+/* JS で 文字列から 組みたてる ところ用。絵が まだ 読めて いなければ
+   これまでの 絵文字を かえす（図鑑の カードや ヒント文は 何度も 作りなおされ、
+   swapSpot() が 走った あとに 中みが 入れかわるので、ここを とおす）*/
+function uiOr(key, px, em){
+  return UI_ICON[key]
+    ? '<img src="' + UI_ICON[key].src + '" alt="" width="' + px + '" height="' + px +
+      '" style="display:inline-block;vertical-align:middle;margin:-4px 0;' +
+      'width:' + px + 'px;height:' + px + 'px">'
+    : em;
+}
 /* 絵文字の ある **文字ノードだけ**を さしかえる。
    `innerHTML` を 丸ごと 書きかえると 中の <span class="pwTx"> が 作りなおされ、
    fitHead() が 出し引きした 状態が 消える。だから 文字ノードを 分けて 差しこむ */
@@ -11509,8 +11531,13 @@ function swapSpot(sel, em, key, px){
             after.nodeValue = after.nodeValue.slice(em.length);
             const im = new Image(px, px);
             im.src = UI_ICON[key].src; im.alt = '';
+            /* **たての 負の 余白を わすれないこと。**絵が 文字より 高いと
+               行の 高さが のびて、ガイドの 見出しが 0.4px 高くなり
+               本文が まるごと ずれました（実測）。まわりの 高さは
+               padding と line-height で 決まっているので、
+               ここを へこませても つぶれません（-2 で もう 足りる）*/
             im.style.cssText = 'display:inline-block;vertical-align:middle;flex:0 0 auto;' +
-                               'width:' + px + 'px;height:' + px + 'px';
+                               'margin:-4px 0;width:' + px + 'px;height:' + px + 'px';
             t.parentNode.insertBefore(im, after);
             t = after;
           }

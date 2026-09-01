@@ -55,6 +55,17 @@ const SHEETS = [
       /* 2,1 は 空。書かなければ 切り出しません */
     ],
   },
+  {
+    /* Phase 3 ——Phase 2 と おなじ 背景つきの シート */
+    file:'phase3_source.png', w:1536, h:1024, cols:3, rows:2, mode:'key',
+    plan:[
+      { cell:'0,0', key:'nav_pin',   name:'ピン留め（宝石の ペン）' },
+      { cell:'1,0', key:'nav_close', name:'閉じる（翼の ついた ✕）' },
+      { cell:'2,0', key:'nav_egg',   name:'たまご（王冠と 翼）' },
+      { cell:'0,1', key:'nav_guard', name:'まもり神（王さまの けもの）' },
+      /* 1,1 と 2,1 は 空 */
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }
