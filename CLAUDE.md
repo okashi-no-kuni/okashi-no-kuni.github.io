@@ -981,8 +981,13 @@ node tools/make-icons.mjs     # icon-1024.png と assets/（4〜5分 かかる�
 
 `IAP_ON`（`index.html`）**1つ**で、💎パック・復元ボタン・年齢と上限が
 まとめて 引っこみます。中みの コード（`payGems` / `canPayYen` /
-`recordYen` / `receiptOwned` / `restorePurchases`）は **消しません** ——
-1.1 で ここを `true` に して StoreKit を つなぐだけです。
+`recordYen` / `receiptOwned` / `restorePurchases`）は **消しません**。
+
+ただし **「`true` に するだけ」では ありません。**課金を 入れるには
+ほかに **有料Appの 契約（銀行口座・米国の 税務書類）**と、
+**WebView から StoreKit を よぶ ネイティブの 橋わたし**（Capacitor の
+課金プラグイン）が 要ります。手つづきの ほうが 重いです
+——`docs/appstore.md` の 8章に ぜんぶ 書いて あります。
 
 ### アプリには 20MB だけ 入れる
 
@@ -1537,10 +1542,19 @@ localStorage は書きかえ放題なので、これは画面がわの歯どめ�
 しても、レシートが入れば買った分だけに戻ります（`?dbg=1` の
 `__dbg.setReceipt()` で確かめられます）。
 
-たしかめは**かならずサーバーで**。端末の中でたしかめても、そのこたえ自体を
-書きかえられるので意味がありません。App Store Server API
+**自分で 書いた 判定を 信じないこと。**セーブも、そこから 読んだ こたえも
+書きかえられるので、「持っているか」を JavaScript の 中だけで 決めては
+いけません。
+
+よりどころに するのは **Apple が 署名した もの**です。**StoreKit 2 なら
+端末の 中で 署名を 検証ずみの トランザクションが 返る**ので、
+**1.1 は サーバーなしで 始めて かまいません。**
+
+もっと 堅くしたく なったら App Store Server API
 （`/inApps/v1/transactions/{id}`、`verifyReceipt` は古い）で、署名の鎖・
 bundleId・environment・払いもどし・パスポートの `expiresDate` を見ます。
+**売上が ふえて 不正が 気に なってから で じゅうぶん**です
+——先に サーバーを 建てると、無いはずの サーバーが 1つ 増えます。
 
 **復元ボタンは必須**です（非消費型を売るアプリに Apple が求めています）。
 `restorePurchases()` の中を `restoreCompletedTransactions()` の結果に
