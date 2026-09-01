@@ -28,7 +28,12 @@ export const CORE = [
   'icon-maskable-512.png',
   'vendor/phaser.min.js',
   'vendor/phaser-LICENSE.txt',   // MIT は 著作権の 一文を くばる 義務が ある
-  'art/title/title_main.webp',
+  /* 表紙は **2つ とも 入れる**こと。`TITLE_V2` を false に すれば
+     いつでも v1 に もどせる、が この 段どりの ねらいなので、
+     v1 を 外すと もどした とたん アプリと オフラインだけ 絵が 出なく なります。
+     v2 が 正式採用に なったら、v1 を 片づけるのは 別の 作業で */
+  'art/title/title_main.webp',   // v1（いままでの 完成版）
+  'art/title/title_v2.webp',     // v2（いまの 候補）
 ];
 
 /* あとから いる もの。キャラの 絵と 画面の 絵、ほかの ページ */
