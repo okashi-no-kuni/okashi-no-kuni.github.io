@@ -12,7 +12,7 @@ StoreKit も 銀行口座も 要らないので、審査で 止まるところ�
 
 | | |
 |---|---|
-| アプリの 中み | `www/`（`node tools/build-www.mjs` が 作る）**18.9MB** |
+| アプリの 中み | `www/`（`node tools/build-www.mjs` が 作る）**12.3MB** |
 | iOS のプロジェクト | `ios/`（Capacitor 7・コミットずみ） |
 | バンドルID | `io.github.okashinokuni.sweetkingdom` |
 | ホーム画面の名前 | おかしの国 |
@@ -263,6 +263,7 @@ node tools/check-btn.mjs        # ボタンが 押せなくならないか
 node tools/check-flyer.mjs      # 予告の 影が 早すぎないか
 node tools/sim.mjs              # かべ（250〜550）
 node tools/build-www.mjs        # アプリに 入る 絵の 読みおとし
+node tools/build-sw.mjs         # web版の オフライン（sw.js を 作りなおす）
 node tools/shots.mjs            # スクリーンショット
 ```
 
@@ -272,6 +273,7 @@ node tools/shots.mjs            # スクリーンショット
 - [ ] スクショ 6まいが 1320x2868 ちょうど
 - [ ] アイコンに アルファが ない（`カラータイプ 2`）
 - [ ] ビルド番号が 前より 大きい（同じ数字は 二度と つかえない）
+- [ ] `node tools/build-sw.mjs --check` が 通る（web版が 古いままに ならない）
 
 ---
 
@@ -299,7 +301,15 @@ node tools/shots.mjs            # スクリーンショット
 100万ドル未満）に 申請すると **15%** に なります。個人なら まず 該当するので、
 **忘れず 申請すること。**
 
-### ② WebView から StoreKit は 直接 呼べない
+### ② WebView から StoreKit は 直接 呼べない（橋は もう ある）
+
+**`NATIVE`（`index.html`）に 橋の 入口が できています。**
+ふるえ（`@capacitor/haptics`）は もう つないであるので、
+課金も おなじ 形で 足せます ——`NATIVE.plugin('Purchases')` を とって、
+`payGems()` の 中みだけ さしかえる。
+
+以下は その 元の 説明です。
+
 
 **ここが 1.0 の 時点で 書いていない コードです。**
 

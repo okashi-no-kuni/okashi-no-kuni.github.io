@@ -2076,8 +2076,70 @@ function setVib(on){ vibOn = on; try{ localStorage.setItem('sweetTD.vib', on ? '
    そのまま 鳴らせます。UIFeedbackGenerator は 単発の トンッ だけなので、
    せっかくの リズムが つぶれます。
    **さしかえるのは この関数 1つだけ。**ゲーム側は 1行も さわりません */
+/* ==========================================================
+   ネイティブへの 橋（NATIVE）
+   ==========================================================
+   **WebView に 無い ものは、ぜんぶ ここを とおして 足します。**
+   ゲーム本体は「アプリで 動いているか」を 気に しません。
+   足す ものが ふえても、さわるのは この オブジェクトだけです。
+
+   なぜ 1か所に まとめるか ——ちらばると、web版で 落ちます。
+   `Capacitor` は アプリの 中にしか いないので、うっかり 直に
+   よぶと ブラウザで `undefined` に なって そこで 止まります。
+
+   これから 足す ものも おなじ 形に します。
+     課金      Purchases プラグイン → payGems() の 中みだけ さしかえ
+     通知      LocalNotifications  → 💗が たまったら 教える
+     Game Center  なくても 動く（無いときは しずかに 何もしない）
+
+   **「無い ときは しずかに 何も しない」**が いちばん だいじです。
+   web版でも アプリ版でも おなじ コードが 動くように します */
+const NATIVE = {
+  /* アプリの 中で 動いているか。ブラウザでは false */
+  get on(){
+    try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform &&
+                   window.Capacitor.isNativePlatform()); }catch(e){ return false; }
+  },
+  /* プラグインを とる。入っていなければ null（呼ぶ側で 分岐する） */
+  plugin(name){
+    try{ return (window.Capacitor && window.Capacitor.Plugins &&
+                 window.Capacitor.Plugins[name]) || null; }catch(e){ return null; }
+  },
+};
+
+/* ふるえ。**iPhone の ブラウザには navigator.vibrate が ありません**
+   （バグでは なく、iOS に その機能が 無い）。アプリに つつむと
+   Capacitor の Haptics ごしに 鳴らせるように なります。
+
+   ただし ネイティブの ハプティクスは「トンッ」の 単発しか 出せないので、
+   [30,50,30] のような **リズムは 自分で 組みたてます**（鳴らす→待つ→鳴らす）。
+   ミリびょうの ならびは ITEMS / SKILLS に 書いた ものを そのまま つかいます。
+
+   **実機で ためしていません。**この環境に iPhone が 無いためです。
+   鳴らなくても 落ちない 作りに して あります（try で かこってある）*/
+let vibTimers = [];
 function vib(pat){
-  if (!vibOn || !navigator.vibrate) return;
+  if (!vibOn) return;
+  for (const t of vibTimers) clearTimeout(t);
+  vibTimers.length = 0;
+
+  const H = NATIVE.plugin('Haptics');
+  if (H){
+    /* [ふるえ, 休み, ふるえ, …] の ならび。長いほど 強く 鳴らす */
+    const list = Array.isArray(pat) ? pat : [pat];
+    let at = 0;
+    for (let i = 0; i < list.length; i += 2){
+      const ms = list[i] | 0;
+      const style = ms >= 40 ? 'HEAVY' : ms >= 20 ? 'MEDIUM' : 'LIGHT';
+      vibTimers.push(setTimeout(() => {
+        try{ H.impact({ style }); }catch(e){}
+      }, at));
+      at += ms + (list[i + 1] | 0);
+    }
+    return;
+  }
+  // Android の ブラウザと アプリは これで 鳴る
+  if (!navigator.vibrate) return;
   try{ navigator.vibrate(pat); }catch(e){}
 }
 let paraders = [];            // 応援パレード中のなかま
@@ -11171,6 +11233,11 @@ function showDiag(){
     ' ／ 見えてる ' + (vv ? Math.round(vv.height) : '-') +
     ' ／ ホームバー ' + sb +
     ' ／ 下のすき間 ' + gap + (gap >= sb + 8 ? ' ✅' : ' ⚠はみ出し') +
+    /* オフラインの じゅんび。**「直したのに 古いまま」の 切りわけに いちばん 効く。**
+       版が 出ていれば その 中みで あそんでいる、と 言いきれる */
+    '<br>オフライン: ' + (NATIVE.on ? 'アプリ版（はじめから ぜんぶ 入っている）'
+                        : swVer ? '版 ' + swVer + ' ✅'
+                        : ('serviceWorker' in navigator) ? 'じゅんび中…' : '×つかえない') +
     '<br>ばんめん: マス ' + CELL + ' ／ ' + (over ? '⚠おわり(over)' : 'うごいてる') +
     ' ／ えらび ' + (selTool || 'なし') +
     '<br>さいごのタップ: ' + (lastTap
@@ -14189,6 +14256,33 @@ checkLife();      // 💗の回復まちの途中なら、その画面にもど�
                   // ※ 今日のプレゼント（checkLogin）は 表紙を とじた あと
 hintGuide();      // はじめての人には 📕 を 光らせて ガイドの ありかを 教える
 openTitle();      // 表紙（本でいう 表紙）から はじまる
+
+/* ---- web版を オフラインでも あそべるように する ----
+   アプリ版は 絵も コードも 中に 入っているので はじめから オフラインですが、
+   ブラウザ版は 毎回 GitHub Pages から 読んでいます。
+   sw.js を 入れると、一度 あそべば 電波が 無くても あそべます。
+
+   **https の ときだけ 入れること。**Service Worker は 安全な つながりでしか
+   動かず、`file://` や アプリの `capacitor://` では 例外に なります。
+   検査の どうぐは file:// で ひらくので、ここで 分けておかないと
+   毎回 エラーが 出ます。
+
+   sw.js は `node tools/build-sw.mjs` が 作りなおします（手で 直さない）*/
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || location.hostname === 'localhost')){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+    /* いま どの 版が 効いているか。ガイドの 診断に 出して、
+       「直したのに 古いまま」を 切りわけられるように する */
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data && e.data.sw){ swVer = e.data.sw; showDiag(); }
+    });
+    navigator.serviceWorker.ready.then(r => {
+      if (r.active) r.active.postMessage('version');
+    }).catch(() => {});
+  });
+}
+let swVer = '';
 
 game = new Phaser.Game({
   type: Phaser.CANVAS,        // 絵は Canvas 2D で描くので いまは WebGL にしない

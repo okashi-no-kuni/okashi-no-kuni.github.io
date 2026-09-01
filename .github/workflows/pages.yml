@@ -24,6 +24,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # sw.js が 古いまま 出ると、**直したのに 遊ぶ人には 古いままが 出ます。**
+      # エラーも 出ないので 報告されるまで 気づけない。ここで 止めます
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: sw.js が 最新か たしかめる
+        run: node tools/build-sw.mjs --check
+
       # enablement: true で、設定画面を触らずに Pages を有効化する
       - uses: actions/configure-pages@v5
         with:
