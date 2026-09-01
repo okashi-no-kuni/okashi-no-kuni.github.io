@@ -595,34 +595,132 @@
   #invMsg{min-height:1.5em;font-size:calc(11.5px * var(--fs));color:var(--pink-d);
     font-weight:800;margin:2px 0 6px}
   /* ============ はじめての人の 画面（#weOv） ============
-     おかえりなさい（#backOv）と ならびは 同じだが、こちらは
-     **1まいの 絵**（art/screens/welcome.webp）。canvas も rAF も 走らない。
-     絵は 切らずに ぜんぶ 見せる（表紙と 同じ考え。はしの タフィと
-     こうもりが 切れると「みんな ならんでいる」に 見えない）*/
+     表紙の「はじめる」の すぐ あとに 1回だけ 出す 導入の 画面。
+     canvas も rAF も 走りません（いちばん 軽い 画面の ひとつ）。
+
+     **1まいの 絵に しないこと。**上の 絵・カード・文・区切り・ボタンを
+     ばらばらの 部品に して CSS で 組みます。1まいの 絵に すると、
+     画面の たてよこ比が 端末ごとに ちがうので、**文字が 切れるか、
+     絵が つぶれるか の どちらか**に かならず なります
+     （表紙は 文字も 絵の 中なので 例外あつかい）。
+
+     ならびは 上から  絵 → 題 → 説明 → 区切り → 📕 → ボタン。
+
+     **せまい 画面では 絵から 先に ちぢめます**（`--weCap`）。
+     文字と ボタンを 小さくして 場所を 作っては いけません ——
+     読めない 題と 押しにくい ボタンでは、画面の 用が たりません */
   #weOv{position:fixed;inset:0;z-index:39;display:none;
     width:100vw;height:100vh;height:100dvh;overflow-y:auto;box-sizing:border-box;
+    /* 下は ホームインジケーターの ぶん ＋ 18px。ボタンを 帯に 近づけない */
     padding:calc(env(safe-area-inset-top) + 12px) 14px
-            calc(env(safe-area-inset-bottom) + 16px);
-    align-items:center;justify-content:center;
-    background:linear-gradient(to bottom,#cfe7fa 0%,#eee0f4 45%,#f4d8e7 100%)}
+            calc(env(safe-area-inset-bottom) + 18px);
+    align-items:flex-start;justify-content:center;
+    /* 上＝淡い スカイブルー、中＝ブルー〜ラベンダー、下＝ラベンダー〜パールピンク。
+       **ピンク一色に しないこと**（子どもにも 大人にも、という ねらい）*/
+    background:
+      radial-gradient(115% 55% at 50% 0%, rgba(255,255,255,.5), rgba(255,255,255,0) 62%),
+      radial-gradient(90% 45% at 50% 100%, rgba(255,236,246,.6), rgba(255,236,246,0) 70%),
+      linear-gradient(to bottom,#cfe6fb 0%,#d8dcf7 30%,#e4d9f5 56%,#f1ddee 80%,#fae1ea 100%)}
   #weOv.on{display:flex;animation:tFade .4s ease}
-  #weCard{width:min(100%,430px);border-radius:26px;text-align:center;
-    padding:9px 16px 16px;
-    background:linear-gradient(180deg,rgba(255,252,254,.96),rgba(255,244,251,.94));
-    box-shadow:0 14px 40px rgba(180,130,175,.30), inset 0 0 0 3px rgba(255,255,255,.9);
+  /* **`margin:auto` で まん中に すること。**`align-items:center` だけだと、
+     カードが 画面より 高いとき 上が 切れて、スクロールしても 出てきません
+     （375x667 で 上が 19px 欠けた）。flex の auto マージンは、
+     場所が 足りない ときは 0 に なるので 切れません */
+  #weCard{width:min(100%,420px);margin:auto;position:relative;
+    display:flex;flex-direction:column;gap:clamp(6px,1.5vh,11px);
+    text-align:center;border-radius:28px;
+    padding:clamp(10px,3.2vw,15px) clamp(12px,3.6vw,18px) clamp(13px,3.8vw,18px);
+    /* 角丸と ゴールドの ふちの 両立は、border を すきとおらせて
+       background を 2枚（padding-box / border-box）かさねる（図鑑の わくと 同じ手）*/
+    border:1.5px solid transparent;
+    background:
+      linear-gradient(180deg,rgba(255,253,254,.97),rgba(255,247,251,.96) 52%,rgba(255,242,248,.96)) padding-box,
+      linear-gradient(160deg,#f7e4bb,#ffdcec 34%,#f4e3c2 60%,#ecd2ea) border-box;
+    box-shadow:0 18px 44px rgba(176,132,178,.30),0 4px 14px rgba(150,120,180,.14);
     animation:pop .42s cubic-bezier(.2,1.4,.5,1)}
-  /* たてよこ比は 原画（1200x896）そのまま。ここを 変えると 絵が ゆがむ */
-  #weArt{display:block;width:100%;height:auto;aspect-ratio:1200 / 896;
-    border-radius:20px}
-  #weT{font-size:calc(19px * var(--fs));color:var(--pink-d);line-height:1.35;
-    margin:8px 0 2px}
-  /* 本文は 1行ずつ。**行の あいだを あけること** ——4つの ことを
-     つづけて 書くと、どれが「いま やること」か 分からない */
-  #weB{font-size:calc(13px * var(--fs));line-height:1.65;opacity:.82;
-    margin:6px 0 12px}
+  /* 中がわの 細い 金の 線。**1本だけ**にすること ——参考の 高級感は
+     線の 本数では なく 細さと うすさで 出ます */
+  #weCard::before{content:'';position:absolute;inset:5px;border-radius:23px;
+    border:1px solid rgba(212,175,108,.26);pointer-events:none}
+  /* 上の 絵。**たてよこ比は たもつ**（つぶさない）。高さが 足りない ときだけ
+     `--weCap` で 頭うちに して、はみ出す ぶんを 上下から 切ります。
+     絵を さしかえる ときに 直すのは **`--weAR` と `src` の 2か所だけ** */
+  #weArtWrap{position:relative;flex:0 0 auto;width:100%;overflow:hidden;
+    --weAR:1200 / 896;
+    --weCap:clamp(150px,34vh,320px);
+    --weCap:clamp(150px,34dvh,320px);
+    aspect-ratio:var(--weAR);max-height:var(--weCap);
+    border-radius:20px;border:1.5px solid transparent;
+    background:linear-gradient(160deg,#f7e4bb,#ffdcec 40%,#efd8b4) border-box;
+    box-shadow:0 6px 18px rgba(176,132,178,.22)}
+  /* 切るのは 上下（object-position）。お城が まん中に のこる いちにする */
+  #weArt{display:block;width:100%;height:100%;border-radius:19px;
+    object-fit:cover;object-position:50% 45%}
+  /* 区切りの かざり。細い 金の 線＋小さな ひし形。**Canvas も 画像も つかわない** */
+  .weOrn{display:flex;align-items:center;justify-content:center;gap:9px;
+    margin:0;pointer-events:none}
+  .weOrn i{flex:1 1 0;max-width:32%;height:1px;
+    background:linear-gradient(90deg,rgba(212,175,108,0),rgba(212,175,108,.55))}
+  .weOrn i:last-child{transform:scaleX(-1)}
+  .weOrn span{flex:0 0 auto;width:7px;height:7px;border-radius:1.5px;
+    transform:rotate(45deg);background:linear-gradient(135deg,#f8e3b4,#d9b36a);
+    box-shadow:0 0 6px rgba(212,175,108,.45)}
+  .weOrn.sm i{max-width:18%}
+  .weOrn.sm span{width:5px;height:5px;background:linear-gradient(135deg,#ffd3e8,#f09cc5);
+    box-shadow:0 0 5px rgba(240,156,197,.5)}
+  .weOrn.dot i{max-width:29%;height:0;background:none;
+    border-top:1px dotted rgba(212,175,108,.55)}
+  /* 題。**画像の 中の 文字に しないこと** ——端末ごとに 大きさが 変わるので、
+     焼きこむと 小さい 画面で 読めなくなります。clamp で 幅に ついてこさせる */
+  #weT{position:relative;font-weight:900;line-height:1.34;letter-spacing:.01em;
+    font-size:clamp(17px,calc(5.1vw * var(--fs)),25px);
+    color:#e8579a;
+    text-shadow:0 1px 0 rgba(255,255,255,.92),0 2px 7px rgba(224,95,158,.17)}
+  #weT::before,#weT::after{content:'✦';position:absolute;font-size:.36em;
+    color:rgba(226,183,104,.8);pointer-events:none}
+  #weT::before{left:0;top:.15em}
+  #weT::after{right:0;bottom:.15em}
+  /* 説明。ピンクに しないこと ——題と おなじ色だと どちらが 主役か 分からない */
+  #weB{line-height:1.7;color:#7a6a8c;font-weight:700;
+    font-size:clamp(12.5px,calc(3.4vw * var(--fs)),16px)}
   #weB b{color:var(--pink-d);font-weight:800}
-  #weOv .btn{width:100%;height:auto;min-height:52px;
-    font-size:calc(17px * var(--fs));border-radius:16px}
+  /* 📕への 案内。文の 役わりが ちがうので 1段 小さく、うすく */
+  #weG{line-height:1.6;color:#847994;font-weight:700;opacity:.9;
+    font-size:clamp(11.5px,calc(3.1vw * var(--fs)),14.5px)}
+  #weG b{font-style:normal;font-size:1.18em;vertical-align:-.06em}
+  /* ボタン。ゲームを はじめる 処理は 1行も さわっていません（見た目だけ）。
+     **常時 うごく アニメは 入れない**こと ——表紙の「はじめる」だけが
+     光る 役で、ここで 2つ 光ると どちらを 押すのか 分からなくなります */
+  #weGo{flex:0 0 auto;position:relative;width:100%;height:auto;overflow:hidden;
+    min-height:clamp(50px,7vh,58px);margin-top:1px;
+    font-size:clamp(16px,calc(4.4vw * var(--fs)),21px);font-weight:900;
+    letter-spacing:.04em;color:#fff;border-radius:999px;
+    border:1.5px solid transparent;
+    background:
+      linear-gradient(180deg,#ffa6d1 0%,#fb85bc 46%,#ef6ea9 100%) padding-box,
+      linear-gradient(180deg,#fbe9c4,#e6c489 55%,#f6e2b8) border-box;
+    box-shadow:0 4px 0 rgba(198,88,148,.55),0 10px 22px rgba(224,95,158,.26);
+    text-shadow:0 1px 2px rgba(188,68,128,.4);
+    transition:transform .12s ease,box-shadow .12s ease}
+  /* うわの つや。1本だけ 敷く（動かさない）*/
+  #weGo::before{content:'';position:absolute;left:6%;right:6%;top:4px;height:36%;
+    border-radius:999px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0))}
+  /* 押した ときだけ 軽く へこませる（.btn の translateY は つかわない）*/
+  #weGo:active{transform:scale(.98);
+    box-shadow:0 2px 0 rgba(198,88,148,.55),0 5px 12px rgba(224,95,158,.22)}
+  /* たてが みじかい 端末（320x568 など）。**文字と ボタンは そのまま**、
+     すき間・絵・かざり の 順に けずる */
+  @media (max-height:660px){
+    #weOv{padding-top:calc(env(safe-area-inset-top) + 8px)}
+    #weCard{gap:5px}
+    #weArtWrap{--weCap:clamp(120px,27vh,210px);--weCap:clamp(120px,27dvh,210px)}
+    .weOrn.sm,.weOrn.dot{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #weOv.on{animation:none}
+    #weCard{animation:none}
+    #weGo{transition:none} }
   /* 読みあげ用にだけ のこす 題字（見た目は 絵がわ）*/
   .tSr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
     clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -1233,15 +1331,18 @@
 
 <div id="weOv">
   <div id="weCard">
-    <img id="weArt" src="art/screens/welcome.webp" width="1200" height="896"
-         alt="おかしの国の おしろの まえに あつまった なかまたち" draggable="false">
-    <div id="weT">魔法にかけられた<br>おかしの国を 救いに行こう！</div>
-    <div id="weB">
-      敵と戦って たくさん<b>仲間</b>を増やしてね<br>
-      遊びかたは <b>📕</b> のところにあるよ<br>
-      さあ　ゲームをはじめよう！
+    <div id="weArtWrap">
+      <img id="weArt" src="art/screens/welcome.webp" width="1200" height="896"
+           alt="おかしの国の おしろと おかしの けしき" draggable="false">
     </div>
-    <button class="btn" id="weGo">ゲームを はじめる ▶</button>
+    <div class="weOrn" aria-hidden="true"><i></i><span></span><i></i></div>
+    <div id="weT">魔法にかけられた<br>おかしの国を救いに行こう！</div>
+    <div class="weOrn sm" aria-hidden="true"><i></i><span></span><i></i></div>
+    <div id="weB">敵と戦って、仲間を集めながら<br>不思議なおかしの世界を冒険しよう</div>
+    <div class="weOrn dot" aria-hidden="true"><i></i><span></span><i></i></div>
+    <div id="weG">遊びかたは <b>📕</b> からいつでも見られるよ</div>
+    <div class="weOrn" aria-hidden="true"><i></i><span></span><i></i></div>
+    <button class="btn" id="weGo">ゲームをはじめる ▶</button>
   </div>
 </div>
 
@@ -13901,6 +14002,7 @@ function resize(){
   const W = COLS*CELL, H = ROWS*CELL;
   for (const s of sparks){ s.x = Math.min(s.x, W); s.y = Math.min(s.y, H); }
   bakeGround();
+  fitWe();                       // 導入の 画面が 出ている あいだは よこ向きにも ついてくる
 }
 window.addEventListener('resize', resize);
 /* **起動直後に 1回 はかるだけでは 足りない。**
@@ -14197,6 +14299,46 @@ $('backNew').onclick = () => {         // さいしょから
    下2つを 見るのは、**この版より 前から あそんでいる人**に 旗が
    立っていないため。旗だけで 見ると あの人たちにも 出てしまう */
 const weOv = $('weOv');
+/* 行を かぞえる。**まん中の たかさで まとめる**こと ——上ばしで かぞえると、
+   📕 のように 大きさや ベースラインの ちがう 字が おなじ行でも
+   別の行に 見えます（検査で じっさいに 2行と 出ました）*/
+function weLines(el){
+  const r = document.createRange(); r.selectNodeContents(el);
+  const rows = [];
+  for (const b of r.getClientRects()){
+    if (b.height <= 1 || b.width <= 0) continue;
+    const mid = b.top + b.height / 2;
+    const hit = rows.find(g => mid > g.top && mid < g.bottom);
+    if (hit){ hit.top = Math.min(hit.top, b.top); hit.bottom = Math.max(hit.bottom, b.bottom); }
+    else rows.push({ top:b.top, bottom:b.bottom });
+  }
+  return rows.length;
+}
+/* 出したあとに 測って、おりかえしていたら その行だけ 縮める。
+   図鑑の 札の `fitStat()`・見出しの `fitHead()` と 同じ考えです。
+
+   **決めうちの clamp() だけでは 実機で おりかえします。**
+   ここ（Linux）で つかわれる フォントは iPhone の 丸ゴシックより せまいので、
+   393px で 1行に 収まって 見えても 向こうでは 1行 ふえます。
+   実測の のこり幅は 題が いちばん せまく、320px で **10%** しか ありません。
+
+   **はじめから 小さくして 場所を 作っては いけません。**題の 読みやすさが
+   この画面の いちばん の 用です。だから ふだんは clamp() のまま、
+   はみ出した ときだけ 0.82倍までの あいだで 下げます */
+function fitWe(){
+  if (!weOv.classList.contains('on')) return;
+  for (const [id, want] of [['weT',2],['weB',2],['weG',1]]){
+    const el = $(id);
+    if (!el) continue;
+    el.style.fontSize = '';
+    if (!el.clientWidth) continue;                  // まだ 出ていない
+    const base = parseFloat(getComputedStyle(el).fontSize);
+    if (!base) continue;
+    /* 小数で 引くと 0.82 が 0.8199… に なって 1だん 手前で 止まる。整数で かぞえる */
+    for (let k = 96; k >= 82 && weLines(el) > want; k -= 4)
+      el.style.fontSize = (base * k / 100).toFixed(2) + 'px';
+  }
+}
 function openWelcome(){
   if (location.search.includes('dbg=1')) return false;
   try{
@@ -14205,6 +14347,10 @@ function openWelcome(){
     if (localStorage.getItem('sweetTD.login'))    return false;
   }catch(e){ return false; }
   weOv.classList.add('on');
+  fitWe();
+  /* フォントが まだ 読めていない ことが あるので もう一度。
+     `document.fonts.ready` は resize() から よばれる */
+  requestAnimationFrame(fitWe);
   return true;
 }
 function closeWelcome(){
