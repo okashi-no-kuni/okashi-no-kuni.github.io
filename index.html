@@ -11190,7 +11190,23 @@ function makeShareCard(){
   g.fillText('ウェーブ ' + Math.max(1, wave, rec.bw) + ' 到達！', W2/2, 260);
   const got = dexList().filter(o => o.cat === 'ch' && dex[o.id]).length;
   g.font = "800 38px 'Hiragino Maru Gothic ProN',sans-serif";
-  g.fillText('👑 仲間 ' + got + '人　⭐ 倒した数 ' + rec.kills, W2/2, 340);
+  /* 👑 だけ 絵に する。canvas なので <img> では なく drawImage。
+     まん中ぞろえの ままだと 絵の ぶん ずれるので、
+     **絵＋すき間＋字**の 幅を 出してから 左ぞろえで 置きなおす。
+     絵が まだ 読めて いなければ、これまでどおり 絵文字で 1行 書く。
+     ⭐ は Phase 5 なので さわらない */
+  const shTx = ' 仲間 ' + got + '人　⭐ 倒した数 ' + rec.kills;
+  if (UI_ICON.nav_dex){
+    const IC = 44, GAP = 8;
+    const tw = g.measureText(shTx).width;
+    const x0 = W2/2 - (IC + GAP + tw)/2;
+    g.drawImage(UI_ICON.nav_dex, x0, 340 - IC*0.78, IC, IC);
+    g.textAlign = 'left';
+    g.fillText(shTx, x0 + IC + GAP, 340);
+    g.textAlign = 'center';
+  } else {
+    g.fillText('👑' + shTx, W2/2, 340);
+  }
   // なかまの似顔絵をならべる（いなければおかしのようせい）
   const picks = dexList().filter(o => o.cat === 'ch' && dex[o.id]).map(o => o.pid);
   const fill = ['tw_candy','tw_ice','tw_choco','tw_star'];
@@ -11408,10 +11424,21 @@ const keySvg = (n, st) => svgTag(n, st,
 
 /* さんかく（つぎへ）。文の中で何度もつかうので、
    id をつかうグラデではなく 重ねぬりで立体にしてある */
-const playSvg = (n, st) => svgTag(n, st,
-  '<path d="M8 5.4 L19.4 12.8 L8 20.2 Z" fill="#c94b86" opacity=".5"/>' +
-  '<path d="M7.4 4.6 L18.8 12 L7.4 19.4 Z" fill="#fff7ec"/>' +
-  '<path d="M7.4 4.6 L18.8 12 L7.4 12 Z" fill="#ffffff" opacity=".8"/>');
+/* さんかく（▶）。ふだんは **こいピンクの ボタンの上**に 出るので 白で 塗る。
+   `ink` を つけると **白い地の上**用に なる ——ガイドの 見出しは
+   `.hSec{background:rgba(255,255,255,.8)}` の 白なので、白い 三角は
+   輪郭しか 見えず、実測で 中みと 地の さが **1**しか なかった（見出しの 字は 112）。
+   色は 見出しの 字と 同じ `--pink-d` に そろえ、上半分だけ 明るくして
+   ほかの アイコンと おなじ「つやのある」見え方に する。
+   **形は 変えないこと** ——「次へ・ひらく」の 意味は 形で 伝わっている */
+const playSvg = (n, st, ink) => svgTag(n, st,
+  ink
+    ? '<path d="M8.2 5.6 L19.6 13 L8.2 20.4 Z" fill="#8f2f5c" opacity=".22"/>' +
+      '<path d="M7.4 4.6 L18.8 12 L7.4 19.4 Z" fill="#c9457f"/>' +
+      '<path d="M7.4 4.6 L18.8 12 L7.4 12 Z" fill="#ff8fc4" opacity=".85"/>'
+    : '<path d="M8 5.4 L19.4 12.8 L8 20.2 Z" fill="#c94b86" opacity=".5"/>' +
+      '<path d="M7.4 4.6 L18.8 12 L7.4 19.4 Z" fill="#fff7ec"/>' +
+      '<path d="M7.4 4.6 L18.8 12 L7.4 12 Z" fill="#ffffff" opacity=".8"/>');
 
 /* 音符（8分音符） */
 const noteSvg = (n, st) => {
@@ -11441,7 +11468,8 @@ const ICO_BTN = 'display:block;margin:-4px auto';
    **paintUiIcons() より 先に 置くこと** ——const は 巻きあがらないので、
    あとに 置くと 呼ばれた しゅんかんに ReferenceError で 止まる（1回 やった）*/
 const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
-const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
+const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく（ピンクの ボタンの上）
+const PLAY_INK = playSvg(17, INLINE, true);   // ガイドの 見出し用（白い 地の上）
 
 /* ==========================================================
    UIアイコン（art/ui/*.webp）
@@ -11471,7 +11499,11 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
 /* 閉じるだけ 大きめ（24px）。CLAUDE.md の きまりで
    「✕ は 見つけやすさ が いちばん だいじ」。20px だと わくの 中の ✕ が
    小さくて、いまの 文字の ✕ より 見つけにくく なった（見くらべて 決めた）*/
-const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14 };
+/* ガイド本文は **文章の 読みやすさが 先**。字は 見出し14.3px・本文12.1px
+   （行の 高さ 19.36px）なので、絵は 見出し17px・本文15px に とどめる。
+   たての 負の 余白（-4px）が あるので 行は のびない */
+const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14,
+                 h3:17, body:15 };
 
 /* 絵文字を 絵に さしかえる ところ。
    [どこ, いまの 絵文字, 絵の キー, 大きさ]
@@ -11605,7 +11637,7 @@ const TOWER_TIPS = {
 };
 function buildHelp(){
   let h = '';
-  h += '<div class="hSec"><h3>' + PLAY + ' ウェーブと「早よび」</h3>' +
+  h += '<div class="hSec"><h3>' + PLAY_INK + ' ウェーブと「早よび」</h3>' +
     '<p>ウェーブが終わると <b>10秒で自動的に次が始まります</b>。' +
     '待ちきれないときはボタンをタップすると、<b>残り秒数×ボーナス⭐</b>がもらえます。' +
     '準備を取るか、⭐を取るか、毎回の駆け引き！</p></div>';
@@ -11629,8 +11661,8 @@ function buildHelp(){
     'やさしい回がまざります。画面の上に名前が出ます</li></ul>' +
     '<p style="margin-top:5px">たおした子は <b>図鑑に入って、そのまま 仲間としても つかえます</b>。' +
     'つまり <b>敵は 未来の 仲間</b>です🎀</p></div>';
-  h += '<div class="hSec"><h3>👑 図鑑（コレクション）</h3>' +
-    '<p>集めた子は 👑 の 図鑑に ならびます。' +
+  h += '<div class="hSec"><h3>' + uiOr('nav_dex', UI_PX.h3, '👑') + ' 図鑑（コレクション）</h3>' +
+    '<p>集めた子は ' + uiOr('nav_dex', UI_PX.body, '👑') + ' の 図鑑に ならびます。' +
     '<b>仲間・敵・伝説・アイテム・友だち</b> の5つのタブで、' +
     'いま <b>' + GEN_LIST.length + '体</b>います。' +
     '<b>図鑑にいる子だけ 盤面に おけます</b>ので、集めるほど 戦いかたが ふえます。</p>' +
@@ -11644,10 +11676,12 @@ function buildHelp(){
     '①敵をたおす ②' + STAGE_WAVES + 'ウェーブごとのクリアで たまごが1こ ' +
     '③⭐や💎で たまごを ひらく ④ともだちバトルに勝つと かけら🩷。' +
     'たまごから ダブりが 出たときも かけらに なって、ほしい★の子と 交換できます。</p>' +
-    '<p style="margin-top:5px">🛍ショップ・🏅今週のおだい・🔑合言葉 も ' +
+    '<p style="margin-top:5px">' + uiOr('nav_shop', UI_PX.body, '🛍') + 'ショップ・' +
+    uiOr('nav_week', UI_PX.body, '🏅') + '今週のおだい・' +
+    uiOr('nav_code', UI_PX.body, '🔑') + '合言葉 も ' +
     'この 図鑑の 中に あります。</p></div>';
   h += '<div class="hSec"><h3>✨ 仲間ワザの使いかた</h3>' +
-    '<p>👑図鑑で仲間をタップ → ワザバーに<b>貼る</b>（7こまで）。バーをタップで発動、<b>1こ減ります</b>。' +
+    '<p>' + uiOr('nav_dex', UI_PX.body, '👑') + '図鑑で仲間をタップ → ワザバーに<b>貼る</b>（7こまで）。バーをタップで発動、<b>1こ減ります</b>。' +
     'バーがいっぱいのときは、いちばん左の仲間が図鑑に戻って<b>交代</b>。' +
     'バーの仲間を<b>長押し</b>しても図鑑に戻せます。' +
     '敵のプレゼント🎁・ログインボーナス・⭐で買い足して補充してください。</p><ul style="margin-top:5px">' +
@@ -11689,9 +11723,10 @@ function buildHelp(){
     '敵は少しずつ強くなるので、どこまで潜れるかが記録になります</li>' +
     '<li>うわさでは、<b>ウェーブ' + LEGENDS[0].wave + '</b>で 伝説が 立ちふさがるらしい…✨<br>なかまを 1人 えらんで <b>1対1</b>。かてば なかまに なって、<b>' + EGGS[2].name + '</b>も 3こ もらえる。まけても <b>3回</b>まで やりなおせて、つぎに その ウェーブまで 行けば また ちょうせん できる</li>' +
     '<li>かちとった 伝説は <b>まもり神</b>として 1体 つれていけます。ワザバーの いちばん左（✨）から えらんで、<b>1プレイに 1回だけ</b> よべる 切りふだ。' + LEGENDS.length + '体 ぜんぶ 効きめが ちがいます</li></ul></div>';
-  h += '<div class="hSec"><h3>🔑 合言葉</h3>' +
+  h += '<div class="hSec"><h3>' + uiOr('nav_code', UI_PX.h3, '🔑') + ' 合言葉</h3>' +
     '<p>とくべつな「合言葉」を手に入れたら、' +
-    '<b>👑図鑑をひらいて、いちばん上の「🔑合言葉」</b>から入れてください。' +
+    '<b>' + uiOr('nav_dex', UI_PX.body, '👑') + '図鑑をひらいて、いちばん上の「' +
+    uiOr('nav_code', UI_PX.body, '🔑') + '合言葉」</b>から入れてください。' +
     '限定の着せかえテーマが届きます🎁</p></div>';
   /* ---- けんりと あんしん ----
      **クレジット表記が いる 素材を つかったら ここに 書くこと**
