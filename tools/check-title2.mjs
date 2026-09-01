@@ -85,6 +85,17 @@ for (const [w, h] of SIZES){
        ① 当たり判定の 中は ボタンか          … 中の 点が ボタンの 色か
        ② 当たり判定の すぐ外は ボタンでないか … はみ出して いないか
        ③ 押したら ボタンに 当たるか           … 何かが かぶって いないか  */
+  /* **チカチカする 光を 止めてから 撮ること。**下では「いまの 絵」と
+     「フェードを 外した 絵」の 2まいを くらべますが、光が 動いて いると
+     2まいで 明るさが ちがい、ボタンと ローマ字が「食われて いる」と
+     出ます（じっさい 差 127 と 出ました）。ここで 見たいのは
+     フェードと ぼかしの 話なので、光は 止めて そろえます */
+  await pg.evaluate(() => {
+    const g = document.getElementById('titleGo');
+    g.style.animationPlayState = 'paused';
+    g.style.animationDelay = '0s';
+  });
+  await pg.waitForTimeout(120);
   const png = (await pg.screenshot()).toString('base64');
   const seen = await pg.evaluate(async ({ png, dpr, go }) => {
     const im = new Image();
