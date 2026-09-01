@@ -4251,7 +4251,7 @@ function startWave(early){
 }
 btnWave.onclick = () => startWave(true);
 btnSpd.onclick = () => { speed = speed % 5 + 1; btnSpd.textContent = speed + 'x'; };
-btnSnd.onclick = () => { sndOn = !sndOn; btnSnd.style.opacity = sndOn ? 1 : .45; if (sndOn) beep(600,.1); };
+btnSnd.onclick = () => { sndOn = !sndOn; syncSndIcon(); if (sndOn) beep(600,.1); };
 
 /* ==========================================================
    エフェクト
@@ -11434,12 +11434,64 @@ const noteSvg = (n, st) => {
 /* ボタンは大きめ、文の中はすこし小さめ。
    マイナスの余白を入れて、絵を大きくしても まわりの高さが のびないようにしてある */
 const ICO_BTN = 'display:block;margin:-4px auto';
-for (const el of document.querySelectorAll('.bookIc'))
-  el.innerHTML = el.classList.contains('big')
-    ? bookSvg(25, ICO_BTN)
-    : bookSvg(21, 'display:inline-block;vertical-align:middle;margin:-8px 0');
-btnCol.innerHTML = crownSvg(25, ICO_BTN);
-btnSnd.innerHTML = noteSvg(25, ICO_BTN);
+
+/* ==========================================================
+   UIアイコン（art/ui/*.webp）
+   ----------------------------------------------------------
+   **絵が 読めるまでは 上の SVG を 出します。**アイテムの 絵
+   （ART_SPRITE）と まったく 同じ 段どりで、読めた 時点で
+   はめなおします。こう しておくと
+
+     ・読みこみ中でも ボタンが 空っぽに ならない
+     ・電波が 無い／絵が 消えた ときも 押す ところが 見える
+     ・SVG は 予備として 生きつづける（消さないこと）
+
+   大きさは **決めうちの px**。ボタンの 高さ（46px）も
+   ワザバーも 決めうちなので、ここが 育つと 下のUIが 高くなって
+   **そのぶん 盤面が 縮みます**。em では なく px で 書くこと。
+   ========================================================== */
+const UI_ICON = {};                       // 読めた 絵。まだなら 入っていない
+const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off'];
+/* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
+   だったが、こちらは 宝石や リボンの 描きこみが あるので、
+   同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない */
+const UI_PX  = { btn:30, inline:22 };
+const uiImg = (k, px, st) =>
+  '<img src="' + UI_ICON[k].src + '" alt="" width="' + px + '" height="' + px +
+  '" style="' + st + '">';
+
+/* ボタンに 絵（または 予備の SVG）を はめる。
+   読めた 時点で 何度でも 呼んでよい */
+function paintUiIcons(){
+  const B = 'display:block;margin:0 auto';
+  const I = 'display:inline-block;vertical-align:middle;margin:-8px 0';
+  for (const el of document.querySelectorAll('.bookIc')){
+    const big = el.classList.contains('big');
+    el.innerHTML = UI_ICON.nav_guide
+      ? uiImg('nav_guide', big ? UI_PX.btn : UI_PX.inline, big ? B : I)
+      : (big ? bookSvg(25, ICO_BTN)
+             : bookSvg(21, 'display:inline-block;vertical-align:middle;margin:-8px 0'));
+  }
+  btnCol.innerHTML = UI_ICON.nav_dex ? uiImg('nav_dex', UI_PX.btn, B) : crownSvg(25, ICO_BTN);
+  syncSndIcon();
+}
+/* 音の ボタンだけは ON と OFF で 絵が ちがう。
+   むかしは opacity を さげる だけ だったので、**OFF は 新しく 足した もの**。
+   絵が まだ 無い ときは これまで どおり うすくする だけ に 落とす */
+function syncSndIcon(){
+  const k = sndOn ? 'snd_on' : 'snd_off';
+  btnSnd.innerHTML = UI_ICON[k]
+    ? uiImg(k, UI_PX.btn, 'display:block;margin:0 auto')
+    : noteSvg(25, ICO_BTN);
+  /* 絵で ON/OFF が わかる ときは うすくしない（2重に 伝えると 押せない ように 見える）*/
+  btnSnd.style.opacity = (UI_ICON.snd_on && UI_ICON.snd_off) ? 1 : (sndOn ? 1 : .45);
+}
+paintUiIcons();
+for (const k of UI_KEYS){
+  const im = new Image();
+  im.onload = () => { UI_ICON[k] = im; paintUiIcons(); };
+  im.src = 'art/ui/' + k + '.webp';
+}
 /* 文の中にならべる絵。まわりの行の高さを のばさないよう マイナスの余白つき */
 const INLINE = 'display:inline-block;vertical-align:middle;margin:-8px 0';
 const PLAY = playSvg(19, INLINE);          // 「つぎのウェーブ ▶」などの さんかく
