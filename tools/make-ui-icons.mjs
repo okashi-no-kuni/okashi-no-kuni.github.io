@@ -144,6 +144,14 @@ const SHEETS = [
       { cell:'1,0', key:'bonus_ame',    name:'🍭 ぺろぺろキャンディ', pad:0.78, minFill:20 },
     ],
   },
+  {
+    /* Phase 5D-2-D ——「仲間を選ぶ」の タイル。**はじめから 透過**。
+       よこに 長い（たてよこ比 2.11）ので、うめ具合は 25%を 大きく 下まわります */
+    file:'phase5d2d_source.png', w:1515, h:1038, cols:1, rows:1, mode:'alpha',
+    plan:[
+      { cell:'0,0', key:'nav_pick', name:'🧸 仲間を選ぶ（3体の クマ）', minFill:12 },
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }

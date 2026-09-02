@@ -11546,7 +11546,9 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  'item_ball', 'item_bolt', 'item_hammer',
                  'item_elixir', 'item_freeze', 'item_rain',
                  /* 5D-2-C ——ボーナスウェーブの のこり 2つ */
-                 'bonus_ichigo', 'bonus_ame'];
+                 'bonus_ichigo', 'bonus_ame',
+                 /* 5D-2-D ——「仲間を選ぶ」の タイル */
+                 'nav_pick'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
@@ -11568,7 +11570,17 @@ const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14,
                  h3:17, body:15, hud:21,
                  /* Phase 5D-1。どれも position:absolute の 画面の 中なので
                     盤面の 高さには ひびきません（resize() は 数えない）*/
-                 wkgo:18, pk:14, pkBig:24, duT:22, duEgg:30, clear:16 };
+                 wkgo:18, pk:14, pkBig:24, duT:22, duEgg:30, clear:16,
+                 /* 5D-2-D ——**46px に しては いけません。**
+                    `#shop` は `repeat(5,1fr)` の grid で、`1fr` は
+                    `minmax(auto,1fr)`＝**中みより 細くは なりません**。
+                    46px の 絵を 入れると 5つめの 札が 47.94 → 54px に なり、
+                    **320px の 画面で ページが 3px よこに はみ出します**
+                    （`check-title2` が 見つけました）。
+                    40px なら 札は 48px＝もとの 47.94 と ほぼ 同じ。
+                    タワーの 似顔絵は 46px ですが、あちらは `.cs` の
+                    「⭐110 ×0」が すでに 札を 広げて いるので 入ります */
+                 pickIc:40 };
 
 /* 絵文字を 絵に さしかえる ところ。
    [どこ, いまの 絵文字, 絵の キー, 大きさ]
@@ -11629,6 +11641,12 @@ const UI_SPOT = [
   ['#duGo',                 '🥚', 'nav_egg',  'duT'],
   ['#duEggs .em',           '🥚', 'nav_egg',  'duEgg', 'margin:0;display:block'],
   ['#ovB .clrTx',           '🥚', 'nav_egg',  'clear'],
+  /* Phase 5D-2-D ——「仲間を選ぶ」。
+     盤面の 札は `.tw .ic` が **高さ40px の 決めうち**。中の 似顔絵は
+     46px の canvas ですが、**ここは 40px**です（上の `pickIc` の わけ）。
+     絵は よこに 長い（2.11）ので、40px の わくの 中では 38x18 に なります */
+  ['#shop .tw[data-k="__pick"] .ic', '🧸', 'nav_pick', 'pickIc', 'margin:0;display:block'],
+  ['#pickHead > div',                '🧸', 'nav_pick', 'tab'],
 ];
 /* JS で 文字列から 組みたてる ところ用。絵が まだ 読めて いなければ
    これまでの 絵文字を かえす（図鑑の カードや ヒント文は 何度も 作りなおされ、
