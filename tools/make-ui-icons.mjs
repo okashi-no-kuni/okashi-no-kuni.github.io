@@ -66,6 +66,20 @@ const SHEETS = [
       /* 1,1 と 2,1 は 空 */
     ],
   },
+  {
+    /* Phase 5 ——通貨・状態の 記号。Phase 2/3 と おなじ 背景つきの シート。
+       かけら（右はし）は **大きい 結晶と 小さい かけら の 2つ**なので、
+       いちばん 大きい かたまり だけ では 小さい ほうが 落ちます。
+       だから この シートだけ keep で「大きい ほうの 8%以上」を のこす */
+    file:'phase5_source.png', w:1536, h:1024, cols:4, rows:2, mode:'key', keep:0.08,
+    plan:[
+      { cell:'0,0', key:'cur_star',  name:'⭐ おほしさま（通貨）' },
+      { cell:'1,0', key:'cur_gem',   name:'💎 ジュエル' },
+      { cell:'2,0', key:'cur_heart', name:'💗 ハート（あそべる 回数）' },
+      { cell:'3,0', key:'cur_shard', name:'🩷 かけら' },
+      /* 1,1 と 2,1 は 空 */
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }
@@ -192,6 +206,7 @@ for (const sh of SHEETS){
         if (y > 0) push(x, y-1); if (y < h-1) push(x, y+1); }
       /* いちばん 大きい かたまり だけ のこす（ますの かざり枠・きらめきを 捨てる）*/
       const lab = new Int32Array(w*h).fill(-1); let best = -1, bestN = 0, nc = 0;
+      const size = [];
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
         const p0 = y*w + x; if (bgm[p0] || lab[p0] >= 0) continue;
         const id = nc++; const s2 = [p0]; lab[p0] = id; let n = 0;
@@ -200,15 +215,19 @@ for (const sh of SHEETS){
             const nx = qx+dx, ny = qy+dy; if (nx<0||ny<0||nx>=w||ny>=h) continue;
             const np = ny*w + nx; if (bgm[np] || lab[np] >= 0) continue;
             lab[np] = id; s2.push(np); } }
+        size[id] = n;
         if (n > bestN){ bestN = n; best = id; }
       }
       if (bestN < 4000) return { empty:true, p90 };
+      /* ふつうは いちばん 大きい かたまり だけ。keep を 書いた シートでは
+         その 何割か より 大きい かたまりも のこす（かけらの 小さい ほう）*/
+      const ok = id => id === best || (sh.keep > 0 && id >= 0 && size[id] >= bestN*sh.keep);
       /* 外がわの うすい モヤ（絵に 焼きこまれた ひかり）を もう一段 落とす。
          **外がわからしか たどらない**ので、輪郭に かこまれた 中の うすい ところ
          （屋根の 白いしま など）は のこる */
       const H2 = 42, st2 = [];
       const push2 = (x, y) => { const i = y*w + x;
-        if (bgm[i] || lab[i] !== best || dif(x, y) > H2) return;
+        if (bgm[i] || !ok(lab[i]) || dif(x, y) > H2) return;
         bgm[i] = 1; st2.push(i); };
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
         if (!bgm[y*w + x]) continue;
@@ -221,7 +240,7 @@ for (const sh of SHEETS){
          ここを 中まで かけると、うすい クリームの 面が すけて 穴に なる */
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
         const i = y*w + x, j = i << 2;
-        if (lab[i] !== best || bgm[i]){ QD[j+3] = 0; continue; }
+        if (!ok(lab[i]) || bgm[i]){ QD[j+3] = 0; continue; }
         let touch = false;
         for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]]){
           const nx = x+dx, ny = y+dy; if (nx<0||ny<0||nx>=w||ny>=h) continue;

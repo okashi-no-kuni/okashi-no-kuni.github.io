@@ -11489,7 +11489,11 @@ const PLAY_INK = playSvg(17, INLINE, true);   // ガイドの 見出し用（白
 const UI_ICON = {};                       // 読めた 絵。まだなら 入っていない
 const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  'nav_shop', 'nav_week', 'nav_code', 'nav_avatar', 'nav_share',
-                 'nav_pin', 'nav_close', 'nav_egg', 'nav_guard'];
+                 'nav_pin', 'nav_close', 'nav_egg', 'nav_guard',
+                 /* Phase 5A ——HUD の 2つ だけ。💎🩷 の 絵は art/ui/ に ありますが、
+                    まだ どこも つかって いないので ここには のせません
+                    （読みこむ だけ むだに なる）*/
+                 'cur_star', 'cur_heart'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
@@ -11502,8 +11506,13 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
 /* ガイド本文は **文章の 読みやすさが 先**。字は 見出し14.3px・本文12.1px
    （行の 高さ 19.36px）なので、絵は 見出し17px・本文15px に とどめる。
    たての 負の 余白（-4px）が あるので 行は のびない */
+/* HUD だけ 21px。**ここが 盤面の 高さに 直結します。**
+   `.stat .v` は font 20.9px・line-height 22.99px なので、
+   21px までは 行が のびず #hud は 59.17px の まま（6画面で 実測）。
+   22px で +0.30px、24px で +1.30px に なるので **上げないこと**。
+   たての 負の 余白も 要りません（`.v` は align-items:center の flex）*/
 const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14,
-                 h3:17, body:15 };
+                 h3:17, body:15, hud:21 };
 
 /* 絵文字を 絵に さしかえる ところ。
    [どこ, いまの 絵文字, 絵の キー, 大きさ]
@@ -11535,6 +11544,20 @@ const UI_SPOT = [
   ['#gdHead > div',           '✨', 'nav_guard',  'tab'],
   ['#gdGo',                   '✨', 'nav_guard',  'tab'],
   ['#eggHead > div',          '🥚', 'nav_egg',    'tab'],
+  /* Phase 5A ——HUD の ハートと おほしさま。
+     根を `#hud` に して 中の 文字ノードを たどります（この中に 💗⭐ は
+     1つずつ しか ありません。げんき＝文字だけ・ベスト＝🏆）。
+     5つめを 書くと **たての ならべかたを 差しかえられます**。
+     ここは `margin:0` ＋ `display:block`。
+
+     **`vertical-align:middle` の ままでは 数字より 0.79px 下がります**（実測）——
+     絵の 親は `<span>`（`.v` の flex の 子）で、`vertical-align:middle` は
+     その span の **文字の ベースライン**に そろえるためです。
+     `display:block` に すると span の 高さが 絵と おなじ 21px に なり、
+     `.v` の `align-items:center` が まん中に そろえます（ずれ 0.00px）。
+     たての 負の 余白も 要りません（行が のびる ところ用）*/
+  ['#hud', '💗', 'cur_heart', 'hud', 'margin:0;display:block'],
+  ['#hud', '⭐', 'cur_star',  'hud', 'margin:0;display:block'],
 ];
 /* JS で 文字列から 組みたてる ところ用。絵が まだ 読めて いなければ
    これまでの 絵文字を かえす（図鑑の カードや ヒント文は 何度も 作りなおされ、
@@ -11549,7 +11572,7 @@ function uiOr(key, px, em){
 /* 絵文字の ある **文字ノードだけ**を さしかえる。
    `innerHTML` を 丸ごと 書きかえると 中の <span class="pwTx"> が 作りなおされ、
    fitHead() が 出し引きした 状態が 消える。だから 文字ノードを 分けて 差しこむ */
-function swapSpot(sel, em, key, px){
+function swapSpot(sel, em, key, px, box){
   if (!UI_ICON[key]) return;
   for (const root of document.querySelectorAll(sel)){
     const st = [root];
@@ -11569,7 +11592,8 @@ function swapSpot(sel, em, key, px){
                padding と line-height で 決まっているので、
                ここを へこませても つぶれません（-2 で もう 足りる）*/
             im.style.cssText = 'display:inline-block;vertical-align:middle;flex:0 0 auto;' +
-                               'margin:-4px 0;width:' + px + 'px;height:' + px + 'px';
+                               'margin:-4px 0;' + (box ? box + ';' : '') +
+                               'width:' + px + 'px;height:' + px + 'px';
             t.parentNode.insertBefore(im, after);
             t = after;
           }
@@ -11600,7 +11624,7 @@ function paintUiIcons(){
   $('btnPw').innerHTML = (UI_ICON.nav_code
       ? uiImg('nav_code', UI_PX.head, 'display:inline-block;vertical-align:middle;flex:0 0 auto')
       : keySvg(19, INLINE)) + '<span class="pwTx">合言葉</span>';
-  for (const [sel, em, key, sz] of UI_SPOT) swapSpot(sel, em, key, UI_PX[sz]);
+  for (const [sel, em, key, sz, box] of UI_SPOT) swapSpot(sel, em, key, UI_PX[sz], box);
   /* 見出しの 幅が 変わるので、名前の 出し引きを やり直す。
      絵文字の 幅は 端末の フォントまかせだったが、絵なら px で 決まる */
   if (typeof fitHead === 'function') fitHead();
