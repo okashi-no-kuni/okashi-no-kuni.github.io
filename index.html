@@ -2426,6 +2426,82 @@ const DUEL_BG = {
   'よぞらのくに':         'duel_night',    // 三日月と 地面に おちた星
   'にじのてんくう':       'duel_rainbow',  // 雲の島と にじの橋
 };
+/* ==========================================================
+   Phase 6-0 ——「この ウェーブは 何者か」を 1か所に あつめる
+   ----------------------------------------------------------
+   いま「ウェーブ番号から 何かを 決める」ところが **15系統**に
+   ちらばって います（国・BGM・道・ボス・ステージクリア・ボーナス・
+   友だちバトル・たいけつ・とつぜんのウェーブ…）。このまま
+   季節イベントや 47都道府県を 足すと、**どれが どれを 上書きするのか
+   決める 場所が ありません**。
+
+   だから まず **あつめ先だけ**を 作ります。
+
+   **6-0 では 呼ぶ ところを 1か所も 変えて いません。**
+   中みは 既にある 式を そのまま 読ぶだけ なので、見た目は 1pxも
+   変わりません。呼び出し側を 移すのは 6-1 から、1つずつ です
+   （まとめて 移すと、どこで こわれたか 追えなく なります）。
+
+   **かならず 純関数に すること。**次を 見ては いけません。
+
+     new Date()      … `tools/sim.mjs` は file:// で n=1..5000 を まわすので、
+                        日付を 見ると **走らせた日で かべの いちが 変わります**
+     セーブ・weekly・きせかえ・持っている キャラ・そのほか ゲームの 状態
+
+   だから 国は `themeOf()`（きせかえで 別の名前を かえす）では なく
+   **`themeIdxOf()`** を 読みます。
+
+   **いま 入れて いない もの**（先まわりして 作らない）
+     ・国の 安定ID     … 6-2。ここで 文字列の 名前を 恒久キーに しない
+     ・element（属性） … 6-3
+     ・季節イベント／47都道府県／origin／BGMの 修正／startWave の 組みかえ
+
+   `special` は **同時に いくつも 立ちます**（W20 は ステージクリアと
+   ボーナスが 同時、W240 は そこに 国の かわりめも 重なる）。だから
+   1つの 文字列では なく **旗の あつまり**に して あります。
+   ========================================================== */
+/* たいけつが 立つ ウェーブ。`LEGENDS` から 作るので 2か所に ならない */
+const LEG_WAVE_SET = new Set(LEGENDS.map(l => l.wave));
+/* 1つ おぼえて おく。じめんの 焼きなおし（`groundKey`）のように
+   毎フレーム 呼ばれる ところへ 6-1 で 移しても おもく ならない ように */
+let wdN = -1, wdDef = null;
+function waveDef(n){
+  n = Math.max(1, n | 0);
+  if (n === wdN) return wdDef;
+  const inStage = ((n - 1) % STAGE_WAVES) + 1;   // 国の中の 何ウェーブめ（1〜20）
+  const mod = waveMod(n);
+  const def = Object.freeze({
+    n,
+    stage:   Math.ceil(n / STAGE_WAVES),         // とおしの ステージ番号（1〜）
+    inStage,
+    lap:     lapOf(n),                           // 何周め（0〜）
+    inLap:   ((n - 1) % LAP_WAVES) + 1,          // 周の中の いち（1〜240）
+    /* **番号の まま**。安定IDに するのは 6-2。
+       ここで 文字列の 国名を 恒久キーに しては いけない
+       （`DUEL_BG` と `groundKey` が 名前を キーに していて、
+         名前を 変えると だまって こわれる ——それを 直すのが 6-2）*/
+    countryIdx: themeIdxOf(n),
+    /* てきの「型」の ならび。**`waveList()` を そのまま 呼ぶだけ**で、
+       ここに 式を 写しては いけません（2か所に なると かならず ずれます）。
+       見た目の 顔ぶれ（`EN_THEME`）は `countryIdx` から 出るので 6-1 で */
+    enemyTypes: Object.freeze(waveList(n)),
+    mod,                                          // とつぜんの ウェーブ（無ければ null）
+    special: Object.freeze({
+      countryStart: inStage === 1,                       // 国の かわりめ（名前を 出す回）
+      midBoss:      n % 10 === 0 && n % STAGE_WAVES !== 0,
+      stageClear:   n % STAGE_WAVES === 0,
+      bonus:        n % 20 === 0,
+      /* 友だちバトルは **枠**だけ。ほんとうに 出るかは
+         `avFriends.length > 0`（ゲームの 状態）なので ここでは 見ない */
+      friendSlot:   n >= 10 && n % STAGE_WAVES === 10,
+      /* たいけつも **枠**だけ。ほんとうに 出るかは 図鑑と のこり回数しだい */
+      duelSlot:     LEG_WAVE_SET.has(n),
+      mod:          !!mod,
+    }),
+  });
+  wdN = n; wdDef = def;
+  return def;
+}
 /* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
    たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
@@ -15453,7 +15529,12 @@ window.__chk = {
   /* つりあいの 検査（tools/sim.mjs）用。数字を いじったら かならず かけなおす */
   bal: { hpScale, goldWave, upMul, waveList, waveMod, ENEMIES, TOWERS, maxLvAt: w => 3 + Math.floor(w/10),
          earlyBonus,
-         makeWay, wayMeasure, LAP_WAVES },
+         makeWay, wayMeasure, LAP_WAVES,
+         /* Phase 6-0 ——「この ウェーブは 何者か」の あつめ先。
+            **`waveList` たちの 上に 乗せる だけ**で、あちらの
+            かたちは 変えて いません（`tools/sim.mjs` が そのまま 読む）。
+            純関数なので、検査から 何回 呼んでも 同じ こたえが 出ます */
+         waveDef, STAGE_WAVES, THEME_COUNT, themeIdxOf, LEGENDS },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。
