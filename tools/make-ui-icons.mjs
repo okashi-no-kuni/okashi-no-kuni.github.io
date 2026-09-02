@@ -128,6 +128,22 @@ const SHEETS = [
       { cell:'2,1', key:'item_rain',   name:'⭐ おほしさまの雨（雲から 星が 降る）' },
     ],
   },
+  {
+    /* Phase 5D-2-C ——ボーナスウェーブの 🍓 と 🍭。**はじめから 透過**。
+       ならぶ 相手は `art/ui/` の アイコンでは なく **盤面の スプライト**
+       （candy / donut / cookie / cupcake / cake / purin）なので、
+       画風も 大きさも そちらに 合わせます。
+
+       **pad:0.78 が いのちです。**盤面の スプライトは 256pxの わくの 中で
+       中みが よこ0.76・たて0.78 しか ありません。`CELL*0.95` の 1つの 倍率で
+       8種 ぜんぶを えがくので、ここを わくいっぱい（0.955）で 切ると
+       この 2枚だけ 22% 大きく 見えます */
+    file:'phase5d2c_source.png', w:1808, h:870, cols:2, rows:1, mode:'alpha',
+    plan:[
+      { cell:'0,0', key:'bonus_ichigo', name:'🍓 いちご',            pad:0.78, minFill:20 },
+      { cell:'1,0', key:'bonus_ame',    name:'🍭 ぺろぺろキャンディ', pad:0.78, minFill:20 },
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }
@@ -325,7 +341,12 @@ for (const sh of SHEETS){
       const o = document.createElement('canvas'); o.width = N; o.height = N;
       const og = o.getContext('2d', { willReadFrequently:true });
       og.imageSmoothingQuality = 'high';
-      const k2 = Math.min(N/sw, N/sh2)*PAD;
+      /* ふだんは わくいっぱい（PAD）。`pad` を 書いた ときは その わりあい。
+         **ボーナスの お菓子だけ 0.78 に します** ——盤面の スプライトは
+         256pxの わくの 中で 中みが 0.76x0.78 しか なく、そこに 合わせた
+         `CELL*0.95` の 1つの 倍率で 8種 ぜんぶを えがくためです。
+         わくいっぱいで 切ると、この 2枚だけ 22% 大きく 見えます */
+      const k2 = Math.min(N/sw, N/sh2)*(p.pad || PAD);
       og.drawImage(srcCv, sx, sy, sw, sh2, (N-sw*k2)/2, (N-sh2*k2)/2, sw*k2, sh2*k2);
       /* 出したあとに たしかめる：ふちに ついて いないか・小さすぎないか */
       const QD = og.getImageData(0, 0, N, N).data;
@@ -335,7 +356,7 @@ for (const sh of SHEETS){
         n++; if (x<bx0)bx0=x; if (x>bx1)bx1=x; if (y<by0)by0=y; if (y>by1)by1=y;
         if (x===0||y===0||x===N-1||y===N-1) edge++;
       }
-      out.push({ key:p.key, name:p.name, minFill:p.minFill, fill:+(n/(N*N)*100).toFixed(1),
+      out.push({ key:p.key, name:p.name, minFill:p.minFill, pad:p.pad, fill:+(n/(N*N)*100).toFixed(1),
                  box:[bx0,by0,bx1,by1], w:bx1-bx0+1, h:by1-by0+1, edge, p90,
                  data:o.toDataURL('image/webp', Q) });
     }

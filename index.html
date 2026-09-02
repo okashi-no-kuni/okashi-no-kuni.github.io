@@ -4374,12 +4374,19 @@ function celebrate(o){
 const BONUS_EMO = ['🍬','🍩','🍪','🧁','🍓','🍭','🍰','🍮'];
 /* Phase 5D-1 ——降ってくる お菓子を 盤面の スプライトで えがく。
    **新しい 絵は 作って いません。**いま 図鑑に いる子の 絵を つかいます。
-   🍓 と 🍭 は 絵が 無いので **絵文字の まま**です ——8種を むりに
-   そろえないこと（無い ものを こちらで 作ると 画風が ずれる）。
-   絵は `dataIcon()` の ③→④ で 決まるので、読めて いなければ
+   🍓 と 🍭 は **Phase 5D-2-C で 足しました**（`BONUS_KEY`）。
+   絵は `dataIcon()` の ②→③→④ で 決まるので、読めて いなければ
    これまでどおり 絵文字が 出ます */
 const BONUS_ART = { '🍬':'candy', '🍩':'donut', '🍪':'cookie',
                     '🧁':'cupcake', '🍰':'cake', '🍮':'purin' };
+/* Phase 5D-2-C ——のこりの 2つ。**画風は `art/ui/` の アイコンでは なく
+   盤面の スプライトに 合わせて**あります（ならぶ 相手が そちらなので）。
+   切り出しも `pad:0.78` で、中みの わりあいを 6つと そろえて あるので、
+   `CELL*0.95` の 1つの 倍率が 8種 ぜんぶに 効きます */
+const BONUS_KEY = { '🍓':'bonus_ichigo', '🍭':'bonus_ame' };
+/* えがく ところと 検査どうぐが **同じ 式**を 見るように、1か所に する。
+   2か所に 書くと かならず ずれます（じっさい 検査だけ 古い ままに なった）*/
+const bonusRec = em => ({ ic:em, icKey:BONUS_KEY[em], art:BONUS_ART[em] });
 function startBonus(){
   const nB = 30 - (hasLg('pegasus') ? 3 : 0);   // ペガサスの しゅくふく
   bonus = { spawnLeft: nB, total: nB, spT: 0.4, items: [], got: 0 };
@@ -11537,7 +11544,9 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  /* 5D-2-B ——アイテム 6種。`art/sprites/it_*.png` と 名前を
                     分けて あるので、1つの レコードの icKey と art が 読み分けられる */
                  'item_ball', 'item_bolt', 'item_hammer',
-                 'item_elixir', 'item_freeze', 'item_rain'];
+                 'item_elixir', 'item_freeze', 'item_rain',
+                 /* 5D-2-C ——ボーナスウェーブの のこり 2つ */
+                 'bonus_ichigo', 'bonus_ame'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
@@ -14680,7 +14689,7 @@ function render(){
         ctx.rotate(Math.sin(it.ph)*0.25);
         /* 絵が あれば 絵、無ければ これまでどおり 絵文字（dataIcon の ③→④）。
            絵文字の 見た目に あわせて すこし 大きく とる */
-        const bi = dataIcon({ ic:it.em, art:BONUS_ART[it.em] });
+        const bi = dataIcon(bonusRec(it.em));
         if (bi.t === 'em'){
           ctx.font = (CELL*0.72) + 'px sans-serif';
           ctx.fillText(it.em, 0, 0);
@@ -15478,8 +15487,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     bonus.items.length = 0; bonus.spawnLeft = 0;
     BONUS_EMO.forEach((em, i) => bonus.items.push({
       x: CELL*(1.0 + (i % 4)*2.2), y: CELL*(2.5 + ((i/4)|0)*3), vy:0, em, ph:0 }));
-    return BONUS_EMO.map(em => ({ em, art:BONUS_ART[em] || null,
-                                  出かた: dataIcon({ ic:em, art:BONUS_ART[em] }).t })); },
+    return BONUS_EMO.map(em => { const d = dataIcon(bonusRec(em));
+      return { em, 出かた:d.t, キー:d.key || d.ch }; }); },
   float: (t, c, dataIc) => { floats.length = 0;
     floatTx(COLS*CELL/2, ROWS*CELL*0.5, t, c || '#ffb43f', dataIc); },
   floatN: () => floats.length,
