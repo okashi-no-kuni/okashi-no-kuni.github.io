@@ -94,6 +94,22 @@ const SHEETS = [
       { cell:'0,0', key:'it_elixir3', name:'⚗️ こだいの秘薬（王冠つきの 瓶）', minFill:20 },
     ],
   },
+  {
+    /* Phase 5D-2-A ——ショップの 26px の 行（7つ）。**3x3 で 7素材＋空き2マス**。
+       ますが 等分なので 切り出しの ぐあいが そろいます。
+       Phase 2・3 と おなじ 背景つきなので keyOut で 抜きます */
+    file:'phase5d2a_source.png', w:1278, h:1231, cols:3, rows:3, mode:'key',
+    plan:[
+      { cell:'0,0', key:'shop_start',       name:'🎁 はじめてパック（リボンの 箱）' },
+      { cell:'1,0', key:'shop_pass',        name:'🎫 30日パスポート（王冠と 時計の 券）' },
+      { cell:'2,0', key:'shop_help',        name:'🎒 おたすけセット（もちもの入りの かばん）' },
+      { cell:'0,1', key:'shop_rainbow_set', name:'🌈 にじいろセット（宝箱）' },
+      { cell:'1,1', key:'theme_dream',      name:'🌈 ゆめいろパステル（にじと 雲）' },
+      { cell:'2,1', key:'theme_lemon',      name:'🍋 レモンのおかやま（レモンと おうち）' },
+      { cell:'0,2', key:'theme_mermaid',    name:'🐚 にんぎょのうみ（真珠の 貝）' },
+      /* 1,2 と 2,2 は 空 */
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }

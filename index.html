@@ -2116,10 +2116,13 @@ const SP_THEMES = {
 };
 /* 💎で買える着せかえ。ならべた順に ショップへ出る。
    アイコンは その国が ひとめで わかるものを 1つずつ */
+/* icKey は Phase 5D-2-A の 専用の 絵（art/ui/）。
+   **にじいろセット（shop_rainbow_set）とは 別の キー・別の 絵**です
+   ——どちらも 絵文字は 🌈 ですが、指している ものが ちがいます */
 const SHOP_THEMES = [
-  { id:'dream',   ic:'🌈' },
-  { id:'lemon',   ic:'🍋' },
-  { id:'mermaid', ic:'🐚' },
+  { id:'dream',   ic:'🌈', icKey:'theme_dream'   },
+  { id:'lemon',   ic:'🍋', icKey:'theme_lemon'   },
+  { id:'mermaid', ic:'🐚', icKey:'theme_mermaid' },
 ];
 const CODES = {
   'さくらまんかい':       { theme:'sakura',    msg:'🌸 限定テーマ「さくらのくに」が届きました！' },
@@ -11517,7 +11520,11 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  /* 通貨・状態の 記号（5A＝HUD／5B＝DOM ぜんぶ）*/
                  'cur_star', 'cur_gem', 'cur_heart', 'cur_shard',
                  /* 5D-2-0 ——こだいの秘薬。にじいろの秘薬と 同じ絵だった のを 直す */
-                 'it_elixir3'];
+                 'it_elixir3',
+                 /* 5D-2-A ——ショップの 26px の 行。**🌈 は 2つ とも 別の 絵**
+                    （にじいろセット＝宝箱／ゆめいろパステル＝にじと 雲）*/
+                 'shop_start', 'shop_pass', 'shop_help', 'shop_rainbow_set',
+                 'theme_dream', 'theme_lemon', 'theme_mermaid'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
@@ -11678,7 +11685,8 @@ const CUR_SKIP = '#hud, #weOv, #titleOv, #infoIc, .itIc, .skN, .dic';
    おなじ 大きさでは どちらかが 必ず はみ出します。
    決めうちに するのは この 2つ だけ（文字の 大きさから 決めると
    ショップバー 12px と 説明文 14px が 分けられない）*/
-const CUR_PX = [['#shop', 12], ['.spIc', 28]];
+const CUR_PX_SPIC = 28;   // 商品の 絵。5B（通貨）と 5D-2-A（品もの）で そろえる
+const CUR_PX = [['#shop', 12], ['.spIc', CUR_PX_SPIC]];
 function curPx(el){
   for (const [sel, px] of CUR_PX) if (el.closest && el.closest(sel)) return px;
   const fs = parseFloat(getComputedStyle(el).fontSize) || 12;
@@ -11870,11 +11878,13 @@ function dataIcon(rec, opt){
 /* <img> に して かえす。**絵文字の ときは null**なので、
    呼ぶ側は これまでの 絵文字を そのまま のこせます */
 function dataImg(rec, px, opt){
-  const r = dataIcon(rec, opt);
+  const r = dataIcon(rec, opt || {});
   if (r.t === 'em') return null;
   const im = document.createElement('img');
   im.src = r.src; im.alt = (rec && rec.ic) || '';
   im.width = px; im.height = px;
+  /* opt.style は **見た目の 置きかた**だけ。決める じゅんばんとは 関係ない */
+  if (opt && opt.style) im.style.cssText = opt.style;
   return im;
 }
 
@@ -12330,7 +12340,7 @@ const SHOP_ITEMS = [
      「おなじ★の子から 均等に 1人」に して かくりつを 1行で 言いきれる形に する。
      おだい中は 買えない。あそこの ⭐は もどるときに 消えるので、
      買った ⭐が そのまま きえてしまう */
-  { id:'pack_start', sec:'はじめての方に', ic:'🎁', name:'はじめてパック',
+  { id:'pack_start', sec:'はじめての方に', ic:'🎁', icKey:'shop_start', name:'はじめてパック',
     desc:'⭐' + PACK_STARS.toLocaleString() + ' ＋ ★' + PACK_LV + 'のなかま1人。1回だけ',
     note: () => {
       const n = packPool().length;
@@ -12359,7 +12369,7 @@ const SHOP_ITEMS = [
   /* 30日パスポート。買いなおすと のこりに たされる。
      ⭐や 攻撃力は 上げない。強さを 売ると、子どもも あそぶゲームで
      いちばん 言われる「課金しないと 勝てない」に なってしまう */
-  { id:'pass', sec:'はじめての方に', ic:'🎫', name:'30日パスポート',
+  { id:'pass', sec:'はじめての方に', ic:'🎫', icKey:'shop_pass', name:'30日パスポート',
     desc:'毎日 かけら🩷' + PASS_SHARDS + ' ＋ 💗が満タンに。' + PASS_DAYS + '日ぶん',
     note: () => passOn()
       ? 'のこり ' + passLeft() + '日。いま買うと そこから ' + PASS_DAYS + '日 たされます'
@@ -12377,7 +12387,7 @@ const SHOP_ITEMS = [
      強さそのもの（攻撃力・⭐）は 売らない、という きまりは まもっている */
   /* アイテムは 金の わく＝レア。お金で かんたんに 山づみ できないよう、
      セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
-  { id:'it_set', sec:'あそぶ', ic:'🎒', name:'おたすけセット',
+  { id:'it_set', sec:'あそぶ', ic:'🎒', icKey:'shop_help', name:'おたすけセット',
     desc: () => '<span class="dic">' + ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×1こずつ',
     note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP()*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
@@ -12387,7 +12397,7 @@ const SHOP_ITEMS = [
     buy: () => { for (const it of ITEMS) giveItem(it.id, 1); buildSkillBar();
                  itDay.set = dayKey(); saveItDay();
                  return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
-  { id:'it_big', sec:'あそぶ', ic:'🌈', name:'にじいろセット',
+  { id:'it_big', sec:'あそぶ', ic:'🌈', icKey:'shop_rainbow_set', name:'にじいろセット',
     desc: () => '<span class="dic">' + ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×3こずつ',
     note: () => '1日1回まで。おたすけセット3こぶん',
     cost: 55,
@@ -12407,8 +12417,8 @@ const SHOP_ITEMS = [
     } },
   /* 着せかえは ランダムなしの 買いきり。買ったら すぐ その見た目に する。
      じめんは groundKey がテーマ名で 変わるので loop が 焼きなおす */
-  ...SHOP_THEMES.map(({ id, ic }) => ({
-    id: 'th_' + id, sec:'着せかえ', ic, name:'「' + SP_THEMES[id].th.name + '」',
+  ...SHOP_THEMES.map(({ id, ic, icKey }) => ({
+    id: 'th_' + id, sec:'着せかえ', ic, icKey, name:'「' + SP_THEMES[id].th.name + '」',
     desc:'ステージの見た目とBGMが変わります', cost: 60,
     can:  () => !hasTheme(id),
     done: () => hasTheme(id),
@@ -12504,6 +12514,22 @@ function buildShopScreen(){
   h += buildGemSection();
   h += '<div id="shopMsg" style="font-size:calc(12px * var(--fs));color:var(--pink-d);text-align:center;min-height:18px"></div>';
   shopBody.innerHTML = h;
+  /* Phase 5D-2-A ——絵が 読めた 品ものだけ 絵に する。
+     `dataImg()` は 絵文字の とき null を かえすので、
+     持っていない 品もの（💗ハートぜんかい・💎パック）は そのまま。
+     特例の えだは ありません ——dataIcon() の じゅんばんが 決めます */
+  for (const el of shopBody.querySelectorAll('.spIt[data-id]')){
+    const rec = SHOP_ITEMS.find(x => x.id === el.dataset.id);
+    /* たての 負の 余白は 5B の 通貨の 絵（💗ハートぜんかい）と そろえる。
+       つけないと `.spIc` の 行が 31→35px に のびます（行や 総丈は
+       変わりませんが、💗の 行だけ 30px で ちぐはぐに なる）*/
+    const im = rec && dataImg(rec, CUR_PX_SPIC,
+      { style:'display:inline-block;vertical-align:middle;margin:-4px 0;' +
+              'width:' + CUR_PX_SPIC + 'px;height:' + CUR_PX_SPIC + 'px' });
+    if (!im) continue;
+    const box = el.querySelector('.spIc');
+    box.textContent = ''; box.append(im);
+  }
   // 買ったものの 復元。課金が 無い あいだは ボタンごと 出ない
   if ($('restoreBtn')) $('restoreBtn').onclick = () => {
     const r = restorePurchases();
