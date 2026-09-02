@@ -4261,7 +4261,10 @@ function puff(x,y,color){
   parts.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s-20, life:.4+Math.random()*.4, age:0,
                r:1.5+Math.random()*3.5, color, rot:Math.random()*6.3 });
 }
-function floatTx(x,y,text,color){ floats.push({ x, y, text, color, age:0, life:.75 }); }
+/* dataIc は「この 文字列の 記号は 通貨では ない」の しるし。
+   ⭐の雨の アイテム（ITEMS.rain.ic）を 通貨の ⭐に しない ため。
+   DOM がわの .dic と おなじ 考えかた */
+function floatTx(x,y,text,color,dataIc){ floats.push({ x, y, text, color, dataIc, age:0, life:.75 }); }
 function ring(x,y,color,max){ rings.push({ x, y, r:4, max:max||CELL*1.4, age:0, life:.5, color }); }
 function mote(x,y,color){
   parts.push({ x: x+(Math.random()-0.5)*CELL*0.55, y, vx:(Math.random()-0.5)*9,
@@ -4675,7 +4678,8 @@ function update(dt){
       if (gf.it){
         const it = ITEM_BY_ID[gf.it];
         giveItem(it.id, 1);
-        floatTx(gf.tx, ROWS*CELL - CELL*0.6, it.ic + ' ' + it.name + ' +1', '#b98ae0');
+        /* 先頭は ITEMS の ic。⭐の雨の ⭐は 通貨では ないので しるしを つける */
+        floatTx(gf.tx, ROWS*CELL - CELL*0.6, it.ic + ' ' + it.name + ' +1', '#b98ae0', true);
         beep(660,.08,'triangle',.05); setTimeout(()=>beep(990,.12,'triangle',.05),90);
         vib([15]);
         buildSkillBar();   // はじめて 手に 入れたときは ボタンごと ふえる
@@ -11190,23 +11194,20 @@ function makeShareCard(){
   g.fillText('ウェーブ ' + Math.max(1, wave, rec.bw) + ' 到達！', W2/2, 260);
   const got = dexList().filter(o => o.cat === 'ch' && dex[o.id]).length;
   g.font = "800 38px 'Hiragino Maru Gothic ProN',sans-serif";
-  /* 👑 だけ 絵に する。canvas なので <img> では なく drawImage。
-     まん中ぞろえの ままだと 絵の ぶん ずれるので、
-     **絵＋すき間＋字**の 幅を 出してから 左ぞろえで 置きなおす。
-     絵が まだ 読めて いなければ、これまでどおり 絵文字で 1行 書く。
-     ⭐ は Phase 5 なので さわらない */
+  /* 👑 と ⭐ を 絵に する。canvas なので <img> では なく drawImage。
+     まん中ぞろえの ままだと 絵の ぶん ずれるので、**絵＋すき間＋字**の
+     幅を 先に 出してから 置きなおす（drawCurLine が やる）。
+     絵が まだ 読めて いなければ、これまでどおり 絵文字で 1行 書く */
   const shTx = ' 仲間 ' + got + '人　⭐ 倒した数 ' + rec.kills;
-  if (UI_ICON.nav_dex){
-    const IC = 44, GAP = 8;
-    const tw = g.measureText(shTx).width;
-    const x0 = W2/2 - (IC + GAP + tw)/2;
-    g.drawImage(UI_ICON.nav_dex, x0, 340 - IC*0.78, IC, IC);
-    g.textAlign = 'left';
-    g.fillText(shTx, x0 + IC + GAP, 340);
-    g.textAlign = 'center';
-  } else {
+  const IC = 44, GAP = 8;
+  /* 先頭の 👑 は 段の 1つめ。⭐ は 文字列から わけて もらう */
+  const shSeg = UI_ICON.nav_dex
+    ? [{ ic:'nav_dex' }].concat(curSegs(shTx))
+    : curSegs('👑' + shTx);
+  if (shSeg.some(x => typeof x !== 'string'))
+    drawCurLine(g, shSeg, W2/2, 340, { ic:IC, gap:GAP, iy:340 - IC*0.78 });
+  else
     g.fillText('👑' + shTx, W2/2, 340);
-  }
   // なかまの似顔絵をならべる（いなければおかしのようせい）
   const picks = dexList().filter(o => o.cat === 'ch' && dex[o.id]).map(o => o.pid);
   const fill = ['tw_candy','tw_ice','tw_choco','tw_star'];
@@ -11617,6 +11618,7 @@ function swapSpot(sel, em, key, px, box){
    かならず ずれる」と 同じ）。だから DOM の 変化を 見て、
    **変わった ところ だけ**を さしかえます。 */
 const CUR_EM = { '⭐':'cur_star', '💎':'cur_gem', '💗':'cur_heart', '🩷':'cur_shard' };
+const CUR_RE = /[\u2B50\u{1F48E}\u{1F497}\u{1FA77}]/u;
 /* さしかえない ところ。**おなじ 字でも 意味が ちがいます。**
    #hud    … Phase 5A が べつの 大きさ（21px・display:block）で もっている
    #infoIc … スターの タワーの 絵（TOWERS.star.ic）。通貨では ない
@@ -11645,13 +11647,13 @@ function paintCur(node){
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const hits = [];
     for (let t = w.nextNode(); t; t = w.nextNode())
-      if (/[\u2B50\u{1F48E}\u{1F497}\u{1FA77}]/u.test(t.nodeValue)) hits.push(t);
+      if (CUR_RE.test(t.nodeValue)) hits.push(t);
     for (let t of hits){
       const el = t.parentElement;
       if (!el || (el.closest && el.closest(CUR_SKIP))) continue;
       const px = curPx(el);
       for (;;){
-        const m = t.nodeValue.match(/[\u2B50\u{1F48E}\u{1F497}\u{1FA77}]/u);
+        const m = t.nodeValue.match(CUR_RE);
         if (!m) break;
         const key = CUR_EM[m[0]];
         if (!UI_ICON[key]) break;                 // まだ 読めていない ——絵文字の まま
@@ -11680,6 +11682,69 @@ new MutationObserver(ms => {
     else for (const n of m.addedNodes) paintCur(n);
   }
 }).observe(document.body, { childList:true, subtree:true, characterData:true });
+
+/* ==========================================================
+   Phase 5C ——canvas の ⭐💎💗🩷
+   ==========================================================
+   canvas は <img> に できないので `drawImage`。
+   **呼ぶ ところ（floatTx の 11か所）は 1つも 書きかえません。**
+   出た 文字列を その場で「文字」と「絵」に わけます。 */
+/* 「+ ⭐ 60」のように、文字と 絵を 順に もつ ならびに する。
+   **絵が まだ 読めて いない 記号は 文字の まま のこす**ので、
+   読みこみ前は これまでの 絵文字が そのまま 出ます */
+function curSegs(text){
+  const out = []; let buf = '';
+  for (const ch of text){
+    const k = CUR_EM[ch];
+    if (k && UI_ICON[k]){ if (buf){ out.push(buf); buf = ''; } out.push({ ic:k }); }
+    else buf += ch;
+  }
+  if (buf) out.push(buf);
+  return out;
+}
+/* 絵と 字を **おなじ 1行**として まん中ぞろえで 置く。
+   ・総幅（measureText の 合計 ＋ 絵の 幅）を **先に** 出してから 置くので、
+     絵が 入っても 行の まん中は 動かない
+   ・たては 絵の まん中を 字の まん中に そろえる（o.iy）。だから
+     ⭐💗🩷 が まざっても 上下に ばらけない
+   ・ふちどりは **字を ぜんぶ 先に**。段ごとに stroke→fill に すると、
+     つぎの 段の 白い ふちが 前の 段の 字を 消す
+   ・さわった もの（textAlign / textBaseline / globalAlpha /
+     fillStyle / strokeStyle）は かならず 入ってきた ときの 値に もどす */
+function drawCurLine(g, segs, cx, y, o){
+  o = o || {};
+  const ic = o.ic, gap = o.gap || 0;
+  let w = 0;
+  for (const s of segs) w += (typeof s === 'string') ? g.measureText(s).width : ic + gap;
+  const ta = g.textAlign, tb = g.textBaseline, ga = g.globalAlpha,
+        fl = g.fillStyle, st = g.strokeStyle;
+  g.textAlign = 'left';
+  const x0 = cx - w/2;
+  let x = x0;
+  if (o.stroke){
+    for (const s of segs){
+      if (typeof s === 'string'){ g.strokeText(s, x, y); x += g.measureText(s).width; }
+      else x += ic + gap;
+    }
+    x = x0;
+  }
+  for (const s of segs){
+    if (typeof s === 'string'){ g.fillText(s, x, y); x += g.measureText(s).width; }
+    else x += ic + gap;
+  }
+  x = x0;
+  for (const s of segs){
+    if (typeof s === 'string') x += g.measureText(s).width;
+    else { g.drawImage(UI_ICON[s.ic], x, o.iy, ic, ic); x += ic + gap; }
+  }
+  g.textAlign = ta; g.textBaseline = tb; g.globalAlpha = ga;
+  g.fillStyle = fl; g.strokeStyle = st;
+  /* 検査どうぐ用。まん中が 動いていないか・絵の たてが そろっているかを
+     画素では なく 数字で 見る（__dbg._as と おなじ 出しかた）*/
+  if (window.__dbg) window.__dbg._cur = { cx, y, w, ic, x0,
+    seg: segs.map(v => typeof v === 'string' ? { t:v, w:+g.measureText(v).width.toFixed(2) }
+                                             : { ic:v.ic, iy:o.iy }) };
+}
 
 const uiImg = (k, px, st) =>
   '<img src="' + UI_ICON[k].src + '" alt="" width="' + px + '" height="' + px +
@@ -14494,10 +14559,21 @@ function render(){
   for (const f of floats){
     const k = f.age/f.life;
     ctx.globalAlpha = 1 - k*k;
-    ctx.font = '800 ' + (CELL*0.42) + 'px system-ui,sans-serif';
+    const fz = CELL*0.42;
+    ctx.font = '800 ' + fz + 'px system-ui,sans-serif';
     ctx.lineWidth = CELL*0.11; ctx.strokeStyle='#fff';
-    ctx.strokeText(f.text, f.x, f.y); ctx.fillStyle=f.color;
-    ctx.fillText(f.text, f.x, f.y);
+    ctx.fillStyle = f.color;
+    /* 通貨の 記号が あって、その 絵が 読めて いる ときだけ 絵に する。
+       1つも 読めて いなければ これまで どおり 1回で 書く（見た目は 同じ）。
+       絵の 大きさは 決めうちに せず、そのときの 字の 大きさから 出す */
+    const segs = (!f.dataIc && CUR_RE.test(f.text)) ? curSegs(f.text) : null;
+    if (segs && segs.some(s => typeof s !== 'string')){
+      const ic = Math.round(fz * 1.05);
+      drawCurLine(ctx, segs, f.x, f.y, { stroke:true, ic, iy:f.y - ic/2 });
+    } else {
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillText(f.text, f.x, f.y);
+    }
   }
   ctx.globalAlpha = 1;
 
@@ -15212,6 +15288,12 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   duelTap: n => { for (let k = 0; k < n; k++){ if (duS) duS.cd = 0; duTap(); } },
   duelHurt: () => { if (duS && duS.phase === 'fight') duS.myHp = 1; },
   setStars: n => { stars = n; syncHUD(); },
+  /* Phase 5C ——うかぶ文字を 好きな 文で 出す（絵と 字の ならびを 見る）*/
+  float: (t, c, dataIc) => { floats.length = 0;
+    floatTx(COLS*CELL/2, ROWS*CELL*0.5, t, c || '#ffb43f', dataIc); },
+  floatN: () => floats.length,
+  curLine: () => window.__dbg._cur || null,
+  shareCard: () => makeShareCard(),
   /* ---- スクリーンショット（tools/shots.mjs）用 ----
      「見ばえのする 場面」を 手で 作らずに 出せるように しておく。
      手で 撮ると、画面を 直すたびに 撮りなおしが 出て、しかも
