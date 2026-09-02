@@ -4298,8 +4298,10 @@ function startWave(early){
   }
   bgmStart();          // 最初のウェーブからBGM開始（タップ後なので再生できる）
   spawnQ = waveList(wave).slice();
-  // とつぜんの ウェーブ。waveList そのものは いじらない（tools/sim.mjs が つかうため）
-  wmod = weekly ? null : waveMod(wave);
+  /* とつぜんの ウェーブ。waveList そのものは いじらない（tools/sim.mjs が つかうため）。
+     **Phase 6-1**：`waveMod(wave)` を 直に 呼ばず `waveDef` から とる。
+     おなじ ものが かえる（n=1..12000＝50周ぶんで 同一と 確かめた）*/
+  wmod = weekly ? null : waveDef(wave).mod;
   if (wmod){
     if (wmod.count){
       const base = spawnQ.slice(), add = Math.round(base.length * (wmod.count - 1));
@@ -4331,7 +4333,8 @@ function startWave(early){
   btnWave.disabled = true;
   waveBtn('ウェーブ' + wave + '<br>進行中');
   // 新しいステージの最初のウェーブでは、景色の名前をお披露目する
-  if ((wave-1) % STAGE_WAVES === 0)
+  // **Phase 6-1**：`(wave-1) % STAGE_WAVES === 0` と おなじ（50周ぶんで 確認ずみ）
+  if (waveDef(wave).special.countryStart)
     floatTx(COLS*CELL/2, CELL*2.2, '「' + themeOf(wave).name + '」', '#b98ae0');
   beep(560,.2,'triangle',.06);
   syncHUD();
@@ -4807,14 +4810,18 @@ function update(dt){
     nextT = NEXT_WAIT + (hasLg('chronos') ? 3 : 0);   // クロノスのしゅくふくで じっくり
     if (!weekly){ rec.bw = Math.max(rec.bw, wave); saveRec(); }
     syncHUD();
+    /* **Phase 6-1**：この 3つの 判定を `waveDef` から 読む。
+       ここは `running` が 立って いる 中なので wave は かならず 1以上
+       （`reset()` は `wave = 0` と `running = false` を いっしょに する）*/
+    const wd = waveDef(wave);
     // 10ウェーブの節目はちいさなお祝い（クリアの節目はstageClearが盛大にやる）
-    if (wave % 10 === 0 && wave % STAGE_WAVES !== 0) celebrate({ conf: 30, fanfare: 1 });
-    if (wave % STAGE_WAVES === 0) stageClear();
+    if (wd.special.midBoss) celebrate({ conf: 30, fanfare: 1 });
+    if (wd.special.stageClear) stageClear();
     else checkLegends();
     // ボーナスウェーブは20ウェーブごと（ウェーブ数にはカウントしない）。
     // クリアのお祝いと同じ回なので、ここでは よやくだけして、
     // お祝いの画面がとじてパレードを見せてから始める（下のまちうけ処理）
-    if (wave % 20 === 0 && !weekly){
+    if (wd.special.bonus && !weekly){
       bonusWait = 2.4;
       btnWave.disabled = true;                       // まちのあいだ はやよびで飛ばされないように
       waveBtn('🎁 このあと<br>ボーナスタイム！');
@@ -4855,7 +4862,10 @@ let wmod = null;                                      // いまの「とつぜ�
 const nameRects = [];                                 // ともだちの なまえを おいた ばしょ
 /* ともだちが いれば、ステージの まん中で「ともだちバトル」を ひらく。
    ステージクリアの ウェーブと ぶつからないように 10の ところに おく */
-const isFriendWave = n => avFriends.length > 0 && n >= 10 && n % STAGE_WAVES === 10;
+/* **Phase 6-1**：ウェーブの 枠は `waveDef` が 持つ。ここに のこすのは
+   「ともだちが いるか」＝ゲームの 状態の ほうだけ
+   （`waveDef` は 純関数なので 状態を 見られない）*/
+const isFriendWave = n => avFriends.length > 0 && waveDef(n).special.friendSlot;
 function spawnEnemy(k, d0){
   const E = ENEMIES[k];
   const hp = E.hp * hpScale(wave) * (weekly && weekly.hp ? weekly.hp : 1) * (wmod && wmod.hp ? wmod.hp : 1);
