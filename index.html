@@ -3038,6 +3038,52 @@ const BGMS = [
          96,-1,-1,-1, 89,-1,84, 0,  91,-1,86,-1, 83,-1,-1, 0,
          84,88,96,-1, 91,-1,88, 0,  79,-1,-1,-1, 83,-1,-1, 0] },
 ];
+/* ==========================================================
+   Phase 6-4a ——国 → 曲の 表
+   ----------------------------------------------------------
+   **ならびの ぐうぜんの 一致に たよらないこと。**むかしは
+   `BGMS[ceil(w/20)-1 % BGMS.length]` と、**ステージ番号を
+   そのまま index に して** いました。ところが `BGMS` の ならびは
+   `THEMES` の ならびと ちがう ので、**周0の ステージ3から**
+   ずれて いました（12国中 合って いたのは 3つだけ）。
+
+   直したのは 3つ。
+     ① ならびの ずれ  … 国IDで 引く 表に する（ここ）
+     ② 曲の ない 国    … `egypt` と `fire` は 曲そのものが 無い。
+                        いまは いちばん 近い 曲を あてる（下）
+     ③ 周が かわると さらに ずれる
+                      … `countryIdOf` が `lapOf` を ふくむので 自動で 直る
+
+   **`egypt` と `fire` は 暫定です。**専用の 曲を 作ったら
+   **この 2行を 書きかえる だけ**で すみます（Phase 6-4b）。
+     egypt → 5（キャラメルのさばく）… 土地が 近い
+     fire  → 6（ソーダのうみべ）    … 10曲で いちばん 勢いが ある（bpm134）
+   曲の 名前は **遊ぶ人には 見えません**（コードの コメントだけ）ので、
+   名前の ちぐはぐは 気に しなくて よい ——耳で 合うかが すべてです */
+const BGM_OF = {
+  sugar:   0,   // シュガーガーデン
+  berry:   1,   // いちごのおか
+  forest:  7,   // マカロンのもり
+  choco:   2,   // チョコレートのおか
+  ice:     3,   // こおりのしろ
+  snow:    8,   // ゆきのケーキやま
+  sea:     6,   // ソーダのうみべ
+  caramel: 5,   // キャラメルのさばく
+  egypt:   5,   // ← 暫定（専用曲なし）
+  fire:    6,   // ← 暫定（専用曲なし）
+  night:   4,   // よぞらのテラス
+  rainbow: 9,   // にじのてんくう
+};
+/* 国が ふえたのに 曲を 足しわすれる と、その国だけ 音が 出なく なります。
+   目では 気づけないので ここで 落とします（`THEMES` の id の 見はりと 同じ） */
+for (const t of THEMES){
+  const b = BGM_OF[t.id];
+  if (b === undefined) throw new Error('BGM_OF に ' + t.id + ' が ない');
+  if (!(b >= 0 && b < BGMS.length)) throw new Error('BGM_OF.' + t.id + ' が BGMS の はんい外');
+}
+/* いま 鳴らす 曲。きせかえ中は そちらが 勝つ（有料の 限定テーマ 8種の
+   はたらき。**ここを 変えないこと**）。ふだんは 国IDの 表から */
+const bgmFor = w => themeOverride ? themeOverride.bgm : BGMS[BGM_OF[countryIdOf(w)]];
 let bgmTimer = null, bgmStep = 0, bgmNext = 0;
 let bgmBus = null, bgmWet = null, bgmSend = null, bgmDelayNode = null, bgmNoise = null;
 const midiF = m => 440 * Math.pow(2, (m-69)/12);
@@ -3199,9 +3245,8 @@ function bgmTick(){
   bgmSetup();
   // ミュートしていた間のぶんを一気に鳴らさないための巻きなおし
   if (bgmNext < actx.currentTime - 0.1) bgmNext = actx.currentTime + 0.05;
-  // いまのステージの曲（ウェーブが変わると自動でつぎの曲へ。きせかえ中はその曲）
-  const B = themeOverride ? themeOverride.bgm
-    : BGMS[Math.max(0, Math.ceil(Math.max(wave,1)/STAGE_WAVES)-1) % BGMS.length];
+  // いまの国の曲（ウェーブが変わると自動でつぎの曲へ。きせかえ中はその曲）
+  const B = bgmFor(wave);
   const stepDur = 60 / B.bpm / 2;    // 8分音符
   // やまびこの間かくは 付点8分。テンポに合わせないと リズムから ずれてしまう
   bgmDelayNode.delayTime.setTargetAtTime(stepDur*1.5, actx.currentTime, 0.08);
@@ -15606,6 +15651,10 @@ window.__chk = {
          waveDef, STAGE_WAVES, THEME_COUNT, themeIdxOf, LEGENDS,
          /* Phase 6-2 ——国の 恒久キーの 検査用 */
          countryIdOf, themeKeyOf, countryEnvOf,
+         /* Phase 6-4a ——国 → 曲。`bgmFor` は 音の 準備が いるので、
+            検査からは **表と 番号だけ**を 見る（file:// でも 走る）*/
+         BGM_OF, bgmCount: () => BGMS.length,
+         normalBgmIdx: w => BGM_OF[countryIdOf(w)],
          themes: () => THEMES.map(t => ({ id:t.id, env:t.env, name:t.name })),
          duelBgOf: w => DUEL_BG[countryIdOf(w)] || null },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
@@ -15828,6 +15877,15 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   },
   life: () => life,
   setWeek: n => { weekDbg = n; },
+  /* Phase 6-4a ——いま 何の 曲が 鳴って いるか。
+     wave / 国ID / ふだんの 曲番号 / きせかえの 有無 / さいごに えらばれた 曲 */
+  bgmNow: () => {
+    const id = countryIdOf(wave), ni = BGM_OF[id], B = bgmFor(wave);
+    return { wave, countryId:id, normalBgmIndex:ni,
+             override: themeOverride ? themeSel : null,
+             finalBgm: BGMS.indexOf(B) >= 0 ? BGMS.indexOf(B) : 'きせかえ(' + themeSel + ')',
+             bpm: B.bpm };
+  },
   setGems: n => { gems = n; saveGems(); },
   giveTheme: id => { if (!bought.includes(id)) bought.push(id); saveBought();
                      themeSel = id; saveThemeSel(); applyThemeSel(); },
