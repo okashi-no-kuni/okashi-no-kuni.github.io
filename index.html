@@ -9240,7 +9240,7 @@ function stageClear(){
       giveItem(it.id, 1);
       ovB.insertAdjacentHTML('beforeend',
         '<div style="font-size:calc(12.5px * var(--fs));color:var(--pink-d)">' +
-        it.ic + ' アイテム「' + it.name + '」+1</div>');
+        '<span class="dic">' + it.ic + '</span> アイテム「' + it.name + '」+1</div>');
     }
   }
   // ステージクリアの ごほうびの たまご
@@ -11490,10 +11490,8 @@ const UI_ICON = {};                       // 読めた 絵。まだなら 入っ
 const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  'nav_shop', 'nav_week', 'nav_code', 'nav_avatar', 'nav_share',
                  'nav_pin', 'nav_close', 'nav_egg', 'nav_guard',
-                 /* Phase 5A ——HUD の 2つ だけ。💎🩷 の 絵は art/ui/ に ありますが、
-                    まだ どこも つかって いないので ここには のせません
-                    （読みこむ だけ むだに なる）*/
-                 'cur_star', 'cur_heart'];
+                 /* 通貨・状態の 記号（5A＝HUD／5B＝DOM ぜんぶ）*/
+                 'cur_star', 'cur_gem', 'cur_heart', 'cur_shard'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。
@@ -11602,6 +11600,87 @@ function swapSpot(sel, em, key, px, box){
     }
   }
 }
+/* ==========================================================
+   Phase 5B ——DOM に 出る ⭐💎💗🩷 を 絵に する
+   ==========================================================
+   **HTMLも 文字列も 1文字も 変えません。**`swapSpot()` と おなじで、
+   出たあとの **文字ノードだけ**を さしかえます。だから
+
+   ・`textContent` を `innerHTML` に 変える ところが 1つも ない
+     （＝ 文字列を HTML に する 危なさが そもそも 生まれない）
+   ・絵が 読めない ときは これまでの 絵文字が そのまま 出る
+
+   **どこで さしかえるかを 表に しません。**⭐💎💗🩷 は 60か所ほどに
+   ちらばって いて、しかも ショップ・図鑑・ガイド・お祝いの 文は
+   ひらくたびに 作りなおされます。呼ぶ ところを 数えあげる やりかたに
+   すると **足しわすれが かならず 出ます**（CLAUDE.md の「2か所に 書くと
+   かならず ずれる」と 同じ）。だから DOM の 変化を 見て、
+   **変わった ところ だけ**を さしかえます。 */
+const CUR_EM = { '⭐':'cur_star', '💎':'cur_gem', '💗':'cur_heart', '🩷':'cur_shard' };
+/* さしかえない ところ。**おなじ 字でも 意味が ちがいます。**
+   #hud    … Phase 5A が べつの 大きさ（21px・display:block）で もっている
+   #infoIc … スターの タワーの 絵（TOWERS.star.ic）。通貨では ない
+   .itIc   … ⭐の雨の アイテムの 絵（ITEMS.rain.ic）
+   .skN    … ワザの 名前「⭐の雨」
+   .dic    … データの ic を そのまま ならべる ところ（下の 4か所で つける）*/
+const CUR_SKIP = '#hud, #weOv, #titleOv, #infoIc, .itIc, .skN, .dic';
+/* 大きさは **その場の 文字に 合わせます**。1つの px に そろえては いけません
+   ——盤面の ショップバーは 10.5px、商品の 絵は 26px で、
+   おなじ 大きさでは どちらかが 必ず はみ出します。
+   決めうちに するのは この 2つ だけ（文字の 大きさから 決めると
+   ショップバー 12px と 説明文 14px が 分けられない）*/
+const CUR_PX = [['#shop', 12], ['.spIc', 28]];
+function curPx(el){
+  for (const [sel, px] of CUR_PX) if (el.closest && el.closest(sel)) return px;
+  const fs = parseFloat(getComputedStyle(el).fontSize) || 12;
+  return Math.min(18, Math.max(14, Math.round(fs * 1.15)));
+}
+let curBusy = false;   // 自分が 入れた <img> で また 呼ばれない ように
+function paintCur(node){
+  if (curBusy || !node) return;
+  const root = node.nodeType === 3 ? node.parentElement : node;
+  if (!root || root.nodeType !== 1 || !root.isConnected) return;
+  curBusy = true;
+  try{
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const hits = [];
+    for (let t = w.nextNode(); t; t = w.nextNode())
+      if (/[\u2B50\u{1F48E}\u{1F497}\u{1FA77}]/u.test(t.nodeValue)) hits.push(t);
+    for (let t of hits){
+      const el = t.parentElement;
+      if (!el || (el.closest && el.closest(CUR_SKIP))) continue;
+      const px = curPx(el);
+      for (;;){
+        const m = t.nodeValue.match(/[\u2B50\u{1F48E}\u{1F497}\u{1FA77}]/u);
+        if (!m) break;
+        const key = CUR_EM[m[0]];
+        if (!UI_ICON[key]) break;                 // まだ 読めていない ——絵文字の まま
+        const after = t.splitText(m.index);
+        after.nodeValue = after.nodeValue.slice(m[0].length);
+        const im = new Image(px, px);
+        im.src = UI_ICON[key].src; im.alt = m[0];
+        /* たての 負の 余白を わすれないこと。絵は 文字より 高いので、
+           これが ないと 行の 高さが のびて、その ぶん 下のUIが 高くなり
+           **盤面が 縮みます**（Phase 3 で 実際に 起きた）*/
+        im.style.cssText = 'display:inline-block;vertical-align:middle;flex:0 0 auto;' +
+                           'margin:-4px 0;width:' + px + 'px;height:' + px + 'px';
+        t.parentNode.insertBefore(im, after);
+        t = after;
+      }
+    }
+  } finally { curBusy = false; }
+}
+/* 出たあとの 変化を 見て、**変わった ところ だけ**を さしかえる。
+   ウェーブの ボタンは 1秒に 4回 書きかわるが、見るのは その ボタンの
+   中だけ なので 軽い（画面ぜんたいを 毎回 たどらない）*/
+new MutationObserver(ms => {
+  if (curBusy) return;
+  for (const m of ms){
+    if (m.type === 'characterData') paintCur(m.target);
+    else for (const n of m.addedNodes) paintCur(n);
+  }
+}).observe(document.body, { childList:true, subtree:true, characterData:true });
+
 const uiImg = (k, px, st) =>
   '<img src="' + UI_ICON[k].src + '" alt="" width="' + px + '" height="' + px +
   '" style="' + st + '">';
@@ -11628,6 +11707,7 @@ function paintUiIcons(){
   /* 見出しの 幅が 変わるので、名前の 出し引きを やり直す。
      絵文字の 幅は 端末の フォントまかせだったが、絵なら px で 決まる */
   if (typeof fitHead === 'function') fitHead();
+  paintCur(document.body);   // 5B。絵が 読めた しゅんかんに もう 出ている ぶんも
 }
 /* 音の ボタンだけは ON と OFF で 絵が ちがう。
    むかしは opacity を さげる だけ だったので、**OFF は 新しく 足した もの**。
@@ -11666,7 +11746,10 @@ function buildHelp(){
     '待ちきれないときはボタンをタップすると、<b>残り秒数×ボーナス⭐</b>がもらえます。' +
     '準備を取るか、⭐を取るか、毎回の駆け引き！</p></div>';
   h += '<div class="hSec"><h3>🍬 お菓子（タワー）の得意分野</h3><ul>' +
-    ORDER.map(k => '<li>' + TOWERS[k].ic + ' <b>' + TOWERS[k].name + '</b>：' + TOWER_TIPS[k] + '</li>').join('') +
+    /* .dic ＝ データの ic を そのまま 出す ところ。スターの ⭐ は
+       通貨では ないので Phase 5B の さしかえから 外す */
+    ORDER.map(k => '<li><span class="dic">' + TOWERS[k].ic + '</span> <b>' +
+                   TOWERS[k].name + '</b>：' + TOWER_TIPS[k] + '</li>').join('') +
     '</ul><p style="margin-top:4px">置いたお菓子をタップ →「強化」でレベルアップ。' +
     '<b>レベルに上限はありません</b>。もぐったウェーブに応じて上限が伸びるので、' +
     '深く進むほど強く育てられます（⭐が続くかぎり）。' +
@@ -11719,7 +11802,7 @@ function buildHelp(){
     'アイテムは <b>たおす</b>ので、後半の かたい敵にも おなじだけ 効きます。' +
     '敵からのドロップ・ステージクリア・ショップで 手に入ります。' +
     'ワザバーの <b>左はし</b>に 出ます。</p><ul style="margin-top:5px">' +
-    ITEMS.map(it => '<li>' + it.ic + ' <b>' + it.name + '</b>：' + it.desc +
+    ITEMS.map(it => '<li><span class="dic">' + it.ic + '</span> <b>' + it.name + '</b>：' + it.desc +
                     '<br><span style="opacity:.7">' + it.note + '</span></li>').join('') +
     '</ul></div>';
   h += '<div class="hSec"><h3>📳 ふるえ（バイブ）</h3>' +
@@ -12098,7 +12181,7 @@ const SHOP_ITEMS = [
   /* アイテムは 金の わく＝レア。お金で かんたんに 山づみ できないよう、
      セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
   { id:'it_set', sec:'あそぶ', ic:'🎒', name:'おたすけセット',
-    desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×1こずつ',
+    desc: () => '<span class="dic">' + ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×1こずつ',
     note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP()*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
     cost: 20,
@@ -12108,7 +12191,7 @@ const SHOP_ITEMS = [
                  itDay.set = dayKey(); saveItDay();
                  return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
   { id:'it_big', sec:'あそぶ', ic:'🌈', name:'にじいろセット',
-    desc: () => ITEMS.map(it => it.ic).join('') + ' 6しゅるい ×3こずつ',
+    desc: () => '<span class="dic">' + ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×3こずつ',
     note: () => '1日1回まで。おたすけセット3こぶん',
     cost: 55,
     can:  () => itDay.big !== dayKey(),
