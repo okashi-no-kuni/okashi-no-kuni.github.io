@@ -2555,6 +2555,81 @@ function waveDef(n){
   wdN = n; wdDef = def;
   return def;
 }
+
+/* ==========================================================
+   Phase 6-5 ——「この ウェーブに 何が 出るか」を 1か所で 組む
+   ----------------------------------------------------------
+   むかし `startWave()` は、`spawnQ` を 上から 順に **上書き**して
+   いました。`waveList` → とつぜんのウェーブ → おだい → ともだちバトル、
+   と 4段が おなじ 配列を 取りあう 形です。ここに 季節イベントや
+   47都道府県を 足すと、**どれが どれを 上書きするのか 決める 場所が
+   ありません**（3つ目・4つ目を 足せば おなじ ループが 4回に なる）。
+
+   だから 3段に 分けて 名前を つけました。**中みは 1つも 変えて
+   いません**（W1〜5000 × おだい7通り × ともだち4通り ＝
+   140,000ケースで 旧ロジックと 同一と 確かめた）。
+
+     ① base       waveList(n)                     1つだけ
+     ② modifier   wmod.count → weekly.many → weekly.boss
+                                                  0こ以上・順序に 意味が ある
+     ③ encounter  ともだちバトル                  1つだけ・**前段を すてる**
+
+   **ここに 入れない もの**（別チャンネル。今回 数えて 分けた）
+
+     ambient  HP・速さ・⭐・げんき … `spawnQ` に 焼きこまれず、
+              `wmod` / `weekly` を **つかう しゅんかんに 読む**。
+              だから ボスの しょうかんで わく スライムにも かかる
+     overlay  midBoss・stageClear・bonus・duel・countryStart …
+              `spawnQ` に さわらない。ごほうびと 演出だけ
+
+   **これから 足す ときの ものさし。**「ベースごと 入れかえる」なら ①、
+   「重ねがけ」なら ②、「その回は これだけに なる」なら ③、
+   「見た目と ごほうびだけ」なら overlay。③が 2つ以上に なった ときに
+   はじめて 優先順位の 表が いります（いまは ともだちバトル 1つだけ
+   なので 作りません）。
+
+   **純関数に すること。**状態（おだい中か・ともだちが 何人か）は
+   `ctx` で もらいます。`waveDef` と 同じで、`new Date()` や セーブを
+   見ては いけません（`tools/sim.mjs` は `file://` で n=1..5000 を
+   まわすので、走らせた日で 結果が 変わると こまる）。
+   `waveList` / `waveMod` / `waveDef` の かたちは 1文字も 変えて
+   いません（あちらを 呼ぶだけ ——ぐるぐる回りに しない）。
+   ========================================================== */
+/* 水まし。**2か所の 式を そのまま 1つに した だけ**です。
+   `Math.round` を ceil / floor に しないこと。
+   もとに するのは **足す前の 長さ**（`base`）で、
+   足しながら のびていく `q.length` では ありません */
+const inflate = (q, mul) => {
+  const base = q.slice(), add = Math.round(base.length * (mul - 1));
+  for (let i = 0; i < add; i++) q.push(base[i % base.length]);
+  return q;
+};
+function wavePlan(n, ctx){
+  const wk  = ctx.weekly || null;
+  /* とつぜんの ウェーブは おだい中は 出ない（おだいは その週 全員が
+     同じ 条件なので）。**mod を 決めるのは ここ 1か所**。
+     呼ぶ 側で もう一度 計算しないこと（2か所に なると ずれる） */
+  const mod = wk ? null : waveDef(n).mod;
+
+  let q = waveList(n).slice();                            // ① base
+                                                          // ② modifier（順序は 現行のまま）
+  if (mod && mod.count) inflate(q, mod.count);
+  if (wk){
+    if (wk.many) inflate(q, wk.many);
+    if (wk.boss && n % wk.boss === 0) q.push('boss');
+  }
+  /* ③ encounter ——**前段を まるごと すてます**。
+     おだい中でも ともだちバトルは 出ます（実測）。ここを
+     「おだい中は 出さない」に 変えるのは 仕様の 変更なので しません */
+  let enc = null;
+  if (ctx.friends > 0 && waveDef(n).special.friendSlot){
+    enc = 'friend';
+    q = [];
+    for (let i = 0; i < ctx.friends; i++){ q.push('golem'); q.push('fast'); q.push('slime'); }
+    q.push('boss');
+  }
+  return { spawnQ: q, mod, encounter: enc };
+}
 /* 💗は「あと なんかい あそべるか」。1プレイ まけるたびに 1こ へる。
    たたかい中の たいりょくは life（おかしの国の げんき）で、べつもの。
    てきが ゴールに 入っても 💗は へらない（へるのは life） */
@@ -4459,38 +4534,30 @@ function startWave(early){
       floatTx(COLS*CELL/2, CELL*3.9, '道の上の仲間' + chg.moved + '人は ⭐' + fmtN(chg.back) + 'で戻しました', '#e05f9e');
   }
   bgmStart();          // 最初のウェーブからBGM開始（タップ後なので再生できる）
-  spawnQ = waveList(wave).slice();
-  /* とつぜんの ウェーブ。waveList そのものは いじらない（tools/sim.mjs が つかうため）。
-     **Phase 6-1**：`waveMod(wave)` を 直に 呼ばず `waveDef` から とる。
-     おなじ ものが かえる（n=1..12000＝50周ぶんで 同一と 確かめた）*/
-  wmod = weekly ? null : waveDef(wave).mod;
+  /* **Phase 6-5**：出す てきの ならびは `wavePlan()` が ぜんぶ 組む。
+     ここは 受けとって 演出を 出すだけ。
+     `waveList` / `waveMod` / `waveDef` は 1文字も さわって いません。
+
+     **演出は 動かさないこと。**うかぶ文字は 配列の 順に えがかれるので、
+     まとめて うしろへ 寄せると かさなり方が 変わって 画素が 動きます。
+     だから ならびは いまの まま ——とつぜんのウェーブ → ともだちバトル
+     → 国名 の 順に 出します */
+  const plan = wavePlan(wave, { weekly, friends: avFriends.length });
+  spawnQ = plan.spawnQ;
+  /* **mod を ここで もう一度 計算しないこと。**決めるのは `wavePlan()`
+     1か所だけ。2か所に 書くと、かたっぽを 直した ときに ずれます */
+  wmod = plan.mod;
   if (wmod){
-    if (wmod.count){
-      const base = spawnQ.slice(), add = Math.round(base.length * (wmod.count - 1));
-      for (let i = 0; i < add; i++) spawnQ.push(base[i % base.length]);
-    }
     floatTx(COLS*CELL/2, CELL*3.0, wmod.name, wmod.col);
     iflash = 0.7; iflashCol = hexRgb(wmod.col);
     vib([25, 30, 25]);
     beep(wmod.hp && wmod.hp < 1 ? 780 : 300, .16, 'triangle', .06);
   }
-  if (weekly){
-    // おだいの ぶん。waveList そのものは いじらない（tools/sim.mjs が つかうため）
-    if (weekly.many){
-      const base = spawnQ.slice(), add = Math.round(base.length * (weekly.many - 1));
-      for (let i = 0; i < add; i++) spawnQ.push(base[i % base.length]);
-    }
-    if (weekly.boss && wave % weekly.boss === 0) spawnQ.push('boss');
-  }
   spawnSeq = 0;      // ウェーブごとに 0にもどす（おなじウェーブは いつも おなじ顔ぶれ）
   // ともだちが いると、ステージの まん中の ウェーブが「ともだちバトル」になる
-  friendWave = isFriendWave(wave);
-  if (friendWave){
-    spawnQ = [];
-    for (const f of avFriends){ spawnQ.push('golem'); spawnQ.push('fast'); spawnQ.push('slime'); }
-    spawnQ.push('boss');
+  friendWave = plan.encounter === 'friend';
+  if (friendWave)
     floatTx(COLS*CELL/2, CELL*2.2, '👭 友だちバトル！', '#ff5f8a');
-  }
   spawnT = 0; running = true;
   btnWave.disabled = true;
   waveBtn('ウェーブ' + wave + '<br>進行中');
@@ -5023,11 +5090,13 @@ let legMissWave = -1;                                 // にじの子に にげ�
 let wmod = null;                                      // いまの「とつぜんの ウェーブ」（waveMod）
 const nameRects = [];                                 // ともだちの なまえを おいた ばしょ
 /* ともだちが いれば、ステージの まん中で「ともだちバトル」を ひらく。
-   ステージクリアの ウェーブと ぶつからないように 10の ところに おく */
-/* **Phase 6-1**：ウェーブの 枠は `waveDef` が 持つ。ここに のこすのは
-   「ともだちが いるか」＝ゲームの 状態の ほうだけ
-   （`waveDef` は 純関数なので 状態を 見られない）*/
-const isFriendWave = n => avFriends.length > 0 && waveDef(n).special.friendSlot;
+   ステージクリアの ウェーブと ぶつからないように 10の ところに おく。
+
+   **Phase 6-5**：この 判定は `wavePlan()` の ③encounter へ 移しました
+   （`ctx.friends > 0 && waveDef(n).special.friendSlot` ——式は そのまま）。
+   ここに あった `isFriendWave()` は 消して あります。のこすと
+   「ともだちバトルか どうか」を 決める ところが 2か所に なり、
+   かたっぽを 直した ときに ずれる ——6-5 が なくそうと している 形 その ものです */
 function spawnEnemy(k, d0){
   const E = ENEMIES[k];
   const hp = E.hp * hpScale(wave) * (weekly && weekly.hp ? weekly.hp : 1) * (wmod && wmod.hp ? wmod.hp : 1);
@@ -15737,6 +15806,10 @@ window.__chk = {
             かたちは 変えて いません（`tools/sim.mjs` が そのまま 読む）。
             純関数なので、検査から 何回 呼んでも 同じ こたえが 出ます */
          waveDef, STAGE_WAVES, THEME_COUNT, themeIdxOf, LEGENDS,
+         /* Phase 6-5 ——① base → ② modifier → ③ encounter。
+            純関数なので、検査から 140,000とおり 呼んで 旧ロジックと
+            つきあわせられる（状態は ctx で わたす）*/
+         wavePlan, WEEK_RULES,
          /* Phase 6-2 ——国の 恒久キーの 検査用 */
          countryIdOf, themeKeyOf, countryEnvOf,
          /* Phase 6-4a ——国 → 曲。`bgmFor` は 音の 準備が いるので、
