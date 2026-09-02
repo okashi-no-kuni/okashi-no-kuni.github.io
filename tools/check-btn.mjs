@@ -9,7 +9,8 @@
  *
  *   node tools/check-btn.mjs      # 終了コード 0 で 合格
  *
- * ものさしは 1つ。**「次のウェーブ」と 書いてあるのに 押せない、を 作らない。**
+ * ものさしは 1つ。**「つぎに 進める」と 見せて いるのに 押せない、を 作らない。**
+ * さがすのは **文言では なく `btnWave.dataset.next`**（`nextWaveBtn()` が つける）。
  * 文字と disabled は かならず 対で 動かすこと。
  */
 import { launch } from './_pw.mjs';
@@ -26,10 +27,14 @@ await p.waitForTimeout(1200);
 
 const st = () => p.evaluate(() => {
   const w = document.getElementById('btnWave');
-  return { text: w.textContent.trim(), off: w.disabled };
+  return { text: w.textContent.trim(), off: w.disabled, next: w.dataset.next === '1' };
 });
-/* 「次のウェーブ」と 書いてあるのに 押せない のが だめな 形 */
-const bad = s => s.off && s.text.indexOf('次のウェーブ') >= 0;
+/* 「つぎに 進める」と 見せて いるのに 押せない のが だめな 形。
+   **文言では なく しるし（`data-next`）で 見ること。**
+   むかしは 「次のウェーブ」の 文字で さがして いましたが、
+   ボタンの 文言を「次は W60」に 変えた とたん 検査が 空ぶりしました
+   （2か所に 書くと ずれる、の 一例）*/
+const bad = s => s.off && s.next;
 
 const ng = [];
 const look = async label => {
@@ -64,13 +69,13 @@ let back = false;
 for (let i = 0; i < 14 && !back; i++){
   await p.waitForTimeout(1000);
   const s = await st();
-  if (s.text.indexOf('次のウェーブ') >= 0){ back = true; await look('ボーナスの あと'); }
+  if (s.next){ back = true; await look('ボーナスの あと'); }
 }
 if (!back) ng.push('ボーナスウェーブが 終わりませんでした');
 
 await b.close();
 if (errs.length) ng.push('JSエラー: ' + errs[0]);
 console.log('ウェーブのボタン');
-console.log(ng.length ? '  ✗ ' + ng.join('\n  ✗ ') : '  「次のウェーブ」で 止まる ところ なし ✅');
+console.log(ng.length ? '  ✗ ' + ng.join('\n  ✗ ') : '  「つぎに 進める」で 止まる ところ なし ✅');
 console.log(ng.length ? '\n検査 NG（' + ng.length + '件）' : '\n検査 OK ✅');
 process.exit(ng.length ? 1 : 0);
