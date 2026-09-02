@@ -10299,20 +10299,27 @@ const skillCost = s => Math.round(s.base * (1 + wave*0.03) * (hasCh('queen') ? 0
      ⭐の雨   … こばんが ころがる。5つ 速く 上がる                        */
 const ITEMS = [
   { id:'ball',   name:'にじいろボール', sn:'ボール',   ic:'🌈', col:'#c9a7ff', need:true,
+    /* Phase 5D-2-B ——icKey が ②、art が ③、ic が ④。
+       絵が 読めない ときは いまの スプライトに 落ちるので、
+       見た目は これまでの ままに もどります */
+    icKey:'item_ball',
     art:'it_ball',   vib:[40,30,90],
     snd:[[520,.18,'triangle',.06,1.4,0], [700,.20,'triangle',.06,1.4,110],
          [920,.22,'triangle',.06,1.4,220], [1240,.34,'triangle',.07,1.6,330]],
     desc:'画面の敵を ぜんぶ たおす',        note:'いちばん強い切りふだ' },
   { id:'bolt',   name:'いなずま',       sn:'いなずま', ic:'⚡', col:'#ffd76e', need:true,
+    icKey:'item_bolt',
     art:'it_bolt',   vib:[25,20,25],
     snd:[[1300,.05,'sawtooth',.06,.35,0], [620,.09,'sawtooth',.07,.4,45],
          [190,.26,'sawtooth',.06,.5,110]],
     desc:'横1れつの敵を たおす',            note:'かたまって来たときに' },
   { id:'hammer', name:'ハンマー',       sn:'ハンマー', ic:'🔨', col:'#ff9ec9', need:true,
+    icKey:'item_hammer',
     art:'it_hammer', vib:[60],
     snd:[[150,.16,'square',.07,.5,0], [96,.30,'square',.07,.45,110]],
     desc:'いちばんHPの多い敵を 1体たおす',  note:'ボス1体だけを 落とす' },
   { id:'elixir', name:'にじいろの秘薬', sn:'ひやく',   ic:'🧪', col:'#8fe3c4', need:false,
+    icKey:'item_elixir',
     art:'it_elixir', vib:[20,40,20,40,60],
     snd:[[600,.10,'triangle',.05,1.4,0], [800,.10,'triangle',.05,1.4,100],
          [1000,.24,'triangle',.06,1.5,200]],
@@ -10339,11 +10346,13 @@ const ITEMS = [
          [790,.10,'triangle',.05,1.4,190],[1180,.30,'triangle',.06,1.6,285]],
     desc:'仲間を1人 きんいろに して 攻撃3倍', note:'ウェーブ200から 敵が おとす' },
   { id:'freeze', name:'こおりのつぼ',   sn:'こおり',   ic:'🧊', col:'#9ed8ff', need:true,
+    icKey:'item_freeze',
     art:'it_freeze', vib:[80],
     snd:[[1480,.07,'sine',.05,.9,0], [990,.12,'sine',.05,.85,80],
          [660,.46,'sine',.05,.8,180]],
     desc:'敵ぜんぶを 8秒 とめる',           note:'ゴール直前を しのぐときに' },
   { id:'rain',   name:'おほしさまの雨', sn:'⭐の雨',   ic:'⭐', col:'#ffe08a', need:false,
+    icKey:'item_rain',
     art:'it_rain',   vib:[20,20,20],
     snd:[[760,.07,'triangle',.05,1.5,0],  [990,.07,'triangle',.05,1.5,70],
          [1180,.07,'triangle',.05,1.5,140],[1400,.07,'triangle',.05,1.5,210],
@@ -11524,7 +11533,11 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  /* 5D-2-A ——ショップの 26px の 行。**🌈 は 2つ とも 別の 絵**
                     （にじいろセット＝宝箱／ゆめいろパステル＝にじと 雲）*/
                  'shop_start', 'shop_pass', 'shop_help', 'shop_rainbow_set',
-                 'theme_dream', 'theme_lemon', 'theme_mermaid'];
+                 'theme_dream', 'theme_lemon', 'theme_mermaid',
+                 /* 5D-2-B ——アイテム 6種。`art/sprites/it_*.png` と 名前を
+                    分けて あるので、1つの レコードの icKey と art が 読み分けられる */
+                 'item_ball', 'item_bolt', 'item_hammer',
+                 'item_elixir', 'item_freeze', 'item_rain'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。

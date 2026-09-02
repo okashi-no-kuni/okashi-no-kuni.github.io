@@ -110,6 +110,24 @@ const SHEETS = [
       /* 1,2 と 2,2 は 空 */
     ],
   },
+  {
+    /* Phase 5D-2-B ——アイテム 6種。**3x2・空きマスなし**。
+       ますの 境めに 点線が 引いて ありますが、keyOut は ますの
+       内がわ 5.5% から 切るので 入りません。
+
+       キーは `item_*` に します。`art/sprites/it_*.png` と おなじ 名前に
+       すると、1つの レコードに `icKey:'it_ball'` と `art:'it_ball'` が
+       ならんで 読みにくく なるためです */
+    file:'phase5d2b_source.png', w:1563, h:1006, cols:3, rows:2, mode:'key',
+    plan:[
+      { cell:'0,0', key:'item_ball',   name:'🌈 にじいろボール（4方向の 衝撃光つき オーブ）' },
+      { cell:'1,0', key:'item_bolt',   name:'⚡ いなずま（よこ方向の 電撃波）' },
+      { cell:'2,0', key:'item_hammer', name:'🔨 ハンマー（一点衝撃の 星）' },
+      { cell:'0,1', key:'item_elixir', name:'🧪 にじいろの秘薬（まるい胴の フラスコ）' },
+      { cell:'1,1', key:'item_freeze', name:'🧊 こおりのつぼ（ふたつき＋雪のけっしょう）' },
+      { cell:'2,1', key:'item_rain',   name:'⭐ おほしさまの雨（雲から 星が 降る）' },
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }
