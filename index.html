@@ -3934,7 +3934,8 @@ function buildPick(){
     const d = document.createElement('div');
     d.className = 'pk';
     d.style.cssText = 'grid-column:1/-1;cursor:default;padding:14px 8px';
-    d.innerHTML = '<div style="font-size:24px">🥚</div>' +
+    /* .pkEgg ＝ Phase 5D-1 が さしかえる しるし。絵文字は そのまま のこす */
+    d.innerHTML = '<div class="pkEgg" style="font-size:24px">🥚</div>' +
       '<div class="pkN">★' + pickLv + 'の仲間は まだいません</div>' +
       '<div class="pkS">たまごを開くか、敵を倒して<br>仲間にしよう</div>';
     pickGrid.append(d);
@@ -4006,6 +4007,13 @@ function openInfo(t){
   infoIc.textContent = '';
   if (T.avatar && avMe) infoIc.append(avThumb(avMe, 46));
   else if (T.gen) infoIc.append(genThumb(T.gen, 46));
+  /* Phase 5D-1 ——お菓子の タワーは **盤面の ショップバーと おなじ 似顔絵**。
+     絵文字（TOWERS[k].ic）だと 盤面の 子と 別人に 見えます。
+     31px は いまの font-size と 同じ。`#infoTx`（61.08px）が
+     `#info` の 高さを 決めているので、24〜46px の どれでも
+     `#panel` は 1pxも 変わりません（6画面で 実測）。
+     `TOWERS[k].ic` は フォールバックとして データに のこして あります */
+  else if (ORDER.indexOf(t.k) >= 0) infoIc.append(charThumb({ pid:'tw_' + t.k }, 31));
   else infoIc.textContent = T.ic;
   syncInfo();
 }
@@ -4361,6 +4369,14 @@ function celebrate(o){
    ウェーブ数にはカウントしない。落ちる速さはゲーム速度に関係なく一定
    ========================================================== */
 const BONUS_EMO = ['🍬','🍩','🍪','🧁','🍓','🍭','🍰','🍮'];
+/* Phase 5D-1 ——降ってくる お菓子を 盤面の スプライトで えがく。
+   **新しい 絵は 作って いません。**いま 図鑑に いる子の 絵を つかいます。
+   🍓 と 🍭 は 絵が 無いので **絵文字の まま**です ——8種を むりに
+   そろえないこと（無い ものを こちらで 作ると 画風が ずれる）。
+   絵は `dataIcon()` の ③→④ で 決まるので、読めて いなければ
+   これまでどおり 絵文字が 出ます */
+const BONUS_ART = { '🍬':'candy', '🍩':'donut', '🍪':'cookie',
+                    '🧁':'cupcake', '🍰':'cake', '🍮':'purin' };
 function startBonus(){
   const nB = 30 - (hasLg('pegasus') ? 3 : 0);   // ペガサスの しゅくふく
   bonus = { spawnLeft: nB, total: nB, spT: 0.4, items: [], got: 0 };
@@ -9253,7 +9269,7 @@ function stageClear(){
     gth.style.cssText = 'display:block;margin:6px auto 2px';
     ovB.append(gth);
     ovB.insertAdjacentHTML('beforeend',
-      '<div style="font-size:calc(12.5px * var(--fs));color:var(--pink-d)">🥚 ' + EGGS[eggIdx].name + 'から ' +
+      '<div class="clrTx" style="font-size:calc(12.5px * var(--fs));color:var(--pink-d)">🥚 ' + EGGS[eggIdx].name + 'から ' +
       gift.o.name + '（★' + gift.o.lv + '）' +
       (gift.dup ? '<br><span style="opacity:.7">すでにいるので 🩷かけら+' + gift.shard + '</span>'
                 : '<br>仲間になった！✨') + '</div>');
@@ -11509,7 +11525,10 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
    22px で +0.30px、24px で +1.30px に なるので **上げないこと**。
    たての 負の 余白も 要りません（`.v` は align-items:center の flex）*/
 const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14,
-                 h3:17, body:15, hud:21 };
+                 h3:17, body:15, hud:21,
+                 /* Phase 5D-1。どれも position:absolute の 画面の 中なので
+                    盤面の 高さには ひびきません（resize() は 数えない）*/
+                 wkgo:18, pk:14, pkBig:24, duT:22, duEgg:30, clear:16 };
 
 /* 絵文字を 絵に さしかえる ところ。
    [どこ, いまの 絵文字, 絵の キー, 大きさ]
@@ -11555,6 +11574,21 @@ const UI_SPOT = [
      たての 負の 余白も 要りません（行が のびる ところ用）*/
   ['#hud', '💗', 'cur_heart', 'hud', 'margin:0;display:block'],
   ['#hud', '⭐', 'cur_star',  'hud', 'margin:0;display:block'],
+  /* Phase 5D-1 ——**新しい 絵は 1枚も 作って いません。**
+     Phase 2・3 で 作った nav_week / nav_egg を つかいまわします。
+     どれも `position:absolute` の 画面の 中なので、大きさを 変えても
+     **盤面の 高さには ひびきません**（`resize()` は 数えない）。
+
+     **図鑑カードの 🥚（`.cTt`・9.9px）は のせません。**あそこだけ
+     小さすぎて、絵に すると つぶれます */
+  ['#wkGo',                 '🏅', 'nav_week', 'wkgo'],
+  ['#pickHint',             '🥚', 'nav_egg',  'pk'],
+  ['#pickGrid .pkN',        '🥚', 'nav_egg',  'pk'],
+  ['#pickGrid .pkEgg',      '🥚', 'nav_egg',  'pkBig', 'margin:0;display:block'],
+  ['#duT',                  '🥚', 'nav_egg',  'duT'],
+  ['#duGo',                 '🥚', 'nav_egg',  'duT'],
+  ['#duEggs .em',           '🥚', 'nav_egg',  'duEgg', 'margin:0;display:block'],
+  ['#ovB .clrTx',           '🥚', 'nav_egg',  'clear'],
 ];
 /* JS で 文字列から 組みたてる ところ用。絵が まだ 読めて いなければ
    これまでの 絵文字を かえす（図鑑の カードや ヒント文は 何度も 作りなおされ、
@@ -11571,7 +11605,11 @@ function uiOr(key, px, em){
    fitHead() が 出し引きした 状態が 消える。だから 文字ノードを 分けて 差しこむ */
 function swapSpot(sel, em, key, px, box){
   if (!UI_ICON[key]) return;
-  for (const root of document.querySelectorAll(sel)){
+  for (const root of document.querySelectorAll(sel)) swapSpotEl(root, em, key, px, box);
+}
+function swapSpotEl(root, em, key, px, box){
+  if (!UI_ICON[key]) return;
+  {
     const st = [root];
     while (st.length){
       const n = st.pop();
@@ -11670,14 +11708,36 @@ function paintCur(node){
     }
   } finally { curBusy = false; }
 }
+/* Phase 5D-1 ——`UI_SPOT` の さしかえを **あとから 作られた ところ**にも かける。
+   ショップ・図鑑・仲間を選ぶ・たいけつは ひらくたびに 作りなおされるので、
+   `paintUiIcons()` の 1回だけでは 足りません。呼ぶ ところを 数えあげると
+   足しわすれが 出るので、5B の 見はり役に のせます */
+function paintSpotIn(n0){
+  if (curBusy || !n0) return;
+  /* `textContent = '…'` は **文字ノードが 足された**形で 来ます。
+     要素だけを 見ていると、たいけつの 題や ボタンを 取りこぼします
+     （じっさい 取りこぼしました）*/
+  const node = n0.nodeType === 3 ? n0.parentElement : n0;
+  if (!node || node.nodeType !== 1) return;
+  curBusy = true;
+  try{
+    for (const [sel, em, key, sz, box] of UI_SPOT){
+      if (!UI_ICON[key]) continue;
+      const px = UI_PX[sz];
+      if (node.matches && node.matches(sel)) swapSpotEl(node, em, key, px, box);
+      if (node.querySelectorAll)
+        for (const el of node.querySelectorAll(sel)) swapSpotEl(el, em, key, px, box);
+    }
+  } finally { curBusy = false; }
+}
 /* 出たあとの 変化を 見て、**変わった ところ だけ**を さしかえる。
    ウェーブの ボタンは 1秒に 4回 書きかわるが、見るのは その ボタンの
    中だけ なので 軽い（画面ぜんたいを 毎回 たどらない）*/
 new MutationObserver(ms => {
   if (curBusy) return;
   for (const m of ms){
-    if (m.type === 'characterData') paintCur(m.target);
-    else for (const n of m.addedNodes) paintCur(n);
+    if (m.type === 'characterData'){ paintCur(m.target); paintSpotIn(m.target.parentElement); }
+    else for (const n of m.addedNodes){ paintCur(n); paintSpotIn(n); }
   }
 }).observe(document.body, { childList:true, subtree:true, characterData:true });
 
@@ -11787,13 +11847,13 @@ function dataIcon(rec, opt){
   if (rec && rec.icKey && allow.indexOf('ui') >= 0){
     for (const suf of dataIconVariants(opt)){        // ①
       const k = rec.icKey + suf;
-      if (UI_ICON[k]) return { t:'ui', key:k, src:UI_ICON[k].src };
+      if (UI_ICON[k]) return { t:'ui', key:k, src:UI_ICON[k].src, im:UI_ICON[k] };
     }
     if (UI_ICON[rec.icKey])                          // ②
-      return { t:'ui', key:rec.icKey, src:UI_ICON[rec.icKey].src };
+      return { t:'ui', key:rec.icKey, src:UI_ICON[rec.icKey].src, im:UI_ICON[rec.icKey] };
   }
   if (rec && rec.art && allow.indexOf('sprite') >= 0 && ART_SPRITE[rec.art])
-    return { t:'sprite', key:rec.art, src:ART_SPRITE[rec.art].src };   // ③
+    return { t:'sprite', key:rec.art, src:ART_SPRITE[rec.art].src, im:ART_SPRITE[rec.art] };   // ③
   return { t:'em', ch:(rec && rec.ic) || '' };                          // ④
 }
 /* <img> に して かえす。**絵文字の ときは null**なので、
@@ -14568,8 +14628,20 @@ function render(){
       for (const it of bonus.items){
         ctx.save(); ctx.translate(it.x, it.y);
         ctx.rotate(Math.sin(it.ph)*0.25);
-        ctx.font = (CELL*0.72) + 'px sans-serif';
-        ctx.fillText(it.em, 0, 0);
+        /* 絵が あれば 絵、無ければ これまでどおり 絵文字（dataIcon の ③→④）。
+           絵文字の 見た目に あわせて すこし 大きく とる */
+        const bi = dataIcon({ ic:it.em, art:BONUS_ART[it.em] });
+        if (bi.t === 'em'){
+          ctx.font = (CELL*0.72) + 'px sans-serif';
+          ctx.fillText(it.em, 0, 0);
+        } else {
+          /* **わくの 大きさでは なく、えがかれる 中みで そろえる。**
+             スプライトは まわりに 余白が あるので、絵文字と おなじ
+             `CELL*0.72` に すると 8px 小さく 見えます（実測）。
+             `0.95` で 中みの たてが 31.0px ＝ 絵文字の 31.8px と ほぼ 同じ */
+          const bs = CELL*0.95;
+          ctx.drawImage(bi.im, -bs/2, -bs/2, bs, bs);
+        }
         ctx.restore();
         sparkle(it.x + CELL*0.34, it.y - CELL*0.3, CELL*0.07, it.ph*2, '#ffffff');
       }
@@ -15350,6 +15422,14 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   duelHurt: () => { if (duS && duS.phase === 'fight') duS.myHp = 1; },
   setStars: n => { stars = n; syncHUD(); },
   /* Phase 5C ——うかぶ文字を 好きな 文で 出す（絵と 字の ならびを 見る）*/
+  /* Phase 5D-1 ——ボーナスウェーブを その場で 出す。8種を 順に ならべて
+     「6種が 絵・🍓🍭 が 絵文字」を たしかめる */
+  bonus: () => { startBonus();
+    bonus.items.length = 0; bonus.spawnLeft = 0;
+    BONUS_EMO.forEach((em, i) => bonus.items.push({
+      x: CELL*(1.0 + (i % 4)*2.2), y: CELL*(2.5 + ((i/4)|0)*3), vy:0, em, ph:0 }));
+    return BONUS_EMO.map(em => ({ em, art:BONUS_ART[em] || null,
+                                  出かた: dataIcon({ ic:em, art:BONUS_ART[em] }).t })); },
   float: (t, c, dataIc) => { floats.length = 0;
     floatTx(COLS*CELL/2, ROWS*CELL*0.5, t, c || '#ffb43f', dataIc); },
   floatN: () => floats.length,
