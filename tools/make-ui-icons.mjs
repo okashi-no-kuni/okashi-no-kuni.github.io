@@ -146,8 +146,8 @@ const SHEETS = [
   },
   {
     /* Phase 5D-2-D ——「仲間を選ぶ」の タイル。**はじめから 透過**。
-       よこに 長い（たてよこ比 1.68）ので、うめ具合は 25%を 大きく 下まわります */
-    file:'phase5d2d_source.png', w:1453, h:1082, cols:1, rows:1, mode:'alpha',
+       よこに 長い（たてよこ比 1.65）ので、うめ具合は 25%を 大きく 下まわります */
+    file:'phase5d2d_source.png', w:1538, h:1023, cols:1, rows:1, mode:'alpha',
     plan:[
       { cell:'0,0', key:'nav_pick', name:'🧸 仲間を選ぶ（3体の クマ）', minFill:12 },
     ],
