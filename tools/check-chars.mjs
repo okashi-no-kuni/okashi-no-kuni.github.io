@@ -25,7 +25,7 @@
  */
 import { launch } from './_pw.mjs';
 import { resolve } from 'path';
-import { readdirSync, existsSync } from 'fs';
+import { readdirSync, existsSync, readFileSync } from 'fs';
 
 const MIN_BIG = 0.55;   // わくに たいして これより 小さいと ぽつんと 見える
 const MAX_OFF = 0.10;   // まん中からの ずれの ゆるせる はば
@@ -224,10 +224,50 @@ line('出ない なかま', rep.chGhost || []);
 line('たまごの ならび', rep.eggBad || []);
 line('たいけつの背景', bgMiss);
 
+/* ---------- Phase 6-6 ——unlock() に origin を わたし忘れて いないか ----------
+   `unlock(id)` と 2つめを 書かずに 呼ぶと、その子は だまって
+   `unknown` に なります。**目でも 実行しても 見つかりません**
+   ——図鑑には ふつうに 入るので、画面は 何も おかしく ならない。
+   だから ソースを そのまま 読んで 数えます。
+
+   `giveItem` / `eggDraw` も 中で unlock を 呼ぶ ヘルパなので、
+   おなじく 引数で origin を 受けとって いるか 見ます */
+const src = readFileSync(target, 'utf8');
+const originMiss = [];
+{
+  const known = new Set((src.match(/^const ORIGIN = Object\.freeze\(\{[\s\S]*?^\}\);/m) || [''])[0]
+                  .match(/^\s{2}(\w+):/gm)?.map(x => x.trim().replace(':','')) || []);
+  /* **コメントを 先に 消すこと。**「行あたまが * か //」で よけると、
+     ブロックコメントの 途中の 行（`\`unlock()\` の 中で…`）が すりぬけて
+     「origin無し」と 出ます（じっさい 出た）。行数は 変えたくないので、
+     消したところは 改行だけ のこす */
+  const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+                      .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + ' '.repeat(m.length - p.length));
+  const lines = strip(src).split('\n');
+  lines.forEach((ln, i) => {
+    for (const m of ln.matchAll(/\bunlock\(([^)]*)\)/g)){
+      const args = m[1];
+      if (/^\s*id\s*,\s*origin\s*$/.test(args)) continue;        // 定義そのもの
+      const parts = args.split(',');
+      if (parts.length < 2){ originMiss.push('L' + (i+1) + ':origin無し'); continue; }
+      const o = parts[parts.length - 1].trim();
+      if (o === 'origin') continue;                                // ヘルパが 通す
+      const mm = o.match(/^ORIGIN\.(\w+)$/);
+      if (!mm) originMiss.push('L' + (i+1) + ':' + o);
+      else if (!known.has(mm[1])) originMiss.push('L' + (i+1) + ':ORIGIN.' + mm[1] + 'は無い');
+    }
+  });
+  // 中で unlock を 呼ぶ ヘルパは、origin を 引数で 受けとる こと
+  for (const fn of ['eggDraw', 'giveItem'])
+    if (!new RegExp('function ' + fn + '\\([^)]*\\borigin\\b').test(src))
+      originMiss.push(fn + 'が originを 受けとって いない');
+}
+line('unlockの origin', originMiss);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length;
+         + bgMiss.length + originMiss.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

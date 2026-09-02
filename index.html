@@ -3714,12 +3714,15 @@ function eggPick(list){
   if (r < o.pL + o.pG) return one(o.gold);
   return one(o.norm.length ? o.norm : o.gold.length ? o.gold : o.leg);
 }
-function eggDraw(e){
+/* **Phase 6-6**：`origin` は 呼び出し元が わたす。ここで `egg` と
+   決めうちに すると、ステージクリアの たまごも 伝説の ごほうびの
+   たまごも おなじに なって あとから 区別できない */
+function eggDraw(e, origin){
   const pool = eggPool(e);
   const news = pool.filter(o => !hasGen(o));
   if (news.length){
     const o = eggPick(news);
-    unlock(o.id);
+    unlock(o.id, origin);
     return { o, dup: false };
   }
   const o = eggPick(pool);
@@ -3865,7 +3868,7 @@ function buildShardBox(){
       if (!pool.length || shards < need) return;
       shards -= need; saveShards();
       const o = pool[(Math.random() * pool.length) | 0];
-      unlock(o.id);
+      unlock(o.id, ORIGIN.shard);
       showEggResult({ o, dup: false }, true);
     };
     row.append(b);
@@ -3895,7 +3898,7 @@ function buyEgg(e, pay){
     saveRun();
   }
   syncHUD(); syncShop();
-  showEggResult(eggDraw(e), false, e);
+  showEggResult(eggDraw(e, ORIGIN.egg), false, e);
 }
 
 /* あけた ところを 見せる。たまご → われる → 出てくる */
@@ -4142,7 +4145,7 @@ function giveStarters(){
   const pool = GEN_LIST.filter(o => o.side === 'ch' && o.lv === 1);
   for (let i = 0; i < 5 && pool.length; i++){
     const k = (Math.random() * pool.length) | 0;
-    unlock(pool[k].id);
+    unlock(pool[k].id, ORIGIN.starter);
     pool.splice(k, 1);
   }
   try{ localStorage.setItem('sweetTD.starter', dateStr()); }catch(e){}
@@ -4496,7 +4499,7 @@ function boardTap(px, py){
   // なかまの id は そのまま（c_xxx）。'tw_' を つけると ありもしない id が
   // ずかんに たまり、なかまは 一生 とうろくされない
   const dexId = T.avatar ? null : (T.ally ? selTool : 'tw_' + selTool);
-  if (dexId && unlock(dexId)){
+  if (dexId && unlock(dexId, ORIGIN.place)){
     if (!T.ally) dex[dexId].lv = 1;
     saveDex();
     floatTx(cx(c), cy(r) - CELL*0.95, '図鑑に登録！', '#b98ae0');
@@ -5011,7 +5014,7 @@ function update(dt){
       gifts.splice(i,1);
       if (gf.it){
         const it = ITEM_BY_ID[gf.it];
-        giveItem(it.id, 1);
+        giveItem(it.id, 1, ORIGIN.drop);
         /* 先頭は ITEMS の ic。⭐の雨の ⭐は 通貨では ないので しるしを つける */
         floatTx(gf.tx, ROWS*CELL - CELL*0.6, it.ic + ' ' + it.name + ' +1', '#b98ae0', true);
         beep(660,.08,'triangle',.05); setTimeout(()=>beep(990,.12,'triangle',.05),90);
@@ -5113,7 +5116,7 @@ function killEnemy(e, px, py){
   const idx = enemies.indexOf(e);
   if (idx < 0) return;
   enemies.splice(idx,1);
-  if (unlock('en_' + e.k))
+  if (unlock('en_' + e.k, ORIGIN.battle))
     floatTx(px, py - CELL*0.7, '図鑑に登録！', '#b98ae0');
   if (e.gi){
     /* にじ（25%）と 金（60%）の わくの子は たおしても ときどきしか
@@ -5122,7 +5125,7 @@ function killEnemy(e, px, py){
     const gk = artKeyOf(e.gi);
     const keep = DEX_LEGEND.has(gk) ? LEG_KEEP : DEX_GOLD.has(gk) ? GOLD_KEEP : 1;
     if (dex[e.gi.id] || Math.random() < keep){
-      if (unlock(e.gi.id))
+      if (unlock(e.gi.id, ORIGIN.battle))
         floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
     } else if (legMissWave !== wave){
       legMissWave = wave;
@@ -9549,10 +9552,79 @@ function dateStr(){
   const d = new Date();
   return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
 }
-/* はじめての登録なら true。いつ手に入れたかも残す */
-function unlock(id){
-  if (dex[id]) return false;
-  dex[id] = { w: wave, d: dateStr() };
+/* ==========================================================
+   Phase 6-6 ——「どこで 手に 入れたか」（origin）の 受け口
+   ----------------------------------------------------------
+   これから 季節イベント・誕生日・47都道府県・紹介・合言葉・交換 を
+   足すと、「この子は どこから 来たのか」を 記録する 場所が いります。
+   **今回は 記録できる 受け口だけ**です。個体ID・複数所持・交換・
+   限定フラグ・進化段階は 1つも 作りません（Phase 7）。
+
+   **`dex` は いまも「種／図鑑単位」です。こわしません。**
+   個体ごとの 配列や インスタンスに 変えると、セーブ・交換・複数所持・
+   進化・限定キャラまで 一気に 連鎖します。だから **フィールドを
+   1つ 足すだけ**に します。
+
+     dex[id] = { w:入手ウェーブ, d:入手日, lv:とうたつレベル, origin:入手元 }
+
+   #### 意味は「その **種** を **はじめて** 手に 入れた 経路」
+
+   いま 個体モデルが 無いので、「いま 持って いる 個体の 出自」は
+   正しく 表せません。だから **種単位の 初回入手元**として あつかいます。
+   Phase 7 で 個体モデルを 入れたら `instance.origin` へ そのまま
+   のばせる 名前と 値に して あります。
+
+   **上書きは 構造的に 起きません。**`unlock()` は いちばん上で
+   `if (dex[id]) return false;` と 返すので、2回目からは 何も 書きません。
+   新しい 見はりを 足す 必要は ありませんでした。
+
+   #### 呼び出し元から 明示的に わたす
+
+   `unlock()` の 中で グローバルから 推測しない こと。いまなら
+   `weekly` や `duS` を 見て 当てられますが、イベントが ふえた ときに
+   **だまって まちがえます**（推測の 条件が 1つ ふえるたびに
+   ぜんぶの 経路を 見なおす ことに なる）。
+
+   `eggDraw()` と `giveItem()` は **1つの ヘルパを 3〜4か所から
+   呼んで います**。ここは 引数で 通します ——ヘルパの 中で
+   決めうちに すると、ステージクリアの たまごも 伝説の ごほうびの
+   たまごも おなじ `egg` に なって、**あとから 区別できなく なります**。
+
+   #### 値は 言語に よらない 安定ID
+
+   日本語の 表示文字列を 保存しない こと（英語版で 変わる）。
+   いま **ほんとうに ある 経路だけ**を 入れて あります。
+   `event` / `birthday` / `prefecture` / `referral` / `code` / `trade` は
+   **まだ 作りません**（その しくみが 無いので、書いても うそに なる）。
+   ========================================================== */
+const ORIGIN = Object.freeze({
+  starter: 'starter',   // はじめての 5人（giveStarters）
+  egg:     'egg',       // ⭐/💎で 買った たまご
+  stage:   'stage',     // ステージクリア（なかま・たまご・アイテム）
+  duel:    'duel',      // 伝説に かった（本人・ごほうびの たまご）
+  legend:  'legend',    // 到達制の 伝説（legendArrival。いまは 通らない）
+  battle:  'battle',    // 敵を たおした
+  drop:    'drop',      // 戦いの ドロップ（アイテム）
+  place:   'place',     // 盤面に おいた（お菓子タワー・なかま）
+  shard:   'shard',     // かけら交換
+  login:   'login',     // ログインボーナス
+  shop:    'shop',      // ショップで 買った（はじめてパック・アイテムセット）
+  debug:   'debug',     // 検査どうぐ
+  /* **既定値。**この版より 前に 手に 入れた ぶんは 経路を 記録して
+     いないので、`normal` の ように 「ふつうに 手に 入れた」と
+     決めつけません ——ほんとうに 分からないからです。
+     読むときに おぎなうだけで、**古い セーブを 書きかえません** */
+  unknown: 'unknown',
+});
+/* 読むのは かならず ここを とおす。古い セーブには 無いので
+   `?? unknown` で おぎなう（ロード時に 一括で 書きかえない）*/
+const originOf = id => (dex[id] && dex[id].origin) || ORIGIN.unknown;
+
+/* はじめての登録なら true。いつ・どこで 手に入れたかも残す。
+   **origin は 呼び出し元が わたす**こと（中で 推測しない）*/
+function unlock(id, origin){
+  if (dex[id]) return false;          // ← 2回目からは 何も 書かない＝初回の origin は 守られる
+  dex[id] = { w: wave, d: dateStr(), origin: origin || ORIGIN.unknown };
   saveDex();
   checkComplete();   // これが最後のひとりだったら、おかしの国がかんせいする
   return true;
@@ -9571,7 +9643,7 @@ function stageClear(){
   healHearts(3 + (hasCh('apple') ? 3 : 0));   // ごほうびにハートを回復（ためた💗はへらさない）
   const ch = CHARS.find(c => !dex['ch_'+c.id]);
   if (ch){
-    unlock('ch_' + ch.id);
+    unlock('ch_' + ch.id, ORIGIN.stage);
     // おためし用にストックを1つプレゼントし、あきがあればタスクバーにも自動ではる
     if (SKILLS.some(s => s.ch === ch.id)){
       skStock[ch.id] = Math.min(ITEM_MAX, skStock[ch.id] + 1);
@@ -9581,7 +9653,7 @@ function stageClear(){
   }
   // ステージが すすむほど いい たまごが もらえる
   const eggIdx = stageNo >= 6 ? 2 : stageNo >= 3 ? 1 : 0;
-  const gift = eggDraw(EGGS[eggIdx]);
+  const gift = eggDraw(EGGS[eggIdx], ORIGIN.stage);
   const got = CHARS.filter(c => dex['ch_'+c.id]).length;
   const done = got >= CHARS.length;
   ovT.textContent = (done && ch) ? 'おかしの国 完成！🏰' : 'ステージ ' + stageNo + ' クリア！🎉';
@@ -9606,7 +9678,7 @@ function stageClear(){
     const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP && (!it.late || wave >= it.late));
     if (pool.length){
       const it = pool[(Math.random()*pool.length)|0];
-      giveItem(it.id, 1);
+      giveItem(it.id, 1, ORIGIN.stage);
       ovB.insertAdjacentHTML('beforeend',
         '<div style="font-size:calc(12.5px * var(--fs));color:var(--pink-d)">' +
         '<span class="dic">' + it.ic + '</span> アイテム「' + it.name + '」+1</div>');
@@ -9953,7 +10025,7 @@ function duWin(){
   duArena.onpointerdown = null;
   if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
   const L = duS.L;
-  unlock('lg_' + L.id);
+  unlock('lg_' + L.id, ORIGIN.duel);
   dex['lg_' + L.id].w = L.wave;
   /* はじめての 1体は こちらで えらんで おく。空っぽの スロットを 見せると
      「何か 足りない」だけで 終わり、つかい方に 気づいてもらえません */
@@ -9994,7 +10066,7 @@ function duEggs(){
     b.onclick = () => {
       if (b.classList.contains('done')) return;
       tapSel();
-      const r = eggDraw(E);                // ダブりは かけらに なる（既存のしくみ）
+      const r = eggDraw(E, ORIGIN.duel);   // ダブりは かけらに なる（既存のしくみ）
       b.classList.add('done'); b.innerHTML = '';
       b.append(genThumb(r.o, 44));
       b.insertAdjacentHTML('beforeend',
@@ -10076,7 +10148,7 @@ function duLose(ranAway){
 
 function legendArrival(L, preview){
   if (!preview){
-    unlock('lg_' + L.id);              // 撮影プレビューでは図鑑にとうろくしない
+    unlock('lg_' + L.id, ORIGIN.legend);   // 撮影プレビューでは図鑑にとうろくしない
     // でんせつは「ベストが とどいた」ごほうびなので、じっさいに 出会うのは
     // つぎの ウェーブの おわり。そのまま unlock すると やりなおした直後の
     // ウェーブ1が 記録されて、図鑑に「ウェーブ1」と 出てしまう。
@@ -10736,11 +10808,13 @@ try{
 }catch(e){}
 function saveGear(){ try{ localStorage.setItem('sweetTD.gear', JSON.stringify(gear)); }catch(e){} }
 /* 1こ わたす。はじめて 手に 入れたら ずかんにも のこす */
-function giveItem(id, n){
+/* **Phase 6-6**：`origin` は 呼び出し元が わたす（ドロップ／
+   ステージクリア／ショップ の 3とおりから 呼ばれる）*/
+function giveItem(id, n, origin){
   if (!ITEM_BY_ID[id]) return 0;
   const before = gear[id];
   gear[id] = Math.min(ITEM_CAP, before + (n || 1));
-  saveGear(); unlock('it_' + id);
+  saveGear(); unlock('it_' + id, origin);
   return gear[id] - before;
 }
 
@@ -11483,7 +11557,7 @@ function applyLoginReward(day){
       return '所持しているワザのストック <b>全部+1</b>！';
     default:
       if (!dex['sp_rpurin']){
-        unlock('sp_rpurin');
+        unlock('sp_rpurin', ORIGIN.login);
         if (pins.length < PIN_MAX && !pins.includes('rpurin')){ pins.push('rpurin'); savePins(); }
         return '伝説の仲間 <b>ながれぼし</b> が仲間に！！<br>✨ プレゼントが おちやすくなる ✨';
       }
@@ -12742,7 +12816,7 @@ const SHOP_ITEMS = [
       const news = packPool().filter(o => !hasGen(o));
       if (news.length){
         const o = news[(Math.random() * news.length) | 0];
-        unlock(o.id);
+        unlock(o.id, ORIGIN.shop);
         return '⭐' + PACK_STARS.toLocaleString() + ' と ★' + PACK_LV + '「' + o.name + '」が仲間に！';
       }
       const n = SHARD_GET[PACK_LV] || 1;
@@ -12778,7 +12852,7 @@ const SHOP_ITEMS = [
     cost: 20,
     can:  () => itDay.set !== dayKey(),
     poor: () => 'きょうは もう 買いました。また あした',
-    buy: () => { for (const it of ITEMS) giveItem(it.id, 1); buildSkillBar();
+    buy: () => { for (const it of ITEMS) giveItem(it.id, 1, ORIGIN.shop); buildSkillBar();
                  itDay.set = dayKey(); saveItDay();
                  return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
   { id:'it_big', sec:'あそぶ', ic:'🌈', icKey:'shop_rainbow_set', name:'にじいろセット',
@@ -12787,7 +12861,7 @@ const SHOP_ITEMS = [
     cost: 55,
     can:  () => itDay.big !== dayKey(),
     poor: () => 'きょうは もう 買いました。また あした',
-    buy: () => { for (const it of ITEMS) giveItem(it.id, 3); buildSkillBar();
+    buy: () => { for (const it of ITEMS) giveItem(it.id, 3, ORIGIN.shop); buildSkillBar();
                  itDay.big = dayKey(); saveItDay();
                  return '🌈 6しゅるいの アイテムが 3こずつ！'; } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
@@ -15818,6 +15892,9 @@ window.__chk = {
          normalBgmIdx: w => BGM_OF[countryIdOf(w)],
          themes: () => THEMES.map(t => ({ id:t.id, env:t.env, name:t.name })),
          duelBgOf: w => DUEL_BG[countryIdOf(w)] || null },
+  /* Phase 6-6 ——入手元（origin）。値は 言語に よらない 安定ID。
+     古い セーブには 無いので、読むのは かならず `originOf()` を とおす */
+  ORIGIN, originOf, dexRaw: () => dex,
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。
@@ -15853,6 +15930,14 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return c.toDataURL('image/png');
   },
   setWave: w => { wave = w; syncHUD(); },
+  /* Phase 6-6 ——入手元の たしかめ用。
+     `origin` は 図鑑カードにも どこにも 出さない（今回は 受け口だけ）*/
+  origin: id => (id ? originOf(id) : Object.fromEntries(
+                   Object.keys(dex).map(k => [k, originOf(k)]))),
+  originEntry: id => dex[id] ? { ...dex[id] } : null,
+  originSet: (id, v) => { if (dex[id]){ dex[id].origin = v; saveDex(); } return originOf(id); },
+  originDel: id => { if (dex[id]) delete dex[id].origin; saveDex(); return originOf(id); },
+  dexDel: id => { delete dex[id]; saveDex(); return !dex[id]; },
   /* ウェーブの ボタンの「つぎの 行き先」の 文言を 出しなおす。
      **文字数で 2行に おれると 高さ 46px を こえて 下が 切れます**。
      ウェーブは 何千にも なるので、機械で しらべられる ように 口を 出す */
@@ -15923,7 +16008,7 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   },
   fillDex: t => {                       // ずかんを t（0〜1）の わりあいだけ うめる
     const all = dexList();
-    all.slice(0, Math.round(all.length * t)).forEach(o => unlock(o.id));
+    all.slice(0, Math.round(all.length * t)).forEach(o => unlock(o.id, ORIGIN.debug));
     /* 「おかしの国 完成！」の お祝いは 出さない。検査でも スクショでも
        盤面の 前に かぶさって じゃまに なるだけ（お祝いは 本物の
        プレイで 見せる もの）*/
@@ -15931,7 +16016,7 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     return Object.keys(dex).length;
   },
   /* まもり神。ふつうは 伝説に 勝たないと つかえないので、検査では ここから */
-  guardGive: id => { unlock('lg_' + id); guard = id; saveGuard(); guardUsed = false;
+  guardGive: id => { unlock('lg_' + id, ORIGIN.debug); guard = id; saveGuard(); guardUsed = false;
                      buildSkillBar(); return guardOf() && guardOf().name; },
   guardState: () => ({ えらんだ: guard, つかった: guardUsed,
                        もっている: guardList().map(l => l.name) }),
