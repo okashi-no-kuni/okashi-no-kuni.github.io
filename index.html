@@ -3925,7 +3925,7 @@ function buildPick(){
       };
     } else {
       d.insertAdjacentHTML('beforeend',
-        '<div style="font-size:30px;flex:0 0 56px;text-align:center">🎀</div>' +
+        '<div class="avIc" style="font-size:30px;flex:0 0 56px;text-align:center">🎀</div>' +
         '<div style="flex:1"><div class="pkN">アバターを作る</div>' +
         '<div class="pkS">顔・髪型・服を選んで<br>自分を盤面に出そう</div></div>' +
         '<div style="font-size:calc(11px * var(--fs));color:#b98ae0">作る ▶</div>');
@@ -10036,7 +10036,7 @@ function buildFriendGrid(){
     me.querySelector('button').onclick = () => { openAvatar('colOv'); };
   } else {
     me.insertAdjacentHTML('beforeend',
-      '<div style="font-size:30px;flex:0 0 56px;text-align:center">🎀</div>' +
+      '<div class="avIc" style="font-size:30px;flex:0 0 56px;text-align:center">🎀</div>' +
       '<div style="flex:1"><div class="cNm">アバターを作ろう</div>' +
       '<div class="cTt">顔・髪型・服を選ぼう</div></div>' +
       '<button class="mini">作る</button>');
@@ -10228,7 +10228,13 @@ function buildColGrid(){
       if (o.item){
         const box = document.createElement('div');
         box.style.cssText = 'height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:.45';
-        box.textContent = o.item.ic;
+        /* 所持ぶん（上）と おなじ ③→④。ここを わすれると、
+           **1こも 持っていない あいだ 7枚 ぜんぶが 絵文字**に なります */
+        const im0 = dataImg(o.item, 64);
+        if (im0){
+          im0.style.cssText = 'width:64px;height:64px;display:block';
+          box.append(im0);
+        } else box.textContent = o.item.ic;
         d.append(box);
       } else d.append(lazyThumb(o, 64));
       d.insertAdjacentHTML('beforeend',
@@ -11580,7 +11586,12 @@ const UI_PX  = { btn:30, head:18, tab:20, close:24, inline:22, pin:17, text:14,
                     40px なら 札は 48px＝もとの 47.94 と ほぼ 同じ。
                     タワーの 似顔絵は 46px ですが、あちらは `.cs` の
                     「⭐110 ×0」が すでに 札を 広げて いるので 入ります */
-                 pickIc:40 };
+                 pickIc:40,
+                 /* Phase 5D-3 ——アバターの 🎀（`.avIc`）。
+                    `font-size:30px` の 行を そのまま 30px の 絵に する。
+                    となりの 字（.pkN + .pkS ／ .cNm + .cTt）の ほうが
+                    高いので、ここが 0.96px 縮んでも 行は 変わりません */
+                 avBig:30 };
 
 /* 絵文字を 絵に さしかえる ところ。
    [どこ, いまの 絵文字, 絵の キー, 大きさ]
@@ -11646,6 +11657,11 @@ const UI_SPOT = [
      46px の canvas ですが、**ここは 40px**です（上の `pickIc` の わけ）。
      絵は よこに 長い（2.11）ので、40px の わくの 中では 38x18 に なります */
   ['#shop .tw[data-k="__pick"] .ic', '🧸', 'nav_pick', 'pickIc', 'margin:0;display:block'],
+  /* Phase 5D-3 ——アバターの 🎀 30px。**新しい 絵は 作って いません**
+     ——`nav_avatar`（図鑑の 🎀 ボタン）と おなじ 意味なので つかいまわし。
+     `text-align:center` の 中の ブロックなので `margin:0 auto` で まん中へ */
+  ['#pickGrid .avIc',       '🎀', 'nav_avatar', 'avBig', 'margin:0 auto;display:block'],
+  ['#colGrid .avIc',        '🎀', 'nav_avatar', 'avBig', 'margin:0 auto;display:block'],
   ['#pickHead > div',                '🧸', 'nav_pick', 'tab'],
 ];
 /* JS で 文字列から 組みたてる ところ用。絵が まだ 読めて いなければ
@@ -12025,7 +12041,10 @@ function buildHelp(){
     '<li>🌈 <b>にじ</b>（伝説）：運まかせ。たまごでは あわせて' + (LEG_RATE()*100) + '%、' +
     'たおしても ときどきしか 図鑑に入りません（にげてしまいます）</li>' +
     '<li>🥇 <b>金</b>（レア）：たまごでも たおしたときでも 出にくい子</li>' +
-    '<li>🥈 <b>銀</b>／🩷 <b>ピンク</b>：ふつうに 集まります</li></ul>' +
+    /* この 🩷 は **わくの 色**で、かけら（通貨）では ない。
+       `.dic` を つけないと paintCur() が かけらの 絵に して しまい、
+       4つ ならぶ 凡例で 1つだけ 結晶の 絵に なる */
+    '<li>🥈 <b>銀</b>／<span class="dic">🩷</span> <b>ピンク</b>：ふつうに 集まります</li></ul>' +
     '<p style="margin-top:5px"><b>集めかた</b>は4つ。' +
     '①敵をたおす ②' + STAGE_WAVES + 'ウェーブごとのクリアで たまごが1こ ' +
     '③⭐や💎で たまごを ひらく ④ともだちバトルに勝つと かけら🩷。' +
