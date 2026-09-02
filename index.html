@@ -1992,39 +1992,49 @@ const goldOf = k => Math.round(ENEMIES[k].gold * (1 + Math.max(0, wave-30)*0.04)
 /* ==========================================================
    ステージ（20ウェーブクリアごとに景色が変わる）
    ========================================================== */
+/* `id` は **言語に よらない 恒久キー**。表示名（`name`）は 英語版で
+   変わるので、内部の キーには つかわないこと（`DUEL_BG` と
+   `groundKey` が むかし 日本語の 名前を キーに して いた ——Phase 6-2 で 直した）。
+   **画像の ファイル名を 正本に しない**こと ——`DUEL_BG` は
+   `id → 絵` の 表を べつに 持ちます */
 const THEMES = [
-  { name:'シュガーガーデン',     g1:'#d9f7e6', g2:'#cdf2dd', p1:'#f0c9a0', p2:'#ffe8c8',
+  { id:'sugar', name:'シュガーガーデン',     g1:'#d9f7e6', g2:'#cdf2dd', p1:'#f0c9a0', p2:'#ffe8c8',
     spr:['#ff9ec9','#9ed8ff','#b6f0c4','#ffe08a'] },
-  { name:'いちごのおかしばたけ', g1:'#ffe4ef', g2:'#ffd9e8', p1:'#c98a5e', p2:'#eec49a',
+  { id:'berry', name:'いちごのおかしばたけ', g1:'#ffe4ef', g2:'#ffd9e8', p1:'#c98a5e', p2:'#eec49a',
     spr:['#ff7fae','#ffffff','#ffd0df','#b6f0c4'] },
-  { name:'マカロンのもり',       g1:'#c8e6c0', g2:'#b8dcae', p1:'#8a5a34', p2:'#b07d4e',
+  { id:'forest', name:'マカロンのもり',       g1:'#c8e6c0', g2:'#b8dcae', p1:'#8a5a34', p2:'#b07d4e',
     spr:['#ffd0df','#fff0b8','#c9a7ff','#ffffff'] },
-  { name:'チョコレートのたに',   g1:'#eed9c2', g2:'#e6cdb2', p1:'#8a5a34', p2:'#b07d4e',
+  { id:'choco', name:'チョコレートのたに',   g1:'#eed9c2', g2:'#e6cdb2', p1:'#8a5a34', p2:'#b07d4e',
     spr:['#ffffff','#ffd76e','#ff9ec9','#9ed8ff'] },
-  { name:'こおりのくに',         g1:'#e2f3fc', g2:'#d6ecf8', p1:'#a8cfe6', p2:'#eef9ff',
+  { id:'ice', name:'こおりのくに',         g1:'#e2f3fc', g2:'#d6ecf8', p1:'#a8cfe6', p2:'#eef9ff',
     spr:['#ffffff','#bfe8ff','#c9a7ff','#ffd0df'] },
-  { name:'ゆきのケーキやま',     g1:'#f2f4fa', g2:'#e6eaf5', p1:'#a8c4e6', p2:'#dceafc',
+  { id:'snow', name:'ゆきのケーキやま',     g1:'#f2f4fa', g2:'#e6eaf5', p1:'#a8c4e6', p2:'#dceafc',
     spr:['#ffffff','#bfe8ff','#ffd0df','#e8d8ff'] },
-  { name:'ソーダのうみべ',       g1:'#d3f2f5', g2:'#c2ebf0', p1:'#e8c49a', p2:'#fff0d8',
+  { id:'sea', name:'ソーダのうみべ',       g1:'#d3f2f5', g2:'#c2ebf0', p1:'#e8c49a', p2:'#fff0d8',
     spr:['#ffffff','#8fd8ff','#b6f0c4','#ffd0df'] },
   // ---- ここから おくの国。さばくが 2つ つづいて、だんだん あつくなる ----
-  { name:'キャラメルのさばく',   g1:'#f5dfb0', g2:'#efd49c', p1:'#b5722f', p2:'#dda45e',
+  { id:'caramel', name:'キャラメルのさばく',   g1:'#f5dfb0', g2:'#efd49c', p1:'#b5722f', p2:'#dda45e',
     spr:['#ffffff','#ffd76e','#ff9ec9','#b98ae0'] },
   /* キャラメルのさばくの おく。あめ色ではなく クッキーの粉のような 白っぽい砂にして、
      キラキラに ラムネ色を まぜて 見わける（同じ あめ色にすると 2つが 見わけられない） */
-  { name:'さばくのくに',         g1:'#f9ead6', g2:'#f2e0c6', p1:'#a88a5e', p2:'#e6d0aa',
+  { id:'egypt', name:'さばくのくに',         g1:'#f9ead6', g2:'#f2e0c6', p1:'#a88a5e', p2:'#e6d0aa',
     spr:['#ffffff','#bfe8ff','#ffd0df','#ffe6a8'] },
   /* 火の国。パステルを くずさないように 赤ではなく さんごいろ。
      じめんは 灰がかった うすいバラいろ、道だけ ようがんの色で 光らせる */
-  { name:'ひのくに',             g1:'#f6dcd8', g2:'#efcfcb', p1:'#c96a4a', p2:'#ffb07a',
+  { id:'fire', name:'ひのくに',             g1:'#f6dcd8', g2:'#efcfcb', p1:'#c96a4a', p2:'#ffb07a',
     spr:['#ffd76e','#ffb08a','#ffffff','#ffc2d4'] },
-  { name:'よぞらのくに',         g1:'#ded4f6', g2:'#d3c7f1', p1:'#d9b96a', p2:'#f6e2a4',
+  { id:'night', name:'よぞらのくに',         g1:'#ded4f6', g2:'#d3c7f1', p1:'#d9b96a', p2:'#f6e2a4',
     spr:['#ffffff','#ffe27a','#ff9ec9','#bfe8ff'] },
-  { name:'にじのてんくう',       g1:'#eadcf8', g2:'#f6d9ee', p1:'#d9a54e', p2:'#ffe9b0',
+  { id:'rainbow', name:'にじのてんくう',       g1:'#eadcf8', g2:'#f6d9ee', p1:'#d9a54e', p2:'#ffe9b0',
     spr:['#ff9ec9','#ffd76e','#8fe3c4','#9ed8ff'] },
 ];
 /* THEME_COUNT と ずれると ステージと 国が 合わなくなる。ここで すぐ 気づけるように */
 if (THEMES.length !== THEME_COUNT) throw new Error('THEME_COUNT が THEMES.length と ちがう');
+/* 国の 恒久キーが そろって いるか。かぶると セーブや イベント定義が
+   だまって こわれるので、ここで すぐ 気づけるように */
+if (new Set(THEMES.map(t => t.id)).size !== THEMES.length)
+  throw new Error('THEMES の id が かぶって いる');
+if (THEMES.some(t => !t.id)) throw new Error('THEMES に id の ない 国が ある');
 /* あいことばで解放される限定テーマ（見た目とBGMのきせかえ。難易度は変わらない） */
 const SP_THEMES = {
   sakura: {   // 春
@@ -2247,6 +2257,29 @@ const themeIdxOf = w => (Math.max(0, Math.ceil(w/STAGE_WAVES)-1) + lapOf(w)) % T
 const themeOf = w => themeOverride ? themeOverride.th : THEMES[themeIdxOf(w)];
 /* ステージ番号（1〜）から その国 */
 const themeOfStage = n => THEMES[themeIdxOf((n-1)*STAGE_WAVES + 1)];
+/* ==========================================================
+   Phase 6-2 ——「国」と「見せかた」を 分ける
+   ----------------------------------------------------------
+   4つは べつの ものです。まぜないこと。
+
+     国       ゲームの すすみ方が 決める **恒久の identity**（`countryIdOf`）
+     テーマ   その国を どう 見せるか（`THEMES[i]`）
+     きせかえ プレイヤーが 一時的に えらんだ 見た目（`themeOverride`）
+     BGM      音の 見せかた（6-4。ここでは さわらない）
+
+   むかしは **日本語の 国名を 内部キー**に していました
+   （`DUEL_BG[themeOf(wave).name]` と `groundKey`）。2つ こまります。
+
+     ・国名を 変えると だまって こわれる（絵は 出るので 気づけない）
+     ・英語版に すると 5か所が いっせいに こわれる
+   ========================================================== */
+/* いまの 国の 恒久キー。**きせかえに 影響されない。**
+   出る てき・たいけつの 背景・イベントの 条件は これで 決めること */
+const countryIdOf = w => THEMES[themeIdxOf(w)].id;
+/* いま **見せている** テーマの 恒久キー。じめんの 焼きなおし（`groundKey`）の
+   ように「見た目が 変わったか」を 見る ところは こちら。
+   きせかえ中は `sp:` を つけて、国の id と ぜったいに かぶらない ようにする */
+const themeKeyOf = w => themeOverride ? 'sp:' + themeSel : countryIdOf(w);
 
 /* ==========================================================
    なかまキャラ（ステージクリアごとに1人ずつ集まる）
@@ -2407,24 +2440,27 @@ const hasLg = id => !!dex['lg_' + id];
    **その周では もう 出てこない**のに、影だけ 一生 とびつづける ため */
 const silNear = next => !!next && wave >= 6 &&
                         wave >= next.wave - 6 && wave <= next.wave;
-/* 国 → たいけつの 背景。**その国だと ひとめで わかる 目じるし**を 1つずつ
+/* 国ID → たいけつの 背景。**Phase 6-2**：キーは 日本語の 名前では なく
+   `THEMES[].id`。名前は 英語版で 変わるので 内部キーに しない。
+   **絵の ファイル名から 国IDを 作らない**こと（表を べつに 持つ）。
+   **その国だと ひとめで わかる 目じるし**を 1つずつ
    入れて 出してある（さばくのくに＝ピラミッドと スフィンクス、
    キャラメルのさばく＝あめ色の岩と サバンナの木）。
    ここに 無い 国は 予備（LEGENDS の bg）に なるので、
    絵を 足したら **ここに 1行 書くこと** */
 const DUEL_BG = {
-  'シュガーガーデン':     'duel_sugar',    // あめの木と れんがの道
-  'いちごのおかしばたけ': 'duel_berry',    // いちご畑の うね
-  'マカロンのもり':       'duel_forest',   // マカロンの木
-  'チョコレートのたに':   'duel_choco',    // チョコの がけと たき
-  'こおりのくに':         'duel_ice',      // すきとおった 氷の柱
-  'ゆきのケーキやま':     'duel_snow',     // ケーキの山に クリームの雪
-  'ソーダのうみべ':       'duel_sea',      // ソーダの海と あわ
-  'キャラメルのさばく':   'duel_caramel',  // あめ色の 岩と サバンナの木
-  'さばくのくに':         'duel_egypt',    // ピラミッド・スフィンクス
-  'ひのくに':             'duel_fire',     // クリームの火山と キャラメルの溶岩
-  'よぞらのくに':         'duel_night',    // 三日月と 地面に おちた星
-  'にじのてんくう':       'duel_rainbow',  // 雲の島と にじの橋
+  sugar:   'duel_sugar',    // あめの木と れんがの道
+  berry:   'duel_berry',    // いちご畑の うね
+  forest:  'duel_forest',   // マカロンの木
+  choco:   'duel_choco',    // チョコの がけと たき
+  ice:     'duel_ice',      // すきとおった 氷の柱
+  snow:    'duel_snow',     // ケーキの山に クリームの雪
+  sea:     'duel_sea',      // ソーダの海と あわ
+  caramel: 'duel_caramel',  // あめ色の 岩と サバンナの木
+  egypt:   'duel_egypt',    // ピラミッド・スフィンクス
+  fire:    'duel_fire',     // クリームの火山と キャラメルの溶岩
+  night:   'duel_night',    // 三日月と 地面に おちた星
+  rainbow: 'duel_rainbow',  // 雲の島と にじの橋
 };
 /* ==========================================================
    Phase 6-0 ——「この ウェーブは 何者か」を 1か所に あつめる
@@ -2476,11 +2512,12 @@ function waveDef(n){
     inStage,
     lap:     lapOf(n),                           // 何周め（0〜）
     inLap:   ((n - 1) % LAP_WAVES) + 1,          // 周の中の いち（1〜240）
-    /* **番号の まま**。安定IDに するのは 6-2。
-       ここで 文字列の 国名を 恒久キーに しては いけない
-       （`DUEL_BG` と `groundKey` が 名前を キーに していて、
-         名前を 変えると だまって こわれる ——それを 直すのが 6-2）*/
+    /* 番号は `EN_BY_TH` の ような **ならびで 引く** ところ用。
+       セーブ・イベント定義・絵の 表には 下の `countryId` を つかうこと */
     countryIdx: themeIdxOf(n),
+    /* **Phase 6-2**：言語に よらない 恒久キー。イベント定義や セーブに
+       のこすなら 番号では なく こちら（番号は ならびを 変えると ずれる）*/
+    countryId:  countryIdOf(n),
     /* てきの「型」の ならび。**`waveList()` を そのまま 呼ぶだけ**で、
        ここに 式を 写しては いけません（2か所に なると かならず ずれます）。
        見た目の 顔ぶれ（`EN_THEME`）は `countryIdx` から 出るので 6-1 で */
@@ -9465,7 +9502,10 @@ function openDuel(L){
   closePanels();
   if (duelSt[L.id] === undefined){ duelSt[L.id] = DUEL_TRIES; saveDuel(); }
   duS = { L, ally: null, phase: 'intro' };
-  $('duBg').src = 'art/screens/' + (DUEL_BG[themeOf(wave).name] || L.bg) + '.webp';
+  /* **Phase 6-2**：`themeOf(wave).name`（＝きせかえで 変わる 表示名）では なく
+     **国ID**で 引く。むかしは きせかえ中に 表が 空ぶりして、
+     12国 ぜんぶが 予備（`l.bg` ＝ `duel_forest`）に 落ちて いた */
+  $('duBg').src = 'art/screens/' + (DUEL_BG[countryIdOf(wave)] || L.bg) + '.webp';
   duOv.classList.add('on');
   duIntro();
   celebrate({ rays: 3, conf: 60, flash: true, fanfare: 1 });
@@ -14941,7 +14981,10 @@ function withCtx(g, fn){ const p = ctx; ctx = g; try{ fn(); } finally { ctx = p;
 /* じめんの見た目が かわる条件。ここが変わったときだけ 焼きなおす */
 /* 道の 形も 入れる。国・ます・DPR・周 だけだと、
    それらが 同じまま 道だけ 変わったときに 古い 道が 残る */
-const groundKey = () => themeOf(wave).name + '/' + CELL + '/' + DPR + '/' + lapOf(wave)
+/* **Phase 6-2**：日本語の 表示名では なく 恒久キー（`themeKeyOf`）。
+   ここが 見るのは **見せている もの**なので、きせかえも 区別する
+   （国ID か `sp:きせかえID`）。分けかたは 前と まったく 同じ */
+const groundKey = () => themeKeyOf(wave) + '/' + CELL + '/' + DPR + '/' + lapOf(wave)
                       + '/' + WAY.join(';');
 
 function bakeGround(){
@@ -15517,7 +15560,7 @@ window.__chk = {
   themeOfStage, chars: () => CHARS.map(c => c.name),
   /* 12国ぜんぶに たいけつの 背景が あるか。1つでも 抜けると
      その国だけ よその 絵が 出る（気づきにくい）*/
-  duelBg: () => THEMES.map(t => ({ 国:t.name, 絵:DUEL_BG[t.name] || null })),
+  duelBg: () => THEMES.map(t => ({ 国:t.name, id:t.id, 絵:DUEL_BG[t.id] || null })),
   legends: () => LEGENDS.map(l => ({ w:l.wave, 名:l.name, 祝福:l.fx })),
   duelWaves: () => LEGENDS.map(l => ({ w:l.wave, 名:l.name,
                      国: THEMES[(Math.max(0,Math.ceil(l.wave/STAGE_WAVES)-1))%THEMES.length].name })),
@@ -15544,7 +15587,10 @@ window.__chk = {
             **`waveList` たちの 上に 乗せる だけ**で、あちらの
             かたちは 変えて いません（`tools/sim.mjs` が そのまま 読む）。
             純関数なので、検査から 何回 呼んでも 同じ こたえが 出ます */
-         waveDef, STAGE_WAVES, THEME_COUNT, themeIdxOf, LEGENDS },
+         waveDef, STAGE_WAVES, THEME_COUNT, themeIdxOf, LEGENDS,
+         /* Phase 6-2 ——国の 恒久キーの 検査用 */
+         countryIdOf, themeKeyOf, themes: () => THEMES.map(t => ({ id:t.id, name:t.name })),
+         duelBgOf: w => DUEL_BG[countryIdOf(w)] || null },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。
