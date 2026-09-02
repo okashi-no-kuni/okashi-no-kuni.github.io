@@ -10320,7 +10320,16 @@ const ITEMS = [
      もどってしまう ——だから **後半だけ**。坂では なく 階段に する ため。
      **ショップには 置かないこと。**強さそのものは 売らない（CLAUDE.md） */
   { id:'elixir3', name:'こだいの秘薬', sn:'こだい',   ic:'⚗️', col:'#ffd76e', need:false, late:200,
-    art:'it_elixir', vib:[26,40,26,40,26,40,80],
+    /* Phase 5D-2-0 ——**にじいろの秘薬（🧪）と 同じ絵に なっていました。**
+       ワザバーで 2つの べつの 切りふだが 同じ絵で ならんで いた ので、
+       専用の 絵を 用意しました（`art/ui/it_elixir3.webp`）。
+
+       **`art:'it_elixir'` は 消します。**のこすと 絵が 読めなかった とき
+       `dataIcon()` の ③で また 🧪 と 同じ絵に なり、直したい ことが
+       そのまま 起きます。消せば ②→④ で **⚗️ の 絵文字**に 落ちます。
+       特例の えだは 書いて いません ——じゅんばんが 決めます */
+    icKey:'it_elixir3',
+    vib:[26,40,26,40,26,40,80],
     /* にじいろの秘薬と おなじ「上がる」形だが、**1つ 多くて 低く 始まる**。
        目を つぶっても どちらを つかったか 分かるように する（CLAUDE.md）*/
     snd:[[440,.10,'triangle',.05,1.4,0],  [590,.10,'triangle',.05,1.4,95],
@@ -11506,7 +11515,9 @@ const UI_KEYS = ['nav_dex', 'nav_guide', 'snd_on', 'snd_off',
                  'nav_shop', 'nav_week', 'nav_code', 'nav_avatar', 'nav_share',
                  'nav_pin', 'nav_close', 'nav_egg', 'nav_guard',
                  /* 通貨・状態の 記号（5A＝HUD／5B＝DOM ぜんぶ）*/
-                 'cur_star', 'cur_gem', 'cur_heart', 'cur_shard'];
+                 'cur_star', 'cur_gem', 'cur_heart', 'cur_shard',
+                 /* 5D-2-0 ——こだいの秘薬。にじいろの秘薬と 同じ絵だった のを 直す */
+                 'it_elixir3'];
 /* 絵の 大きさ。SVG（25px）より すこし 大きい ——SVGは 単色に 近い 図形
    だったが、こちらは 宝石や リボンの 描きこみが あるので、
    同じ 25px だと つぶれて 見える。46pxの ボタンの 中なので 高さは 変わらない。

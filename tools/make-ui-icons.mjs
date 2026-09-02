@@ -80,6 +80,20 @@ const SHEETS = [
       /* 1,1 と 2,1 は 空 */
     ],
   },
+  {
+    /* Phase 5D-2-0 ——こだいの秘薬（⚗️）だけの 1まい。**はじめから 透過**。
+       にじいろの秘薬（🧪・it_elixir.png）と 同じ絵に なっていたのを 直す ため。
+       つばさが 胴から はなれた かたまりに なる ことが あるので、
+       alpha の 切りかたは かたまりの わくを 足しあわせます（もとから そう）*/
+    file:'phase5d20_source.png', w:1098, h:1432, cols:1, rows:1, mode:'alpha',
+    plan:[
+      /* **わざと たてに 細い**（たてよこ比 0.48）。にじいろの秘薬は 0.85 の
+         まるい フラスコなので、14pxでも 形で 見わけられる ように している。
+         そのぶん 四角い わくの うめ具合は 25%を 下まわるので、
+         この 絵だけ しきい値を さげる */
+      { cell:'0,0', key:'it_elixir3', name:'⚗️ こだいの秘薬（王冠つきの 瓶）', minFill:20 },
+    ],
+  },
 ];
 
 if (!existsSync(REF)){ console.error('✗ 原画の ありかが ありません: ' + REF); process.exit(1); }
@@ -287,7 +301,7 @@ for (const sh of SHEETS){
         n++; if (x<bx0)bx0=x; if (x>bx1)bx1=x; if (y<by0)by0=y; if (y>by1)by1=y;
         if (x===0||y===0||x===N-1||y===N-1) edge++;
       }
-      out.push({ key:p.key, name:p.name, fill:+(n/(N*N)*100).toFixed(1),
+      out.push({ key:p.key, name:p.name, minFill:p.minFill, fill:+(n/(N*N)*100).toFixed(1),
                  box:[bx0,by0,bx1,by1], w:bx1-bx0+1, h:by1-by0+1, edge, p90,
                  data:o.toDataURL('image/webp', Q) });
     }
@@ -306,7 +320,8 @@ for (const sh of SHEETS){
       (o.w + 'x' + o.h).padEnd(15) + String(o.edge).padEnd(6) +
       String(o.p90 === null ? '—' : o.p90.toFixed(1)).padEnd(19) + kb + 'KB');
     if (o.edge > 0){ console.log('    ✗ ' + o.key + ' が わくの ふちに ついて います'); bad++; }
-    if (o.fill < 25){ console.log('    ✗ ' + o.key + ' が 小さすぎます（' + o.fill + '%）'); bad++; }
+    if (o.fill < (o.minFill || 25)){
+      console.log('    ✗ ' + o.key + ' が 小さすぎます（' + o.fill + '%）'); bad++; }
     /* 背景モデルの ずれが 大きいと、うすい 白（背景との へだたり 22〜26）と
        見わけが つかなく なる。ますごとに 当てれば 3〜6 に 収まる */
     if (o.p90 !== null && o.p90 > 12){
