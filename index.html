@@ -10124,9 +10124,9 @@ function buildColGrid(){
       // アイテムは キャラでは ないので、絵（または 絵文字）と のこり数を 出す
       const box = document.createElement('div');
       box.style.cssText = 'height:64px;display:flex;align-items:center;justify-content:center;font-size:40px';
-      if (ART_SPRITE[o.item.art]){
-        const im = document.createElement('img');
-        im.src = ART_SPRITE[o.item.art].src;
+      /* Phase 5D-0 ——ここも ③→④ そのもの */
+      const im = dataImg(o.item, 64);
+      if (im){
         im.style.cssText = 'width:64px;height:64px;display:block';
         box.append(im);
       } else box.textContent = o.item.ic;
@@ -10849,13 +10849,11 @@ function buildSkillBar(){
     b.dataset.it = it.id;
     b.innerHTML = '<div class="itIc">' + it.ic + '</div>' +
                   '<div class="skN">' + it.sn + '</div><div class="skC"></div>';
+    /* Phase 5D-0 ——ここは もともと「スプライトが あれば 絵、無ければ 絵文字」
+       ＝ dataIcon の ③→④ そのもの。中みを 移しただけで 見た目は 同じ */
     const ic = b.querySelector('.itIc');
-    if (ART_SPRITE[it.art]){
-      ic.textContent = '';
-      const im = document.createElement('img');
-      im.src = ART_SPRITE[it.art].src; im.width = 38; im.height = 38;
-      ic.append(im);
-    }
+    const im = dataImg(it, 38);
+    if (im){ ic.textContent = ''; ic.append(im); }
     b.onclick = () => useItem(it);
     skillBar.append(b);
   }
@@ -11744,6 +11742,69 @@ function drawCurLine(g, segs, cx, y, o){
   if (window.__dbg) window.__dbg._cur = { cx, y, w, ic, x0,
     seg: segs.map(v => typeof v === 'string' ? { t:v, w:+g.measureText(v).width.toFixed(2) }
                                              : { ic:v.ic, iy:o.iy }) };
+}
+
+/* ==========================================================
+   Phase 5D-0 ——データ由来の アイコンを 1か所で 決める
+   ==========================================================
+   ITEMS / TOWERS / SHOP_ITEMS … の 1件から「何を えがくか」を かえします。
+   いまは **見た目を 1つも 変えません**（呼ぶ ところの 中みを そのまま
+   移しただけ）。これは あとの ための 入口です。
+
+   決める じゅんばん。**上から 順に 見て、無ければ 下へ 落ちます。**
+
+     ① rec.icKey ＋ しっぽ   進化（_s2）や 属性（_fire）の 絵
+     ② rec.icKey             その品ものの 絵（art/ui/）
+     ③ rec.art               いまある スプライト（art/sprites/）
+     ④ rec.ic                **絵文字。ぜったいに 消さない**
+
+   **なぜ 先に これを 作るのか。**いま アイコンを 決めている ところは
+   10か所以上に ちらばって います。このまま 属性（火・砂・水）や 進化を
+   足すと、足すたびに 全部を 直すことに なります。ここを 1か所に して
+   おけば、**あとから 絵を 置くだけ**で 差しかわります。
+
+   **属性・進化の しくみ そのものは まだ ありません。**ここは 受け口だけ。
+   絵が 無ければ ②③④へ 落ちるので、用意する 前でも こわれません。
+
+   **属性を 絵に 焼きこまないこと。**アイテム7種 × 属性5種 = 35枚に
+   なります。小さな バッジを 別に 作って すみに 重ねれば 7＋5＝12枚 です。
+   属性は アイコンの キー文字列では なく **データの がわ**（rec.elem）に
+   置くこと ——`ic:'🔥🧪'` のように 混ぜては いけません。 */
+function dataIconVariants(opt){
+  /* しっぽの ならび。こまかい ほうから 見る */
+  const out = [];
+  if (opt.elem && opt.stage) out.push('_' + opt.elem + '_s' + opt.stage);
+  if (opt.stage) out.push('_s' + opt.stage);
+  if (opt.elem)  out.push('_' + opt.elem);
+  return out;
+}
+/* opt.allow で どこまで 使ってよいかを しぼれる。
+   たとえば ガイド本文は 小さいので、スプライトを つかわず
+   絵文字に 落としたい ——そのときは allow から 'sprite' を 外す */
+function dataIcon(rec, opt){
+  opt = opt || {};
+  const allow = opt.allow || ['ui', 'sprite', 'em'];
+  if (rec && rec.icKey && allow.indexOf('ui') >= 0){
+    for (const suf of dataIconVariants(opt)){        // ①
+      const k = rec.icKey + suf;
+      if (UI_ICON[k]) return { t:'ui', key:k, src:UI_ICON[k].src };
+    }
+    if (UI_ICON[rec.icKey])                          // ②
+      return { t:'ui', key:rec.icKey, src:UI_ICON[rec.icKey].src };
+  }
+  if (rec && rec.art && allow.indexOf('sprite') >= 0 && ART_SPRITE[rec.art])
+    return { t:'sprite', key:rec.art, src:ART_SPRITE[rec.art].src };   // ③
+  return { t:'em', ch:(rec && rec.ic) || '' };                          // ④
+}
+/* <img> に して かえす。**絵文字の ときは null**なので、
+   呼ぶ側は これまでの 絵文字を そのまま のこせます */
+function dataImg(rec, px, opt){
+  const r = dataIcon(rec, opt);
+  if (r.t === 'em') return null;
+  const im = document.createElement('img');
+  im.src = r.src; im.alt = (rec && rec.ic) || '';
+  im.width = px; im.height = px;
+  return im;
 }
 
 const uiImg = (k, px, st) =>
@@ -15293,6 +15354,31 @@ if (location.search.includes('dbg=1')) window.__dbg = {
     floatTx(COLS*CELL/2, ROWS*CELL*0.5, t, c || '#ffb43f', dataIc); },
   floatN: () => floats.length,
   curLine: () => window.__dbg._cur || null,
+  /* Phase 5D-0 ——決める じゅんばんを 機械で たしかめる。
+     ①②の 絵は まだ 1枚も 無いので、ここで にせの 絵を さしこんで 見る */
+  dataIconTest: () => {
+    const it = ITEMS.find(x => x.id === 'freeze');
+    const rec = { ic:it.ic, art:it.art, icKey:'zz_test' };
+    const put = k => { UI_ICON[k] = { src:'data:,' + k }; };
+    const del = k => { delete UI_ICON[k]; };
+    const out = [];
+    const T = (name, opt) => out.push({ name, ...dataIcon(rec, opt) });
+    T('絵も キーの 絵も 無い → ③ スプライト', {});
+    T('allow から sprite を 外す → ④ 絵文字', { allow:['ui','em'] });
+    put('zz_test');            T('キーの 絵が ある → ②', {});
+    put('zz_test_s2');         T('進化の 絵が ある → ①', { stage:2 });
+    T('進化を たのまなければ ②の まま', {});
+    put('zz_test_fire');       T('属性の 絵が ある → ①', { elem:'fire' });
+    put('zz_test_fire_s2');    T('属性＋進化 → ① いちばん こまかい', { elem:'fire', stage:2 });
+    T('用意して いない 属性 → ②へ 落ちる', { elem:'water' });
+    del('zz_test'); del('zz_test_s2'); del('zz_test_fire'); del('zz_test_fire_s2');
+    T('にせの 絵を 消したら ③に もどる', {});
+    /* icKey を 持たない いまの データは ぜんぶ ③か④ */
+    const now = ITEMS.map(x => ({ id:x.id, ...dataIcon(x) }))
+      .concat(ORDER.map(k => ({ id:'tw_'+k, ...dataIcon(TOWERS[k]) })))
+      .concat(SHOP_ITEMS.map(x => ({ id:x.id, ...dataIcon(x) })));
+    return { order:out, now };
+  },
   shareCard: () => makeShareCard(),
   /* ---- スクリーンショット（tools/shots.mjs）用 ----
      「見ばえのする 場面」を 手で 作らずに 出せるように しておく。
