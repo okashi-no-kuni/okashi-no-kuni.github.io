@@ -309,11 +309,16 @@ line('dexの 直読み', dexRaw);
    ひろわない ように 語の 切れめで さがします */
 const instRef = [];
 {
-  const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V'];
+  /* 7-3 で `ensureInst` / `instOfSpecies` が ふえました。
+     ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ */
+  const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
+                 'ensureInst', 'instOfSpecies'];
   const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
   const lines = strip(src).split('\n');
   const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
-  const defTo   = lines.findIndex(l => l.includes("return pfx + '.' + instSeq.toString(36);"));
+  /* 基盤（7-2）と ensure（7-3）は ひとつづきの ブロックなので、
+     おわりは `ensureInst` の さいごの 行で 見る */
+  const defTo   = lines.findIndex(l => l.includes('return { id, sp };'));
   const chkAt   = lines.findIndex(l => l.includes('window.__chk = {'));
   lines.forEach((ln, i) => {
     if (!re.test(ln)) return;
