@@ -10895,13 +10895,20 @@ function enemyLook(k, n, i){
   return pool[(n * 7 + i * 3 + lapOf(n) * 5) % pool.length];
 }
 /* 見た目を えがく。えがく じゅんばんは drawGen → かげ → にじいろ の 順 */
-function genThumb(o, size){
+/* `evo` は **呼ぶ 側が わたす**（Phase 7-7-3-6）。ここでは `inst` も
+   `instEvoOf` も `detailIid` も 見ません ——個体を 知って いるのは
+   individual-aware な 画面がわ で、えがく ほうは わたされた ものだけを
+   見る、が 7-7-2 で 決めた ならび です。
+
+   わたさなければ これまでどおり base の 絵。だから **図鑑の カード
+   （`lazyThumb`）は 1文字も 変わりません** */
+function genThumb(o, size, evo){
   const c = document.createElement('canvas');
   const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
   c.width = size*dpr; c.height = size*dpr;
   c.style.width = size + 'px'; c.style.height = size + 'px';
   const g = c.getContext('2d');
-  g.setTransform(dpr,0,0,dpr,0,0); drawGen(g, size, o);
+  g.setTransform(dpr,0,0,dpr,0,0); drawGen(g, size, o, evo);
   g.setTransform(dpr,0,0,dpr,0,0); portraitShade(g, size);
   g.setTransform(dpr,0,0,dpr,0,0); drawGenFx(g, size, o);
   return c;
@@ -11222,9 +11229,20 @@ function buildCharDetail(){
   art.innerHTML = ''; rows.innerHTML = '';
   if (!o){ $('chNm').textContent = '—'; $('chTt').textContent = ''; return; }
   const got = hasDex(o.id);
-  /* 絵は **base のまま**。`instEvoOf` を わたしません（次の フェーズ）。
-     カードの `lazyThumb` と まったく 同じ 出しかた です */
-  art.append(o.gen ? genThumb(o.gen, 128) : charThumb(o, 128));
+  /* ---- 個体は **先に 1回だけ** 決める（Phase 7-7-3-6）----
+     絵と「すがた」の 行が **おなじ iid から** 出て いる ことが 大事です。
+     2回 引くと、複数所持を 開けた とき **絵は 個体A・文は 個体B**に なりえます */
+  const iid = detailIid(o);
+  const evo = iid ? instEvoOf(iid) : null;
+  /* 絵に **わたす だけ**。`artKeyFor()` が 中で
+     「`_e1` の 絵が あれば それ、無ければ base」を 決めます（7-7-2）。
+     いまは `_e1` の 絵が 1件も 無いので、**本番の 見た目は 従来と 完全に 同じ**です。
+
+     `charThumb`（CHARS・お菓子タワー・伝説）は `DEX_ART[id]` を ひく
+     **別系統**で、`rc` を 持たないので `artKeyFor` が つかえません。
+     あちら用の receiver は **べつの フェーズ**です
+     ——ここで 特別な えだを 作らない（7-7-2 の 申し送り）*/
+  art.append(o.gen ? genThumb(o.gen, 128, evo) : charThumb(o, 128));
   if (!got) art.style.opacity = '.45'; else art.style.opacity = '';
   $('chNm').textContent = o.name;
   $('chTt').textContent = o.title || '';
@@ -11237,12 +11255,13 @@ function buildCharDetail(){
   if (rc && rc.d) row('手に 入れた日', (rc.w ? 'ウェーブ' + rc.w + '・' : '') + rc.d);
   if (!got && o.hint) row('あつめかた', o.hint);
   /* ---- ここから 個体の 話。**読むのは かならず reader を とおす** ---- */
-  const iid = detailIid(o);
   if (iid){
     row('入手元', ORIGIN_TX[instOriginOf(iid)] || null);
     /* 内部の `e1` を そのまま 見せません。**恒久の 日本語名も まだ 決めません**
        （名称の 体系が 決まって いないので、決める 前に 焼きこまない）*/
-    row('すがた', instEvoOf(iid) ? '進化ずみ' : 'まだ 進化して いません');
+    /* **絵に わたした のと 同じ 値**を つかう（もう一度 引かない）。
+       ここで 引きなおすと、絵と 文が 別の ものを 見る 道が できます */
+    row('すがた', evo ? '進化ずみ' : 'まだ 進化して いません');
   }
 }
 $('chClose').onclick = () => { tapSel(); openPanel(chFrom || 'colOv', chFrom === 'colOv' ? buildColGrid : null); };

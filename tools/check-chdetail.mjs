@@ -28,15 +28,24 @@ const bad = [], errs = [];
   const body = strip(readFileSync(target, 'utf8'));
   const fn = (body.match(/function buildCharDetail\(\)\{[\s\S]*?\n\}/) || [''])[0];
   if (!fn) bad.push('buildCharDetail が ない');
-  else for (const [re, why] of [[/artKeyFor/, 'artKeyFor（進化の 絵。次の フェーズ）'],
+  else for (const [re, why] of [[/artKeyFor/, 'artKeyFor（resolver は genThumb ごしに 通す）'],
                                 [/\bgear\b/, 'gear（秘薬の 消費）'],
                                 [/evolveInst/, 'evolveInst（進化させる）'],
                                 [/ensureInst/, 'ensureInst（見るだけで 個体を 作る）'],
                                 [/\bgenSprite\b|\brbSprite\b/, '生の スプライト（似顔絵を とおすこと）']])
     if (re.test(fn)) bad.push('buildCharDetail が ' + why + ' に 手を のばして いる');
-  /* 絵を 出す ところが **evo を わたして いない** こと */
+  /* **Phase 7-7-3-6 で ここが 逆に なりました。**7-7-3-5 では
+     「絵に evo を わたして いない こと」を 見て いましたが、
+     いまは **わたして いる こと**が 正しい。回帰では なく 前提の 変更です */
   const draw = (fn.match(/art\.append\([^;]*/) || [''])[0];
-  if (draw && /evo/i.test(draw)) bad.push('詳細画面の 絵に evo を わたして いる：' + draw.slice(0, 80));
+  if (!draw) bad.push('絵を 出す ところ（art.append）が 見つからない');
+  else if (!/genThumb\([^)]*,\s*evo\s*\)/.test(draw))
+    bad.push('詳細画面の 絵に evo を わたして いない：' + draw.slice(0, 90));
+  /* **iid は 1回だけ 引く。**絵と「すがた」が 別の 個体を 見る 道を 作らない */
+  const nIid = (fn.match(/detailIid\(/g) || []).length;
+  if (nIid !== 1) bad.push('detailIid を ' + nIid + '回 呼んで いる（1回の はず）');
+  const nEvo = (fn.match(/instEvoOf\(/g) || []).length;
+  if (nEvo !== 1) bad.push('instEvoOf を ' + nEvo + '回 呼んで いる（1回の はず ——絵と 文で 同じ 値を つかう）');
   /* 恒久の 日本語名を データに 焼いて いないか */
   if (/e1\s*:\s*'|'e1'\s*:|第1進化/.test(body)) bad.push('evo の 恒久名称を データに 書いて いる');
 }
@@ -148,6 +157,69 @@ const evoShown = await pg.evaluate(async iid => {
     rows[r.querySelector('b').textContent] = r.querySelector('span').textContent;
   document.getElementById('chClose').click();
   return { rows, evo: window.__chk.inst.evoOf(iid) };
+}, IID);
+
+/* ---- Phase 7-7-3-6 ——**架空の `_e1`** で 絵が 切りかわるか ----
+   本番の `ART_SPRITE` に `_e1` は 1件も 無いので、**検査の 中だけで**
+   その場に 登録します（ファイルは 1つも 作りません）。
+   見るのは 3とおり ——evo なし＝base／`e1`＋架空assetあり＝`_e1`／
+   架空assetを 消したら `e1` でも base（fallback）*/
+const fake = await pg.evaluate(async iid => {
+  const k = window.__chk, I = k.inst;
+  /* 対象は クマ（c_bear）。`o.gen` の カードなので `artKeyFor` の 系統 */
+  const open = async () => {
+    for (const t of ['ch', 'en', 'lg']){
+      const tb = [...document.querySelectorAll('#colTabs .ctab')].find(x => x.dataset.t === t);
+      if (tb) tb.click();
+      const b2 = document.querySelector('.cDet[data-det="c_bear"]');
+      if (b2){ b2.click(); break; }
+    }
+    const cv = document.querySelector('#chArt canvas');
+    const url = cv ? cv.toDataURL() : null;
+    document.getElementById('chClose').click();
+    return url;
+  };
+  const gen  = k.buildRoster().find(o => o.id === 'c_bear');
+  const base = k.artKeyOf(gen);
+  const out  = { base, evoKey: base + '_e1' };
+  /* ① evo なし → base */
+  out.noEvo = await open();
+  out.keyNoEvo = k.artKeyFor(gen, null);
+  /* ② e1 ＋ 架空asset あり → _e1 */
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g = cv.getContext('2d'); g.fillStyle = '#ff00ff'; g.fillRect(0, 0, 64, 64);
+  k.artSprite()[base + '_e1'] = cv;
+  I.evolve(iid, 'e1');
+  out.keyWithFake = k.artKeyFor(gen, 'e1');
+  out.withFake = await open();
+  /* まん中が むらさきに なって いるか（＝架空assetが えらばれた）。
+     **ぴったり 255,0,255 には なりません** ——`portraitShade` の つやと
+     `drawGenFx` が あとから かかる ので（実測 240,60,237）。
+     色あいで 見ること */
+  out.magenta = await (async () => {
+    for (const t of ['ch', 'en', 'lg']){
+      const tb = [...document.querySelectorAll('#colTabs .ctab')].find(x => x.dataset.t === t);
+      if (tb) tb.click();
+      const b2 = document.querySelector('.cDet[data-det="c_bear"]');
+      if (b2){ b2.click(); break; }
+    }
+    const c2 = document.querySelector('#chArt canvas');
+    const gg = c2.getContext('2d');
+    const d = gg.getImageData(Math.round(c2.width/2), Math.round(c2.height/2), 1, 1).data;
+    document.getElementById('chClose').click();
+    return [d[0], d[1], d[2]].join(',');
+  })();
+  /* ③ 架空assetを 消したら base へ もどる（fallback）*/
+  delete k.artSprite()[base + '_e1'];
+  out.keyAfterDel = k.artKeyFor(gen, 'e1');
+  out.afterDel = await open();
+  out.stillHasFake = k.artHas(base + '_e1');
+  /* キャッシュキーは base と evo で 別（7-7-2 の receiver を つかって いる 証拠）*/
+  k.genSprite(gen, 64);  k.genSprite(gen, 64, 'e1');
+  out.cache = k.cacheKeys().gen.filter(x => x.startsWith('c_bear@64'));
+  /* かたづけ ——この個体の evo を もどす 口は ない（不可逆）ので、
+     セーブごと 元に もどす */
+  return out;
 }, IID);
 
 /* ---- ③ 既存の カード操作 ---- */
@@ -282,10 +354,28 @@ if (noBubble.stockBefore !== noBubble.stockAfter)
   bad.push('詳細ボタンが カードの タップまで 呼んで いる（在庫が 変わった）：' +
            noBubble.stockBefore + ' → ' + noBubble.stockAfter);
 
+/* ---- 架空assetの 判定 ---- */
+eqs('evo なしの 絵の キー', fake.keyNoEvo, fake.base);
+eqs('架空assetが ある ときの キー', fake.keyWithFake, fake.evoKey);
+eqs('架空assetを 消した あとの キー', fake.keyAfterDel, fake.base);
+if (fake.noEvo === fake.withFake) bad.push('e1＋架空assetでも 絵が 変わって いない');
+if (fake.withFake === fake.afterDel) bad.push('架空assetを 消しても 絵が もどって いない');
+if (fake.noEvo !== fake.afterDel)   bad.push('架空assetを 消した あとの 絵が base と ちがう（fallback して いない）');
+{
+  const [r, g2, b2] = fake.magenta.split(',').map(Number);
+  if (!(r > 180 && g2 < 120 && b2 > 180))
+    bad.push('架空assetが えがかれて いない（まん中の 色 ' + fake.magenta + '）');
+}
+if (fake.stillHasFake)              bad.push('架空assetが のこって いる');
+if (!(fake.cache.includes('c_bear@64') && fake.cache.includes('c_bear@64@e1')))
+  bad.push('キャッシュキーが base と evo で 分かれて いない：' + fake.cache.join(' / '));
+
 const out = (t, a) => console.log('  ' + t.padEnd(16, ' ') + (a.length ? '✗\n    ' + a.join('\n    ') : 'なし ✅'));
 console.log('キャラクターの 詳細（#chOv）');
 for (const [tag, r] of Object.entries(cases))
   console.log('  ' + tag + '\n    ' + (r && r.rows ? JSON.stringify(r.rows) : JSON.stringify(r)));
+console.log('  絵の キー  base=' + fake.base + ' / evo=' + fake.keyWithFake +
+            ' / 消したあと=' + fake.keyAfterDel + ' ／ キャッシュ ' + fake.cache.join(','));
 console.log('  つかった ワザカード ' + (TARGET ? TARGET.nm + '（' + TARGET.id + '）' : 'なし'));
 console.log('  inst ' + before.n + '件 → ' + after.n + '件 ／ seq ' + before.seq + ' → ' + after.seq);
 out('JSエラー', errs);

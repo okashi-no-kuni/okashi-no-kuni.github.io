@@ -400,7 +400,7 @@ const artEvo = [];
   const to    = from < 0 ? -1 : from + lines.slice(from).findIndex(l => l.includes('return ART_SPRITE[k] ? k : base;'));
   if (from < 0 || to < from) artEvo.push('artKeyFor の 定義が 見つからない');
   else for (let i = from; i <= to; i++)
-    if (/\b(inst|instEvoOf|instOfSpecies|dex|dexRec)\b/.test(lines[i]))
+    if (/\b(inst|instEvoOf|instOfSpecies|detailIid|dex|dexRec)\b/.test(lines[i]))
       artEvo.push('L' + (i+1) + ':resolver が 個体/dex を のぞいて いる');
   /* ゲームの ほうから evo を わたして いないか（検査どうぐは のぞく）*/
   lines.forEach((ln, i) => {
@@ -423,6 +423,72 @@ const artEvo = [];
   });
 }
 line('絵の resolver', artEvo);
+
+/* ---------- Phase 7-7-3-6 ——進化の 絵を わたす caller は 1つだけ ----------
+   `evo` を 知って いるのは **individual-aware な 画面がわ**（詳細画面）だけ。
+   えがく ほう（`drawGen` / `genSprite` / `genThumb` / `drawPortrait` /
+   `charThumb`）は **わたされた ものだけ**を 見ます（7-7-2 の 責任分離）。
+
+   だから ここでは 2つ 見ます。
+     ① えがく 関数の 中から 個体を のぞいて いないか
+     ② `genThumb` に evo を わたす 本番の ところが **`buildCharDetail` 1つだけ**か
+        （図鑑の カード＝`lazyThumb` は 2引数の まま＝base）*/
+const evoCall = [];
+{
+  const lines = strip(src).split('\n');
+  const chkAt = lines.findIndex(l => l.includes('window.__chk = {'));
+  const span = (head, tail) => {
+    const a = lines.findIndex(l => l.includes(head));
+    return a < 0 ? [-1, -1] : [a, a + lines.slice(a).findIndex((l, i) => i > 0 && l.includes(tail))];
+  };
+  /* ① えがく 関数の 中から 個体を のぞかない */
+  for (const [nm, head, tail] of [
+        ['genThumb',     'function genThumb(o, size, evo){', 'return c;'],
+        ['genSprite',    'function genSprite(o, px, evo){',  'return c;'],
+        ['drawPortrait', 'function drawPortrait(g, id, S){', 'function '],
+        ['charThumb',    'function charThumb(ch, size){',    'return c;'],
+      ]){
+    const [a, z] = span(head, tail);
+    if (a < 0 || z < a){ evoCall.push(nm + ' の 定義が 見つからない'); continue; }
+    for (let i = a; i <= z; i++)
+      if (/\b(detailIid|instEvoOf|instOfSpecies|inst)\b/.test(lines[i]))
+        evoCall.push(nm + ' L' + (i+1) + ' が 個体を のぞいて いる：' + lines[i].trim().slice(0, 60));
+  }
+  /* `genThumb` は 3つめを `drawGen` の 4つめへ そのまま 流すだけ */
+  const [ga, gz] = span('function genThumb(o, size, evo){', 'return c;');
+  if (ga >= 0 && !lines.slice(ga, gz + 1).some(l => /drawGen\(g, size, o, evo\)/.test(l)))
+    evoCall.push('genThumb が evo を drawGen へ 流して いない');
+  /* ② `genThumb` に 3つめを わたす 本番の ところ */
+  /* しっぽは **中の さいごの 文**で とる。`'}'` で さがすと 途中の
+     かっこに 当たって、窓が 短すぎて 呼び出しを 外して しまいます */
+  const [ba, bz] = span('function buildCharDetail(){', "row('すがた'");
+  const [la, lz] = span('function lazyThumb(o, size){', 'return box;');
+  const callers = [];
+  lines.forEach((ln, i) => {
+    if (chkAt >= 0 && i > chkAt) return;                       // 検査どうぐ
+    if (ga >= 0 && i >= ga && i <= gz) return;                 // 定義そのもの
+    for (const m of ln.matchAll(/(?<![\w.])genThumb\(([^()]*)\)/g)){
+      const args = m[1].split(',').map(x => x.trim()).filter(Boolean);
+      if (args.length < 3) continue;
+      callers.push({ i, ln: ln.trim().slice(0, 70) });
+    }
+  });
+  if (callers.length !== 1)
+    evoCall.push('genThumb に evo を わたす ところが ' + callers.length + 'か所（1か所の はず）：' +
+                 callers.map(c => 'L' + (c.i+1)).join(','));
+  else if (!(ba >= 0 && callers[0].i >= ba && callers[0].i <= bz))
+    evoCall.push('evo を わたして いるのが 詳細画面（buildCharDetail）の 外：L' + (callers[0].i+1));
+  /* 図鑑の カードは base の まま（2引数）*/
+  if (la >= 0)
+    for (let i = la; i <= lz; i++)
+      for (const m of lines[i].matchAll(/(?<![\w.])genThumb\(([^()]*)\)/g))
+        if (m[1].split(',').filter(x => x.trim()).length >= 3)
+          evoCall.push('図鑑の カード（lazyThumb）に evo を わたして いる：L' + (i+1));
+  /* 本番の 絵に `_e1` を まだ 入れて いない こと */
+  const keys = (strip(src).match(/const ART_KEYS = \[[^\]]*\]/) || [''])[0];
+  if (/_e\d/.test(keys)) evoCall.push('ART_KEYS に 進化の 絵が 入って いる（このフェーズでは 0件）');
+}
+line('進化の 絵の caller', evoCall);
 
 /* ---------- Phase 7-7-3-1 ——戦闘用の 集合を つかうべき ところ ----------
    `ITEMS` は 9つの 入口を かねて います。「戦闘で つかえるか」を
@@ -633,6 +699,6 @@ line('通常dropの 軸', dropAxis);
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length + pubRaw.length + dropRaw.length + dropAxis.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + evoCall.length + battleRaw.length + pubRaw.length + dropRaw.length + dropAxis.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);
