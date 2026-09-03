@@ -397,10 +397,58 @@ const artEvo = [];
 }
 line('絵の resolver', artEvo);
 
+/* ---------- Phase 7-7-3-1 ——戦闘用の 集合を つかうべき ところ ----------
+   `ITEMS` は 9つの 入口を かねて います。「戦闘で つかえるか」を
+   意味する ところに 生の `ITEMS` が のこって いると、戦闘で つかえない
+   アイテムを 足した とたん **ワザバーに 出て、💎の 商品の 中みも
+   変わります**（有料商品の 事故）。
+
+   **ぜんぶ 禁止には しません。**`gear` の 保存・`ITEM_BY_ID`・図鑑・
+   ガイド・ドロップの pool は `ITEMS` の ままが 正しい ——
+   「戦闘で つかえるか」と「ドロップして よいか」は 別の 仕様です */
+const battleRaw = [];
+{
+  const lines = strip(src).split('\n');
+  /* 「ここは 戦闘用の 集合で なければ いけない」ところを、
+     行の 目じるしで さがす。目じるしが 見つからない ときも 落とす
+     （書きかえた のに 検査だけ 素通り、を 作らない）*/
+  const SITES = [
+    ['ワザバー',        'if (gear[it.id] < 1) continue;', -1],
+    ['ショップ おたすけ', "giveItem(it.id, 1, ORIGIN.shop)", 0],
+    ['ショップ にじいろ', "giveItem(it.id, 3, ORIGIN.shop)", 0],
+    ['セットの 説明1',   "6しゅるい ×1こずつ", 0],
+    ['セットの 説明3',   "6しゅるい ×3こずつ", 0],
+  ];
+  for (const [name, mark, off] of SITES){
+    const i = lines.findIndex(l => l.includes(mark));
+    if (i < 0){ battleRaw.push(name + 'の 目じるしが 見つからない'); continue; }
+    const ln = lines[i + off];
+    if (!/\bBATTLE_ITEMS\b/.test(ln))
+      battleRaw.push(name + ' L' + (i + off + 1) + ':生の ITEMS が のこって いる');
+  }
+  /* `useItem` の 入口にも しきりが いる */
+  if (!/function useItem\(it\)\{[\s\S]{0,400}?isBattleItem\(it\)/.test(strip(src).replace(/\s*\n\s*/g, m => m.includes('\n') ? '\n' : m)))
+    if (!/if \(!isBattleItem\(it\)\) return;/.test(strip(src)))
+      battleRaw.push('useItem に しきりが ない');
+  /* **しきりの 決めかた**も 見る。`evo` は「進化の アイテム」、
+     `battle` は「戦闘で つかえるか」で **意味が ちがいます**。
+     `!it.evo` に すると、進化では ないけれど 戦闘で つかえない ものを
+     足した ときに 表せなく なります */
+  const def = (strip(src).match(/const BATTLE_ITEMS = [^;]*/) || [''])[0];
+  if (!/isBattleItem/.test(def)) battleRaw.push('BATTLE_ITEMS が isBattleItem で 決まって いない：' + def.slice(0,60));
+  const pred = (strip(src).match(/const isBattleItem = [^;]*/) || [''])[0];
+  if (!/battle\s*!==\s*false/.test(pred)) battleRaw.push('isBattleItem が「未指定＝戦闘用」に なって いない：' + pred.slice(0,60));
+  if (/\bevo\b/.test(def) || /\bevo\b/.test(pred)) battleRaw.push('しきりが evo で 決まって いる（意味が ちがう）');
+  /* 未指定＝戦闘用。既存に battle:true を ばらまいて いないか */
+  const t = (strip(src).match(/battle:\s*true/g) || []).length;
+  if (t) battleRaw.push('battle:true が ' + t + '件（未指定＝戦闘用に すること）');
+}
+line('戦闘用の 集合', battleRaw);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

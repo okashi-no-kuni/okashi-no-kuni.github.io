@@ -11178,6 +11178,39 @@ function tapSel(ok){
 }
 const ITEM_BY_ID = {};
 for (const it of ITEMS) ITEM_BY_ID[it.id] = it;
+/* ==========================================================
+   Phase 7-7-3-1 ——「戦闘中に つかえる アイテム」を 切り出す
+   ----------------------------------------------------------
+   `ITEMS` は「戦闘の 消耗品」の 顔を して いますが、じっさいには
+   **9つの 入口**に なって います ——`gear` の 初期化・`ITEM_BY_ID`・
+   図鑑の アイテムタブ・ガイド本文・ドロップ2種・ワザバー・`useItem`・
+   ショップの 2セット。
+
+   このまま 戦闘で つかえない アイテム（進化の秘薬など）を 足すと、
+   **💎20 と 💎55 の 既存商品の 中みと 説明文が だまって 変わります。**
+   有料の 商品なので、これは 事故に なります。
+
+   だから **「戦闘で つかえるか」の しきりを 1つ**だけ 作ります。
+
+   #### `evo` で 判定しないこと
+
+   `evo` は「進化の アイテム」、`battle` は「戦闘で つかえるか」で、
+   **意味が ちがいます**。進化では ないけれど 戦闘で つかえない ものが
+   出て きた とき、`!it.evo` では 表せなく なります。
+
+   #### **未指定＝これまでどおり 戦闘用**
+
+   いまの 7つには `battle:true` を 1行も 足しません。あとから
+   足す ものだけ `battle:false` と 書きます（7-7-3-1 では 0件）。
+
+   #### 置きかえるのは「戦闘で つかえるか」を 意味する ところだけ
+
+   **ドロップの pool を 機械的に 置きかえないこと** ——「戦闘で
+   つかえるか」と「ドロップして よいか」は 別の 仕様です。
+   `gear` の 保存・`ITEM_BY_ID`・図鑑・ガイドも `ITEMS` の ままです。
+   ========================================================== */
+const isBattleItem = it => !!it && it.battle !== false;
+const BATTLE_ITEMS = ITEMS.filter(isBattleItem);
 const ITEM_CAP = 99;
 /* 持ち数。ワザの skStock とは 別の 入れもの。
    混ぜると「ワザが へった／アイテムが へった」が わからなくなる */
@@ -11405,6 +11438,10 @@ function rbSprite(src, px, tag, evo){
 /* アイテムを つかう。ワザ（useSkill）と 分けてあるのは、
    ワザは「HPをけずる」、アイテムは「たおす」で 効きめの しゅるいが ちがうため */
 function useItem(it){
+  /* **Phase 7-7-3-1**：ここが「戦闘で つかう」の 入口です。
+     ワザバーにも 出さない ように して ありますが、呼ぶ 口が
+     ふえても なりたつ ように ここでも 見ます */
+  if (!isBattleItem(it)) return;
   if (over || gear[it.id] < 1) return;
   if (it.need && !enemies.length){ tapSel(false); return; }
   const W = COLS*CELL, H = ROWS*CELL;
@@ -11686,7 +11723,7 @@ function buildSkillBar(){
   }
   /* 持っている アイテムを 左はしに 出す。バーは 横スクロールなので
      高さは ふえない（下のボタンが 画面の外に 出ない） */
-  for (const it of ITEMS){
+  for (const it of BATTLE_ITEMS){
     if (gear[it.id] < 1) continue;
     const b = document.createElement('button');
     b.className = 'sk it';
@@ -13230,22 +13267,22 @@ const SHOP_ITEMS = [
   /* アイテムは 金の わく＝レア。お金で かんたんに 山づみ できないよう、
      セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
   { id:'it_set', sec:'あそぶ', ic:'🎒', icKey:'shop_help', name:'おたすけセット',
-    desc: () => '<span class="dic">' + ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×1こずつ',
+    desc: () => '<span class="dic">' + BATTLE_ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×1こずつ',
     note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP()*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
     cost: 20,
     can:  () => itDay.set !== dayKey(),
     poor: () => 'きょうは もう 買いました。また あした',
-    buy: () => { for (const it of ITEMS) giveItem(it.id, 1, ORIGIN.shop); buildSkillBar();
+    buy: () => { for (const it of BATTLE_ITEMS) giveItem(it.id, 1, ORIGIN.shop); buildSkillBar();
                  itDay.set = dayKey(); saveItDay();
                  return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
   { id:'it_big', sec:'あそぶ', ic:'🌈', icKey:'shop_rainbow_set', name:'にじいろセット',
-    desc: () => '<span class="dic">' + ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×3こずつ',
+    desc: () => '<span class="dic">' + BATTLE_ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×3こずつ',
     note: () => '1日1回まで。おたすけセット3こぶん',
     cost: 55,
     can:  () => itDay.big !== dayKey(),
     poor: () => 'きょうは もう 買いました。また あした',
-    buy: () => { for (const it of ITEMS) giveItem(it.id, 3, ORIGIN.shop); buildSkillBar();
+    buy: () => { for (const it of BATTLE_ITEMS) giveItem(it.id, 3, ORIGIN.shop); buildSkillBar();
                  itDay.big = dayKey(); saveItDay();
                  return '🌈 6しゅるいの アイテムが 3こずつ！'; } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
@@ -16227,6 +16264,8 @@ window.__chk = {
   /* Phase 7-7-2 ——**種の 絵 ＋ わたされた evo → 絵の キー**（純関数）。
      `inst` を 1つも 見ない。検査から 架空の evo を わたして ためす */
   artKeyFor, artSprite: () => ART_SPRITE,
+  /* Phase 7-7-3-1 ——戦闘用の しきり。検査から 架空の アイテムで ためす */
+  isBattleItem, battleItems: () => BATTLE_ITEMS.map(i => i.id), itemsRaw: () => ITEMS,
   /* キャッシュの キーを 見る ため。**evo の 前後で 別キーに なる**ことを
      機械で たしかめる（同じ キーに なると 進化しても 同じ絵が 出る）*/
   genSprite, rbSprite,
