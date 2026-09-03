@@ -509,10 +509,56 @@ const pubRaw = [];
 }
 line('公開の 集合', pubRaw);
 
+/* ---------- ドロップの late は 1か所 ----------
+   ステージクリアと 戦いの ドロップは **同じ しきり**（`dropPoolAt`）を
+   通さなければ いけません。むかしは 2か所に 書いて あり、
+   **戦いの ほうだけ `late` を 見て いませんでした** ——
+   `late:200` の こだいの秘薬が ウェーブ1から 落ちて いた のに、
+   絵にも 文にも 出ないので だれも 気づけません */
+const dropRaw = [];
+{
+  const body = strip(src);
+  const lines = body.split('\n');
+  const SITES = [
+    ['ステージクリア', 'giveItem(it.id, 1, ORIGIN.stage)', -8],
+    ['戦いの ドロップ', "t:0, life:0.8, it:it.id", -8],
+  ];
+  for (const [name, mark, off] of SITES){
+    const i = lines.findIndex(l => l.includes(mark));
+    if (i < 0){ dropRaw.push(name + 'の 目じるしが 見つからない'); continue; }
+    /* 目じるしの 少し 上に pool を 作る 行が ある */
+    const near = lines.slice(Math.max(0, i + off), i + 1).join('\n');
+    if (!/const pool = dropPoolAt\(wave\);/.test(near))
+      dropRaw.push(name + ' L' + (i + 1) + ': pool が dropPoolAt(wave) で 作られて いない\n      ' +
+                   near.split('\n').filter(l => l.includes('pool')).join(' / ').trim().slice(0, 90));
+    /* その場で late を 見なおして いないか（しきいを 2か所に 書く のを ふせぐ）*/
+    if (/\blate\b/.test(near)) dropRaw.push(name + ': 呼び出し口で late を 見なおして いる');
+  }
+  /* しきりの 中み。`>` に すると さかいめの ウェーブが 1つ ずれる */
+  const ok = (body.match(/const dropOK = [^;]*/) || [''])[0];
+  const pl = (body.match(/const dropPoolAt = [^;]*/) || [''])[0];
+  if (!ok) dropRaw.push('dropOK が ない');
+  if (!pl) dropRaw.push('dropPoolAt が ない');
+  if (ok && !/w\s*>=\s*it\.late/.test(ok))
+    dropRaw.push('dropOK の さかいめが >= に なって いない：' + ok.slice(0, 70));
+  if (ok && !/gear\[it\.id\]\s*<\s*ITEM_CAP/.test(ok))
+    dropRaw.push('dropOK が 持ち数の 上限を 見て いない：' + ok.slice(0, 70));
+  if (pl && !/dropOK/.test(pl))
+    dropRaw.push('dropPoolAt が dropOK を 通って いない：' + pl.slice(0, 70));
+  /* `late` を 生で 見て いる ところが ほかに ふえて いないか。
+     ゆるすのは しきり じしんと 検査どうぐだけ */
+  for (const [i, l] of lines.entries()){
+    if (!/\blate\b/.test(l)) continue;
+    if (/const dropOK =|const dropPoolAt =|dropPool:|late:\s*\d|i\.late \|\| 0/.test(l)) continue;
+    dropRaw.push('L' + (i + 1) + ': late を 生で 見て いる：' + l.trim().slice(0, 80));
+  }
+}
+line('ドロップの late', dropRaw);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length + pubRaw.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length + pubRaw.length + dropRaw.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

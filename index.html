@@ -10052,8 +10052,8 @@ function stageClear(){
   /* アイテムも 1こ。はじめての人が つかいかたを おぼえられるように、
      たまごと ちがって かならず もらえる形に する */
   {
-    /* `late` を もつ アイテムは その ウェーブから しか 出ない */
-    const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP && (!it.late || wave >= it.late));
+    /* `late` の しきりは `dropPoolAt` 1つ（戦いの ドロップと 共有）*/
+    const pool = dropPoolAt(wave);
     if (pool.length){
       const it = pool[(Math.random()*pool.length)|0];
       giveItem(it.id, 1, ORIGIN.stage);
@@ -11337,10 +11337,28 @@ let gifts = [];
    **関数に すること** ——2か所（落とす所と ショップの 説明）で つかうので、
    決めうちだと 片方だけ 古くなる */
 const ITEM_DROP = () => 0.08 + (hasLg('kraken') ? 0.02 : 0);
+/* ドロップの pool。**ステージクリアと 戦闘の 2か所から 呼びます。**
+
+   `late` を もつ アイテムは その ウェーブから しか 出ません
+   （こだいの秘薬は `late:200`。かべの 正体は「⭐が 足りなくなる」ことなので、
+   ⭐を つかわずに 火力を 足せる ものを 中盤に 出すと、せっかく 締めた
+   よゆうが もどります ——坂では なく 階段に する ため）。
+
+   **むかしは 2か所に 書いて あり、片方だけ 見て いませんでした。**
+   ステージクリアは `!it.late || wave >= it.late` を 見て いたのに、
+   戦いの ドロップ（`spawnGift`）は 見て いなかった ので、
+   **こだいの秘薬が ウェーブ1から 敵から 落ちて いました。**
+   CLAUDE.md の 仕様（「ウェーブ200からの ドロップでしか 出ません」）と
+   実際の 動きが ちがって いた ことに なります。
+
+   だから **判定は ここ 1つ**に します。2か所に 書くと かならず ずれます
+   （「6しゅるい」「ITEM_DROP」と まったく 同じ 話）*/
+const dropOK = (it, w) => gear[it.id] < ITEM_CAP && (!it.late || w >= it.late);
+const dropPoolAt = w => ITEMS.filter(it => dropOK(it, w));
 function spawnGift(x, y){
   // ときどき ワザでは なく アイテムが 落ちる
   if (Math.random() < ITEM_DROP()){
-    const pool = ITEMS.filter(it => gear[it.id] < ITEM_CAP);
+    const pool = dropPoolAt(wave);
     if (pool.length){
       const it = pool[(Math.random()*pool.length)|0];
       gifts.push({ sx:x, sy:y, x, y,
@@ -16559,7 +16577,33 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   },
   items: () => ITEMS.map(i => ({ id:i.id, name:i.name, late:i.late || 0 })),
   gear: () => JSON.parse(JSON.stringify(gear)),
+  /* **前からの もの。意味を 変えない**（`late` だけ・`gear` を 見ない）。
+     過去の 検査が これを 見て いるので のこす */
   dropPool: w => ITEMS.filter(it => !it.late || w >= it.late).map(i => i.id),
+  /* ステージクリアの pool。呼び出し口と おなじ 共有の しきりを 通す */
+  stageDropPool: w => dropPoolAt(w).map(i => i.id),
+  /* 戦いの pool。**ほんとうに `spawnGift` を 走らせて** 見ます ——
+     式を 写すと「検査だけ 直って 本体は 古いまま」に なるので
+     （`check-btn` で 一度 やった 失敗）。
+
+     でたらめに たよると「たまたま 出なかった」で 落ちる 検査に なるため、
+     `Math.random` を 差しかえて **pool の あたまから 順に** えらばせます。
+     1回目＝落とすかの さいころ（0 なら かならず アイテムの えだ）、
+     2回目＝pool の どれを えらぶか、3回目＝回転（見た目）。
+     `i/N`（N＝ITEMS の 数）を N回 まわすと、pool が それより 短くても
+     0〜pool.length-1 を もれなく 通ります */
+  battleDropPool: w => {
+    const w0 = wave, g0 = gifts, r0 = Math.random, N = ITEMS.length;
+    try{
+      wave = w; gifts = [];
+      for (let i = 0; i < N; i++){
+        let c = 0;
+        Math.random = () => (c++ === 0 ? 0 : i / N);
+        spawnGift(0, 0);
+      }
+      return [...new Set(gifts.filter(g => g.it).map(g => g.it))];
+    } finally { Math.random = r0; wave = w0; gifts = g0; }
+  },
   /* クリア画面の 見た目を たしかめる。ステージNまで あそばずに 出せる */
   stageClear: n => { wave = n * STAGE_WAVES; stageClear(); },
   /* ワザを 1つ ためす。バーは 7こまでなので、はっていない子は 押せない */
