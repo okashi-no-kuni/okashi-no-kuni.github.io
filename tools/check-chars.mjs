@@ -340,10 +340,28 @@ const instRef = [];
 }
 line('instの 参照', instRef);
 
+/* ---------- Phase 7-5 ——`MINT_MULTI` に いまの 経路が 入って いないか ----------
+   複数所持を ゆるす ところは ここ 1か所 だけ です。**いまの 12経路を
+   入れると 個体が 大量に ふえます**（W250 までで 敵は 8,889体）。
+   足して よいのは、個体を くばる ことが 目的の 新しい 経路
+   （event / birthday / trade など）だけ */
+const multiBad = [];
+{
+  const NOW = ['starter','egg','stage','duel','legend','battle',
+               'drop','place','shard','login','shop','debug'];
+  const m = strip(src).match(/const MINT_MULTI = new Set\(\[([\s\S]*?)\]\)/);
+  if (!m) multiBad.push('MINT_MULTI の 定義が 見つからない');
+  else for (const x of m[1].matchAll(/(?:ORIGIN\.(\w+)|'([^']*)'|"([^"]*)")/g)){
+    const v = x[1] || x[2] || x[3];
+    if (NOW.includes(v)) multiBad.push(v + 'は いまの 経路（入れては いけない）');
+  }
+}
+line('MINT_MULTI', multiBad);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

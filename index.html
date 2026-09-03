@@ -9753,9 +9753,10 @@ function ensureInst(sp){
    ---------------------------------------------------------- */
 function mintInst(sp, origin){
   if (!sp || !hasDex(sp)) return null;
-  /* ▼ 7-4 は 上限1。7-5 で 複数所持に するとき 変えるのは ここだけ */
   const had = instOfSpecies(sp);
-  if (had) return { id: had, sp };
+  /* ▼ 複数所持の 唯一の 切りかえ点。`MINT_MULTI` が から の あいだは
+       いつも 上限1 ——7-4 と **完全に 同じ ふるまい**です */
+  if (had && !MINT_MULTI.has(origin)) return { id: had, sp };
   /* ▲ */
   const id = newInstId();
   inst[id] = { sp };            // ← origin は **まだ 入れない**（7-6）
@@ -9851,6 +9852,28 @@ const ORIGIN = Object.freeze({
 /* 読むのは かならず ここを とおす。古い セーブには 無いので
    `?? unknown` で おぎなう（ロード時に 一括で 書きかえない）*/
 const originOf = id => { const r = dexRec(id); return (r && r.origin) || ORIGIN.unknown; };
+
+/* **Phase 7-5**：どの 入手元なら 2個体目を 作ってよいか。
+   **複数所持を ゆるす ところは ここ 1か所だけ**です（`mintInst` が 見ます）。
+
+   **7-5 では から のまま。**調べた ところ、いまの 12経路には
+   2個体目を 正当化できる ものが **1つも ありません**でした
+   （CLAUDE.md の「Phase 7-5」に 実測つきで 書いて あります）。
+
+   ここに 足して よいのは、**個体を くばる ことが 目的の
+   新しい 経路**だけ です ——`event` / `birthday` / `trade` など。
+   **いまの 12経路（とくに `battle` / `place` / `drop`）を 入れないこと**
+   ——W250 までで 敵は 8,889体 いるので、個体が 大量に ふえます。
+
+   上限の 数（1人 何体まで）は **まだ 決めません**。ほんとうに
+   1経路 開ける ときに、要るのか・経路ごとか・ぜんたいか を 決めます。
+
+   > **`ORIGIN` の あとに 置くこと。**はじめ 個体の 箱の となり
+   > （`ORIGIN` より 前）に 書いたら、`ORIGIN.battle` と 書いた とたん
+   > **`ReferenceError: Cannot access 'ORIGIN' before initialization` で
+   > 画面が 真っ白**に なりました（「`const` は 巻きあがらない」）。
+   > `mintInst` は 呼ばれる のが ずっと あとなので、ここで かまいません */
+const MINT_MULTI = new Set([]);
 
 /* はじめての登録なら true。いつ・どこで 手に入れたかも残す。
    **origin は 呼び出し元が わたす**こと（中で 推測しない）*/
@@ -16162,6 +16185,11 @@ window.__chk = {
        所有の 正本は まだ `dex` なので、ここを 所持判定に つかわない */
     ensure: ensureInst,                     // ← 検査からだけ 呼ぶ
     ofSpecies: instOfSpecies,
+    /* Phase 7-5 ——複数所持の 切りかえ点。**中みは から**。
+       検査は ここへ 架空の origin を その場で 入れて ためし、
+       おわったら 消します（ソースは から のまま）*/
+    mint: mintInst,
+    multi: MINT_MULTI,
     raw:   () => localStorage.getItem('sweetTD.inst'),
     v:     INST_V,
   },
