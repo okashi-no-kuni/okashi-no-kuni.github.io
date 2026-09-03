@@ -246,9 +246,12 @@ const originMiss = [];
                       .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + ' '.repeat(m.length - p.length));
   const lines = strip(src).split('\n');
   lines.forEach((ln, i) => {
-    for (const m of ln.matchAll(/\bunlock\(([^)]*)\)/g)){
+    /* **Phase 7-4**：入手経路は `gainSpecies()` を とおるように なったので、
+       そちらも 見る。ここを 足しわすれると、入手経路で origin を
+       書きわすれても だまって `unknown` に なります */
+    for (const m of ln.matchAll(/\b(?:unlock|gainSpecies)\(([^)]*)\)/g)){
       const args = m[1];
-      if (/^\s*id\s*,\s*origin\s*$/.test(args)) continue;        // 定義そのもの
+      if (/^\s*(id|sp)\s*,\s*origin\s*$/.test(args)) continue;   // 定義そのもの・そのまま 通すだけ
       const parts = args.split(',');
       if (parts.length < 2){ originMiss.push('L' + (i+1) + ':origin無し'); continue; }
       const o = parts[parts.length - 1].trim();
@@ -312,21 +315,28 @@ const instRef = [];
   /* 7-3 で `ensureInst` / `instOfSpecies` が ふえました。
      ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ */
   const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
-                 'ensureInst', 'instOfSpecies'];
+                 'ensureInst', 'instOfSpecies', 'mintInst'];
   const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
   const lines = strip(src).split('\n');
   const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
-  /* 基盤（7-2）と ensure（7-3）は ひとつづきの ブロックなので、
-     おわりは `ensureInst` の さいごの 行で 見る */
-  const defTo   = lines.findIndex(l => l.includes('return { id, sp };'));
+  /* 基盤（7-2）・ensure（7-3）・mint（7-4）は ひとつづきの ブロック。
+     `return { id, sp };` は ensure と mint の **2か所**に 出るので、
+     **さいごの ほう**で 見ること（先頭で 見ると mint の 中みが 落ちます）*/
+  const defTo   = lines.reduce((a, l, i) => l.includes('return { id, sp };') ? i : a, -1);
+  /* `gainSpecies`（7-4 の 入口）は `unlock` の となりに 置いて あるので
+     べつの ゆるし ぶんとして 見る */
+  const gsFrom  = lines.findIndex(l => l.includes('function gainSpecies(sp, origin){'));
+  const gsTo    = gsFrom < 0 ? -1 : gsFrom + lines.slice(gsFrom).findIndex(l => l.includes('return isNew;'));
   const chkAt   = lines.findIndex(l => l.includes('window.__chk = {'));
   lines.forEach((ln, i) => {
     if (!re.test(ln)) return;
     if (defFrom >= 0 && i >= defFrom && i <= defTo + 1) return;   // 箱の 定義そのもの
+    if (gsFrom >= 0 && i >= gsFrom && i <= gsTo) return;          // gainSpecies の 中み
     if (chkAt >= 0 && i > chkAt) return;                          // __chk / __dbg（検査どうぐ）
     instRef.push('L' + (i+1) + ':' + ln.trim().slice(0, 46));
   });
   if (defFrom < 0 || defTo < 0) instRef.push('個体の 箱の 定義が 見つからない');
+  if (gsFrom < 0 || gsTo < gsFrom) instRef.push('gainSpecies の 定義が 見つからない');
 }
 line('instの 参照', instRef);
 

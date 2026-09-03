@@ -3722,7 +3722,7 @@ function eggDraw(e, origin){
   const news = pool.filter(o => !hasGen(o));
   if (news.length){
     const o = eggPick(news);
-    unlock(o.id, origin);
+    gainSpecies(o.id, origin);
     return { o, dup: false };
   }
   const o = eggPick(pool);
@@ -3868,7 +3868,7 @@ function buildShardBox(){
       if (!pool.length || shards < need) return;
       shards -= need; saveShards();
       const o = pool[(Math.random() * pool.length) | 0];
-      unlock(o.id, ORIGIN.shard);
+      gainSpecies(o.id, ORIGIN.shard);
       showEggResult({ o, dup: false }, true);
     };
     row.append(b);
@@ -4145,7 +4145,7 @@ function giveStarters(){
   const pool = GEN_LIST.filter(o => o.side === 'ch' && o.lv === 1);
   for (let i = 0; i < 5 && pool.length; i++){
     const k = (Math.random() * pool.length) | 0;
-    unlock(pool[k].id, ORIGIN.starter);
+    gainSpecies(pool[k].id, ORIGIN.starter);
     pool.splice(k, 1);
   }
   try{ localStorage.setItem('sweetTD.starter', dateStr()); }catch(e){}
@@ -4501,7 +4501,7 @@ function boardTap(px, py){
   // なかまの id は そのまま（c_xxx）。'tw_' を つけると ありもしない id が
   // ずかんに たまり、なかまは 一生 とうろくされない
   const dexId = T.avatar ? null : (T.ally ? selTool : 'tw_' + selTool);
-  if (dexId && unlock(dexId, ORIGIN.place)){
+  if (dexId && gainSpecies(dexId, ORIGIN.place)){
     if (!T.ally) dex[dexId].lv = 1;
     saveDex();
     floatTx(cx(c), cy(r) - CELL*0.95, '図鑑に登録！', '#b98ae0');
@@ -5118,7 +5118,7 @@ function killEnemy(e, px, py){
   const idx = enemies.indexOf(e);
   if (idx < 0) return;
   enemies.splice(idx,1);
-  if (unlock('en_' + e.k, ORIGIN.battle))
+  if (gainSpecies('en_' + e.k, ORIGIN.battle))
     floatTx(px, py - CELL*0.7, '図鑑に登録！', '#b98ae0');
   if (e.gi){
     /* にじ（25%）と 金（60%）の わくの子は たおしても ときどきしか
@@ -5127,7 +5127,7 @@ function killEnemy(e, px, py){
     const gk = artKeyOf(e.gi);
     const keep = DEX_LEGEND.has(gk) ? LEG_KEEP : DEX_GOLD.has(gk) ? GOLD_KEEP : 1;
     if (hasDex(e.gi.id) || Math.random() < keep){
-      if (unlock(e.gi.id, ORIGIN.battle))
+      if (gainSpecies(e.gi.id, ORIGIN.battle))
         floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
     } else if (legMissWave !== wave){
       legMissWave = wave;
@@ -9719,6 +9719,49 @@ function ensureInst(sp){
   saveInst();                               // ← ほんとうに 1件 作った ときだけ 書く
   return { id, sp };
 }
+
+/* ----------------------------------------------------------
+   Phase 7-4 ——新しく 手に 入れた ときに 1個体 作る
+   ----------------------------------------------------------
+   **`ensureInst` と 中みが よく 似て いますが、責任が ちがいます。**
+
+     `unlock(sp, origin)`  … その **種** を はじめて 図鑑・所持に 登録する
+     `mintInst(sp, origin)`… **1個体を 作る**（新しく 手に 入れた とき）
+     `ensureInst(sp)`      … いまの 所持から **必要な ときだけ** 1個体へ 橋わたし
+
+   **1つの 関数に まとめては いけません。**将来こう なるからです。
+
+     ・すでに 図鑑に いる 種を もう 1個体 もらう
+     ・交換で 既存の 種の 個体だけ ふえる
+
+   どちらも **`unlock()` は false を かえすのに mint は 要る**場面です。
+   だから `unlock` を「個体を 作る 関数」に 変えず、
+   **`mintInst` は `unlock` の 戻り値で しばりません**（下の `gainSpecies`）。
+
+   #### 7-4 は 上限1
+
+   同じ 種の 2個体目は 作りません。**変えるのは 下の 3行だけ**で、
+   7-5 で 複数所持を 決めた ときに ここを ひろげます
+   （呼ぶ 側は 1か所も 直さなくて すみます）。
+
+   #### `origin` は 受けとるだけ・まだ 保存しない
+
+   `dex[id].origin`（Phase 6-6）は **種の 初回入手元**です。
+   個体の 出自は **別の もの**なので、7-6 で `instance.origin` として
+   持ちます。ここで 保存すると 2つを 同じ ものとして 固定して しまうので、
+   **受け口だけ**に して あります。
+   ---------------------------------------------------------- */
+function mintInst(sp, origin){
+  if (!sp || !hasDex(sp)) return null;
+  /* ▼ 7-4 は 上限1。7-5 で 複数所持に するとき 変えるのは ここだけ */
+  const had = instOfSpecies(sp);
+  if (had) return { id: had, sp };
+  /* ▲ */
+  const id = newInstId();
+  inst[id] = { sp };            // ← origin は **まだ 入れない**（7-6）
+  saveInst();
+  return { id, sp };
+}
 /* 前の版で 'tw_c_xxx' という ありもしない id を ためてしまっていたので かたづける。
    ほんとうの id（c_xxx）に つけかえて、あつめた ぶんを むだにしない */
 (function fixDexIds(){
@@ -9818,6 +9861,28 @@ function unlock(id, origin){
   checkComplete();   // これが最後のひとりだったら、おかしの国がかんせいする
   return true;
 }
+/* **Phase 7-4**：手に 入れた ときの 入口。`unlock`（種の 初登録）と
+   `mintInst`（1個体を 作る）を **この 順に** 呼ぶだけ です。
+
+   **`mintInst` を `unlock` の 戻り値で しばらないこと。**
+   すでに 図鑑に いる 種を もう 1個体 もらう ときや、交換で 既存の 種の
+   個体だけ ふえる ときは、`unlock` が false でも mint は 要ります。
+   だから ここでは **かならず 両方 呼びます**。
+
+   かえすのは **`unlock` の 戻り値 その まま**（＝はじめての 登録か）。
+   呼ぶ 側の 書きかたも 意味も 1つも 変わりません。
+
+   > **`unlock()` の 中に mint を 入れなかった 理由**が これです。
+   > 中に 入れると「新規登録の ときしか mint できない」形に 固まり、
+   > 7-5 で 複数所持を 足す ときに 12か所ぜんぶ 直すことに なります。
+
+   検査どうぐ（`__dbg.fillDex` / `guardGive`）は **ここを 通しません**
+   ——ほんとうの 入手経路では ないので、個体を ふやしません */
+function gainSpecies(sp, origin){
+  const isNew = unlock(sp, origin);
+  mintInst(sp, origin);              // ← 戻り値で しばらない（7-5 で ひろげる）
+  return isNew;
+}
 
 /* ステージクリア（20ウェーブ）ごとのごほうび。なかまを1人むかえて、次のステージへ */
 function stageClear(){
@@ -9832,7 +9897,7 @@ function stageClear(){
   healHearts(3 + (hasCh('apple') ? 3 : 0));   // ごほうびにハートを回復（ためた💗はへらさない）
   const ch = CHARS.find(c => !hasDex('ch_'+c.id));
   if (ch){
-    unlock('ch_' + ch.id, ORIGIN.stage);
+    gainSpecies('ch_' + ch.id, ORIGIN.stage);
     // おためし用にストックを1つプレゼントし、あきがあればタスクバーにも自動ではる
     if (SKILLS.some(s => s.ch === ch.id)){
       skStock[ch.id] = Math.min(ITEM_MAX, skStock[ch.id] + 1);
@@ -10214,7 +10279,7 @@ function duWin(){
   duArena.onpointerdown = null;
   if (duRaf){ cancelAnimationFrame(duRaf); duRaf = 0; }
   const L = duS.L;
-  unlock('lg_' + L.id, ORIGIN.duel);
+  gainSpecies('lg_' + L.id, ORIGIN.duel);
   dex['lg_' + L.id].w = L.wave;
   /* はじめての 1体は こちらで えらんで おく。空っぽの スロットを 見せると
      「何か 足りない」だけで 終わり、つかい方に 気づいてもらえません */
@@ -10337,7 +10402,7 @@ function duLose(ranAway){
 
 function legendArrival(L, preview){
   if (!preview){
-    unlock('lg_' + L.id, ORIGIN.legend);   // 撮影プレビューでは図鑑にとうろくしない
+    gainSpecies('lg_' + L.id, ORIGIN.legend);   // 撮影プレビューでは図鑑にとうろくしない
     // でんせつは「ベストが とどいた」ごほうびなので、じっさいに 出会うのは
     // つぎの ウェーブの おわり。そのまま unlock すると やりなおした直後の
     // ウェーブ1が 記録されて、図鑑に「ウェーブ1」と 出てしまう。
@@ -11003,7 +11068,7 @@ function giveItem(id, n, origin){
   if (!ITEM_BY_ID[id]) return 0;
   const before = gear[id];
   gear[id] = Math.min(ITEM_CAP, before + (n || 1));
-  saveGear(); unlock('it_' + id, origin);
+  saveGear(); gainSpecies('it_' + id, origin);
   return gear[id] - before;
 }
 
@@ -11746,7 +11811,7 @@ function applyLoginReward(day){
       return '所持しているワザのストック <b>全部+1</b>！';
     default:
       if (!hasDex('sp_rpurin')){
-        unlock('sp_rpurin', ORIGIN.login);
+        gainSpecies('sp_rpurin', ORIGIN.login);
         if (pins.length < PIN_MAX && !pins.includes('rpurin')){ pins.push('rpurin'); savePins(); }
         return '伝説の仲間 <b>ながれぼし</b> が仲間に！！<br>✨ プレゼントが おちやすくなる ✨';
       }
@@ -13005,7 +13070,7 @@ const SHOP_ITEMS = [
       const news = packPool().filter(o => !hasGen(o));
       if (news.length){
         const o = news[(Math.random() * news.length) | 0];
-        unlock(o.id, ORIGIN.shop);
+        gainSpecies(o.id, ORIGIN.shop);
         return '⭐' + PACK_STARS.toLocaleString() + ' と ★' + PACK_LV + '「' + o.name + '」が仲間に！';
       }
       const n = SHARD_GET[PACK_LV] || 1;
