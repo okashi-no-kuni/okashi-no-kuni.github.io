@@ -1327,6 +1327,15 @@
   .cMe button{flex:0 0 auto;white-space:nowrap;font-size:calc(11px * var(--fs));padding:7px 10px}
   .cPin{position:absolute;top:-7px;right:-5px;font-size:calc(15px * var(--fs));
     filter:drop-shadow(0 1px 2px rgba(150,110,170,.45))}
+  /* くわしく（詳細画面への 入口・Phase 7-7-3-5）。
+     **右上には 置けません** ——📌（`.cPin`）が そこに います。
+     `position:absolute` なので カードの 高さを 1pxも 変えません
+     （`#colGrid` は `minmax(92px,1fr)` で、中みが 太ると 列が へる）*/
+  .cDet{position:absolute;top:-5px;left:-5px;width:23px;height:23px;padding:0;
+    border:none;border-radius:50%;background:var(--dxPinkD);color:#fff;
+    font-family:inherit;font-weight:800;font-size:calc(11px * var(--fs));line-height:23px;
+    box-shadow:0 2px 5px rgba(150,110,170,.4);cursor:pointer;z-index:2}
+  .cDet:active{transform:scale(.9)}
   #colHint{text-align:center;font-size:calc(10px * var(--fs));color:var(--dxLavD);
     background:var(--dxPaper);border:1px solid rgba(180,160,205,.28);
     border-radius:10px;padding:5px 6px;line-height:1.5}
@@ -1338,6 +1347,41 @@
   #kingOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
   #kingCv{width:100%;border-radius:14px;box-shadow:0 6px 18px rgba(180,130,175,.35)}
   #kingCap{text-align:center;font-size:calc(11px * var(--fs));opacity:.7;line-height:1.5}
+
+  /* ---------- キャラクターの 詳細（#chOv・Phase 7-7-3-5）----------
+     図鑑の 中の 入れ子なので、おかしの国（#kingOv）と おなじ 作りに して
+     「戻る」で 図鑑へ もどします。`#wrap` の 中の `position:absolute` なので
+     **盤面の 高さを 1pxも 取りません**（`resize()` は 流れの中の ものだけ 数える）。
+
+     ここは 将来 **個体の origin・進化・基本形・複数個体・交換**の 受け皿に
+     なります。だから 中みは 1まいの 絵では なく **行**で 組みます */
+  /* **スクロールするのは 中みだけ**（`#chBody`）。ぜんたいを スクロールわくに
+     すると、下まで スクロールした とき「戻る」が 画面の 外へ 出て
+     押せなく なります（まもり神の `#gdOv` で 一度 やった 失敗。
+     図鑑・ガイドの 見出しを sticky に した のと 同じ 話）。
+     flex の 子には `min-height:0` を つけること ——ないと 中みの 高さで
+     つっぱって スクロールせず、下が 切れた ままに なります */
+  #chOv{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;border-radius:20px;
+    background:rgba(255,244,251,.97);backdrop-filter:blur(6px);padding:12px;overflow:hidden;z-index:5}
+  #chOv.on{display:flex;animation:pop .3s cubic-bezier(.2,1.4,.5,1)}
+  #chHead{flex:0 0 auto;display:flex;align-items:center;gap:8px;
+    font-size:calc(14px * var(--fs));color:var(--pink-d)}
+  #chBody{flex:1 1 auto;min-height:0;overflow-y:auto;background:rgba(255,255,255,.86);
+    border:1px solid rgba(180,160,205,.3);border-radius:16px;padding:12px 11px;
+    box-shadow:0 4px 14px rgba(150,110,170,.14)}
+  #chArt{display:flex;align-items:center;justify-content:center;min-height:128px}
+  #chNm{text-align:center;font-size:calc(15px * var(--fs));font-weight:800;
+    color:var(--dxPinkD);margin-top:6px;line-height:1.35;word-break:break-word}
+  #chTt{text-align:center;font-size:calc(10.5px * var(--fs));color:var(--dxLavD);
+    line-height:1.5;word-break:break-word}
+  #chRows{margin-top:9px;display:flex;flex-direction:column;gap:6px}
+  .chRow{display:flex;gap:8px;align-items:baseline;
+    font-size:calc(11px * var(--fs));line-height:1.5;
+    border-top:1px solid rgba(180,160,205,.22);padding-top:6px}
+  .chRow:first-child{border-top:none;padding-top:0}
+  .chRow b{flex:0 0 auto;color:var(--dxLavD);font-weight:700}
+  .chRow span{flex:1;text-align:right;color:var(--dxPinkD);font-weight:700;
+    word-break:break-word}
 
   /* ---------- 合言葉・着せかえ ---------- */
   /* ショップ・今週のおだい・合言葉は 図鑑（👑）の 中に 入れてある。
@@ -1474,6 +1518,18 @@
       </div>
       <canvas id="kingCv"></canvas>
       <div id="kingCap"></div>
+    </div>
+    <div id="chOv">
+      <div id="chHead">
+        <div style="flex:1" id="chHd">詳細</div>
+        <button class="mini gray" id="chClose">戻る</button>
+      </div>
+      <div id="chBody">
+        <div id="chArt"></div>
+        <div id="chNm"></div>
+        <div id="chTt"></div>
+        <div id="chRows"></div>
+      </div>
     </div>
     <div id="pwOv">
       <div style="display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fs));color:var(--pink-d)">
@@ -2769,7 +2825,7 @@ const skillBar = $('skillBar'), colHint = $('colHint');
    ひらく前に ほかの画面を とじる。
    下のボタンは もういちど おすと とじる（いま開いている画面は光る）。
    要素は あとの行で 作られるので、$() で そのつど 引く（TDZ よけ） */
-const PANEL_IDS = ['colOv','helpOv','kingOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv','invOv','gdOv'];
+const PANEL_IDS = ['colOv','helpOv','kingOv','chOv','pwOv','pickOv','eggOv','avOv','wkOv','shopOv','invOv','gdOv'];
 const panelOpen = id => $(id).classList.contains('on');
 function syncNav(){
   $('btnCol').classList.toggle('on',  panelOpen('colOv'));
@@ -11080,11 +11136,116 @@ function buildColGrid(){
         '<div class="cTt">' + o.title + '</div>' +
         '<div class="cTt" style="color:#b98ae0">' + o.hint + '</div>');
     }
+    /* くわしく。**カードの タップには 1つも さわりません**
+       ——`stopPropagation()` で、ワザを 貼る／外す・2回タップで 買う
+       （`buyWait`）は これまでどおり です */
+    if (detailOK(o)){
+      const dt = document.createElement('button');
+      dt.className = 'cDet';
+      dt.type = 'button';
+      dt.textContent = 'i';
+      dt.setAttribute('aria-label', o.name + 'の 詳細');
+      dt.dataset.det = o.id;
+      dt.onclick = e => { e.stopPropagation(); tapSel(); openCharDetail(o.id, 'colOv'); };
+      d.append(dt);
+    }
     colGrid.append(d);
   }
   const gotAll = all.filter(o => hasDex(o.id)).length;
   colTotal.textContent = '合計 ' + gotAll + ' / ' + all.length + ' 登録';
 }
+
+/* ==========================================================
+   キャラクターの 詳細（#chOv）——Phase 7-7-3-5。**見せるだけ**
+   ----------------------------------------------------------
+   将来 **個体の origin・進化・基本形・複数個体・交換**の 受け皿に なる 画面です。
+   いまは 1種＝1個体 なので、**いまある ものを 安全に 見せる だけ**に します。
+
+   #### 進化ボタン・秘薬の 消費・進化の 絵は まだ つなぎません
+
+   `evolveInst()` を 呼ぶ ところは **0か所**。絵も **base の まま**で、
+   `artKeyFor(..., instEvoOf(iid))` を 本番に つなぐのは **次の フェーズ**です
+   ——「画面を 足した」と「進化で 絵が 変わる」を 別に 検証できるように する ため。
+
+   #### 入口は カードの 小さな ボタン。**既存の タップを 置きかえない**
+
+   図鑑の カードには すでに タップの はたらきが あります
+   ——ワザを もつ 13体は「ワザバーに 貼る／外す」、0こ の ときは
+   **2回タップで 買う**（`buyWait`）。ここを 詳細画面に すりかえると、
+   遊ぶ人が 貼れなく なります。
+
+   だから カードの すみに 小さな 入口（`.cDet`）を 置き、
+   `stopPropagation()` で **カードの タップには 1つも さわりません**。
+   置くのは **左上** ——右上は 📌（`.cPin`）が つかって います。
+   ========================================================== */
+/* 入手元の 表示。**この画面だけの 最小の 変換**です。
+   `ORIGIN` は 言語に よらない 安定IDで、`egg` `stage` を そのまま 見せると
+   遊ぶ人には 読めません。かといって **大きな i18n の 辞書は まだ 作りません**
+   ——2言語に するのは ずっと あとの 話（CLAUDE.md の ⑩）なので、
+   ここで 全部を まとめる 場所を 作ると、かならず 中途半端な まま のこります。
+   知らない 値は `null` を かえして **行ごと 出しません** */
+const ORIGIN_TX = {
+  starter: 'はじめの なかま', egg: 'たまごから', stage: 'ステージクリア',
+  duel: '伝説との たいけつ', legend: '伝説との 出会い', battle: '戦いで',
+  drop: '敵の おとしもの', place: '盤面に おいて', shard: 'かけら交換',
+  login: '今日のプレゼント', shop: 'ショップ',
+};
+/* 詳細画面が 見る 個体を 決める **ゆいいつの ところ**。
+
+   **描画の 中で `inst` を 総あたりしない**こと。個体を 知って いるのは
+   この画面（individual-aware な がわ）で、`artKeyFor` の ような
+   resolver や 共通の えがき関数は **わたされた ものだけ**を 見ます
+   （7-7-2 で 決めた ならび）。
+
+   いまは 1種＝1個体 なので `instOfSpecies()` で 引けます。将来
+   `MINT_MULTI` を 開けたら、**ここだけを「個体の 一覧・えらぶ」に
+   差しかえます**（呼ぶ 側は 1行も 直らない）。
+
+   **`ensureInst()` を 呼んでは いけません。**見るだけで 個体が でき、
+   セーブまで 変わって しまいます。未所持は `null`＝個体なし です */
+function detailIid(o){
+  if (!o || o.item || !hasDex(o.id)) return null;
+  return instOfSpecies(o.id);
+}
+let chFrom = '', chId = '';    // どこから ひらいたか／どの カードか
+/* カードに 詳細を 出して よいか。アイテムは キャラでは ないので 出しません。
+   **まだ 会って いない 伝説も 出しません** ——あちらは わざと
+   シルエットと ？？？ で 見せて いるので、名前が わかると 台なしです */
+const detailOK = o => !!o && !o.item && !(o.legend && !hasDex(o.id));
+function openCharDetail(id, from){
+  chId = id; chFrom = from || 'colOv';
+  openPanel('chOv', buildCharDetail);
+}
+function buildCharDetail(){
+  const o = dexList().find(x => x.id === chId);
+  const art = $('chArt'), rows = $('chRows');
+  art.innerHTML = ''; rows.innerHTML = '';
+  if (!o){ $('chNm').textContent = '—'; $('chTt').textContent = ''; return; }
+  const got = hasDex(o.id);
+  /* 絵は **base のまま**。`instEvoOf` を わたしません（次の フェーズ）。
+     カードの `lazyThumb` と まったく 同じ 出しかた です */
+  art.append(o.gen ? genThumb(o.gen, 128) : charThumb(o, 128));
+  if (!got) art.style.opacity = '.45'; else art.style.opacity = '';
+  $('chNm').textContent = o.name;
+  $('chTt').textContent = o.title || '';
+  const row = (k, v) => { if (v == null || v === '') return;
+    rows.insertAdjacentHTML('beforeend',
+      '<div class="chRow"><b>' + k + '</b><span>' + v + '</span></div>'); };
+  row('状態', got ? '仲間に います' : 'まだ いません');
+  if (o.fx) row('とくちょう', o.fx);
+  const rc = dexRec(o.id);
+  if (rc && rc.d) row('手に 入れた日', (rc.w ? 'ウェーブ' + rc.w + '・' : '') + rc.d);
+  if (!got && o.hint) row('あつめかた', o.hint);
+  /* ---- ここから 個体の 話。**読むのは かならず reader を とおす** ---- */
+  const iid = detailIid(o);
+  if (iid){
+    row('入手元', ORIGIN_TX[instOriginOf(iid)] || null);
+    /* 内部の `e1` を そのまま 見せません。**恒久の 日本語名も まだ 決めません**
+       （名称の 体系が 決まって いないので、決める 前に 焼きこまない）*/
+    row('すがた', instEvoOf(iid) ? '進化ずみ' : 'まだ 進化して いません');
+  }
+}
+$('chClose').onclick = () => { tapSel(); openPanel(chFrom || 'colOv', chFrom === 'colOv' ? buildColGrid : null); };
 
 /* ==========================================================
    なかまワザ（あつめたなかまが戦いを手伝ってくれる）
@@ -16519,6 +16680,9 @@ window.__chk = {
        本番から 呼ぶ ところは **まだ 0か所**（UI も 消費も つないで いない）*/
     evolve: evolveInst,
     evoIds: EVO_IDS,
+    /* Phase 7-7-3-5 ——詳細画面が 見る 個体を 決める ところ。
+       **`ensureInst` を 呼ばない**（見るだけで 個体が できては いけない）*/
+    detailIid,
     raw:   () => localStorage.getItem('sweetTD.inst'),
     v:     INST_V,
   },

@@ -312,14 +312,24 @@ line('dexの 直読み', dexRaw);
    ひろわない ように 語の 切れめで さがします */
 const instRef = [];
 {
-  /* 7-3 で `ensureInst` / `instOfSpecies` が ふえました。
-     ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ。
-     7-7-3-4 の `evolveInst` / `EVO_IDS` も ここに 入れます
-     ——**本番から 呼ぶ ところは まだ 0か所**（UI も 消費も つないで いない）*/
-  const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
-                 'ensureInst', 'instOfSpecies', 'mintInst', 'instOriginOf', 'instEvoOf',
-                 'evolveInst', 'EVO_IDS'];
-  const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
+  /* 7-3 で `ensureInst` / `instOfSpecies` が、7-7-3-4 で `evolveInst` /
+     `EVO_IDS` が ふえました。
+
+     **2段に 分けます。**
+       PLUMB … 生の 箱と 作る／書く もの。ゆるすのは 定義ブロック・
+               `gainSpecies`（7-4 の 入口）・`detailIid`（7-7-3-5 の 入口）・
+               検査どうぐ の 4つ だけ
+       READER… 読むだけの 口（7-6・7-7-1）。上に くわえて
+               **`buildCharDetail`（詳細画面）からも 読めます**
+               ——7-7-3-5 で 画面が できたので、そこは 読んで よい ところ
+
+     分けるのが 大事なのは、**画面が 読める ように なっても
+     「作る・書く」は 入って こない**ことを 見はりつづける ため です */
+  const PLUMB  = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
+                  'ensureInst', 'instOfSpecies', 'mintInst', 'evolveInst', 'EVO_IDS'];
+  const READER = ['instOriginOf', 'instEvoOf'];
+  const re     = new RegExp('\\b(' + PLUMB.concat(READER).join('|') + ')\\b');
+  const reP    = new RegExp('\\b(' + PLUMB.join('|') + ')\\b');
   const lines = strip(src).split('\n');
   const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
   /* 基盤（7-2）・ensure（7-3）・mint（7-4）は ひとつづきの ブロック。
@@ -330,16 +340,30 @@ const instRef = [];
      べつの ゆるし ぶんとして 見る */
   const gsFrom  = lines.findIndex(l => l.includes('function gainSpecies(sp, origin){'));
   const gsTo    = gsFrom < 0 ? -1 : gsFrom + lines.slice(gsFrom).findIndex(l => l.includes('return isNew;'));
+  /* `detailIid`（7-7-3-5）は **詳細画面が 見る 個体を 決める ゆいいつの ところ**。
+     individual-aware な 画面がわ なので `instOfSpecies` を 通して よい ——
+     ただし **ここ 1か所だけ**。将来 MINT_MULTI を 開けたら、
+     ここを「個体の 一覧・えらぶ」に 差しかえます */
+  const diFrom  = lines.findIndex(l => l.includes('function detailIid(o){'));
+  const diTo    = diFrom < 0 ? -1 : diFrom + lines.slice(diFrom).findIndex(l => l.includes('return instOfSpecies(o.id);'));
+  /* 詳細画面（7-7-3-5）。**読み口だけ** ゆるす */
+  const cdFrom  = lines.findIndex(l => l.includes('function buildCharDetail(){'));
+  const cdTo    = cdFrom < 0 ? -1 : cdFrom + lines.slice(cdFrom).findIndex(l => l.includes("row('すがた'"));
   const chkAt   = lines.findIndex(l => l.includes('window.__chk = {'));
   lines.forEach((ln, i) => {
     if (!re.test(ln)) return;
     if (defFrom >= 0 && i >= defFrom && i <= defTo + 1) return;   // 箱の 定義そのもの
     if (gsFrom >= 0 && i >= gsFrom && i <= gsTo) return;          // gainSpecies の 中み
+    if (diFrom >= 0 && i >= diFrom && i <= diTo) return;          // detailIid の 中み
     if (chkAt >= 0 && i > chkAt) return;                          // __chk / __dbg（検査どうぐ）
+    /* 詳細画面は **読み口だけ**。生の 箱・作る・書く が まざったら 落とす */
+    if (cdFrom >= 0 && i >= cdFrom && i <= cdTo && !reP.test(ln)) return;
     instRef.push('L' + (i+1) + ':' + ln.trim().slice(0, 46));
   });
   if (defFrom < 0 || defTo < 0) instRef.push('個体の 箱の 定義が 見つからない');
   if (gsFrom < 0 || gsTo < gsFrom) instRef.push('gainSpecies の 定義が 見つからない');
+  if (diFrom < 0 || diTo < diFrom) instRef.push('detailIid の 定義が 見つからない');
+  if (cdFrom < 0 || cdTo < cdFrom) instRef.push('buildCharDetail の 定義が 見つからない');
 }
 line('instの 参照', instRef);
 
