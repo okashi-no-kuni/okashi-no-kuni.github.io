@@ -2435,7 +2435,7 @@ const GUARD_ULT = {
 };
 for (const l of LEGENDS) l.ult = GUARD_ULT[l.id];
 
-const hasLg = id => !!dex['lg_' + id];
+const hasLg = id => hasDex('lg_' + id);
 /* 予告の 黒い影を とばすか。**1か所に まとめる**こと ——検査の
    __dbg.flyerTest も ここを 見ます（2か所に 書くと ずれる）。
 
@@ -3669,7 +3669,7 @@ const yen = n => '¥' + n.toLocaleString();
 
 /* その たまごから 出る子。なかま（味方）だけ */
 const eggPool = e => GEN_LIST.filter(o => o.side === 'ch' && e.lv.includes(o.lv));
-const hasGen  = o => !!dex[o.id];
+const hasGen  = o => hasDex(o.id);
 
 /* たまごを ひらく。まだ いない子を ゆうせんし、ぜんぶ いるなら かけらに する。
    「まだ いない子ゆうせん」は 親切なうえに、ダブり待ちの ストレスを なくす */
@@ -4184,7 +4184,7 @@ $('pickClose').onclick = () => closePanels();
 function buildPick(){
   // もっている子だけ。もっていない子を ならべても おけないので まぎらわしい
   const all  = GEN_LIST.filter(o => o.side === 'ch' && o.lv === pickLv);
-  const list = all.filter(o => dex[o.id]);
+  const list = all.filter(o => hasDex(o.id));
   pickHint.innerHTML = '★' + pickLv + 'の仲間 ' + list.length + ' / ' + all.length + '人　' +
     '⭐' + ALLY_COST[pickLv] + 'で設置' +
     '<br>いない子は 🥚たまご か 敵を倒して仲間にしよう';
@@ -4207,7 +4207,7 @@ function buildPick(){
     c.style.cssText = 'width:52px;height:52px;flex:0 0 52px';
     c.append(eggThumb(EGGS[0], 52));
     d.append(c);
-    const left = GEN_LIST.filter(o => o.side === 'ch' && !dex[o.id]).length;
+    const left = GEN_LIST.filter(o => o.side === 'ch' && !hasDex(o.id)).length;
     d.insertAdjacentHTML('beforeend',
       '<div style="flex:1;min-width:0"><div class="pkN">🥚 たまごを開く</div>' +
       '<div class="pkS">残り ' + left + '人　🩷かけら ' + shards + 'こ</div></div>' +
@@ -4382,7 +4382,9 @@ btnUp.onclick = () => {
   if (stars < c) return;
   stars -= c; t.lv++; t.pulse = 1;
   // ずかんに「ここまで育てた」記録を残す
-  const rc = dex['tw_' + t.k];
+  /* **Phase 7-1**：`dexRec()` は その場の オブジェクトを そのまま かえすので、
+     `rc.lv = …` は これまでどおり dex に とどきます（写しでは ない）*/
+  const rc = dexRec('tw_' + t.k);
   if (rc && (rc.lv || 1) < t.lv){ rc.lv = t.lv; saveDex(); }
   const px = tcx(t), py = tcy(t);
   ring(px, py, '#ffffff', CELL*1.5);
@@ -4796,7 +4798,7 @@ function portraitOf(pid){
 const CHEERS = ['やったね！','すごーい！','さすが✨','おめでとう🎉','かっこいい！','だいすき💗'];
 /* あつめたなかまが下を行進してお祝いしてくれる（all=true で全員：撮影用） */
 function parade(all){
-  const got = dexList().filter(o => o.cat === 'ch' && (all || dex[o.id])).map(o => o.pid);
+  const got = dexList().filter(o => o.cat === 'ch' && (all || hasDex(o.id))).map(o => o.pid);
   got.slice(0, 8).forEach((pid, i) => {
     // ふきだしは3体おきだけ。ぜんいんに出すと 横にならんで つぶし合って読めない。
     // のこりの子は だまって歩く（にぎやかさは そのままで、文字だけ読みやすくなる）
@@ -4807,7 +4809,7 @@ function parade(all){
 }
 /* ボス撃破などで、ひとりだけぴょこっと出てくる */
 function cheerOne(x, y){
-  const got = dexList().filter(o => o.cat === 'ch' && dex[o.id]).map(o => o.pid);
+  const got = dexList().filter(o => o.cat === 'ch' && hasDex(o.id)).map(o => o.pid);
   if (!got.length) return;
   paraders.push({ pid: got[(Math.random()*got.length)|0],
                   x: Math.min(Math.max(x, CELL), COLS*CELL - CELL),
@@ -4846,8 +4848,8 @@ function update(dt){
     flyT -= dt;
     if (flyT <= 0){
       flyT = 22 + Math.random()*18;
-      const owned = LEGENDS.filter(l => dex['lg_' + l.id]);
-      const next = LEGENDS.find(l => !dex['lg_' + l.id]);
+      const owned = LEGENDS.filter(l => hasDex('lg_' + l.id));
+      const next = LEGENDS.find(l => !hasDex('lg_' + l.id));
       let pick = null, sil = false;
       const near = silNear(next);
       // あつめた でんせつは ごほうびとして そらを とぶが、
@@ -5124,7 +5126,7 @@ function killEnemy(e, px, py){
        おなじ ウェーブで 何度も「にげた」と 言うと うるさいので 1回だけ */
     const gk = artKeyOf(e.gi);
     const keep = DEX_LEGEND.has(gk) ? LEG_KEEP : DEX_GOLD.has(gk) ? GOLD_KEEP : 1;
-    if (dex[e.gi.id] || Math.random() < keep){
+    if (hasDex(e.gi.id) || Math.random() < keep){
       if (unlock(e.gi.id, ORIGIN.battle))
         floatTx(px, py - CELL*1.2, e.gi.name + 'が仲間になった！', '#b98ae0');
     } else if (legMissWave !== wave){
@@ -9530,6 +9532,42 @@ try{
   if (old.length){ localStorage.removeItem('sweetTD.col'); saveDex(); }
 }catch(e){}
 function saveDex(){ try{ localStorage.setItem('sweetTD.dex', JSON.stringify(dex)); }catch(e){} }
+
+/* ==========================================================
+   Phase 7-1 ——`dex` を 読む 口を 1つに する
+   ----------------------------------------------------------
+   `dex[id]` を 直に 読んで いる ところが **39か所**ありました。
+   その うち **31か所は「持って いるか」の 真偽値**だけ を 見て います。
+
+   これから 個体（instance）を 別テーブルで 持つ ように なると、
+   「持って いるか」の こたえかたが 変わります。直読みの まま だと
+   **31か所を ぜんぶ 見なおす**ことに なり、しかも
+   `dex[id] = [...]` の ような 形に した とき **`!![]` は true** なので
+   「0体 持って いる」が「持って いる」と 読まれて、
+   **だまって こわれます**（図鑑の 数も カードも）。
+
+   だから **先に 読み口を 閉じます**。ここが これからの 切りかえ点です。
+
+   **いまは `dex` だけを 見ます。**`sweetTD.inst` は まだ ありませんし、
+   ここから 参照も しません（7-2 以降）。7-1 は
+   「所有モデルを 変える」のでは なく「変えられる ように する」だけ です。
+
+   **`const` では なく `function` で 書くこと。**`hasDex` を いちばん
+   はじめに 呼ぶのは `hasLg`（`index.html` の ずっと 上）なので、
+   `const` に すると 場所に よっては TDZ で 落ちます
+   （CLAUDE.md の「`const` は 巻きあがらない」と 同じ 話）。
+   ========================================================== */
+/* 持って いるか。**いまの `!!dex[id]` と 1ミリも 同じ 意味**に すること。
+   `dex[id] = {}`（`sweetTD.col` からの 古い 引っこしが 作る 形）も
+   **持って いる** と 読みます。origin や w / d / lv の あるなしを
+   条件に 足しては いけません ——足した とたん、古い セーブの人の
+   図鑑が 空に なります */
+function hasDex(id){ return !!dex[id]; }
+/* レコードそのもの。**その場の オブジェクトを そのまま かえす**こと
+   （写しを かえすと `rc.lv = …` の 書きこみが dex に とどかない）。
+   無い ときに **かわりの レコードを 作らない**こと ——「持って いない」が
+   「持って いる」に 化けます */
+function dexRec(id){ return dex[id] || null; }
 /* 前の版で 'tw_c_xxx' という ありもしない id を ためてしまっていたので かたづける。
    ほんとうの id（c_xxx）に つけかえて、あつめた ぶんを むだにしない */
 (function fixDexIds(){
@@ -9618,12 +9656,12 @@ const ORIGIN = Object.freeze({
 });
 /* 読むのは かならず ここを とおす。古い セーブには 無いので
    `?? unknown` で おぎなう（ロード時に 一括で 書きかえない）*/
-const originOf = id => (dex[id] && dex[id].origin) || ORIGIN.unknown;
+const originOf = id => { const r = dexRec(id); return (r && r.origin) || ORIGIN.unknown; };
 
 /* はじめての登録なら true。いつ・どこで 手に入れたかも残す。
    **origin は 呼び出し元が わたす**こと（中で 推測しない）*/
 function unlock(id, origin){
-  if (dex[id]) return false;          // ← 2回目からは 何も 書かない＝初回の origin は 守られる
+  if (hasDex(id)) return false;       // ← 2回目からは 何も 書かない＝初回の origin は 守られる
   dex[id] = { w: wave, d: dateStr(), origin: origin || ORIGIN.unknown };
   saveDex();
   checkComplete();   // これが最後のひとりだったら、おかしの国がかんせいする
@@ -9641,7 +9679,7 @@ function stageClear(){
     return;
   }
   healHearts(3 + (hasCh('apple') ? 3 : 0));   // ごほうびにハートを回復（ためた💗はへらさない）
-  const ch = CHARS.find(c => !dex['ch_'+c.id]);
+  const ch = CHARS.find(c => !hasDex('ch_'+c.id));
   if (ch){
     unlock('ch_' + ch.id, ORIGIN.stage);
     // おためし用にストックを1つプレゼントし、あきがあればタスクバーにも自動ではる
@@ -9654,7 +9692,7 @@ function stageClear(){
   // ステージが すすむほど いい たまごが もらえる
   const eggIdx = stageNo >= 6 ? 2 : stageNo >= 3 ? 1 : 0;
   const gift = eggDraw(EGGS[eggIdx], ORIGIN.stage);
-  const got = CHARS.filter(c => dex['ch_'+c.id]).length;
+  const got = CHARS.filter(c => hasDex('ch_'+c.id)).length;
   const done = got >= CHARS.length;
   ovT.textContent = (done && ch) ? 'おかしの国 完成！🏰' : 'ステージ ' + stageNo + ' クリア！🎉';
   ovB.innerHTML = '';
@@ -9730,7 +9768,7 @@ function checkLegends(){
      （背景は ウェーブ60の 国なので ちぐはぐに なる）。
      いまの ウェーブに すると「ウェーブ60で なにかが おきる」の 予告どおりに なり、
      ⭐も じゅうぶん たまっている */
-  const L = LEGENDS.find(l => wave >= l.wave && !dex['lg_' + l.id] && duelTriesOf(l) > 0);
+  const L = LEGENDS.find(l => wave >= l.wave && !hasDex('lg_' + l.id) && duelTriesOf(l) > 0);
   if (L) openDuel(L);
 }
 /* ==========================================================
@@ -9832,7 +9870,7 @@ function duPick(){
   duShowBars(false);
   duEggsEl.classList.remove('on');
   /* もっている子だけ。★の 大きい順（つよい子が 上に 来る）*/
-  const list = GEN_LIST.filter(o => o.side === 'ch' && dex[o.id])
+  const list = GEN_LIST.filter(o => o.side === 'ch' && hasDex(o.id))
                        .sort((a, b) => b.lv - a.lv);
   duPickEl.innerHTML = '';
   if (!list.length){
@@ -10544,20 +10582,20 @@ function buildColGrid(){
   const rank = o => RANK[dexTier(o)];
   list.sort((a, b) => rank(b) - rank(a)
                    || (b.gen ? b.gen.lv : 0) - (a.gen ? a.gen.lv : 0));
-  colCount.textContent = list.filter(o => dex[o.id]).length + ' / ' + list.length;
+  colCount.textContent = list.filter(o => hasDex(o.id)).length + ' / ' + list.length;
   colHint.style.display = (colTab === 'ch') ? '' : 'none';
   /* ワザを もつ子は ならびの 中に ちらばる（精霊は 銀、お菓子タワーは わくなし）
      ので、ばしょでは なく 見た目（✨の行）で さがしてもらう */
   colHint.innerHTML = uiOr('nav_pin', UI_PX.text, '📌') +
     ' 仲間をタップでバーに貼る／はがす（' + pins.length + '/' + PIN_MAX + '）<br>ワザをもつ子には <b>✨</b> がついています';
-  colDone.style.display = CHARS.every(c => dex['ch_'+c.id]) ? '' : 'none';
+  colDone.style.display = CHARS.every(c => hasDex('ch_'+c.id)) ? '' : 'none';
   colGrid.innerHTML = '';
   /* わくの 3段階。レアアイテム＝金・つよい子（★5〜6）＝銀・ふつう＝いまのまま。
      でんせつは にじいろ。もっていない子にも つけて、めあてが 見えるように */
   const TIER = { rain:' tRain', gold:' tGold', silv:' tSilv', pink:'', none:'' };
   const tierOf = o => TIER[o.legend ? 'rain' : dexTier(o)];
   for (const o of list){
-    const rec = dex[o.id];
+    const rec = dexRec(o.id);
     const d = document.createElement('div');
     d.className = 'cCard' + (rec ? '' : ' no') + tierOf(o);
     if (rec && o.item){
@@ -10652,7 +10690,7 @@ function buildColGrid(){
     }
     colGrid.append(d);
   }
-  const gotAll = all.filter(o => dex[o.id]).length;
+  const gotAll = all.filter(o => hasDex(o.id)).length;
   colTotal.textContent = '合計 ' + gotAll + ' / ' + all.length + ' 登録';
 }
 
@@ -10696,7 +10734,7 @@ let skCd = {}, skTick = -1;
 for (const s of SKILLS) skCd[s.ch] = 0;
 /* ワザの一時バフ（のこり秒数） */
 let buffs = { spd:0, dmg:0, rng:0, gold:0 };
-function hasCh(id){ return id === 'rpurin' ? !!dex['sp_rpurin'] : !!dex['ch_' + id]; }
+function hasCh(id){ return id === 'rpurin' ? hasDex('sp_rpurin') : hasDex('ch_' + id); }
 const skillCost = s => Math.round(s.base * (1 + wave*0.03) * (hasCh('queen') ? 0.8 : 1));
 
 /* ==========================================================
@@ -10863,7 +10901,7 @@ function togglePin(ch){
 /* たおした敵がプレゼントを落とす確率。大物ほど落としやすい。
    ながれぼし（ログインボーナス7日目のなかま）がいると1.5倍 */
 const DROP_RATE = { golem:0.35, boss:0.6 };
-const dropRate = k => (DROP_RATE[k] || 0.07) * (dex['sp_rpurin'] ? 1.5 : 1);
+const dropRate = k => (DROP_RATE[k] || 0.07) * (hasDex('sp_rpurin') ? 1.5 : 1);
 
 /* プレゼントキャンディがワザバーへ飛んでいく演出 */
 let gifts = [];
@@ -11556,7 +11594,7 @@ function applyLoginReward(day){
       saveSkStock();
       return '所持しているワザのストック <b>全部+1</b>！';
     default:
-      if (!dex['sp_rpurin']){
+      if (!hasDex('sp_rpurin')){
         unlock('sp_rpurin', ORIGIN.login);
         if (pins.length < PIN_MAX && !pins.includes('rpurin')){ pins.push('rpurin'); savePins(); }
         return '伝説の仲間 <b>ながれぼし</b> が仲間に！！<br>✨ プレゼントが おちやすくなる ✨';
@@ -11652,7 +11690,7 @@ function makeShareCard(){
   g.fillStyle = '#6b4a63';
   g.font = "800 92px 'Hiragino Maru Gothic ProN',sans-serif";
   g.fillText('ウェーブ ' + Math.max(1, wave, rec.bw) + ' 到達！', W2/2, 260);
-  const got = dexList().filter(o => o.cat === 'ch' && dex[o.id]).length;
+  const got = dexList().filter(o => o.cat === 'ch' && hasDex(o.id)).length;
   g.font = "800 38px 'Hiragino Maru Gothic ProN',sans-serif";
   /* 👑 と ⭐ を 絵に する。canvas なので <img> では なく drawImage。
      まん中ぞろえの ままだと 絵の ぶん ずれるので、**絵＋すき間＋字**の
@@ -11669,7 +11707,7 @@ function makeShareCard(){
   else
     g.fillText('👑' + shTx, W2/2, 340);
   // なかまの似顔絵をならべる（いなければおかしのようせい）
-  const picks = dexList().filter(o => o.cat === 'ch' && dex[o.id]).map(o => o.pid);
+  const picks = dexList().filter(o => o.cat === 'ch' && hasDex(o.id)).map(o => o.pid);
   const fill = ['tw_candy','tw_ice','tw_choco','tw_star'];
   while (picks.length < 5) picks.push(fill[picks.length % 4]);
   picks.slice(0, 5).forEach((pid, i) => {
@@ -13184,7 +13222,7 @@ function drawKingdom(g, W, H){
   cloud(W*0.16,H*0.13,W*0.05,.9); cloud(W*0.5,H*0.08,W*0.04,.7); cloud(W*0.9,H*0.18,W*0.045,.8);
 
   // かんせいの国には にじがかかる
-  const complete = dexList().every(o => dex[o.id]);
+  const complete = dexList().every(o => hasDex(o.id));
   if (complete){
     const rb = ['#ffb3c8','#ffd9a8','#fff3b0','#c8ecc8','#b8d8f8','#d8c8f0'];
     g.lineWidth = W*0.012; g.globalAlpha = 0.55; g.lineCap = 'butt';
@@ -13434,11 +13472,11 @@ function drawKingdom(g, W, H){
   let got = 0;
   for (const [pid,x,y,s] of spots){
     const key = pid === 'rpurin' ? 'sp_rpurin' : 'ch_' + pid;
-    if (dex[key]){ put(pid, x, y, s*S1); got++; }
+    if (hasDex(key)){ put(pid, x, y, s*S1); got++; }
   }
   let lgGot = 0;
   for (const [pid,x,y,s] of [['whale',0.18,0.16,84],['phoenix',0.6,0.1,66],['chronos',0.9,0.33,56]]){
-    if (dex['lg_' + pid]){
+    if (hasDex('lg_' + pid)){
       put(pid, x, y, s*S1); lgGot++;
       star4(W*x + s*S1*0.55, H*y - s*S1*0.4, W*0.008, '#fff', 1);
     }
@@ -13527,7 +13565,7 @@ function checkComplete(){
   try{ if (localStorage.getItem('sweetTD.done')) return; }catch(e){ return; }
   // 「おかしの国 かんせい」は もとからの カードを ぜんぶ そろえたとき。
   // コレクションまで 入れると 一生 出なくなるので、そちらは 別あつかいにする
-  if (!dexList().every(o => o.gen || dex[o.id])) return;
+  if (!dexList().every(o => o.gen || hasDex(o.id))) return;
   try{ localStorage.setItem('sweetTD.done', dateStr()); }catch(e){}
   pendingComplete = true;   // 実際の表示は、ウェーブや他の画面が落ちついてから
 }
@@ -15934,7 +15972,7 @@ if (location.search.includes('dbg=1')) window.__dbg = {
      `origin` は 図鑑カードにも どこにも 出さない（今回は 受け口だけ）*/
   origin: id => (id ? originOf(id) : Object.fromEntries(
                    Object.keys(dex).map(k => [k, originOf(k)]))),
-  originEntry: id => dex[id] ? { ...dex[id] } : null,
+  originEntry: id => { const r = dexRec(id); return r ? { ...r } : null; },
   originSet: (id, v) => { if (dex[id]){ dex[id].origin = v; saveDex(); } return originOf(id); },
   originDel: id => { if (dex[id]) delete dex[id].origin; saveDex(); return originOf(id); },
   dexDel: id => { delete dex[id]; saveDex(); return !dex[id]; },
@@ -16117,8 +16155,8 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   friendWave: () => friendWave,
   legendWaves: () => LEGENDS.map(l => l.wave),
   flyerTest: () => {   // どの でんせつが とぶか（見た目の たしかめ用）
-    const owned = LEGENDS.filter(l => dex['lg_' + l.id]);
-    const next = LEGENDS.find(l => !dex['lg_' + l.id]);
+    const owned = LEGENDS.filter(l => hasDex('lg_' + l.id));
+    const next = LEGENDS.find(l => !hasDex('lg_' + l.id));
     const near = silNear(next);
     const canOwned = owned.length && wave >= 5;
     if (canOwned) return '所持ずみ';

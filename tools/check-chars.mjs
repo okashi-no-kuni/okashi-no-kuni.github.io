@@ -233,6 +233,7 @@ line('たいけつの背景', bgMiss);
    `giveItem` / `eggDraw` も 中で unlock を 呼ぶ ヘルパなので、
    おなじく 引数で origin を 受けとって いるか 見ます */
 const src = readFileSync(target, 'utf8');
+let strip;
 const originMiss = [];
 {
   const known = new Set((src.match(/^const ORIGIN = Object\.freeze\(\{[\s\S]*?^\}\);/m) || [''])[0]
@@ -241,7 +242,7 @@ const originMiss = [];
      ブロックコメントの 途中の 行（`\`unlock()\` の 中で…`）が すりぬけて
      「origin無し」と 出ます（じっさい 出た）。行数は 変えたくないので、
      消したところは 改行だけ のこす */
-  const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+  strip = t => t.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
                       .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + ' '.repeat(m.length - p.length));
   const lines = strip(src).split('\n');
   lines.forEach((ln, i) => {
@@ -264,10 +265,45 @@ const originMiss = [];
 }
 line('unlockの origin', originMiss);
 
+/* ---------- Phase 7-1 ——`dex[` の 直読みが 新しく ふえて いないか ----------
+   所持判定は `hasDex()` / レコードは `dexRec()` に 寄せて あります。
+   直読みが また ふえると、7-2 以降で 個体テーブルを 足した ときに
+   **そこだけ 取りのこされます**。しかも `dex[id] = [...]` の ような
+   形に した とき `!![]` は true なので、「0体 持って いる」が
+   「持って いる」と 読まれて **だまって こわれます**。
+
+   のこして よいのは 4つ だけ ——accessor じしん／書きこみ／
+   引っこし（migration）／検査どうぐ。それ以外は 落とします */
+const dexRaw = [];
+{
+  const KEEP = new Set([
+    // accessor じしん
+    'function hasDex(id){ return !!dex[id]; }',
+    'function dexRec(id){ return dex[id] || null; }',
+    // 引っこし・補正（目的が ちがうので 寄せない）
+    "for (const id of old) if (CHARS.some(c => c.id === id) && !dex['ch_'+id]) dex['ch_'+id] = {};",
+    'if (!dex[real]) dex[real] = dex[k];',
+    'delete dex[k]; dirty = true;',
+    "const e = dex['lg_' + L.id];",
+  ]);
+  const isWrite = ln => /\bdex\[[^\]]+\](\.\w+)?\s*=[^=]/.test(ln) || /\bdelete\s+dex\[/.test(ln);
+  const inDbg = i => i > dbgFrom;
+  const lines = strip(src).split('\n');
+  const dbgAt = lines.findIndex(l => l.includes('window.__dbg = {'));
+  var dbgFrom = dbgAt < 0 ? Infinity : dbgAt;
+  lines.forEach((ln, i) => {
+    if (!ln.includes('dex[')) return;
+    const t = ln.trim();
+    if (KEEP.has(t) || isWrite(ln) || inDbg(i)) return;
+    dexRaw.push('L' + (i+1) + ':' + t.slice(0, 46));
+  });
+}
+line('dexの 直読み', dexRaw);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length;
+         + bgMiss.length + originMiss.length + dexRaw.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);
