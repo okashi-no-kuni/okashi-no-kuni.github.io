@@ -1375,6 +1375,12 @@
   #chTt{text-align:center;font-size:calc(10.5px * var(--fs));color:var(--dxLavD);
     line-height:1.5;word-break:break-word}
   #chRows{margin-top:9px;display:flex;flex-direction:column;gap:6px}
+  /* 進化の 操作（Phase 7-7-3-7）。**秘薬を 持って いる ときだけ** 出ます */
+  #chAct{margin-top:10px;display:flex;flex-direction:column;gap:7px;align-items:center}
+  #chAct .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  #chMsg{font-size:calc(10.5px * var(--fs));color:var(--dxLavD);line-height:1.5;
+    text-align:center;word-break:break-word}
+  #chAct button{font-family:inherit}
   .chRow{display:flex;gap:8px;align-items:baseline;
     font-size:calc(11px * var(--fs));line-height:1.5;
     border-top:1px solid rgba(180,160,205,.22);padding-top:6px}
@@ -1529,6 +1535,7 @@
         <div id="chNm"></div>
         <div id="chTt"></div>
         <div id="chRows"></div>
+        <div id="chAct"></div>
       </div>
     </div>
     <div id="pwOv">
@@ -9881,6 +9888,8 @@ function instEvoOf(id){
 
    いまは `e1` **1つだけ**。ふやすのは ここ 1か所です */
 const EVO_IDS = new Set(['e1']);
+/* いま つかえる **さいしょの 進化**。`'e1'` を 2か所に 書かない ため */
+const EVO_FIRST = 'e1';
 /* **`instEvoOf()` に 対する ゆいいつの 書きこみ口**（Phase 7-7-3-4）。
 
    #### する ことは 5つ だけ
@@ -11236,12 +11245,14 @@ function detailIid(o){
   return instOfSpecies(o.id);
 }
 let chFrom = '', chId = '';    // どこから ひらいたか／どの カードか
+let chConfirm = false;        // 進化の たしかめが 出て いるか（画面を ひらくたびに 消す）
 /* カードに 詳細を 出して よいか。アイテムは キャラでは ないので 出しません。
    **まだ 会って いない 伝説も 出しません** ——あちらは わざと
    シルエットと ？？？ で 見せて いるので、名前が わかると 台なしです */
 const detailOK = o => !!o && !o.item && !(o.legend && !hasDex(o.id));
 function openCharDetail(id, from){
   chId = id; chFrom = from || 'colOv';
+  chConfirm = false;          // ひらきなおしたら たしかめは やりなおし
   openPanel('chOv', buildCharDetail);
 }
 function buildCharDetail(){
@@ -11283,7 +11294,99 @@ function buildCharDetail(){
        ここで 引きなおすと、絵と 文が 別の ものを 見る 道が できます */
     row('すがた', evo ? '進化ずみ' : 'まだ 進化して いません');
   }
+  /* 進化の 操作。**iid も evo も ここまでで 出した ものを わたす**
+     （もう一度 引かない ——絵・文・操作が おなじ 個体を 見る）*/
+  buildCharAct(o, iid, evo);
 }
+/* ==========================================================
+   進化を 確定する ——Phase 7-7-3-7。**ゆいいつの orchestration**
+   ----------------------------------------------------------
+   じゅんばんが すべてです。
+
+     ① 所持キャラクターか
+     ② 進化の秘薬を 1こ以上 持って いるか
+     ③ すでに ある 個体は それを つかう
+     ④ もう 進化ずみなら ことわる
+     ⑤ **legacy（個体が ない）ときだけ** ensureInst で 1件 補う
+     ⑥ evolveInst(iid, EVO_FIRST)
+     ⑦ **true だった ときだけ** 秘薬を 1こ へらす
+     ⑧ 在庫を これまでの やりかたで 保存
+
+   **①②③④を 先に すませてから ⑤**に 入るのが 大事です。秘薬 0 で
+   ボタンに さわっただけ・失敗する 操作で **legacy の 個体を 作っては
+   いけません**（見るだけで セーブが 変わるのと 同じ たぐいの 事故）。
+
+   **`evolveInst()` が false なのに 秘薬が へる 道を ぜったいに 作らない。**
+   だから へらすのは ⑥の あと 1か所 だけ です。
+
+   `evolveInst()` には 何も 足しません（7-7-3-4 で 決めた writer の 責任）
+   ——`gear` の 確認も 消費も `ensureInst` も UI も、ぜんぶ こちらの しごとです */
+const EVOLVE_ITEM = 'evolve';
+function tryEvolve(o){
+  if (!o || o.item || !hasDex(o.id)) return 'no';        // ① 所持キャラクターか
+  if (gear[EVOLVE_ITEM] < 1) return 'poor';              // ② 秘薬が あるか（**個体を 作る 前**）
+  let iid = instOfSpecies(o.id);                         // ③ ある 個体を つかう
+  if (iid && instEvoOf(iid)) return 'done';              // ④ もう 進化ずみ
+  if (!iid) iid = (ensureInst(o.id) || {}).id || null;   // ⑤ legacy の ときだけ 補う
+  if (!iid) return 'no';
+  if (!evolveInst(iid, EVO_FIRST)) return 'ng';          // ⑥ 書きこみ
+  gear[EVOLVE_ITEM]--; saveGear();                       // ⑦⑧ 成功した ときだけ へらす
+  return 'ok';
+}
+/* 進化の 操作を 出す。**`visible:false`（公開の 軸）を
+   「進化できる」の 判定に つかわない**こと ——公開と 所持は 別の 軸です。
+   いまは 通常の 入手経路が 0件 なので、`gear` に 1こ以上 ある 人だけに 出ます
+   （＝ふつうに あそんでいる 人には 出ません）*/
+function buildCharAct(o, iid, evo){
+  const box = $('chAct');
+  box.innerHTML = '';
+  if (!o || o.item || !hasDex(o.id)) return;
+  const stock = gear[EVOLVE_ITEM] || 0;
+  if (stock < 1) return;                 // 秘薬を 持って いない 人には 何も 出さない
+  if (evo) return;                       // もう 進化ずみ（不可逆）
+  const it = ITEM_BY_ID[EVOLVE_ITEM];
+  const msg = document.createElement('div');
+  msg.id = 'chMsg';
+  const rowEl = document.createElement('div');
+  rowEl.className = 'row';
+  box.append(msg, rowEl);
+  /* たしかめは **この画面の 中の 2段**で 出します。新しい モーダルの
+     しくみは 作りません ——図鑑の カードの「もう一度タップで決定」と
+     おなじ 考えかたで、進化は 不可逆なので ボタンを 2つに 分けます */
+  const draw = () => {
+    rowEl.innerHTML = '';
+    if (!chConfirm){
+      msg.textContent = it.name + ' ×' + (gear[EVOLVE_ITEM] || 0);
+      const b = document.createElement('button');
+      b.className = 'mini'; b.id = 'chEvo'; b.type = 'button';
+      b.textContent = it.ic + ' 進化させる';
+      b.onclick = () => { tapSel(); chConfirm = true; draw(); };
+      rowEl.append(b);
+      return;
+    }
+    msg.textContent = it.name + 'を 1こ つかって、この仲間を 進化させますか？';
+    const yes = document.createElement('button');
+    yes.className = 'mini'; yes.id = 'chEvoYes'; yes.type = 'button';
+    yes.textContent = 'はい';
+    yes.onclick = () => {
+      const r = tryEvolve(o);
+      chConfirm = false;
+      if (r === 'ok'){ beep(760,.12,'triangle',.05); setTimeout(()=>beep(980,.16,'triangle',.05),110); vib([20,40,20]); }
+      else tapSel(false);
+      buildCharDetail();                 // 出しなおす（すがた・在庫・絵）
+      if (r !== 'ok') $('chMsg') && ($('chMsg').textContent = EVO_NG[r] || EVO_NG.ng);
+    };
+    const no = document.createElement('button');
+    no.className = 'mini gray'; no.id = 'chEvoNo'; no.type = 'button';
+    no.textContent = 'やめる';
+    /* **やめた ときは 何も 変わりません**（個体も evo も 在庫も セーブも）*/
+    no.onclick = () => { tapSel(); chConfirm = false; draw(); };
+    rowEl.append(yes, no);
+  };
+  draw();
+}
+const EVO_NG = { poor: '進化の秘薬が ありません', done: 'もう 進化して います',
+                 no: 'この子は 進化できません', ng: '進化できませんでした' };
 $('chClose').onclick = () => { tapSel(); openPanel(chFrom || 'colOv', chFrom === 'colOv' ? buildColGrid : null); };
 
 /* ==========================================================
@@ -16740,6 +16843,9 @@ window.__chk = {
     /* Phase 7-7-3-5 ——詳細画面が 見る 個体を 決める ところ。
        **`ensureInst` を 呼ばない**（見るだけで 個体が できては いけない）*/
     detailIid,
+    /* Phase 7-7-3-7 ——進化を 確定する ゆいいつの 手つづき。
+       **evolveInst が false なら 秘薬は 1つも へりません** */
+    tryEvolve, evoFirst: EVO_FIRST, evolveItem: EVOLVE_ITEM,
     raw:   () => localStorage.getItem('sweetTD.inst'),
     v:     INST_V,
   },

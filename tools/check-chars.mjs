@@ -346,6 +346,10 @@ const instRef = [];
      ここを「個体の 一覧・えらぶ」に 差しかえます */
   const diFrom  = lines.findIndex(l => l.includes('function detailIid(o){'));
   const diTo    = diFrom < 0 ? -1 : diFrom + lines.slice(diFrom).findIndex(l => l.includes('return instOfSpecies(o.id);'));
+  /* 進化を 確定する 手つづき（7-7-3-7）。**ゆいいつの orchestration**なので
+     `instOfSpecies` / `ensureInst` / `evolveInst` を ここでは ゆるす */
+  const teFrom  = lines.findIndex(l => l.includes('function tryEvolve(o){'));
+  const teTo    = teFrom < 0 ? -1 : teFrom + lines.slice(teFrom).findIndex(l => l.includes("return 'ok';"));
   /* 詳細画面（7-7-3-5）。**読み口だけ** ゆるす */
   const cdFrom  = lines.findIndex(l => l.includes('function buildCharDetail(){'));
   const cdTo    = cdFrom < 0 ? -1 : cdFrom + lines.slice(cdFrom).findIndex(l => l.includes("row('すがた'"));
@@ -355,6 +359,7 @@ const instRef = [];
     if (defFrom >= 0 && i >= defFrom && i <= defTo + 1) return;   // 箱の 定義そのもの
     if (gsFrom >= 0 && i >= gsFrom && i <= gsTo) return;          // gainSpecies の 中み
     if (diFrom >= 0 && i >= diFrom && i <= diTo) return;          // detailIid の 中み
+    if (teFrom >= 0 && i >= teFrom && i <= teTo) return;          // tryEvolve の 中み
     if (chkAt >= 0 && i > chkAt) return;                          // __chk / __dbg（検査どうぐ）
     /* 詳細画面は **読み口だけ**。生の 箱・作る・書く が まざったら 落とす */
     if (cdFrom >= 0 && i >= cdFrom && i <= cdTo && !reP.test(ln)) return;
@@ -364,6 +369,7 @@ const instRef = [];
   if (gsFrom < 0 || gsTo < gsFrom) instRef.push('gainSpecies の 定義が 見つからない');
   if (diFrom < 0 || diTo < diFrom) instRef.push('detailIid の 定義が 見つからない');
   if (cdFrom < 0 || cdTo < cdFrom) instRef.push('buildCharDetail の 定義が 見つからない');
+  if (teFrom < 0 || teTo < teFrom) instRef.push('tryEvolve の 定義が 見つからない');
 }
 line('instの 参照', instRef);
 
@@ -550,6 +556,69 @@ const evoCall = [];
   if (/_e\d/.test(keys)) evoCall.push('ART_KEYS に 進化の 絵が 入って いる（このフェーズでは 0件）');
 }
 line('進化の 絵の caller', evoCall);
+
+/* ---------- Phase 7-7-3-7 ——進化の 手つづきの じゅんばん ----------
+   **`evolveInst()` が false なのに 秘薬が へる 道を ぜったいに 作らない。**
+   そして **失敗する 操作で legacy の 個体を 作らない**
+   （見るだけで セーブが 変わるのと 同じ たぐいの 事故）。
+
+   目でも 実行でも 見つけにくい ので、**じゅんばんを ソースで** 見ます */
+const evoOp = [];
+{
+  const body = strip(src);
+  const fn = (body.match(/function tryEvolve\(o\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!fn) evoOp.push('tryEvolve が ない');
+  else {
+    const at = re => { const m = fn.match(re); return m ? m.index : -1; };
+    const iGear   = at(/gear\[EVOLVE_ITEM\] < 1/);
+    const iEnsure = at(/ensureInst\(/);
+    const iEvolve = at(/evolveInst\(/);
+    const iSpend  = at(/gear\[EVOLVE_ITEM\]--/);
+    const iDone   = at(/instEvoOf\(iid\)/);
+    if (iGear   < 0) evoOp.push('秘薬の 在庫を 見て いない');
+    if (iEnsure < 0) evoOp.push('legacy を 補う ensureInst が ない');
+    if (iEvolve < 0) evoOp.push('evolveInst を 呼んで いない');
+    if (iSpend  < 0) evoOp.push('秘薬を へらして いない');
+    if (iDone   < 0) evoOp.push('もう 進化ずみか 見て いない');
+    if (iGear >= 0 && iEnsure >= 0 && iGear > iEnsure)
+      evoOp.push('秘薬の 在庫より 先に ensureInst を 呼んで いる（0こでも 個体が できる）');
+    if (iDone >= 0 && iEnsure >= 0 && iDone > iEnsure)
+      evoOp.push('進化ずみの 確認より 先に ensureInst を 呼んで いる');
+    if (iEvolve >= 0 && iSpend >= 0 && iSpend < iEvolve)
+      evoOp.push('**evolveInst より 先に 秘薬を へらして いる**');
+    /* へらすのは 1か所 だけ。しかも `evolveInst` の 戻り値で 守られて いること */
+    if ((fn.match(/gear\[EVOLVE_ITEM\]--/g) || []).length !== 1)
+      evoOp.push('秘薬を へらす ところが 1か所では ない');
+    if (!/if \(!evolveInst\(iid, EVO_FIRST\)\) return/.test(fn))
+      evoOp.push('evolveInst の 戻り値で 守って いない（false でも 先へ 進む）');
+    if (!/saveGear\(\)/.test(fn)) evoOp.push('在庫を 保存して いない');
+  }
+  /* `evolveInst`（7-7-3-4 の writer）に 手が 入って いない こと */
+  const w = (body.match(/function evolveInst\(id, evo\)\{[\s\S]*?\n\}/) || [''])[0];
+  for (const [re, why] of [[/\bgear\b/, 'gear'], [/ITEM_BY_ID/, 'ITEM_BY_ID'],
+                           [/ensureInst/, 'ensureInst'], [/instOfSpecies/, 'instOfSpecies'],
+                           [/buildChar|\$\(/, 'UI']])
+    if (w && re.test(w)) evoOp.push('evolveInst に ' + why + ' が 入った（writer の 責任を こわして いる）');
+  /* 呼ぶ ところ ——`tryEvolve` は 詳細画面の ボタンだけ、
+     `evolveInst` は `tryEvolve` だけ（＋定義と 検査どうぐ）*/
+  const lines2 = body.split('\n');
+  const chkAt = lines2.findIndex(l => l.includes('window.__chk = {'));
+  const bad2 = [];
+  lines2.forEach((ln, i) => {
+    if (chkAt >= 0 && i > chkAt) return;
+    if (/function evolveInst|function tryEvolve/.test(ln)) return;
+    if (/\bevolveInst\(/.test(ln) && !/if \(!evolveInst\(iid, EVO_FIRST\)\)/.test(ln))
+      bad2.push('L' + (i+1) + ': evolveInst を tryEvolve の 外から 呼んで いる');
+  });
+  evoOp.push(...bad2);
+  /* UI の 出し分けに 公開の 軸（visible）を つかって いないか */
+  const act = (body.match(/function buildCharAct\([\s\S]*?\n\}/) || [''])[0];
+  if (act && /\bvisible\b|isPublicItem/.test(act))
+    evoOp.push('進化の 操作の 出し分けに 公開の 軸（visible）を つかって いる');
+  if (act && !/gear\[EVOLVE_ITEM\]/.test(act))
+    evoOp.push('進化の 操作が 秘薬の 在庫を 見て いない（未完成の 機能が 出る）');
+}
+line('進化の 手つづき', evoOp);
 
 /* ---------- Phase 7-7-3-1 ——戦闘用の 集合を つかうべき ところ ----------
    `ITEMS` は 9つの 入口を かねて います。「戦闘で つかえるか」を
@@ -760,6 +829,6 @@ line('通常dropの 軸', dropAxis);
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + evoCall.length + battleRaw.length + pubRaw.length + dropRaw.length + dropAxis.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + evoCall.length + evoOp.length + battleRaw.length + pubRaw.length + dropRaw.length + dropAxis.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

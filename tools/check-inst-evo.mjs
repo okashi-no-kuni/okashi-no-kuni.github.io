@@ -44,14 +44,25 @@ const bad = [], errs = [];
       if (set.includes(w)) bad.push('EVO_IDS に 限定の 言葉（' + w + '）が まざって いる');
   }
   if (fn && !/EVO_IDS\.has/.test(fn)) bad.push('evolveInst が EVO_IDS を 通って いない');
-  /* **本番から 呼ぶ ところは 0か所。**ゆるすのは 定義じしんと 検査どうぐだけ */
-  const callers = [];
-  for (const [i, l] of body.split('\n').entries()){
+  /* **Phase 7-7-3-7 で ここが 変わりました。**7-7-3-4 では
+     「本番から 呼ぶ ところは 0か所」でしたが、いまは
+     **`tryEvolve` の 中の 1か所だけ**が 正しい。回帰では なく 前提の 変更です。
+
+     ゆるすのは 定義じしん・検査どうぐ・`tryEvolve` の 中 だけ */
+  const lines = body.split('\n');
+  const ta = lines.findIndex(l => l.includes('function tryEvolve(o){'));
+  const tz = ta < 0 ? -1 : ta + lines.slice(ta).findIndex(l => l.includes("return 'ok';"));
+  const callers = [], inTry = [];
+  for (const [i, l] of lines.entries()){
     if (!/\bevolveInst\b/.test(l)) continue;
     if (/function evolveInst|evolve: evolveInst/.test(l)) continue;
+    if (ta >= 0 && i >= ta && i <= tz){ inTry.push(i); continue; }
     callers.push('L' + (i + 1) + ': ' + l.trim().slice(0, 80));
   }
-  if (callers.length) bad.push('本番から evolveInst を 呼んで いる：' + callers.join(' / '));
+  if (ta < 0 || tz < ta) bad.push('tryEvolve の 定義が 見つからない');
+  if (callers.length) bad.push('tryEvolve の 外から evolveInst を 呼んで いる：' + callers.join(' / '));
+  if (inTry.length !== 1)
+    bad.push('tryEvolve の 中の evolveInst が ' + inTry.length + 'か所（1か所の はず）');
 }
 
 /* ---------- 実行 ---------- */
@@ -154,7 +165,7 @@ is('読みなおした dex の evo', after.dexEvo, 'e1');
 
 const out = (t, a) => console.log('  ' + t.padEnd(16, ' ') + (a.length ? '✗\n    ' + a.join('\n    ') : 'なし ✅'));
 console.log('個体の 進化 writer（evolveInst）');
-console.log('  EVO_IDS ' + r.evoIds.join(',') + ' ／ 本番の caller 0か所');
+console.log('  EVO_IDS ' + r.evoIds.join(',') + ' ／ 本番の caller は tryEvolve の 1か所だけ');
 out('JSエラー', errs);
 out('canary', bad);
 const ng = errs.length + bad.length;
