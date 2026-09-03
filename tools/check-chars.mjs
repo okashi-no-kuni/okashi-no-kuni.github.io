@@ -458,10 +458,61 @@ const battleRaw = [];
   }
 line('戦闘用の 集合', battleRaw);
 
+/* ---------- Phase 7-7-3-2 ——公開の 集合を つかうべき ところ ----------
+   `visible` の 意味は「遊ぶ人に 存在を 公開するか」**だけ**です。
+   戦闘可否・ドロップ可否・所持・限定性とは 別の 軸なので、
+   しきりを それらで 決めて いないかも 見ます。
+
+   **ぜんぶ 禁止には しません。**見るのは 公開UIの **2経路だけ**
+   ——図鑑（`dexList`）と ガイド本文。`ITEM_BY_ID`・`gear`・`giveItem`・
+   贈りもの・ドロップの pool は `ITEMS` の ままが 正しい */
+const pubRaw = [];
+{
+  const body = strip(src);
+  const lines = body.split('\n');
+  const SITES = [
+    ['図鑑（dexList）', "id:'it_'+it.id", 0],
+    ['ガイド本文',      "'</span> <b>' + it.name + '</b>：' + it.desc", 0],
+  ];
+  for (const [name, mark, off] of SITES){
+    const i = lines.findIndex(l => l.includes(mark));
+    if (i < 0){ pubRaw.push(name + 'の 目じるしが 見つからない'); continue; }
+    const ln = lines[i + off];
+    if (!/\bPUBLIC_ITEMS\b/.test(ln))
+      pubRaw.push(name + ' L' + (i + off + 1) + ':生の ITEMS が のこって いる');
+  }
+  /* **しきりの 決めかた。**ここを まちがえると 軸が 混ざります */
+  const def  = (body.match(/const PUBLIC_ITEMS = [^;]*/) || [''])[0];
+  const pred = (body.match(/const isPublicItem = [^;]*/) || [''])[0];
+  if (!def)  pubRaw.push('PUBLIC_ITEMS が ない');
+  if (!pred) pubRaw.push('isPublicItem が ない');
+  if (def && !/isPublicItem/.test(def))
+    pubRaw.push('PUBLIC_ITEMS が isPublicItem で 決まって いない：' + def.slice(0, 70));
+  if (pred && !/visible\s*!==\s*false/.test(pred))
+    pubRaw.push('isPublicItem が「未指定＝公開」に なって いない：' + pred.slice(0, 70));
+  /* 別の 軸で 決めて いないか */
+  for (const [re, why] of [[/\bbattle\b/, 'battle（戦闘可否）'],
+                           [/\bhasDex\b|\bdex\b/, 'hasDex（所持）'],
+                           [/\bgear\b/, 'gear（持ち数）'],
+                           [/\blate\b/, 'late（ドロップ）'],
+                           [/\bevo\b/, 'evo（進化）'],
+                           [/limited|event/, '限定・イベント']])
+    if (re.test(pred) || re.test(def)) pubRaw.push('しきりが ' + why + ' で 決まって いる（軸が ちがう）');
+  /* 未指定＝公開。既存に visible:true を ばらまいて いないか */
+  const t = (body.match(/visible:\s*true/g) || []).length;
+  if (t) pubRaw.push('visible:true が ' + t + '件（未指定＝公開に すること）');
+  /* 下流を 個別に 直して いないか。colCount・完成判定・にじ は
+     dexList() の 結果に したがう のが 正しい */
+  for (const m of body.matchAll(/^.*(colCount|checkComplete|const complete)[^\n]*$/gm))
+    if (/\bPUBLIC_ITEMS\b|\bisPublicItem\b/.test(m[0]))
+      pubRaw.push('下流を 個別に 直して いる：' + m[0].trim().slice(0, 70));
+}
+line('公開の 集合', pubRaw);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length + pubRaw.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

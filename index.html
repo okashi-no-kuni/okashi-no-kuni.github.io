@@ -10632,7 +10632,9 @@ function dexList(){
       fx:'ワザ「にじのおくりもの」＋ドロップUP', hint:'ログインボーナス7日目で仲間に' },
     ...LEGENDS.map(l => ({ id:'lg_'+l.id, pid:l.id, name:l.name, title:l.title, cat:'lg', fx:l.fx,
                            hint:l.tease, legend:true })),
-    ...ITEMS.map(it => ({ id:'it_'+it.id, pid:it.id, name:it.name, title:it.desc, cat:'it',
+    /* Phase 7-7-3-2 ——公開した アイテムだけ。ここに 入れると
+       colCount の 分母・完成判定・国の にじ まで ついてくる */
+    ...PUBLIC_ITEMS.map(it => ({ id:'it_'+it.id, pid:it.id, name:it.name, title:it.desc, cat:'it',
                           fx:it.note, item:it, hint:'敵からのドロップ・ステージクリア・ショップ' })),
     ...GEN_LIST.map(o => ({
       id:o.id, name:o.name, cat:'g'+o.lv, gen:o,
@@ -11207,10 +11209,47 @@ for (const it of ITEMS) ITEM_BY_ID[it.id] = it;
 
    **ドロップの pool を 機械的に 置きかえないこと** ——「戦闘で
    つかえるか」と「ドロップして よいか」は 別の 仕様です。
-   `gear` の 保存・`ITEM_BY_ID`・図鑑・ガイドも `ITEMS` の ままです。
+   `gear` の 保存・`ITEM_BY_ID` は `ITEMS` の ままです（図鑑・ガイドは
+   Phase 7-7-3-2 の 公開集合へ 移りました）。
    ========================================================== */
 const isBattleItem = it => !!it && it.battle !== false;
 const BATTLE_ITEMS = ITEMS.filter(isBattleItem);
+/* ==========================================================
+   Phase 7-7-3-2 ——「遊ぶ人に 存在を 公開するか」を 切り出す
+   ----------------------------------------------------------
+   `visible` の 意味は **これ 1つだけ**です。
+
+     そのアイテムの 存在を 遊ぶ人に 公開するか
+
+   **つぎの 4つとは 混ぜないこと。**どれも 別の 軸です。
+
+   | | 決めるもの |
+   |---|---|
+   | `battle` | 戦闘中に つかえるか（7-7-3-1）|
+   | `late` ほか | ドロップして よいか |
+   | `hasDex` / `gear` | 手に 入れて いるか |
+   | （未実装）| イベント限定か |
+
+   **未指定＝公開。**いまの 7件には `visible:true` を 1つも 足しません
+   （`battle` と まったく 同じ かたち）。
+
+   #### つかうのは 公開UIの 2か所だけ
+
+   `dexList()` の アイテム行と、ガイド本文の アイテム一覧。
+   `colCount`・`checkComplete`・国の にじ は **`dexList()` の 結果に
+   したがう**ので、下流を 個別に 直しては いけません。
+
+   #### 「未所持」で 表しては いけない
+
+   未所持の アイテムは 消えるのでは なく `.cCard.no.yet` の 札に なり、
+   **名前も 説明も 見えて います**。さらに `checkComplete()` は
+   `dexList().every(o => o.gen || hasDex(o.id))` なので、
+   **一生 手に 入らない アイテムを 図鑑に 入れると
+   「おかしの国 完成！！」が 永久に 止まります**（国の にじも かからない）。
+   だから 未公開は **`dexList()` に 入れる前に 除く**しか ありません。
+   ========================================================== */
+const isPublicItem = it => !!it && it.visible !== false;
+const PUBLIC_ITEMS = ITEMS.filter(isPublicItem);
 /* ショップの セットが 何しゅるい 配るか。**`BATTLE_ITEMS.length` だけ**から
    出します。
 
@@ -12898,7 +12937,8 @@ function buildHelp(){
     'アイテムは <b>たおす</b>ので、後半の かたい敵にも おなじだけ 効きます。' +
     '敵からのドロップ・ステージクリア・ショップで 手に入ります。' +
     'ワザバーの <b>左はし</b>に 出ます。</p><ul style="margin-top:5px">' +
-    ITEMS.map(it => '<li><span class="dic">' + it.ic + '</span> <b>' + it.name + '</b>：' + it.desc +
+    /* Phase 7-7-3-2 ——公開した アイテムだけ */
+    PUBLIC_ITEMS.map(it => '<li><span class="dic">' + it.ic + '</span> <b>' + it.name + '</b>：' + it.desc +
                     '<br><span style="opacity:.7">' + it.note + '</span></li>').join('') +
     '</ul></div>';
   h += '<div class="hSec"><h3>📳 ふるえ（バイブ）</h3>' +
@@ -16276,6 +16316,17 @@ window.__chk = {
   artKeyFor, artSprite: () => ART_SPRITE,
   /* Phase 7-7-3-1 ——戦闘用の しきり。検査から 架空の アイテムで ためす */
   isBattleItem, battleItems: () => BATTLE_ITEMS.map(i => i.id), itemsRaw: () => ITEMS,
+  /* Phase 7-7-3-2 ——公開の しきり。**`PUBLIC_ITEMS` は 読みこみの ときの
+     写し**なので、しきりを 逆に しても 写しを 見るだけでは 気づけません。
+     検査は `itemsRaw()` から 数えなおす こと（7-7-3-1 と 同じ わな）*/
+  isPublicItem, publicItems: () => PUBLIC_ITEMS.map(i => i.id),
+  itemById: () => ITEM_BY_ID,
+  /* 図鑑の 中みと 完成判定。公開して いない アイテムが まざると
+     「おかしの国 完成！！」が 永久に 止まる ので、そこまで 見る */
+  dexIds: () => dexList().map(o => o.id),
+  dexItemIds: () => dexList().filter(o => o.cat === 'it').map(o => o.pid),
+  completeOk: () => dexList().every(o => o.gen || hasDex(o.id)),
+  rainbowOk: () => dexList().every(o => hasDex(o.id)),
   /* キャッシュの キーを 見る ため。**evo の 前後で 別キーに なる**ことを
      機械で たしかめる（同じ キーに なると 進化しても 同じ絵が 出る）*/
   genSprite, rbSprite,
