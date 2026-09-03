@@ -555,10 +555,57 @@ const dropRaw = [];
 }
 line('ドロップの late', dropRaw);
 
+/* ---------- Phase 7-7-3-3 ——通常ドロップ可否の 軸（4つめ）と 育成アイテム ----------
+   `battle` `visible` `late` の どれとも 混ぜない。とくに
+   **`late` の 大きい 数で「落とさせない」を 代用しては いけない**
+   ——`late` は「何ウェーブから 出るか」で、禁じる 軸では ないので、
+   いつか その ウェーブに 届いた とたん 出ます */
+const dropAxis = [];
+{
+  const body = strip(src);
+  const pred = (body.match(/const isDropItem = [^;]*/) || [''])[0];
+  const ok   = (body.match(/const dropOK = [^;]*/) || [''])[0];
+  if (!pred) dropAxis.push('isDropItem が ない');
+  if (pred && !/drop\s*!==\s*false/.test(pred))
+    dropAxis.push('isDropItem が「未指定＝ドロップする」に なって いない：' + pred.slice(0, 70));
+  if (ok && !/isDropItem/.test(ok))
+    dropAxis.push('dropOK が isDropItem を 通って いない：' + ok.slice(0, 70));
+  for (const [re, why] of [[/\bbattle\b/, 'battle（戦闘可否）'],
+                           [/\bvisible\b/, 'visible（公開）'],
+                           [/\blate\b/, 'late（何ウェーブから）'],
+                           [/\bhasDex\b/, 'hasDex（所持）'],
+                           [/\bgear\b/, 'gear（持ち数）']])
+    if (re.test(pred)) dropAxis.push('isDropItem が ' + why + ' で 決まって いる（軸が ちがう）');
+  const t = (body.match(/drop:\s*true/g) || []).length;
+  if (t) dropAxis.push('drop:true が ' + t + '件（未指定＝ドロップする に すること）');
+  /* `late` を「落とさせない」の 代用に して いないか。
+     `tools/sim.mjs` は n=1..5000 を まわすので、そこを こえる `late` は
+     モデルからも 届かない ＝「ぜったい 出さない」の つもり */
+  for (const m of body.matchAll(/late:\s*(\d+)/g))
+    if (+m[1] > 5000)
+      dropAxis.push('late が 大きすぎる（' + m[1] + '）。落とさせない なら drop:false を つかう');
+  /* 育成アイテム（進化の秘薬）は **3軸ぜんぶ 閉じて いる** こと。
+     1つでも 欠けると、ワザバー・💎の 商品・図鑑・ガイド・ドロップの
+     どれかに 出ます。目では 気づけません */
+  const ev = (body.match(/\{ id:'evolve',[\s\S]*?\n[^\n]*\},/) || [''])[0];
+  if (!ev) dropAxis.push("id:'evolve' の レコードが 見つからない");
+  else {
+    for (const [k, why] of [['battle', 'ワザバー・useItem・💎の 2セット'],
+                            ['visible', '図鑑・ガイド・完成判定・国の にじ'],
+                            ['drop', 'ステージクリア・敵の ドロップ']])
+      if (!new RegExp(k + ':\\s*false').test(ev))
+        dropAxis.push('進化の秘薬に ' + k + ':false が ない（' + why + 'に 出る）');
+    if (/\blate\s*:/.test(ev)) dropAxis.push('進化の秘薬が late を もって いる（軸が ちがう）');
+    if (/\bicKey\s*:|\bart\s*:/.test(ev))
+      dropAxis.push('進化の秘薬が ほかの 絵を さして いる（5D-2-0 の くりかえし）');
+  }
+}
+line('通常dropの 軸', dropAxis);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length + pubRaw.length + dropRaw.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length + battleRaw.length + pubRaw.length + dropRaw.length + dropAxis.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);

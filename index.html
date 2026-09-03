@@ -11162,6 +11162,35 @@ const ITEMS = [
          [1180,.07,'triangle',.05,1.5,140],[1400,.07,'triangle',.05,1.5,210],
          [1660,.20,'triangle',.06,1.6,280]],
     desc:'おほしさまが たくさん ふる',      note:'つよい仲間を すぐ 置きたいときに' },
+  /* ==========================================================
+     進化の秘薬 ——Phase 7-7-3-3。**データだけ。**まだ 何にも つながって いません
+     ----------------------------------------------------------
+     3つの 軸を **ぜんぶ 閉じて** います。1つでも 欠けると、
+     どこかの 画面や 商品に 出てしまいます。
+
+     | 軸 | 値 | 何が おきないか |
+     |---|---|---|
+     | `battle:false` | 戦闘では つかえない | ワザバー・`useItem`・💎の 2セット |
+     | `visible:false` | 存在を 公開しない | 図鑑・ガイド・完成判定・国の にじ |
+     | `drop:false`   | 通常ドロップに 入らない | ステージクリア・敵の ドロップ |
+
+     **`late` を「落とさせない」ために つかっては いけません。**`late` は
+     「何ウェーブから 通常ドロップの 候補に 入るか」の 軸で、
+     **通常ドロップ そのものを 禁じる 軸では ありません**（大きい 数を 入れて
+     代用すると、いつか その ウェーブに 届いた とたん 出ます）。
+
+     **既存の「秘薬」とは 別システム**です（CLAUDE.md 7-7-0）。だから
+     `elixir` / `elixir3` と 同じ 名まえの ならびに しません。
+     `id` は 将来 変えない 英数字。セーブ（`sweetTD.gear`）の キーに なります。
+
+     絵は **まだ 作りません。**`icKey` も `art` も 持たせないので、
+     `dataIcon()` は ④の 絵文字に 落ちます。🌱 は **仮**です
+     ——ほかの アイテムの 絵を さすと、5D-2-0 の「🧪 と 同じ絵が 2つ」を
+     くりかえします。入手経路も **1つも つないで いません**
+     （`giveItem` から 在庫を 持てる ことだけ 確かめて あります）*/
+  { id:'evolve', name:'進化の秘薬',     sn:'しんか',   ic:'🌱', col:'#a8e6a0', need:false,
+    battle:false, visible:false, drop:false,
+    desc:'仲間の すがたを 変える',          note:'（じゅんび中）' },
 ];
 /* ITEMS の snd を そのまま ならす。おくれは setTimeout（音は 数百ミリびょう） */
 function playSnd(list){
@@ -11353,7 +11382,18 @@ const ITEM_DROP = () => 0.08 + (hasLg('kraken') ? 0.02 : 0);
 
    だから **判定は ここ 1つ**に します。2か所に 書くと かならず ずれます
    （「6しゅるい」「ITEM_DROP」と まったく 同じ 話）*/
-const dropOK = (it, w) => gear[it.id] < ITEM_CAP && (!it.late || w >= it.late);
+/* **通常ドロップに 入れて よいか**（Phase 7-7-3-3）。`battle` `visible` と
+   まったく 同じ かたち ——**未指定＝これまでどおり ドロップする**。
+   既存7件には `drop:true` を 1つも 足しません。
+
+   `late`（何ウェーブから 出るか）とは **別の 軸**です。大きい `late` で
+   代用しては いけません ——その ウェーブに 届いた とたん 出ます。
+
+   `BATTLE_ITEMS` `PUBLIC_ITEMS` の ような 写しの 配列は **作りません**。
+   ドロップの pool は ウェーブごとに 変わるので、`dropPoolAt(w)` が
+   その 役目を もう 果たして います（もとを 2つに しない）*/
+const isDropItem = it => !!it && it.drop !== false;
+const dropOK = (it, w) => isDropItem(it) && gear[it.id] < ITEM_CAP && (!it.late || w >= it.late);
 const dropPoolAt = w => ITEMS.filter(it => dropOK(it, w));
 function spawnGift(x, y){
   // ときどき ワザでは なく アイテムが 落ちる
@@ -16338,6 +16378,8 @@ window.__chk = {
      写し**なので、しきりを 逆に しても 写しを 見るだけでは 気づけません。
      検査は `itemsRaw()` から 数えなおす こと（7-7-3-1 と 同じ わな）*/
   isPublicItem, publicItems: () => PUBLIC_ITEMS.map(i => i.id),
+  /* Phase 7-7-3-3 ——通常ドロップの しきり（4つめの 軸）*/
+  isDropItem,
   itemById: () => ITEM_BY_ID,
   /* 図鑑の 中みと 完成判定。公開して いない アイテムが まざると
      「おかしの国 完成！！」が 永久に 止まる ので、そこまで 見る */
@@ -16577,8 +16619,9 @@ if (location.search.includes('dbg=1')) window.__dbg = {
   },
   items: () => ITEMS.map(i => ({ id:i.id, name:i.name, late:i.late || 0 })),
   gear: () => JSON.parse(JSON.stringify(gear)),
-  /* **前からの もの。意味を 変えない**（`late` だけ・`gear` を 見ない）。
-     過去の 検査が これを 見て いるので のこす */
+  /* **前からの もの。意味を 変えない**（`late` だけ ——`gear` も
+     `drop`（4つめの 軸）も 見ない）。過去の 検査が これを 見て いるので
+     のこして ありますが、**ほんとうの pool は 下の 2つ**です */
   dropPool: w => ITEMS.filter(it => !it.late || w >= it.late).map(i => i.id),
   /* ステージクリアの pool。呼び出し口と おなじ 共有の しきりを 通す */
   stageDropPool: w => dropPoolAt(w).map(i => i.id),

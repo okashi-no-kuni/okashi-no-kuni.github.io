@@ -91,13 +91,21 @@ await b.close();
 const has = (a, x) => a.indexOf(x) >= 0;
 const eq  = (a, b2) => a.length === b2.length && a.every((v, i) => v === b2[i]);
 
-/* ---- 素の 版：7件・PUBLIC_ITEMS ＝ ITEMS（同じ件数・同じ順） ---- */
-if (!eq(base.publicIds, base.rawIds))
-  bad.push('素の版で PUBLIC_ITEMS ≠ ITEMS：' + base.publicIds.join(',') + ' / ' + base.rawIds.join(','));
+/* ---- 素の 版 ----
+   **Phase 7-7-3-3 から `PUBLIC_ITEMS` ≠ `ITEMS`** です（進化の秘薬が
+   `visible:false`）。だから くらべる 相手は 生の `ITEMS` では なく
+   **しきりで 数えなおした もの**。ここを `ITEMS` の ままに して おくと、
+   非公開の アイテムを 足した とたん 検査が「回帰した」と うそを 言います */
 if (!eq(base.publicIds, base.recomputed))
-  bad.push('素の版で 写しと 数えなおしが ちがう（しきりが 逆？）');
-if (!eq(base.dexItemIds, base.rawIds))
-  bad.push('素の版で 図鑑の アイテムが ITEMS と ちがう');
+  bad.push('素の版で 写しと 数えなおしが ちがう（しきりが 逆？）：' +
+           base.publicIds.join(',') + ' / ' + base.recomputed.join(','));
+if (!eq(base.dexItemIds, base.publicIds))
+  bad.push('素の版で 図鑑の アイテムが PUBLIC_ITEMS と ちがう：' +
+           base.dexItemIds.join(',') + ' / ' + base.publicIds.join(','));
+/* 公開して いない アイテムは 図鑑にも ガイドにも 出ない */
+for (const id of base.rawIds)
+  if (!base.publicIds.includes(id) && base.dexItemIds.includes(id))
+    bad.push('素の版で 非公開の ' + id + ' が 図鑑に 出て いる');
 
 /* ---- さしこんだ 版 ---- */
 // ① ITEM_BY_ID 相当では 存在する

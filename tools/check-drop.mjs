@@ -48,8 +48,11 @@ async function look(path){
   await pg.waitForTimeout(1200);
   const r = await pg.evaluate(ws => {
     const d = window.__dbg, k = window.__chk;
-    const o = { items: k.itemsRaw().map(i => i.id), lates: {}, at: {} };
-    for (const i of k.itemsRaw()) o.lates[i.id] = i.late || 0;
+    const o = { items: k.itemsRaw().map(i => i.id), lates: {}, drops: {}, at: {} };
+    /* **Phase 7-7-3-3 から 軸が 2つ**。`late`（何ウェーブから）と
+       `drop`（そもそも 通常ドロップに 入るか）。片方だけ 見ると、
+       進化の秘薬の ような 育成アイテムを 足した とたん 検査が うそを 言う */
+    for (const i of k.itemsRaw()){ o.lates[i.id] = i.late || 0; o.drops[i.id] = k.isDropItem(i); }
     for (const w of ws) o.at[w] = { stage: d.stageDropPool(w), battle: d.battleDropPool(w) };
     return o;
   }, WAVES);
@@ -71,7 +74,7 @@ for (const [tag, r] of [['本物', base], ['さかいめ', cn]]){
       bad.push(tag + ' W' + w + ': ステージと 戦いで pool が ちがう\n      stage : ' +
                stage.join(',') + '\n      battle: ' + battle.join(','));
     /* ② `late` の しきりが その ウェーブ ちょうどから（>=）*/
-    const want = r.items.filter(id => !r.lates[id] || w >= r.lates[id]);
+    const want = r.items.filter(id => r.drops[id] && (!r.lates[id] || w >= r.lates[id]));
     for (const src2 of [['stage', stage], ['battle', battle]])
       if (!eq(src2[1], want))
         bad.push(tag + ' W' + w + ' の ' + src2[0] + ' が ちがう\n      出た : ' +
@@ -85,6 +88,12 @@ for (const [w, want] of [[1, false], [199, false], [200, true], [201, true], [25
   if (has !== want) bad.push('W' + w + ' の 戦い drop に elixir3 が ' +
                              (has ? 'いる' : 'いない') + '（' + (want ? 'いる' : 'いない') + ' はず）');
 }
+/* **通常ドロップに 入らない アイテム**（`drop:false`）は どの ウェーブでも 出ない。
+   `late` の 大きい 数で 代用して いたら、いつか 出て しまう */
+for (const w of WAVES)
+  for (const key of ['stage', 'battle'])
+    if (base.at[w][key].includes('evolve'))
+      bad.push('W' + w + ' の ' + key + ' に 進化の秘薬（drop:false）が いる');
 /* 架空の late:123 の さかいめ */
 for (const [w, want] of [[122, false], [123, true]])
   for (const key of ['stage', 'battle']){
@@ -94,7 +103,7 @@ for (const [w, want] of [[122, false], [123, true]])
   }
 /* ほかの アイテムの 顔ぶれと ならびが 変わって いない こと */
 {
-  const noLate = base.items.filter(id => !base.lates[id]);
+  const noLate = base.items.filter(id => base.drops[id] && !base.lates[id]);
   for (const w of WAVES){
     const got = base.at[w].battle.filter(id => !base.lates[id]);
     if (!eq(got, noLate))
