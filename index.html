@@ -9721,6 +9721,35 @@ function instOriginOf(id){
   const r = inst[id];
   return (r && r.origin) || ORIGIN.unknown;
 }
+/* **Phase 7-7-1**：その **個体** の 進化状態（読むだけ）。
+   まだ **書く 口は ありません** ——進化の しかた・もとに もどせるか・
+   ねだんが 決まって いないので、`setEvo()` の たぐいは 作りません（7-7-3）。
+
+   #### 「進化」と「限定」を まぜない
+
+   ここに 入れて よいのは **進化の 段階と 分かれみち だけ**です
+   （いずれ `e1` / `e2` / `e2a` / `e2b` の ような 安定ID に なります）。
+   `halloween` / `bday` / `event` / `limited` は **別の 軸**なので、
+   ここでは なく あとの フェーズで 別の フィールドに します
+   （CLAUDE.md の「★は 強さ。限定性を ★の 本数に 埋めない」と 同じ 話）。
+
+   #### `evo` が 無い ＝ **基本形**
+
+   いまの 個体は みんな `{ sp, origin }` で `evo` を 持ちません。
+   それが **ふつうの すがた**です。`'base'` の ような 値を
+   古いデータに 書きこんでは いけません（bulk migration を しない）。
+   だから **無い ときは `null`** を かえします ——`'base'` の ような
+   文字列に すると、ほんとうに 保存された 値と 見わけが つかなく なります。
+
+   #### **`dex` を 見ないこと**
+
+   `dex` は 種、`inst` は 個体 です。ここが `dex` を のぞくと、
+   おなじ 種の 個体A と 個体B が べつの 進化状態を 持てなく なります
+   ——それが できないと、そもそも 個体で 持つ 意味が ありません */
+function instEvoOf(id){
+  const r = inst[id];
+  return (r && typeof r.evo === 'string' && r.evo) ? r.evo : null;
+}
 /* その種の 個体を 1つ たしかめる。無ければ 1件だけ 作る。
    **持って いない 種には 何も 作らない**（`dex` も 個体も）。
 
@@ -16222,6 +16251,8 @@ window.__chk = {
     multi: MINT_MULTI,
     /* Phase 7-6 ——**個体**の origin。`originOf`（種の 初回入手元）とは 別もの */
     originOf: instOriginOf,
+    /* Phase 7-7-1 ——**個体**の 進化状態（読むだけ）。無ければ null＝基本形 */
+    evoOf: instEvoOf,
     raw:   () => localStorage.getItem('sweetTD.inst'),
     v:     INST_V,
   },

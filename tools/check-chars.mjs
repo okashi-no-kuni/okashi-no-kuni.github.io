@@ -315,7 +315,7 @@ const instRef = [];
   /* 7-3 で `ensureInst` / `instOfSpecies` が ふえました。
      ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ */
   const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
-                 'ensureInst', 'instOfSpecies', 'mintInst', 'instOriginOf'];
+                 'ensureInst', 'instOfSpecies', 'mintInst', 'instOriginOf', 'instEvoOf'];
   const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
   const lines = strip(src).split('\n');
   const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
