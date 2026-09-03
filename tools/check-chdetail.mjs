@@ -222,6 +222,60 @@ const fake = await pg.evaluate(async iid => {
   return out;
 }, IID);
 
+/* ---- Phase 7-7-3-6B ——似顔絵（`charThumb`）の 2つの 道 ----
+   `drawPortrait` の base は 2つの ところから 出ます。
+     ① `DEX_ART[id]`     … 精霊・ながれぼし・**伝説**（**同じ 道**）
+     ② `TOWERS[k].art`   … お菓子タワー（**別の 道**）
+   だから ①から 1件（伝説）、②から 1件（お菓子タワー）を ためします */
+const fake2 = await pg.evaluate(async () => {
+  const k = window.__chk;
+  const open = async id => {
+    for (const t of ['ch', 'en', 'lg']){
+      const tb = [...document.querySelectorAll('#colTabs .ctab')].find(x => x.dataset.t === t);
+      if (tb) tb.click();
+      const b2 = document.querySelector('.cDet[data-det="' + id + '"]');
+      if (b2){ b2.click(); break; }
+    }
+    const cv = document.querySelector('#chArt canvas');
+    const url = cv ? cv.toDataURL() : null;
+    const gg = cv && cv.getContext('2d');
+    const d = gg && gg.getImageData(Math.round(cv.width/2), Math.round(cv.height/2), 1, 1).data;
+    document.getElementById('chClose').click();
+    return { url, mid: d ? [d[0], d[1], d[2]].join(',') : null };
+  };
+  const mk = () => { const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'); g.fillStyle = '#ff00ff'; g.fillRect(0, 0, 64, 64); return c; };
+  const out = {};
+  for (const [tag, dexId, pid, base] of [
+        ['伝説（DEX_ART の 道）', 'lg_candytree', 'candytree', k.dexArt()['candytree']],
+        ['お菓子タワー（TOWERS.art の 道）', 'tw_candy', 'tw_candy', k.towerArt('candy')]]){
+    const o = { base };
+    o.keyNoEvo   = k.evoArtKey(base, null);
+    o.noEvo      = await open(dexId);
+    k.artSprite()[base + '_e1'] = mk();
+    o.keyWithFake = k.evoArtKey(base, 'e1');
+    /* 個体は まだ ない ので、詳細画面が evo を わたす 道を 直に ためす
+       ——`charThumb(o, 128, 'e1')` と 同じ ことを 検査どうぐから */
+    o.direct = (() => { const c = k.charThumb({ pid }, 128, 'e1');
+      const g = c.getContext('2d');
+      const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
+      return [d[0], d[1], d[2]].join(','); })();
+    o.directBase = (() => { const c = k.charThumb({ pid }, 128);
+      const g = c.getContext('2d');
+      const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
+      return [d[0], d[1], d[2]].join(','); })();
+    delete k.artSprite()[base + '_e1'];
+    o.keyAfterDel = k.evoArtKey(base, 'e1');
+    o.afterDel    = (() => { const c = k.charThumb({ pid }, 128, 'e1');
+      const g = c.getContext('2d');
+      const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
+      return [d[0], d[1], d[2]].join(','); })();
+    o.stillHasFake = k.artHas(base + '_e1');
+    out[tag] = o;
+  }
+  return out;
+});
+
 /* ---- ③ 既存の カード操作 ---- */
 await pg.evaluate(() => { const t = [...document.querySelectorAll('#colTabs .ctab')].find(x => x.dataset.t === 'ch');
                           if (t) t.click(); });
@@ -370,10 +424,27 @@ if (fake.stillHasFake)              bad.push('架空assetが のこって いる
 if (!(fake.cache.includes('c_bear@64') && fake.cache.includes('c_bear@64@e1')))
   bad.push('キャッシュキーが base と evo で 分かれて いない：' + fake.cache.join(' / '));
 
+/* ---- 似顔絵の 2つの 道 ---- */
+for (const [tag, o] of Object.entries(fake2)){
+  if (!o.base){ bad.push(tag + '：base の 絵の キーが 取れない'); continue; }
+  eqs(tag + ' の evo なしの キー', o.keyNoEvo, o.base);
+  eqs(tag + ' の 架空asset ありの キー', o.keyWithFake, o.base + '_e1');
+  eqs(tag + ' の 架空assetを 消した あとの キー', o.keyAfterDel, o.base);
+  const [r, g2, b2] = (o.direct || '').split(',').map(Number);
+  if (!(r > 180 && g2 < 120 && b2 > 180))
+    bad.push(tag + '：架空assetが えがかれて いない（まん中の 色 ' + o.direct + '）');
+  if (o.direct === o.directBase) bad.push(tag + '：evo を わたしても 絵が 変わって いない');
+  if (o.afterDel !== o.directBase) bad.push(tag + '：架空assetを 消しても base に もどって いない');
+  if (o.stillHasFake) bad.push(tag + '：架空assetが のこって いる');
+}
+
 const out = (t, a) => console.log('  ' + t.padEnd(16, ' ') + (a.length ? '✗\n    ' + a.join('\n    ') : 'なし ✅'));
 console.log('キャラクターの 詳細（#chOv）');
 for (const [tag, r] of Object.entries(cases))
   console.log('  ' + tag + '\n    ' + (r && r.rows ? JSON.stringify(r.rows) : JSON.stringify(r)));
+for (const [tag, o] of Object.entries(fake2))
+  console.log('  ' + tag + '  base=' + o.base + ' / evo=' + o.keyWithFake +
+              ' / 消したあと=' + o.keyAfterDel + ' ／ 色 base=' + o.directBase + ' evo=' + o.direct);
 console.log('  絵の キー  base=' + fake.base + ' / evo=' + fake.keyWithFake +
             ' / 消したあと=' + fake.keyAfterDel + ' ／ キャッシュ ' + fake.cache.join(','));
 console.log('  つかった ワザカード ' + (TARGET ? TARGET.nm + '（' + TARGET.id + '）' : 'なし'));

@@ -396,12 +396,39 @@ const artEvo = [];
 {
   const lines = strip(src).split('\n');
   const chkAt = lines.findIndex(l => l.includes('window.__chk = {'));
-  const from  = lines.findIndex(l => l.includes('function artKeyFor(rc, evo){'));
+  /* **Phase 7-7-3-6B から しっぽは `evoArtKey` 1つ。**
+     `artKeyFor`（gen 系）も `drawPortrait` の 2つの 道も ここを 通ります
+     ——3か所に 書くと いつか どれかだけ ずれます */
+  const from  = lines.findIndex(l => l.includes('function evoArtKey(base, evo){'));
   const to    = from < 0 ? -1 : from + lines.slice(from).findIndex(l => l.includes('return ART_SPRITE[k] ? k : base;'));
-  if (from < 0 || to < from) artEvo.push('artKeyFor の 定義が 見つからない');
+  if (from < 0 || to < from) artEvo.push('evoArtKey の 定義が 見つからない');
   else for (let i = from; i <= to; i++)
     if (/\b(inst|instEvoOf|instOfSpecies|detailIid|dex|dexRec)\b/.test(lines[i]))
       artEvo.push('L' + (i+1) + ':resolver が 個体/dex を のぞいて いる');
+  /* `artKeyFor` は しっぽを 自分で 書きなおさず、`evoArtKey` へ わたすだけ */
+  const af = (strip(src).match(/function artKeyFor\(rc, evo\)\{[\s\S]*?\n\}/) || [''])[0];
+  if (!af) artEvo.push('artKeyFor の 定義が 見つからない');
+  else {
+    if (!/evoArtKey\(artKeyOf\(rc\), evo\)/.test(af))
+      artEvo.push('artKeyFor が evoArtKey を 通って いない：' + af.replace(/\s+/g, ' ').slice(0, 80));
+    if (/ART_SPRITE/.test(af))
+      artEvo.push('artKeyFor が しっぽを 自分で 書いて いる（evoArtKey と ずれる）');
+  }
+  /* 似顔絵の 2つの 道も 同じ しっぽを 通る */
+  for (const [nm, re2] of [['DEX_ART の 道', /const ak = evoArtKey\(DEX_ART\[id\], evo\);/],
+                           ['TOWERS.art の 道', /const ta = evoArtKey\(T\.art, evo\);/]])
+    if (!re2.test(strip(src))) artEvo.push('似顔絵の「' + nm + '」が evoArtKey を 通って いない');
+  /* 生の `ART_SPRITE[T.art]` が **`drawPortrait` の 中に** のこって いないか
+     （片方だけ 直す のを ふせぐ）。盤面（`drawTower`）は 別の 関数で、
+     evo を わたさない ので そのまま が 正しい */
+  {
+    const a = lines.findIndex(l => l.includes('function drawPortrait(g, id, S, evo){'));
+    const z = a < 0 ? -1 : a + lines.slice(a).findIndex((l, i) => i > 0 && l.includes('function '));
+    if (a >= 0)
+      for (let i = a; i <= z; i++)
+        if (/ART_SPRITE\[T\.art\]/.test(lines[i]))
+          artEvo.push('似顔絵の お菓子タワーの 道に 生の ART_SPRITE[T.art] が のこって いる：L' + (i+1));
+  }
   /* ゲームの ほうから evo を わたして いないか（検査どうぐは のぞく）*/
   lines.forEach((ln, i) => {
     if (chkAt >= 0 && i > chkAt) return;
@@ -445,8 +472,8 @@ const evoCall = [];
   for (const [nm, head, tail] of [
         ['genThumb',     'function genThumb(o, size, evo){', 'return c;'],
         ['genSprite',    'function genSprite(o, px, evo){',  'return c;'],
-        ['drawPortrait', 'function drawPortrait(g, id, S){', 'function '],
-        ['charThumb',    'function charThumb(ch, size){',    'return c;'],
+        ['drawPortrait', 'function drawPortrait(g, id, S, evo){', 'function '],
+        ['charThumb',    'function charThumb(ch, size, evo){', 'return c;'],
       ]){
     const [a, z] = span(head, tail);
     if (a < 0 || z < a){ evoCall.push(nm + ' の 定義が 見つからない'); continue; }
@@ -481,9 +508,43 @@ const evoCall = [];
   /* 図鑑の カードは base の まま（2引数）*/
   if (la >= 0)
     for (let i = la; i <= lz; i++)
-      for (const m of lines[i].matchAll(/(?<![\w.])genThumb\(([^()]*)\)/g))
-        if (m[1].split(',').filter(x => x.trim()).length >= 3)
-          evoCall.push('図鑑の カード（lazyThumb）に evo を わたして いる：L' + (i+1));
+      for (const fn of ['genThumb', 'charThumb'])
+        for (const m of lines[i].matchAll(new RegExp('(?<![\\w.])' + fn + '\\(([^()]*)\\)', 'g')))
+          if (m[1].split(',').filter(x => x.trim()).length >= 3)
+            evoCall.push('図鑑の カード（lazyThumb）に evo を わたして いる：L' + (i+1));
+  /* `charThumb` に evo を わたす 本番の ところも 1か所だけ（Phase 7-7-3-6B）*/
+  const [ca, cz] = span('function charThumb(ch, size, evo){', 'return c;');
+  const cCallers = [];
+  lines.forEach((ln, i) => {
+    if (chkAt >= 0 && i > chkAt) return;
+    if (ca >= 0 && i >= ca && i <= cz) return;
+    for (const m of ln.matchAll(/(?<![\w.])charThumb\(([^()]*)\)/g))
+      if (m[1].split(',').map(x => x.trim()).filter(Boolean).length >= 3) cCallers.push(i);
+  });
+  if (cCallers.length !== 1)
+    evoCall.push('charThumb に evo を わたす ところが ' + cCallers.length + 'か所（1か所の はず）：' +
+                 cCallers.map(i => 'L' + (i+1)).join(','));
+  else if (!(ba >= 0 && cCallers[0] >= ba && cCallers[0] <= bz))
+    evoCall.push('evo を わたして いるのが 詳細画面の 外：L' + (cCallers[0]+1));
+  /* `drawPortrait` に evo を わたすのは `charThumb` だけ */
+  const dCallers = [];
+  lines.forEach((ln, i) => {
+    if (chkAt >= 0 && i > chkAt) return;
+    if (ca >= 0 && i >= ca && i <= cz) return;
+    if (/function drawPortrait\(/.test(ln)) return;          // 定義そのもの
+    for (const m of ln.matchAll(/(?<![\w.])drawPortrait\(([^()]*)\)/g))
+      if (m[1].split(',').map(x => x.trim()).filter(Boolean).length >= 4) dCallers.push(i);
+  });
+  if (dCallers.length) evoCall.push('drawPortrait に evo を わたす ところが charThumb の 外に ある：' +
+                                    dCallers.map(i => 'L' + (i+1)).join(','));
+  /* **似顔絵の キャッシュは evo を 持たない。**呼び出し元が 2引数の ままなので
+     キーが かち合う ことは ありません。evo の ために 新しい cache は 作らない */
+  for (const nm of ['function portraitOf(pid){', 'const gdPortrait = pid =>']){
+    const i = lines.findIndex(l => l.includes(nm));
+    if (i < 0){ evoCall.push(nm + ' が 見つからない'); continue; }
+    if (/\bevo\b/.test(lines.slice(i, i + 3).join('\n')))
+      evoCall.push('似顔絵の キャッシュ（' + nm.trim() + '）に evo が 入って いる');
+  }
   /* 本番の 絵に `_e1` を まだ 入れて いない こと */
   const keys = (strip(src).match(/const ART_KEYS = \[[^\]]*\]/) || [''])[0];
   if (/_e\d/.test(keys)) evoCall.push('ART_KEYS に 進化の 絵が 入って いる（このフェーズでは 0件）');

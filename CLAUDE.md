@@ -5256,6 +5256,98 @@ node tools/check-public.mjs     # 終了コード 0 で 合格（実行）
 `gear` で 判定 ／ 下流（`colCount`）を 個別に 直す ／ 図鑑を 生の `ITEMS` に
 もどす ／ ガイドを 生の `ITEMS` に もどす ／ `visible:true` を ばらまく。
 
+### Phase 7-7-3-6B ——似顔絵（`charThumb`）の 系統にも 受け口を 作る
+
+7-7-3-6 で つないだのは `drawGen` の 道（`GEN_LIST` の 127体）だけ でした。
+6B で **似顔絵の 道**（精霊・ながれぼし・伝説・お菓子タワー）にも
+受け口が できて、詳細画面は こう なりました。
+
+```
+art.append(o.gen ? genThumb(o.gen, 128, evo) : charThumb(o, 128, evo));
+```
+
+#### 絵の 系統は **3つ**。しっぽは **1つ**
+
+調べた ところ、base の 絵の キーが 出る ところは 3つ ありました。
+
+| | base の 出どころ | だれ | えがく 関数 |
+|---|---|---|---|
+| ① | `artKeyOf(rc)` | `GEN_LIST` の 127体 | `drawGen` |
+| ② | `DEX_ART[id]` | 精霊・ながれぼし・**伝説** | `drawPortrait` |
+| ③ | `TOWERS[k].art` | **お菓子タワー** | `drawPortrait` |
+
+> **②と③は 同じ `drawPortrait` の 中の 別の 道**です。
+> 精霊と 伝説は ②で **同じ 道**、お菓子タワーだけ ③の **別の 道**
+> （`DEX_ART` に `tw_*` は 1つも 無く、`TOWERS[k].art` を ひく）。
+> だから 検査は ②から 1件（伝説）・③から 1件（お菓子タワー）を ためします。
+
+**`artKeyFor` を むりに つかい回しては いけません** ——あれは `rc`
+（`GEN_LIST` の 記録）を とる ①専用で、②③は `rc` を 持ちません。
+
+かわりに **しっぽ（「あれば variant、無ければ base」）だけ 共有**します。
+
+```
+function evoArtKey(base, evo){
+  if (!base || !evo) return base;
+  const k = base + '_' + evo;
+  return ART_SPRITE[k] ? k : base;        // ← ある かは 実物で 見る
+}
+function artKeyFor(rc, evo){ return evoArtKey(artKeyOf(rc), evo); }   // ①
+const ak = evoArtKey(DEX_ART[id], evo);                               // ②
+const ta = evoArtKey(T.art, evo);                                     // ③
+```
+
+**3か所に 書かないこと。**いつか どれかだけ ふるまいが ずれます。
+検査は `artKeyFor` が しっぽを 自分で 書いて いないか（`ART_SPRITE` を
+直に 見て いないか）まで 見ます。
+
+#### 生の `ART_SPRITE[T.art]` の のこりに 気をつける
+
+お菓子タワーの 道は **2か所**で `T.art && ART_SPRITE[T.art]` を 見て
+いました（はね・だいを 出すか の 判定と、絵を はる ところ）。
+**片方だけ 直すと 見た目が こわれます**（はねが 出たり 消えたり する）。
+
+検査は **`drawPortrait` の 中だけ**を 見ます。盤面（`drawTower`）にも
+同じ 式が 4か所 ありますが、あちらは evo を わたさない 別の 関数なので
+**そのままが 正しい**（ぜんぶ 禁止に すると 盤面まで 巻きこみます）。
+
+#### キャッシュは 1つも 足して いません
+
+似顔絵の キャッシュは `pcache`（44px・`portraitOf`）と
+`gdPcache`（128px・まもり神）の 2つで、どちらも **呼び出し元が
+evo を わたしません**。だから キーが かち合う ことは なく、
+**従来の キーの まま**です。検査が「この 2つに evo が 入って いないか」を
+見はります（evo の ために 新しい cache は 作らない）。
+
+詳細画面の `charThumb` は **その場で 1枚 作る**だけで キャッシュを
+通りません。`genSprite` / `rbSprite` は 7-7-2 の とおり
+base と evo で キーが 分かれた ままです。
+
+#### 本番は 見た目が 変わらない
+
+`_e1` の 絵は **まだ 0件**なので、②③も base に fallback します。
+詳細画面の 絵を `toDataURL` で くらべて、**gen・精霊・伝説・
+お菓子タワー・未所持・legacy の 6件が 画素 完全一致**
+（`e1` を 持たせた 場合も 同じ）。
+
+検査の 中だけで 架空の `_e1` を 登録すると こう なります。
+
+| | base | 架空asset あり | 消した あと |
+|---|---|---|---|
+| 伝説（②）| `candytree` | **`candytree_e1`** | `candytree` |
+| お菓子タワー（③）| `candy` | **`candy_e1`** | `candy` |
+| クマ（①）| `bear` | **`bear_e1`** | `bear` |
+
+```
+node tools/check-chdetail.mjs      # 3つの 道を 架空assetで
+node tools/check-chars.mjs         # 「絵の resolver」「進化の 絵の caller」
+```
+
+7とおりで 落ちる ことを 確認ずみ ——resolver が `inst` を 直に 見る／
+`charThumb` が `detailIid` を 呼ぶ／図鑑の カードから evo を わたす／
+`e1` でも `_e1` を えらばない／base へ fallback しない／
+base と evo の キャッシュが 衝突する／`artKeyFor` が しっぽを 自分で 書く。
+
 ### Phase 7-7-3-6 ——進化の 絵を **詳細画面だけ**に つなぐ
 
 保存されて いる 個体の `evo` → 絵の resolver → 詳細画面の 表示。
