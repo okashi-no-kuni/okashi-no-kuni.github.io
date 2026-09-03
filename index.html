@@ -8398,8 +8398,50 @@ const TOWER_PX = 3.2;
 
 const artKeyOf = rc => (rc.opt && rc.opt.key ? rc.opt.key : rc.body);
 
+/* **Phase 7-7-2**：**種の 絵 ＋ わたされた 進化状態 → 絵の キー**。
+
+   #### `inst` を のぞかないこと
+
+   ここは **純関数**です。`inst` / `instEvoOf()` / `instOfSpecies()` を
+   1つも 見ません。個体の 状態を 知って いる **呼ぶ側が evo を
+   わたす**形に します。そう して おけば、図鑑・似顔絵・盤面・
+   将来の 個体えらび画面の **どこからでも 同じ resolver**が つかえます。
+
+   えがく 関数が こっそり 個体を さがしに 行く 作りに すると、
+   「どの 個体の 絵か」を 決める ところが えがく 関数の 中に できて、
+   複数所持が 開いた ときに **どちらの 個体か 分からなく なります**。
+
+   #### `evo` が 無ければ **いまと 完全に 同じ キー**
+
+   だから 既存の 呼び出しは 1つも 変わりません。
+
+   #### 絵が 無ければ **かならず base に もどる**
+
+   いまは 進化の 絵が **1枚も ありません**。存在しない キーを
+   そのまま かえすと 絵が 消えます。
+
+   **たしかめるのは `ART_SPRITE`（読めた 絵）で、`ART_KEYS` では
+   ありません。**`ART_KEYS` は「読みに 行った」だけ の ならびで、
+   404 でも のこります。しかも 読みこみは あと から 終わるので、
+   「いま つかえるか」を 見るには 実物の ほうを 見る しか ありません
+   （`drawGen` が もともと `ART_SPRITE[…] || null` で 見ているのと 同じ）。
+
+   #### `artKeyOf` は さわらない
+
+   あちらは 絵の キーで あると 同時に、`DEX_LEGEND` / `DEX_GOLD` /
+   `DEX_SIDE` の **見わけの キー**にも なって います。evo を 混ぜると
+   わくの 色や 敵味方の ふりわけまで 変わって しまいます */
+function artKeyFor(rc, evo){
+  const base = artKeyOf(rc);
+  if (!evo) return base;                       // ← いまと 完全に 同じ
+  const k = base + '_' + evo;
+  return ART_SPRITE[k] ? k : base;             // ← 絵が 無ければ base へ
+}
+
 /* ---------- ① 立体感をつける前に えがく（からだと かお） ---------- */
-function drawGen(g, S, rc){
+/* `evo` は **省略できます**。わたさなければ これまでと 完全に 同じ。
+   7-7-2 では ゲームの ほうから わたす ところは 1つも ありません */
+function drawGen(g, S, rc, evo){
   /* 絵が ある子は はって おしまい。かげ（portraitShade）と
      にじいろ（drawGenFx）は この あとも これまでどおり かかる。
 
@@ -8418,7 +8460,7 @@ function drawGen(g, S, rc){
      check-chars は わくの はみ出しを 見るので、どちらで えがいても とおる。
      __dbg.art() も「読めた 絵」しか 数えないので 気づけない。
      だから __dbg.artAudit() で「絵が あるのに つかわれない子」を 数える */
-  const art = ART_SPRITE[artKeyOf(rc)] || null;
+  const art = ART_SPRITE[artKeyFor(rc, evo)] || null;
   if (art){ g.drawImage(art, 0, 0, S, S); return; }
   const M = S/2, R = S*0.285, L = LV[rc.lv];   // からだで見わけるので 大きめに
   // 色は その子じたいの色（シャチなら 黒と白）。レベルでは 変えない。
@@ -10634,16 +10676,19 @@ for (const k of ART_KEYS){
   };
   im.src = 'art/sprites/' + k + '.png';
 }
-function genSprite(o, px){
+/* `evo` は 省略できます。**わたさなければ キーも これまでと 同じ**
+   （`id@px`）。わたした ときだけ `id@px@evo` に なるので、
+   進化の 前と 後で キャッシュが ぶつかりません */
+function genSprite(o, px, evo){
   px = Math.max(24, Math.round(px / 8) * 8);        // 8ピクセルきざみに まるめて 数をへらす
-  const k = o.id + '@' + px;
+  const k = o.id + '@' + px + (evo ? '@' + evo : '');
   const hit = genSpriteCache.get(k);
   if (hit) return hit;
   const c = document.createElement('canvas');
   const d = Math.min(window.devicePixelRatio || 1, 2);
   c.width = px*d; c.height = px*d;
   const g = c.getContext('2d');
-  g.setTransform(d,0,0,d,0,0); drawGen(g, px, o);
+  g.setTransform(d,0,0,d,0,0); drawGen(g, px, o, evo);
   g.setTransform(d,0,0,d,0,0); portraitShade(g, px);
   g.setTransform(d,0,0,d,0,0); drawGenFx(g, px, o);
   genSpriteCache.set(k, c);
@@ -11328,9 +11373,12 @@ let aimItem = null;
 /* にじいろに した 絵を 焼いておく。毎フレーム 合成すると おもい。
    色相だけ かける やりかたは drawGenFx と 同じ（明るさを 変えると 顔が 消える） */
 const rbCache = new Map();
-function rbSprite(src, px, tag){
+/* **秘薬（`t.rb`）の 効きめは 1文字も 変えて いません。**ここで いるのは
+   「おなじ 種でも base と evo で 元絵が ちがう 将来に、キャッシュが
+   ぶつからない」ことだけ です。`evo` を わたさなければ キーも 同じ */
+function rbSprite(src, px, tag, evo){
   px = Math.max(24, Math.round(px/8)*8);
-  const k = tag + '@' + px;
+  const k = tag + '@' + px + (evo ? '@' + evo : '');
   const hit = rbCache.get(k); if (hit) return hit;
   const d = Math.min(window.devicePixelRatio || 1, 2);
   const c = document.createElement('canvas');
@@ -16176,6 +16224,13 @@ window.__chk = {
   /* 絵に さしかえた子の キー。検査で 「絵が あるのに つかわれない子」を
      数える ために 出す。drawGen と おなじ 式で キーを 作る こと */
   artKeyOf,                                   // drawGen が つかう ものと 同じ 関数
+  /* Phase 7-7-2 ——**種の 絵 ＋ わたされた evo → 絵の キー**（純関数）。
+     `inst` を 1つも 見ない。検査から 架空の evo を わたして ためす */
+  artKeyFor, artSprite: () => ART_SPRITE,
+  /* キャッシュの キーを 見る ため。**evo の 前後で 別キーに なる**ことを
+     機械で たしかめる（同じ キーに なると 進化しても 同じ絵が 出る）*/
+  genSprite, rbSprite,
+  cacheKeys: () => ({ gen: [...genSpriteCache.keys()], rb: [...rbCache.keys()] }),
   artHas: k => !!ART_SPRITE[k],
   /* てきの 顔ぶれ。国ごとに しぼっているので、どの国にも 入れ わすれた子は
      一生 出てこない。それを 検査で 見つける ために 出す */

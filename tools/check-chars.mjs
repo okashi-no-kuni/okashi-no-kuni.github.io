@@ -358,10 +358,49 @@ const multiBad = [];
 }
 line('MINT_MULTI', multiBad);
 
+/* ---------- Phase 7-7-2 ——絵の resolver が 個体を のぞいて いないか ----------
+   `artKeyFor(rc, evo)` は **純関数**です。えがく 関数が こっそり 個体を
+   さがしに 行くと、複数所持が 開いた ときに「どちらの 個体の 絵か」を
+   決める ところが えがく 関数の 中に できて しまいます。
+
+   それと、**ゲームの ほうから evo を わたして いない**ことも 見ます
+   ——7-7-2 では 本番プレイは 全員 base art の ままです */
+const artEvo = [];
+{
+  const lines = strip(src).split('\n');
+  const chkAt = lines.findIndex(l => l.includes('window.__chk = {'));
+  const from  = lines.findIndex(l => l.includes('function artKeyFor(rc, evo){'));
+  const to    = from < 0 ? -1 : from + lines.slice(from).findIndex(l => l.includes('return ART_SPRITE[k] ? k : base;'));
+  if (from < 0 || to < from) artEvo.push('artKeyFor の 定義が 見つからない');
+  else for (let i = from; i <= to; i++)
+    if (/\b(inst|instEvoOf|instOfSpecies|dex|dexRec)\b/.test(lines[i]))
+      artEvo.push('L' + (i+1) + ':resolver が 個体/dex を のぞいて いる');
+  /* ゲームの ほうから evo を わたして いないか（検査どうぐは のぞく）*/
+  lines.forEach((ln, i) => {
+    if (chkAt >= 0 && i > chkAt) return;
+    for (const [fn, n] of [['drawGen', 3], ['genSprite', 2], ['rbSprite', 3]]){
+      const re = new RegExp('(?<![\\w.])' + fn + '\\(([^()]*)\\)', 'g');
+      for (const m of ln.matchAll(re)){
+        const a = m[1].trim();
+        if (!a) continue;
+        const args = a.split(',').map(x => x.trim());
+        if (args.length <= n) continue;                       // evo を わたして いない
+        /* **さいごが ただの `evo` なら 通す。**それは 定義そのものか、
+           resolver どうしの 受けわたし（`genSprite` → `drawGen`）です。
+           ゲームが ほんとうに わたす ときは 値か 呼び出しに なるので 落ちます。
+           `instEvoOf(...)` を 書いた 場合は「instの 参照」の ほうが 落とします */
+        if (args[args.length - 1] === 'evo') continue;
+        artEvo.push('L' + (i+1) + ':' + fn + ' に evo を わたして いる（' + args[args.length-1] + '）');
+      }
+    }
+  });
+}
+line('絵の resolver', artEvo);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length + multiBad.length + artEvo.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);
