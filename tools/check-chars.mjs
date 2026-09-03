@@ -315,14 +315,14 @@ const instRef = [];
   /* 7-3 で `ensureInst` / `instOfSpecies` が ふえました。
      ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ */
   const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
-                 'ensureInst', 'instOfSpecies', 'mintInst'];
+                 'ensureInst', 'instOfSpecies', 'mintInst', 'instOriginOf'];
   const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
   const lines = strip(src).split('\n');
   const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
   /* 基盤（7-2）・ensure（7-3）・mint（7-4）は ひとつづきの ブロック。
      `return { id, sp };` は ensure と mint の **2か所**に 出るので、
      **さいごの ほう**で 見ること（先頭で 見ると mint の 中みが 落ちます）*/
-  const defTo   = lines.reduce((a, l, i) => l.includes('return { id, sp };') ? i : a, -1);
+  const defTo   = lines.reduce((a, l, i) => l.includes('return { id, sp') ? i : a, -1);
   /* `gainSpecies`（7-4 の 入口）は `unlock` の となりに 置いて あるので
      べつの ゆるし ぶんとして 見る */
   const gsFrom  = lines.findIndex(l => l.includes('function gainSpecies(sp, origin){'));

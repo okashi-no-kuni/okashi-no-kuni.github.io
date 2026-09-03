@@ -9704,6 +9704,23 @@ function instOfSpecies(sp){
   for (const id in inst) if (inst[id] && inst[id].sp === sp) return id;
   return null;
 }
+/* **Phase 7-6**：その **個体** を 手に 入れた 経路。
+   **`originOf(id)`（種の 初回入手元）と まぜないこと。**別ものです。
+
+     originOf(種のid)     … その **種** を はじめて 手に 入れた 経路（Phase 6-6）
+     instOriginOf(個体id) … その **個体そのもの** を 手に 入れた 経路
+
+   複数所持が 開いたら、**おなじ 種でも 個体ごとに ちがう**値に なります
+   （たまごで 来た子と、イベントで もらった子）。だから 1つの 関数に
+   まとめては いけません。
+
+   7-3〜7-5 で できた 個体は `{ sp }` だけ で origin を 持ちません。
+   それは **正常な 古いデータ**です ——読むときに おぎなうだけで、
+   **ロードで 埋めない**こと（`dex` の origin と 同じ 考えかた）*/
+function instOriginOf(id){
+  const r = inst[id];
+  return (r && r.origin) || ORIGIN.unknown;
+}
 /* その種の 個体を 1つ たしかめる。無ければ 1件だけ 作る。
    **持って いない 種には 何も 作らない**（`dex` も 個体も）。
 
@@ -9713,11 +9730,20 @@ function instOfSpecies(sp){
 function ensureInst(sp){
   if (!sp || !hasDex(sp)) return null;     // ← 未所持。`dex` も 個体も 作らない
   const had = instOfSpecies(sp);
-  if (had) return { id: had, sp };          // ← すでに ある。**書きこまない**
+  if (had) return { id: had, sp, origin: instOriginOf(had) };   // すでに ある。**書きこまない**
   const id = newInstId();                   // ← IDは 使いまわさない
-  inst[id] = { sp };
+  /* **Phase 7-6**：ここは 古い セーブの **救済**なので、個体の 出自の
+     記録が そもそも ありません。だから 種の 初回入手元
+     （`dexRec(sp).origin`）を **best-effort の 推定値**として ひきつぎます。
+     無ければ `unknown`。
+
+     **`dex` を 書きかえたり、origin を 埋めもどしたり しないこと。**
+     読んで うつすだけ です */
+  const rec = dexRec(sp);
+  const origin = (rec && rec.origin) || ORIGIN.unknown;
+  inst[id] = { sp, origin };
   saveInst();                               // ← ほんとうに 1件 作った ときだけ 書く
-  return { id, sp };
+  return { id, sp, origin };
 }
 
 /* ----------------------------------------------------------
@@ -9756,12 +9782,16 @@ function mintInst(sp, origin){
   const had = instOfSpecies(sp);
   /* ▼ 複数所持の 唯一の 切りかえ点。`MINT_MULTI` が から の あいだは
        いつも 上限1 ——7-4 と **完全に 同じ ふるまい**です */
-  if (had && !MINT_MULTI.has(origin)) return { id: had, sp };
+  /* **既存の 個体の origin は ぜったいに 書きかえない。**
+     origin は「その 個体を 手に 入れた しゅんかんの 値」なので、
+     あとで 別の 経路で また 手に 入れても 上書きしては いけません */
+  if (had && !MINT_MULTI.has(origin)) return { id: had, sp, origin: instOriginOf(had) };
   /* ▲ */
   const id = newInstId();
-  inst[id] = { sp };            // ← origin は **まだ 入れない**（7-6）
+  /* **Phase 7-6**：新しく 作る ときだけ、その 個体の 出自を のこす */
+  inst[id] = { sp, origin: origin || ORIGIN.unknown };
   saveInst();
-  return { id, sp };
+  return { id, sp, origin: inst[id].origin };
 }
 /* 前の版で 'tw_c_xxx' という ありもしない id を ためてしまっていたので かたづける。
    ほんとうの id（c_xxx）に つけかえて、あつめた ぶんを むだにしない */
@@ -16190,6 +16220,8 @@ window.__chk = {
        おわったら 消します（ソースは から のまま）*/
     mint: mintInst,
     multi: MINT_MULTI,
+    /* Phase 7-6 ——**個体**の origin。`originOf`（種の 初回入手元）とは 別もの */
+    originOf: instOriginOf,
     raw:   () => localStorage.getItem('sweetTD.inst'),
     v:     INST_V,
   },
