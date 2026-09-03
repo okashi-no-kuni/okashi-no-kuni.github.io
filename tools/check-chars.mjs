@@ -313,9 +313,12 @@ line('dexの 直読み', dexRaw);
 const instRef = [];
 {
   /* 7-3 で `ensureInst` / `instOfSpecies` が ふえました。
-     ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ */
+     ゆるすのは 基盤・ensure・検査どうぐ の 3つ だけ。
+     7-7-3-4 の `evolveInst` / `EVO_IDS` も ここに 入れます
+     ——**本番から 呼ぶ ところは まだ 0か所**（UI も 消費も つないで いない）*/
   const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V',
-                 'ensureInst', 'instOfSpecies', 'mintInst', 'instOriginOf', 'instEvoOf'];
+                 'ensureInst', 'instOfSpecies', 'mintInst', 'instOriginOf', 'instEvoOf',
+                 'evolveInst', 'EVO_IDS'];
   const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
   const lines = strip(src).split('\n');
   const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
