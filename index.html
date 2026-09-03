@@ -11211,6 +11211,16 @@ for (const it of ITEMS) ITEM_BY_ID[it.id] = it;
    ========================================================== */
 const isBattleItem = it => !!it && it.battle !== false;
 const BATTLE_ITEMS = ITEMS.filter(isBattleItem);
+/* ショップの セットが 何しゅるい 配るか。**`BATTLE_ITEMS.length` だけ**から
+   出します。
+
+   むかしは「6しゅるい」と 4か所に 書いて あり、`elixir3`（こだいの秘薬）を
+   足した ときに **文言だけ 6の まま のこりました** ——じっさいには
+   7種 配って いたのに「6しゅるい」と 言って いた ことに なります
+   （買った 人には 気づきようが ありません）。
+
+   **数を 2か所に 書かないこと。**足すたびに かならず ずれます */
+const setKinds = () => BATTLE_ITEMS.length + 'しゅるい';
 const ITEM_CAP = 99;
 /* 持ち数。ワザの skStock とは 別の 入れもの。
    混ぜると「ワザが へった／アイテムが へった」が わからなくなる */
@@ -13267,7 +13277,7 @@ const SHOP_ITEMS = [
   /* アイテムは 金の わく＝レア。お金で かんたんに 山づみ できないよう、
      セットは **1日1回ずつ**。日づけは 端末の ローカル日で 見る */
   { id:'it_set', sec:'あそぶ', ic:'🎒', icKey:'shop_help', name:'おたすけセット',
-    desc: () => '<span class="dic">' + BATTLE_ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×1こずつ',
+    desc: () => '<span class="dic">' + BATTLE_ITEMS.map(it => it.ic).join('') + '</span> ' + setKinds() + ' ×1こずつ',
     note: () => '1日1回まで。アイテムは 敵からも 落ちます（' + Math.round(ITEM_DROP()*100) + '%）。' +
                 'ステージクリアでも 1こ もらえます',
     cost: 20,
@@ -13275,16 +13285,16 @@ const SHOP_ITEMS = [
     poor: () => 'きょうは もう 買いました。また あした',
     buy: () => { for (const it of BATTLE_ITEMS) giveItem(it.id, 1, ORIGIN.shop); buildSkillBar();
                  itDay.set = dayKey(); saveItDay();
-                 return '🎒 6しゅるいの アイテムが 1こずつ！'; } },
+                 return '🎒 ' + setKinds() + 'の アイテムが 1こずつ！'; } },
   { id:'it_big', sec:'あそぶ', ic:'🌈', icKey:'shop_rainbow_set', name:'にじいろセット',
-    desc: () => '<span class="dic">' + BATTLE_ITEMS.map(it => it.ic).join('') + '</span> 6しゅるい ×3こずつ',
+    desc: () => '<span class="dic">' + BATTLE_ITEMS.map(it => it.ic).join('') + '</span> ' + setKinds() + ' ×3こずつ',
     note: () => '1日1回まで。おたすけセット3こぶん',
     cost: 55,
     can:  () => itDay.big !== dayKey(),
     poor: () => 'きょうは もう 買いました。また あした',
     buy: () => { for (const it of BATTLE_ITEMS) giveItem(it.id, 3, ORIGIN.shop); buildSkillBar();
                  itDay.big = dayKey(); saveItDay();
-                 return '🌈 6しゅるいの アイテムが 3こずつ！'; } },
+                 return '🌈 ' + setKinds() + 'の アイテムが 3こずつ！'; } },
   { id:'heart', sec:'あそぶ', ic:'💗', name:'ハートぜんかい',
     desc:'あと何回あそべるかが 満タンに もどります', cost:10,
     can:  () => hearts < maxHearts(),

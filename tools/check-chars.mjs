@@ -416,8 +416,8 @@ const battleRaw = [];
     ['ワザバー',        'if (gear[it.id] < 1) continue;', -1],
     ['ショップ おたすけ', "giveItem(it.id, 1, ORIGIN.shop)", 0],
     ['ショップ にじいろ', "giveItem(it.id, 3, ORIGIN.shop)", 0],
-    ['セットの 説明1',   "6しゅるい ×1こずつ", 0],
-    ['セットの 説明3',   "6しゅるい ×3こずつ", 0],
+    ['セットの 説明1',   "×1こずつ'", 0],
+    ['セットの 説明3',   "×3こずつ'", 0],
   ];
   for (const [name, mark, off] of SITES){
     const i = lines.findIndex(l => l.includes(mark));
@@ -443,6 +443,19 @@ const battleRaw = [];
   const t = (strip(src).match(/battle:\s*true/g) || []).length;
   if (t) battleRaw.push('battle:true が ' + t + '件（未指定＝戦闘用に すること）');
 }
+  /* **種類の 数を 決めうちに しない。**むかし「6しゅるい」と 4か所に
+     書いて あり、`elixir3` を 足した ときに 文言だけ のこりました
+     （7種 配って いたのに「6しゅるい」）。`BATTLE_ITEMS.length` が
+     ゆいいつの もとに なって いるかを 見ます */
+  {
+    const body = strip(src).replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const m of body.matchAll(/(\d+)しゅるい/g))
+      battleRaw.push('種類の 数が 決めうち：' + m[0]);
+    const uses = (body.match(/setKinds\(\)/g) || []).length;
+    if (uses !== 4) battleRaw.push('setKinds() の つかい所が ' + uses + 'か所（4か所の はず）');
+    if (!/const setKinds = \(\) => BATTLE_ITEMS\.length/.test(body))
+      battleRaw.push('setKinds が BATTLE_ITEMS.length から 出て いない');
+  }
 line('戦闘用の 集合', battleRaw);
 
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
