@@ -9548,9 +9548,9 @@ function saveDex(){ try{ localStorage.setItem('sweetTD.dex', JSON.stringify(dex)
 
    だから **先に 読み口を 閉じます**。ここが これからの 切りかえ点です。
 
-   **いまは `dex` だけを 見ます。**`sweetTD.inst` は まだ ありませんし、
-   ここから 参照も しません（7-2 以降）。7-1 は
-   「所有モデルを 変える」のでは なく「変えられる ように する」だけ です。
+   **いまは `dex` だけを 見ます。**7-2 で `sweetTD.inst`（からの 箱）が
+   できましたが、**ここからは 1つも 参照しません**（つなぐのは 7-3 以降）。
+   7-1 は「所有モデルを 変える」のでは なく「変えられる ように する」だけ です。
 
    **`const` では なく `function` で 書くこと。**`hasDex` を いちばん
    はじめに 呼ぶのは `hasLg`（`index.html` の ずっと 上）なので、
@@ -9568,6 +9568,99 @@ function hasDex(id){ return !!dex[id]; }
    無い ときに **かわりの レコードを 作らない**こと ——「持って いない」が
    「持って いる」に 化けます */
 function dexRec(id){ return dex[id] || null; }
+
+/* ==========================================================
+   Phase 7-2 ——個体（instance）を 置く **からの 箱**だけ 作る
+   ----------------------------------------------------------
+   これから 進化・限定キャラ・誕生日・交換 を 足すには、
+   「同じ 種でも 個体で ちがう」を のこす 場所が いります。
+   **今回は 箱だけ**です。中みを 作る しくみ（mint）も、
+   いまの 所持から 個体を 起こす しくみも、複数所持も、
+   進化も 交換も UIも **1つも ありません**（7-3 以降）。
+
+   #### `sweetTD.dex` とは **完全に 別の キー**に する
+
+   `dex` は 種／図鑑単位の 所持として **凍結**します（7-0 で 決めた A案）。
+   別キーに するのが 大事なのは、**古い 版に もどしても `dex` が
+   無傷**だから です ——ロールバックできる ゆいいつの 形です。
+   `dex` の 中に 個体の 配列を 持たせると、`!![]` が true なので
+   「0体 持って いる」が「持って いる」と 読まれて こわれます。
+
+   #### **7-2 が おわった 時点で、ふつうに あそんでも 1件も できません**
+
+   ゲームの ロジックからは **ここを 1か所も 見ません**。
+   `hasDex()` / `dexRec()` も `dex` だけを 見る まま です。
+   呼ぶのは 検査どうぐ（`__chk.inst` / `__dbg`）だけ
+   ——`check-chars.mjs` が それを 見はって います。
+
+   #### 1つの キーに まとめる（採番も いっしょに）
+
+   `{ v, pfx, seq, items }` を 1つの キーに 入れます。
+   **採番（`pfx`/`seq`）を 別キーに しないこと** ——書きこみが
+   かたっぽだけ 通ると 連番が ずれ、**IDを 使いまわす**ことに なります。
+   1つの キーなら 書きこみは いつも まとめて 1回です。
+
+   #### 読んだだけでは 書かない（遅延生成）
+
+   古い セーブには この キーが ありません。**無い ときは
+   `{}` として 読むだけ**で、`localStorage` には 何も 書きません。
+   端末の しるし（`pfx`）も 連番も、**はじめて IDを 出す ときに
+   作ります**。だから 7-2 を 入れても、あそんで いない人の
+   セーブは 1バイトも 変わりません。
+
+   #### IDは `<端末の しるし6文字>.<連番36進>`
+
+   - **端末の しるしは 一度 作ったら 変えない**（作った その場で 保存する）
+   - **連番は もどらない・使いまわさない。**出した しゅんかんに 保存するので、
+     読みこみ直しても つぎの IDが かぶりません
+   - **交換で もらった 個体の IDは 変えないこと**（変えると 来歴が 切れ、
+     二重に 受けとった ことも 分からなく なる）
+   - **「世界で ぜったいに 一意」とは あつかわないこと。**サーバーが
+     ないので 保証できません（CLAUDE.md の「通信について」）。
+     これは **実用上の 衝突よけ**です
+   ========================================================== */
+const INST_V = 1;                 // 保存の 版。あとで かたちを 変える ときの 目じるし
+let inst    = {};                 // 個体の 器。**7-2 では かならず 空**
+let instPfx = '';                 // 端末の しるし（初回だけ 作る）
+let instSeq = 0;                  // 連番。**もどらない**
+try{
+  const raw = JSON.parse(localStorage.getItem('sweetTD.inst') || 'null');
+  if (raw && typeof raw === 'object'){
+    if (raw.items && typeof raw.items === 'object') inst = raw.items;
+    if (typeof raw.pfx === 'string') instPfx = raw.pfx.slice(0, 12);
+    /* **後退させないこと。**こわれた 値を 読んでも 連番は 下げない
+       ——下げると IDを 使いまわします */
+    if (typeof raw.seq === 'number' && raw.seq > instSeq) instSeq = Math.floor(raw.seq);
+  }
+}catch(e){}
+function saveInst(){
+  try{ localStorage.setItem('sweetTD.inst',
+         JSON.stringify({ v: INST_V, pfx: instPfx, seq: instSeq, items: inst })); }catch(e){}
+}
+/* 端末の しるし。**初回だけ 作って、あとは 変えない。**
+   作った その場で 保存する ——保存しないと、読みこみ直しで
+   別の しるしに なって しまいます */
+function instDevice(){
+  if (instPfx) return instPfx;
+  const D = '0123456789abcdefghijklmnopqrstuvwxyz';
+  let a = null;
+  try{ a = new Uint32Array(6); (self.crypto || self.msCrypto).getRandomValues(a); }catch(e){}
+  let s = '';
+  for (let i = 0; i < 6; i++) s += D[(a ? a[i] : Math.floor(Math.random() * 4294967296)) % 36];
+  instPfx = s;
+  saveInst();
+  return instPfx;
+}
+/* 新しい 個体IDを 1つ 出す。**7-2 では 検査どうぐ からしか 呼びません。**
+   ここは IDを 出すだけで、`inst` には 何も 入れません
+   ——「IDを 出す」と「個体を 作る」は 別の しごとです（7-3 以降）。
+   出した しゅんかんに 保存するので、読みこみ直しても かぶりません */
+function newInstId(){
+  const pfx = instDevice();
+  instSeq += 1;
+  saveInst();
+  return pfx + '.' + instSeq.toString(36);
+}
 /* 前の版で 'tw_c_xxx' という ありもしない id を ためてしまっていたので かたづける。
    ほんとうの id（c_xxx）に つけかえて、あつめた ぶんを むだにしない */
 (function fixDexIds(){
@@ -15933,6 +16026,18 @@ window.__chk = {
   /* Phase 6-6 ——入手元（origin）。値は 言語に よらない 安定ID。
      古い セーブには 無いので、読むのは かならず `originOf()` を とおす */
   ORIGIN, originOf, dexRaw: () => dex,
+  /* Phase 7-2 ——個体の からの 箱。**ゲームの ロジックからは 1か所も
+     見ません**（`check-chars.mjs` の「instの 参照」が 見はって います）。
+     呼ぶのは 検査どうぐ だけ */
+  inst: {
+    all:   () => inst,
+    count: () => Object.keys(inst).length,
+    pfx:   () => instPfx,
+    seq:   () => instSeq,
+    newId: newInstId,                       // ← 検査からだけ 呼ぶ
+    raw:   () => localStorage.getItem('sweetTD.inst'),
+    v:     INST_V,
+  },
   AV_HAIR, AV_WEAR, AV_ACC, AV_EYE, AV_MOUTH,
 };
 /* 見た目の たしかめ用。?dbg=1 のときだけ 出す。

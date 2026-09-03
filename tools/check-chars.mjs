@@ -300,10 +300,35 @@ const dexRaw = [];
 }
 line('dexの 直読み', dexRaw);
 
+/* ---------- Phase 7-2 ——`inst` を ゲームの ロジックから 見て いないか ----------
+   7-2 で 作ったのは **からの 箱だけ**です。ふつうに あそんで 1件も
+   できない ことが いちばん 大事な 条件なので、**参照そのものを
+   見はります**。のこして よいのは 箱の 定義と 検査どうぐ だけ。
+
+   `inst` は みじかい 名前なので、`instance` や `instagram` を
+   ひろわない ように 語の 切れめで さがします */
+const instRef = [];
+{
+  const NAMES = ['inst', 'instPfx', 'instSeq', 'saveInst', 'instDevice', 'newInstId', 'INST_V'];
+  const re = new RegExp('\\b(' + NAMES.join('|') + ')\\b');
+  const lines = strip(src).split('\n');
+  const defFrom = lines.findIndex(l => l.includes('const INST_V = 1;'));
+  const defTo   = lines.findIndex(l => l.includes("return pfx + '.' + instSeq.toString(36);"));
+  const chkAt   = lines.findIndex(l => l.includes('window.__chk = {'));
+  lines.forEach((ln, i) => {
+    if (!re.test(ln)) return;
+    if (defFrom >= 0 && i >= defFrom && i <= defTo + 1) return;   // 箱の 定義そのもの
+    if (chkAt >= 0 && i > chkAt) return;                          // __chk / __dbg（検査どうぐ）
+    instRef.push('L' + (i+1) + ':' + ln.trim().slice(0, 46));
+  });
+  if (defFrom < 0 || defTo < 0) instRef.push('個体の 箱の 定義が 見つからない');
+}
+line('instの 参照', instRef);
+
 // 中心ずれは 形によっては しかたないので、止めるのは 残りだけ
 const ng = errs.length + rep.over.length + rep.small.length + rep.dupName.length
          + rep.dupId.length + (rep.artLost || []).length + (rep.enGhost || []).length
          + (rep.chGhost || []).length + keyMiss.length + (rep.eggBad || []).length
-         + bgMiss.length + originMiss.length + dexRaw.length;
+         + bgMiss.length + originMiss.length + dexRaw.length + instRef.length;
 console.log(ng ? '\n検査 NG（' + ng + '件）' : '\n検査 OK ✅');
 process.exit(ng ? 1 : 0);
