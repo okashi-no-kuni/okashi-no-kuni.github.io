@@ -551,16 +551,33 @@ const evoCall = [];
     if (/\bevo\b/.test(lines.slice(i, i + 3).join('\n')))
       evoCall.push('似顔絵の キャッシュ（' + nm.trim() + '）に evo が 入って いる');
   }
-  /* 本番の 進化の 絵。**Phase 7-7-3-8-1 から `purin_e1` の 1枚だけ**です
-     （7-7-3-6/6B の「0件」は ここで 前提が 変わりました。回帰では ありません）。
-     ふえた ときは この ならびに 足すこと ——だまって ふえるのを ふせぎます */
-  const EVO_ART = ['purin_e1'];
+  /* 進化の 絵（`<base>_<evo>`）は **わざと 足した ものだけ**である こと。
+     名前を ならべた 特例リストには しません ——ふえる たびに ふくらんで、
+     いつか だれも 直さなく なります。かわりに **すじが 通って いるか**を 見ます。
+
+       ① しっぽが `EVO_IDS`（いま `e1`）に ある 進化IDか
+       ② base の キーが `ART_KEYS` に いるか（元の子が いない 進化は ありえない）
+       ③ ほんとうに ファイルが あるか（`ART_KEYS` にだけ ある ＝ 404）
+
+     さらに **共有キー**（GEN と お菓子タワーで base を 分けあって いる 4つ）は
+     1枚 置くと **両方が 同時に 進化して 見える**ので、ここで 止めます */
+  const SHARED = ['candy', 'star', 'icecream', 'choco'];
   const keys = (strip(src).match(/const ART_KEYS = \[[^\]]*\]/) || [''])[0];
-  const got = [...keys.matchAll(/'([a-z0-9_]+_e\d[a-z]*)'/g)].map(m => m[1]);
-  for (const k of got) if (!EVO_ART.includes(k))
-    evoCall.push('ART_KEYS に 知らない 進化の 絵が ある：' + k);
-  for (const k of EVO_ART) if (!got.includes(k))
-    evoCall.push('ART_KEYS に ' + k + ' が ない');
+  const all  = [...keys.matchAll(/'([a-z0-9_]+)'/g)].map(m => m[1]);
+  const evoIds = [...(strip(src).match(/const EVO_IDS = new Set\(\[([^\]]*)\]/) || ['',''])[1]
+                     .matchAll(/'([a-z0-9]+)'/g)].map(m => m[1]);
+  for (const k of all){
+    const m = k.match(/^(.+)_([a-z]\d[a-z]*)$/);
+    if (!m) continue;
+    const [, base, evo] = m;
+    if (!evoIds.includes(evo)) evoCall.push(k + '：しっぽ「' + evo + '」が EVO_IDS に ない');
+    if (!all.includes(base))   evoCall.push(k + '：base の「' + base + '」が ART_KEYS に ない');
+    if (SHARED.includes(base))
+      evoCall.push(k + '：base が **共有キー**（GEN と お菓子タワーが 分けあって いる）。'
+                     + '1枚で 両方が 進化して 見えます');
+    if (!existsSync(resolve(spriteDir, k + '.png')))
+      evoCall.push(k + '：ART_KEYS に あるのに ファイルが ない');
+  }
 }
 line('進化の 絵の caller', evoCall);
 
