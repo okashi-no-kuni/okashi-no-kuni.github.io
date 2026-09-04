@@ -8494,32 +8494,53 @@ const artKeyOf = rc => (rc.opt && rc.opt.key ? rc.opt.key : rc.body);
    あちらは 絵の キーで あると 同時に、`DEX_LEGEND` / `DEX_GOLD` /
    `DEX_SIDE` の **見わけの キー**にも なって います。evo を 混ぜると
    わくの 色や 敵味方の ふりわけまで 変わって しまいます */
-/* **base の 絵の キー ＋ わたされた evo → 実際に ある キー。**無ければ base。
+/* **base の 絵の キー ＋ evo ＋ 種のID → 実際に ある キー。**無ければ base。
 
    絵の 系統は 3つ あります。
 
    | | base の 出どころ | だれ |
    |---|---|---|
-   | ① | `artKeyOf(rc)` | `GEN_LIST` の 127体（`drawGen`）|
+   | ① | `artKeyOf(rc)` | `GEN_LIST` の 128体（`drawGen`）|
    | ② | `DEX_ART[id]` | 精霊・ながれぼし・伝説（`drawPortrait`）|
    | ③ | `TOWERS[k].art` | お菓子タワー（`drawPortrait`）|
 
-   **「あれば variant、無ければ base」の きまりは ここ 1つ**に します。
-   3か所に 書くと、いつか どれかだけ ふるまいが ずれます
-   （CLAUDE.md の「2か所に 書くと かならず ずれる」）。
+   #### 進化の 絵は **`<種のID>_<evo>`**（Phase 7-7-3-8-2）
+
+   base の キーは **4つが 分けあって います** ——`candy` / `star` /
+   `icecream` / `choco` は GEN の子（`c_candy`…）と お菓子タワー
+   （`tw_candy`…）が 同じ 1枚を つかいます。だから 進化の 絵を
+   `base + '_' + evo` に すると、**両方が `candy_e1` を 取りあいます。**
+
+   種の ID（`c_candy` / `tw_candy`）は セーブでも 個体でも **もともと
+   別もの**なので、**足りなかったのは resolver に それを わたす ことだけ**でした。
+
+   ```
+   candy.png          base。共有の まま。**1枚も 名前を 変えない**
+   c_purin_e1.png     GEN の プリン
+   c_candy_e1.png     GEN の キャンディ
+   tw_candy_e1.png    お菓子タワーの キャンディ
+   ```
+
+   **`base + '_' + evo` の 古い きまりは のこしません。**2つの 規則が
+   ならぶと、どちらで 名づけるかで 迷い、いつか ずれます。
 
    **`inst` / `dex` は 1つも 見ません。**個体を 知って いるのは 画面がわで、
-   ここは わたされた `evo` しか 知りません（7-7-2 の 責任分離）。
+   ここは わたされた `base` / `evo` / `sp` しか 知りません（7-7-2 の 責任分離）。
 
    ある かどうかは **`ART_SPRITE`（実物）**で 見ます ——`ART_KEYS` は
    「読みに 行った」だけの ならびで、404 でも のこる ため */
-function evoArtKey(base, evo){
-  if (!base || !evo) return base;              // ← いまと 完全に 同じ
-  const k = base + '_' + evo;
-  return ART_SPRITE[k] ? k : base;             // ← 絵が 無ければ base へ
+function evoArtKey(base, evo, sp){
+  if (!base || !evo) return base;              // ← evo なしは これまでと 同じ
+  if (sp){
+    const k = sp + '_' + evo;
+    if (ART_SPRITE[k]) return k;
+  }
+  return base;                                 // ← 進化の 絵が 無ければ base へ
 }
+/* `rc.id` が そのまま 種の ID（`c_purin` など）なので、
+   **呼ぶ 側は 何も 変わりません**（`drawGen` / `genThumb` も そのまま）*/
 function artKeyFor(rc, evo){
-  return evoArtKey(artKeyOf(rc), evo);
+  return evoArtKey(artKeyOf(rc), evo, rc && rc.id);
 }
 
 /* ---------- ① 立体感をつける前に えがく（からだと かお） ---------- */
@@ -10792,7 +10813,7 @@ const genSpriteCache = new Map();
 
 /* さしかえた子の キー。art/sprites/ に ある ファイル名と そろえる。
    ここに ない子は これまでどおり コードで えがく */
-const ART_KEYS = ['angel', 'anmitsu', 'berryqueen', 'candytree', 'chocoknight', 'elephant', 'kraken', 'kyubi', 'mammoth', 'moonrabbit', 'pegasus', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'purin_e1', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
+const ART_KEYS = ['angel', 'anmitsu', 'berryqueen', 'candytree', 'chocoknight', 'elephant', 'kraken', 'kyubi', 'mammoth', 'moonrabbit', 'pegasus', 'armadillo', 'bat', 'baum', 'bear', 'bee', 'beetle', 'bigparfait', 'butterfly', 'cactus', 'cake', 'camel', 'candy', 'castella', 'choco', 'churro', 'cleopatra', 'clownfish', 'cobra', 'cookie', 'crab', 'cream', 'cupcake', 'daifuku', 'dango', 'deer', 'devil', 'dolphin', 'donut', 'eagle', 'eclair', 'fairy', 'fennec', 'firebird', 'futaba', 'ghost', 'giraffe', 'golem', 'gull', 'gummy', 'hanabi', 'hedgehog', 'hermit', 'hikari', 'hinotama', 'horse', 'icecream', 'it_ball', 'it_bolt', 'it_elixir', 'it_freeze', 'it_hammer', 'it_rain', 'jelly', 'jelly2', 'kagero', 'kakigori', 'kaminari', 'kangaroo', 'king', 'koala', 'konpeito', 'koori', 'kujaku', 'ladybug', 'lavagolem', 'lavasnail', 'lion', 'lizard', 'macaron', 'manju', 'manta', 'marshmallow', 'meerkat', 'mermaid', 'mille', 'monaka', 'monkey', 'mont', 'mouse', 'mummy', 'nagareboshi', 'octopus', 'ohagi', 'oni', 'onibi', 'orca', 'ostrich', 'owl', 'pancake', 'panda', 'parfait', 'penguin', 'pharaoh', 'pig', 'popcorn', 'pretzel', 'prince', 'princess', 'purin', 'c_purin_e1', 'purinala', 'purinpafe', 'queen', 'rabbit', 'redpanda', 'roll', 'ryu', 'sakuramochi', 'salamander', 'sandcat', 'scorpion', 'seahorse', 'seal', 'senbei', 'shark', 'sheep', 'shizuku', 'slime', 'sloth', 'snowqueen', 'soft', 'sphinx', 'squirrel', 'star', 'starfish', 'sunadokei', 'swan', 'taffy', 'taiyou', 'tart', 'tiger', 'tower', 'tsumuji', 'turtle', 'tutankhamun', 'unicorn', 'waffle', 'warabi', 'watagumo', 'watame', 'wedding', 'whale', 'witch', 'wizard', 'wolf', 'yotsuba', 'youkan', 'yukionna', 'zebra'];
 
 /* 絵を よみこむ。読めた時点で ためた 絵を すてる。
    すてないと、読みおわる 前に えがいた「コードの 絵」が のこって
@@ -11273,7 +11294,7 @@ function buildCharDetail(){
      `charThumb`（精霊・お菓子タワー・伝説）は `rc` を 持たない 別の 道ですが、
      7-7-3-6B で そちらにも 受け口が できました。**しっぽ（`evoArtKey`）は
      どちらも 同じ**なので、ふるまいが ずれません */
-  art.append(o.gen ? genThumb(o.gen, 128, evo) : charThumb(o, 128, evo));
+  art.append(o.gen ? genThumb(o.gen, 128, evo) : charThumb(o, 128, evo, o.id));
   if (!got) art.style.opacity = '.45'; else art.style.opacity = '';
   $('chNm').textContent = o.name;
   $('chTt').textContent = o.title || '';
@@ -14468,14 +14489,14 @@ $('kingShare').onclick = async () => {
    だから 盤面・ショップ・ワザバー・まもり神・図鑑の カードは 1文字も 変わりません。
    `pcache` / `gdPcache` の 呼び出し元は evo を わたさないので、
    **キャッシュキーも 従来の まま**です（evo の ために 新しい cache は 作らない）*/
-function charThumb(ch, size, evo){
+function charThumb(ch, size, evo, sp){
   const c = document.createElement('canvas');
   const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
   c.width = size*dpr; c.height = size*dpr;
   c.style.width = size + 'px'; c.style.height = size + 'px';
   const g = c.getContext('2d');
   g.setTransform(dpr,0,0,dpr,0,0);
-  drawPortrait(g, ch.pid || ch.id, size, evo);
+  drawPortrait(g, ch.pid || ch.id, size, evo, sp);
   portraitShade(g, size);   // えがき終わった絵に あとから光をあてて立体にする
   return c;
 }
@@ -14558,11 +14579,14 @@ function silhouetteThumb(pid, size){
    `rc` を 持たず、`DEX_ART[id]`（精霊・ながれぼし・伝説）と
    `TOWERS[k].art`（お菓子タワー）の **2つ**から base の キーが 出ます。
    むりに `artKeyFor` を つかい回さず、**しっぽ（`evoArtKey`）だけ 共有**します */
-function drawPortrait(g, id, S, evo){
+function drawPortrait(g, id, S, evo, sp){
   const TAU = 6.2832, M = S/2, R = S*0.27;
   /* 絵が ある子は はって おしまい。tw_ や 手がきの 分岐より 先に 見る */
   {
-    const ak = evoArtKey(DEX_ART[id], evo);
+    /* `sp`（種のID）は **呼ぶ 側が わたす**。`id` は 似顔絵の キー
+       （`purin` は 精霊の こおりのつぶ、`tw_candy` は タワー）で、
+       種の ID とは 別ものなので、**ここで 逆引きしては いけません** */
+    const ak = evoArtKey(DEX_ART[id], evo, sp);
     if (ak && ART_SPRITE[ak]){
       const px = R*TOWER_PX;
       g.drawImage(ART_SPRITE[ak], M-px/2, M-px/2, px, px);
@@ -14649,7 +14673,7 @@ function drawPortrait(g, id, S, evo){
     const key = id.slice(3), T = TOWERS[key];
     /* お菓子タワーの base は `DEX_ART` では なく `TOWERS[k].art`
        ——`drawPortrait` の 中に **2つめの 道**が ある（7-7-3-6B）*/
-    const ta = evoArtKey(T.art, evo);
+    const ta = evoArtKey(T.art, evo, sp);
     // はね（カードの白地でも見えるようにうすいラベンダー）。
     // 絵が ある子は じぶんの すがたが あるので つけない
     if (!(ta && ART_SPRITE[ta])){

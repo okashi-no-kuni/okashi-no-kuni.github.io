@@ -32,9 +32,13 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
-  purin: {
+  /* キーは **種の ID**（`dexList` の id）。base の 画像キー（`purin`）とは
+     別ものです ——`candy` / `star` / `icecream` / `choco` は GEN と
+     お菓子タワーが base を 分けあって いるので、進化の 絵は
+     種の ID で 分けます（Phase 7-7-3-8-2）*/
+  c_purin: {
     src:   'art/purin_e1.png',          // 原画（1254x1254・さわらない）
-    out:   'art/sprites/purin_e1.png',  // ゲームが 読む もの
+    out:   'art/sprites/c_purin_e1.png',  // ゲームが 読む もの（**<種のID>_<evo>**）
     base:  'art/sprites/purin.png',     // 大きさを そろえる 相手
     /* 原画の 実測 */
     body:  { x0:172, x1:1098, y0:380, y1:1196, cx:635 },  // プリン本体

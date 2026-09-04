@@ -170,7 +170,10 @@ const rep = await pg.evaluate(({ MIN_BIG, MAX_OFF }) => {
     if (pN !== null && pL !== null && pL >= pN)
       eggBad.push(e.name + '[にじ' + pc(pL) + '≧ふつう' + pc(pN) + ']');
   }
-  return { artLost, enGhost, chGhost, artKeys, duelBg, n: R.length, nav: AV.length, over, small, off, dupName, dupId, eggBad };
+  /* 進化の 絵の 名前は **種の ID**（`dexList` の id）で 始まる こと。
+     ここで 出しておかないと ソース検査から 種を 知る すべが ない */
+  const dexIds = api.dexIds ? api.dexIds() : [];
+  return { artLost, enGhost, chGhost, artKeys, duelBg, dexIds, n: R.length, nav: AV.length, over, small, off, dupName, dupId, eggBad };
 }, { MIN_BIG, MAX_OFF });
 await b.close();
 
@@ -405,8 +408,10 @@ const artEvo = [];
   /* **Phase 7-7-3-6B から しっぽは `evoArtKey` 1つ。**
      `artKeyFor`（gen 系）も `drawPortrait` の 2つの 道も ここを 通ります
      ——3か所に 書くと いつか どれかだけ ずれます */
-  const from  = lines.findIndex(l => l.includes('function evoArtKey(base, evo){'));
-  const to    = from < 0 ? -1 : from + lines.slice(from).findIndex(l => l.includes('return ART_SPRITE[k] ? k : base;'));
+  const from  = lines.findIndex(l => l.includes('function evoArtKey(base, evo, sp){'));
+  /* しっぽは **関数の 閉じかっこ**で とる。中の 1行を 目じるしに すると、
+     その あとに 足された 行を 窓の 外に して しまいます */
+  const to    = from < 0 ? -1 : from + lines.slice(from).findIndex((l, i) => i > 0 && l.trim() === '}');
   if (from < 0 || to < from) artEvo.push('evoArtKey の 定義が 見つからない');
   else for (let i = from; i <= to; i++)
     if (/\b(inst|instEvoOf|instOfSpecies|detailIid|dex|dexRec)\b/.test(lines[i]))
@@ -415,20 +420,20 @@ const artEvo = [];
   const af = (strip(src).match(/function artKeyFor\(rc, evo\)\{[\s\S]*?\n\}/) || [''])[0];
   if (!af) artEvo.push('artKeyFor の 定義が 見つからない');
   else {
-    if (!/evoArtKey\(artKeyOf\(rc\), evo\)/.test(af))
+    if (!/evoArtKey\(artKeyOf\(rc\), evo, rc && rc\.id\)/.test(af))
       artEvo.push('artKeyFor が evoArtKey を 通って いない：' + af.replace(/\s+/g, ' ').slice(0, 80));
     if (/ART_SPRITE/.test(af))
       artEvo.push('artKeyFor が しっぽを 自分で 書いて いる（evoArtKey と ずれる）');
   }
   /* 似顔絵の 2つの 道も 同じ しっぽを 通る */
-  for (const [nm, re2] of [['DEX_ART の 道', /const ak = evoArtKey\(DEX_ART\[id\], evo\);/],
-                           ['TOWERS.art の 道', /const ta = evoArtKey\(T\.art, evo\);/]])
+  for (const [nm, re2] of [['DEX_ART の 道', /const ak = evoArtKey\(DEX_ART\[id\], evo, sp\);/],
+                           ['TOWERS.art の 道', /const ta = evoArtKey\(T\.art, evo, sp\);/]])
     if (!re2.test(strip(src))) artEvo.push('似顔絵の「' + nm + '」が evoArtKey を 通って いない');
   /* 生の `ART_SPRITE[T.art]` が **`drawPortrait` の 中に** のこって いないか
      （片方だけ 直す のを ふせぐ）。盤面（`drawTower`）は 別の 関数で、
      evo を わたさない ので そのまま が 正しい */
   {
-    const a = lines.findIndex(l => l.includes('function drawPortrait(g, id, S, evo){'));
+    const a = lines.findIndex(l => l.includes('function drawPortrait(g, id, S, evo, sp){'));
     const z = a < 0 ? -1 : a + lines.slice(a).findIndex((l, i) => i > 0 && l.includes('function '));
     if (a >= 0)
       for (let i = a; i <= z; i++)
@@ -478,8 +483,8 @@ const evoCall = [];
   for (const [nm, head, tail] of [
         ['genThumb',     'function genThumb(o, size, evo){', 'return c;'],
         ['genSprite',    'function genSprite(o, px, evo){',  'return c;'],
-        ['drawPortrait', 'function drawPortrait(g, id, S, evo){', 'function '],
-        ['charThumb',    'function charThumb(ch, size, evo){', 'return c;'],
+        ['drawPortrait', 'function drawPortrait(g, id, S, evo, sp){', 'function '],
+        ['charThumb',    'function charThumb(ch, size, evo, sp){', 'return c;'],
       ]){
     const [a, z] = span(head, tail);
     if (a < 0 || z < a){ evoCall.push(nm + ' の 定義が 見つからない'); continue; }
@@ -519,7 +524,7 @@ const evoCall = [];
           if (m[1].split(',').filter(x => x.trim()).length >= 3)
             evoCall.push('図鑑の カード（lazyThumb）に evo を わたして いる：L' + (i+1));
   /* `charThumb` に evo を わたす 本番の ところも 1か所だけ（Phase 7-7-3-6B）*/
-  const [ca, cz] = span('function charThumb(ch, size, evo){', 'return c;');
+  const [ca, cz] = span('function charThumb(ch, size, evo, sp){', 'return c;');
   const cCallers = [];
   lines.forEach((ln, i) => {
     if (chkAt >= 0 && i > chkAt) return;
@@ -551,30 +556,32 @@ const evoCall = [];
     if (/\bevo\b/.test(lines.slice(i, i + 3).join('\n')))
       evoCall.push('似顔絵の キャッシュ（' + nm.trim() + '）に evo が 入って いる');
   }
-  /* 進化の 絵（`<base>_<evo>`）は **わざと 足した ものだけ**である こと。
+  /* 進化の 絵は **`<種のID>_<evo>`**（Phase 7-7-3-8-2）。
      名前を ならべた 特例リストには しません ——ふえる たびに ふくらんで、
      いつか だれも 直さなく なります。かわりに **すじが 通って いるか**を 見ます。
 
        ① しっぽが `EVO_IDS`（いま `e1`）に ある 進化IDか
-       ② base の キーが `ART_KEYS` に いるか（元の子が いない 進化は ありえない）
+       ② あたまが **ほんとうに ある 種の ID**か（`dexList` の id）
        ③ ほんとうに ファイルが あるか（`ART_KEYS` にだけ ある ＝ 404）
+       ④ 古い `<base>_<evo>` の 名前が まぎれて いないか
 
-     さらに **共有キー**（GEN と お菓子タワーで base を 分けあって いる 4つ）は
-     1枚 置くと **両方が 同時に 進化して 見える**ので、ここで 止めます */
-  const SHARED = ['candy', 'star', 'icecream', 'choco'];
+     **共有キーの きんしは もう 要りません** ——`candy` を 分けあって いても、
+     `c_candy_e1` と `tw_candy_e1` は 別の キーに なるためです */
   const keys = (strip(src).match(/const ART_KEYS = \[[^\]]*\]/) || [''])[0];
   const all  = [...keys.matchAll(/'([a-z0-9_]+)'/g)].map(m => m[1]);
   const evoIds = [...(strip(src).match(/const EVO_IDS = new Set\(\[([^\]]*)\]/) || ['',''])[1]
                      .matchAll(/'([a-z0-9]+)'/g)].map(m => m[1]);
+  const species = new Set(rep.dexIds || []);
   for (const k of all){
     const m = k.match(/^(.+)_([a-z]\d[a-z]*)$/);
     if (!m) continue;
-    const [, base, evo] = m;
-    if (!evoIds.includes(evo)) evoCall.push(k + '：しっぽ「' + evo + '」が EVO_IDS に ない');
-    if (!all.includes(base))   evoCall.push(k + '：base の「' + base + '」が ART_KEYS に ない');
-    if (SHARED.includes(base))
-      evoCall.push(k + '：base が **共有キー**（GEN と お菓子タワーが 分けあって いる）。'
-                     + '1枚で 両方が 進化して 見えます');
+    const [, head, evo] = m;
+    if (!evoIds.includes(evo)){ evoCall.push(k + '：しっぽ「' + evo + '」が EVO_IDS に ない'); continue; }
+    if (!species.size) { evoCall.push('種の ID の ならびが 取れない'); break; }
+    if (!species.has(head))
+      evoCall.push(k + '：あたまの「' + head + '」が 種の ID では ない'
+                     + (all.includes(head) ? '（古い `<base>_<evo>` の 名前。'
+                        + '`<種のID>_<evo>` に 直すこと）' : ''));
     if (!existsSync(resolve(spriteDir, k + '.png')))
       evoCall.push(k + '：ART_KEYS に あるのに ファイルが ない');
   }

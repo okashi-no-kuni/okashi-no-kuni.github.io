@@ -5256,6 +5256,99 @@ node tools/check-public.mjs     # 終了コード 0 で 合格（実行）
 `gear` で 判定 ／ 下流（`colCount`）を 個別に 直す ／ 図鑑を 生の `ITEMS` に
 もどす ／ ガイドを 生の `ITEMS` に もどす ／ `visible:true` を ばらまく。
 
+### 進化の 絵の 名前は **`<種のID>_<evo>`**（Phase 7-7-3-8-2）
+
+> **記録（2026-09-04）**：`base + '_' + evo` を やめました。
+> **2つの 規則を ならべないこと** ——どちらで 名づけるか 迷い、いつか ずれます。
+
+```
+candy.png          base。**共有の まま。1枚も 名前を 変えない**
+c_purin_e1.png     GEN の プリン
+c_candy_e1.png     GEN の キャンディ
+tw_candy_e1.png    お菓子タワーの キャンディ
+```
+
+#### base の キーは **4つが 分けあって いる**
+
+| 画像キー | GEN | お菓子タワー |
+|---|---|---|
+| `candy` | `c_candy`（キャンディ★1）| `tw_candy`（🍬）|
+| `star` | `c_star`（ほしクッキー★2）| `tw_star`（⭐）|
+| `icecream` | `c_icecream`（アイス★3）| `tw_ice`（🍧）|
+| `choco` | `c_choco`（チョコ★3）| `tw_choco`（🍫）|
+
+`base + '_' + evo` だと この 4つは **1枚の `candy_e1` を 取りあいます**。
+
+**原因は「base を 分けあって いる こと」では ありません。**
+種の ID（`c_candy` / `tw_candy`）は **セーブでも 個体でも もともと 別もの**で、
+足りなかったのは **resolver に それを わたして いなかった こと**だけ でした。
+だから **base を 1枚も 名前を 変えずに** 直せます。
+
+#### resolver は 3つ 受けとる
+
+```
+function evoArtKey(base, evo, sp){
+  if (!base || !evo) return base;
+  if (sp){ const k = sp + '_' + evo; if (ART_SPRITE[k]) return k; }
+  return base;                       // 進化の 絵が 無ければ base
+}
+function artKeyFor(rc, evo){         // ← **呼ぶ 側は 何も 変わらない**
+  return evoArtKey(artKeyOf(rc), evo, rc && rc.id);
+}
+```
+
+- **`rc.id` が そのまま 種の ID**（`c_purin` など）なので、`drawGen` /
+  `genThumb` の 呼び出しは **1文字も 変わりません**
+- `drawPortrait` / `charThumb` は `DEX_ART` と `TOWERS[k].art` の 2つの 道で、
+  **画像の キーだけでは 種が わかりません**。だから **呼ぶ 側が わたします**
+  （詳細画面は `o.id` を 持って いる ので `charThumb(o, 128, evo, o.id)`）
+- **`drawPortrait` の 中で 種を 逆引きしない**こと ——`id`（`purin` は 精霊の
+  こおりのつぶ、`tw_candy` は タワー）は 種の ID とは 別ものです
+- resolver は `inst` / `dex` を 1つも 見ません（7-7-2 の 責任分離の まま）
+
+#### ally の `T.art` を 信じない
+
+`TOWERS['c_*']` は 原型（`ARCHETYPE`）を `{...A}` で 広げて 作るので、
+**`art` が 原型から 継がれて います**（`TOWERS['c_candy'].art === 'icecream'`）。
+盤面は `T.gen` を 先に 見るので 実害は ありませんが、
+**GEN の なかまの 絵の identity に `T.art` を つかっては いけません。**
+正しい 道は `T.gen` → `artKeyFor(rc, evo)` です。
+
+#### 検査
+
+```
+node tools/check-evo-key.mjs      # 終了コード 0 で 合格（実行）
+node tools/check-chars.mjs        # 「進化の 絵の caller」（ソース）
+```
+
+`check-evo-key.mjs` は **検査の 中だけで** 架空の 絵を 登録して、
+
+- 共有の 4つ ぜんぶで `c_*_e1` と `tw_*_e1` が **同時に 別々に** 解決する
+- **古い `candy_e1` だけ 登録しても、GEN も TOWER も 拾わない**
+  （＝`base + '_' + evo` の きまりが のこって いない 証拠）
+- evo なしは base の まま（`c_candy` も `tw_candy` も `candy`）
+- 本物の `c_purin_e1` は のこって いて、古い `purin_e1` は 無い
+
+を 見ます。架空の 絵は **`finally` で かならず もどします**。
+
+`check-chars` の ソース検査は **名前の ならびを 持ちません**。
+
+| | |
+|---|---|
+| ① | しっぽが `EVO_IDS`（いま `e1`）に ある 進化IDか |
+| ② | あたまが **ほんとうに ある 種の ID**か（`dexList` の id）|
+| ③ | ほんとうに ファイルが あるか |
+| ④ | 古い `<base>_<evo>` の 名前が まぎれて いないか（②で つかまる）|
+
+**共有キーの きんしは もう 要りません** ——種の ID で 分かれる ためです。
+
+5とおりで 落ちる ことを 確認ずみ ——`base_evo` の fallback を もどす ／
+`artKeyFor` が 種のIDを わたさない ／ `evoArtKey` が `inst` を のぞく ／
+`drawPortrait` が 種を 逆引き ／ 古い 名前が `ART_KEYS` に ある。
+
+> **これで「1つの 種 × 1つの 進化段階 ＝ 1つの 絵の キー」に なりました。**
+> 共有の base 画像を 気に せず 量産できます。
+
 ### 進化の 絵（`_e1`）の きまり ——**本体の 大きさを そろえる**
 
 > **記録（2026-09-04）**：`purin_e1` を 作る ときに 決めました。
@@ -5333,7 +5426,7 @@ node tools/make-evo-art.mjs purin      # その子だけ
 | | |
 |---|---|
 | 原画 | `art/purin_e1.png`（1254x1254・**さわらない**）|
-| ゲームが 読む もの | `art/sprites/purin_e1.png`（**256x256**・RGBA・78KB）|
+| ゲームが 読む もの | `art/sprites/c_purin_e1.png`（**256x256**・RGBA・78KB）|
 
 `art/` 直下は `tools/_files.mjs` の KEEP に 入って いないので、
 **原画は アプリにも オフラインの キャッシュにも 入りません**
@@ -5382,13 +5475,13 @@ canvas を 入れて ためしますが、**`delete` では 本物を こわし�
 | | |
 |---|---|
 | `artKeyFor(プリン, null)` | `purin` |
-| `artKeyFor(プリン, 'e1')` | **`purin_e1`**（fallback では なく 実 asset）|
+| `artKeyFor(プリン, 'e1')` | **`c_purin_e1`**（fallback では なく 実 asset）|
 | ほかの子（クマ・ケーキ・ウサギ・タワー）に `'e1'` | ぜんぶ base の まま |
-| `ART_KEYS` | 159 → **160**件。`_e*` は `purin_e1` の 1件だけ |
+| `ART_KEYS` | 159 → **160**件。`_e*` は `c_purin_e1` の 1件だけ |
 | キャラ数 | **128 のまま** |
 
 **「キーが 合って いる」だけでは 足りません。**詳細画面が えがいた 画素を
-リポジトリの `art/sprites/purin_e1.png` と つきあわせて、
+リポジトリの `art/sprites/c_purin_e1.png` と つきあわせて、
 **不とうめいの 32,044画素が ぜんぶ ±1 以内**である ことまで 見ました
 （±1 は canvas が アルファを かけた 形で 持つ ための まるめ。
  半とうめいの ふち 1,021画素は のぞく）。

@@ -181,7 +181,10 @@ const fake = await pg.evaluate(async iid => {
   };
   const gen  = k.buildRoster().find(o => o.id === 'c_bear');
   const base = k.artKeyOf(gen);
-  const out  = { base, evoKey: base + '_e1' };
+  /* **Phase 7-7-3-8-2 から 進化の 絵は `<種のID>_<evo>`。**
+     base（`bear`）では なく 種の ID（`c_bear`）で 名づけます */
+  const SP   = gen.id;
+  const out  = { base, sp: SP, evoKey: SP + '_e1' };
   /* ① evo なし → base */
   out.noEvo = await open();
   out.keyNoEvo = k.artKeyFor(gen, null);
@@ -192,12 +195,12 @@ const fake = await pg.evaluate(async iid => {
      もとの 値を おぼえて おいて、おわったら そのまま もどします
      （いまは `purin_e1` が 本物。対象が ぶつかって いなくても、
      ふえた ときに だまって 消さない ように する）*/
-  out.had = Object.prototype.hasOwnProperty.call(k.artSprite(), base + '_e1');
-  out.prev = k.artSprite()[base + '_e1'];
-  const restore = () => { if (out.had) k.artSprite()[base + '_e1'] = out.prev;
-                          else delete k.artSprite()[base + '_e1']; };
+  out.had = Object.prototype.hasOwnProperty.call(k.artSprite(), SP + '_e1');
+  out.prev = k.artSprite()[SP + '_e1'];
+  const restore = () => { if (out.had) k.artSprite()[SP + '_e1'] = out.prev;
+                          else delete k.artSprite()[SP + '_e1']; };
   try {
-  k.artSprite()[base + '_e1'] = cv;
+  k.artSprite()[SP + '_e1'] = cv;
   I.evolve(iid, 'e1');
   out.keyWithFake = k.artKeyFor(gen, 'e1');
   out.withFake = await open();
@@ -225,7 +228,7 @@ const fake = await pg.evaluate(async iid => {
   out.keyAfterDel = k.artKeyFor(gen, 'e1');
   out.afterDel = await open();
   /* もとの 状態に もどって いるか（本物が あったなら ある、無かったなら 無い）*/
-  out.stillHasFake = k.artHas(base + '_e1') !== out.had;
+  out.stillHasFake = k.artHas(SP + '_e1') !== out.had;
   /* キャッシュキーは base と evo で 別（7-7-2 の receiver を つかって いる 証拠）*/
   k.genSprite(gen, 64);  k.genSprite(gen, 64, 'e1');
   out.cache = k.cacheKeys().gen.filter(x => x.startsWith('c_bear@64'));
@@ -262,19 +265,21 @@ const fake2 = await pg.evaluate(async () => {
   for (const [tag, dexId, pid, base] of [
         ['伝説（DEX_ART の 道）', 'lg_candytree', 'candytree', k.dexArt()['candytree']],
         ['お菓子タワー（TOWERS.art の 道）', 'tw_candy', 'tw_candy', k.towerArt('candy')]]){
-    const o = { base };
-    o.keyNoEvo   = k.evoArtKey(base, null);
+    /* 種の ID は **図鑑の id**（`lg_candytree` / `tw_candy`）*/
+    const SP = dexId;
+    const o = { base, sp: SP };
+    o.keyNoEvo   = k.evoArtKey(base, null, SP);
     o.noEvo      = await open(dexId);
-    o.had  = Object.prototype.hasOwnProperty.call(k.artSprite(), base + '_e1');
-    o.prev = k.artSprite()[base + '_e1'];
-    const restore = () => { if (o.had) k.artSprite()[base + '_e1'] = o.prev;
-                            else delete k.artSprite()[base + '_e1']; };
+    o.had  = Object.prototype.hasOwnProperty.call(k.artSprite(), SP + '_e1');
+    o.prev = k.artSprite()[SP + '_e1'];
+    const restore = () => { if (o.had) k.artSprite()[SP + '_e1'] = o.prev;
+                            else delete k.artSprite()[SP + '_e1']; };
     try {
-    k.artSprite()[base + '_e1'] = mk();
-    o.keyWithFake = k.evoArtKey(base, 'e1');
+    k.artSprite()[SP + '_e1'] = mk();
+    o.keyWithFake = k.evoArtKey(base, 'e1', SP);
     /* 個体は まだ ない ので、詳細画面が evo を わたす 道を 直に ためす
        ——`charThumb(o, 128, 'e1')` と 同じ ことを 検査どうぐから */
-    o.direct = (() => { const c = k.charThumb({ pid }, 128, 'e1');
+    o.direct = (() => { const c = k.charThumb({ pid }, 128, 'e1', SP);
       const g = c.getContext('2d');
       const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
       return [d[0], d[1], d[2]].join(','); })();
@@ -283,12 +288,12 @@ const fake2 = await pg.evaluate(async () => {
       const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
       return [d[0], d[1], d[2]].join(','); })();
     restore();
-    o.keyAfterDel = k.evoArtKey(base, 'e1');
-    o.afterDel    = (() => { const c = k.charThumb({ pid }, 128, 'e1');
+    o.keyAfterDel = k.evoArtKey(base, 'e1', SP);
+    o.afterDel    = (() => { const c = k.charThumb({ pid }, 128, 'e1', SP);
       const g = c.getContext('2d');
       const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
       return [d[0], d[1], d[2]].join(','); })();
-    o.stillHasFake = k.artHas(base + '_e1') !== o.had;
+    o.stillHasFake = k.artHas(SP + '_e1') !== o.had;
     } finally { restore(); }
     out[tag] = o;
   }
@@ -447,7 +452,7 @@ if (!(fake.cache.includes('c_bear@64') && fake.cache.includes('c_bear@64@e1')))
 for (const [tag, o] of Object.entries(fake2)){
   if (!o.base){ bad.push(tag + '：base の 絵の キーが 取れない'); continue; }
   eqs(tag + ' の evo なしの キー', o.keyNoEvo, o.base);
-  eqs(tag + ' の 架空asset ありの キー', o.keyWithFake, o.base + '_e1');
+  eqs(tag + ' の 架空asset ありの キー', o.keyWithFake, o.sp + '_e1');
   eqs(tag + ' の 架空assetを 消した あとの キー', o.keyAfterDel, o.base);
   const [r, g2, b2] = (o.direct || '').split(',').map(Number);
   if (!(r > 180 && g2 < 120 && b2 > 180))
