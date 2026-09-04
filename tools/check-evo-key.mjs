@@ -73,6 +73,27 @@ const r = await pg.evaluate(() => {
     } finally { un(); }
     out.oldGone = !k.artHas('candy_e1');
   }
+  /* ---- ⑤ 本番の asset（架空を 1つも つかわない・Phase 7-7-3-8-3）----
+     GEN 以外の 2つの 道でも、**種の ID で 分かれる**ことを 本物で 見る。
+     `ch_choco`（かみなりのこ・DEX_ART）と `tw_ice`（お菓子タワー）は
+     どちらも base を よそと 分けあって いる（`kaminari` は 1体だけだが、
+     `c_choco` / `tw_choco` と 名前が 似て いる ／ `icecream` は
+     `c_icecream` と 共有）*/
+  {
+    const D = k.dexArt();
+    out.prod = {
+      chocoBase: k.evoArtKey(D['choco'], null, 'ch_choco'),
+      chocoE1:   k.evoArtKey(D['choco'], 'e1', 'ch_choco'),
+      iceBase:   k.evoArtKey(k.towerArt('ice'), null, 'tw_ice'),
+      iceE1:     k.evoArtKey(k.towerArt('ice'), 'e1', 'tw_ice'),
+      /* 名前の 似た 別の 種は **拾っては いけない** */
+      cChocoE1:  k.artKeyFor(gen('c_choco'), 'e1'),
+      twChocoE1: k.evoArtKey(k.towerArt('choco'), 'e1', 'tw_choco'),
+      cIceE1:    k.artKeyFor(gen('c_icecream'), 'e1'),
+      has: { ch: k.artHas('ch_choco_e1'), tw: k.artHas('tw_ice_e1') },
+    };
+  }
+
   /* ---- ④ 本物の c_purin_e1 は のこって いる ---- */
   out.purin = { base: k.artKeyFor(gen('c_purin'), null),
                 e1:   k.artKeyFor(gen('c_purin'), 'e1'),
@@ -107,11 +128,26 @@ eqs('プリン e1',   r.purin.e1,   'c_purin_e1');
 if (!r.purin.real)   bad.push('本物の c_purin_e1 が 読めて いない');
 if (r.purin.oldName) bad.push('古い 名前の purin_e1 が のこって いる');
 
+/* ⑤ 本番の asset */
+eqs('かみなりのこ base', r.prod.chocoBase, 'kaminari');
+eqs('かみなりのこ e1',   r.prod.chocoE1,   'ch_choco_e1');
+eqs('アイス（タワー）base', r.prod.iceBase, 'icecream');
+eqs('アイス（タワー）e1',   r.prod.iceE1,   'tw_ice_e1');
+eqs('c_choco の e1',     r.prod.cChocoE1,  'choco');
+eqs('tw_choco の e1',    r.prod.twChocoE1, 'choco');
+eqs('c_icecream の e1',  r.prod.cIceE1,    'icecream');
+if (!r.prod.has.ch) bad.push('本物の ch_choco_e1 が 読めて いない');
+if (!r.prod.has.tw) bad.push('本物の tw_ice_e1 が 読めて いない');
+
 const out = (t,a) => console.log('  ' + t.padEnd(16,' ') + (a.length ? '✗\n    ' + a.join('\n    ') : 'なし ✅'));
 console.log('進化の 絵の 名前（<種のID>_<evo>）');
 for (const p of r.pairs) console.log(`  ${p.art.padEnd(9)} GEN → ${p.gen.padEnd(16)} TOWER → ${p.tw}`);
 console.log(`  古い candy_e1 だけ … GEN → ${r.old.gen} ／ TOWER → ${r.old.tw}（どちらも 拾わない）`);
 console.log(`  プリン … base ${r.purin.base} ／ e1 ${r.purin.e1}`);
+console.log(`  かみなりのこ … base ${r.prod.chocoBase} ／ e1 ${r.prod.chocoE1}`
+  + `（c_choco → ${r.prod.cChocoE1} ／ tw_choco → ${r.prod.twChocoE1}）`);
+console.log(`  アイス（タワー）… base ${r.prod.iceBase} ／ e1 ${r.prod.iceE1}`
+  + `（c_icecream → ${r.prod.cIceE1}）`);
 out('JSエラー', errs);
 out('canary', bad);
 const ng = errs.length + bad.length;
