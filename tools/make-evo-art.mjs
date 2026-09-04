@@ -71,6 +71,99 @@ const bolt = (cx, cy, s, rot) => {
     + `<path d="M${(-0.10*s).toFixed(1)},${(-0.78*s).toFixed(1)} L${(-0.42*s).toFixed(1)},${(0.02*s).toFixed(1)} L${(-0.26*s).toFixed(1)},${(0.02*s).toFixed(1)} L${(0).toFixed(1)},${(-0.62*s).toFixed(1)} Z" fill="#fffdf2" opacity=".6"/></g>`;
 };
 
+/* ── 砂の 粒（`grain`）──────────────────────────────
+   **弧を 太い 帯に しないこと。**すなどけいの わく（`#f0c090`）と
+   一体に 見えて しまいます。粒の つらなりで えがき、色は わくより
+   **明るく 黄色に 寄せ**、1粒ずつ 白い つやを 入れて 分けます */
+const rnd = seed => () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+const qpt = (p0, p1, p2, t) => [
+  (1-t)*(1-t)*p0[0] + 2*(1-t)*t*p1[0] + t*t*p2[0],
+  (1-t)*(1-t)*p0[1] + 2*(1-t)*t*p1[1] + t*t*p2[1]];
+
+/* 曲線に そって、**となりと ぜったいに くっつかない** 間かくで 粒を ならべる。
+   `gap` は （r1+r2）の 何倍 はなすか。1.0 で ちょうど 接するので 1.3 以上。
+   大きさを ばらつかせないと **真珠の ネックレス**に 見えます（1回 やりました）*/
+function grainChain(p0, p1, p2, r0, r1, gap, seed, jit, vary = 0, off = 0, rs = 1){
+  const N = 600, P = [];
+  for (let i = 0; i <= N; i++) P.push(qpt(p0, p1, p2, i/N));
+  const rAt = t => r0 + (r1 - r0) * Math.pow(t, 0.8);
+  const R = rnd(seed), out = [];
+  let i = 0;
+  while (i <= N){
+    const t = i/N, r = rAt(t) * rs * (1 + (R() - .5) * 2 * vary);
+    const nx = P[Math.min(N,i+1)][0] - P[i][0], ny = P[Math.min(N,i+1)][1] - P[i][1];
+    const L = Math.hypot(nx, ny) || 1;              // 法線（外がわへ 少し ずらす）
+    const j = off + (R() - .5) * jit;
+    out.push({ x: P[i][0] + (-ny/L) * j, y: P[i][1] + (nx/L) * j, r, a: R() * 180 });
+    let d = 0, k = i;                                // つぎの 粒まで 弧長で 進む
+    const want = (r + rAt(Math.min(1,(i+1)/N))) * gap;
+    while (k < N && d < want){ d += Math.hypot(P[k+1][0]-P[k][0], P[k+1][1]-P[k][1]); k++; }
+    if (k === i) break;
+    i = k;
+  }
+  return out;
+}
+/* こまかい 砂ぼこり。**これが 無いと 玉の ならびに 見えます** */
+function grainDust(p0, p1, p2, n, seed, spread, r0, r1){
+  const R = rnd(seed), out = [];
+  for (let i = 0; i < n; i++){
+    const t = R();
+    const [x, y] = qpt(p0, p1, p2, t);
+    const [x2, y2] = qpt(p0, p1, p2, Math.min(1, t + .01));
+    const nx = x2 - x, ny = y2 - y, L = Math.hypot(nx, ny) || 1;
+    const j = (R() - .5) * 2 * spread;
+    out.push({ x: x + (-ny/L) * j, y: y + (nx/L) * j,
+               r: r0 + (r1 - r0) * R(), a: R() * 180 });
+  }
+  return out;
+}
+/* 粒 1つ。まん丸に しないで すこし つぶす（砂に 見せる ため）*/
+const grain = g => `<g transform="translate(${g.x.toFixed(1)},${g.y.toFixed(1)}) rotate(${(g.a||0).toFixed(0)})">`
+  + `<ellipse rx="${g.r.toFixed(1)}" ry="${(g.r*.84).toFixed(1)}"`
+  + ` fill="url(#sand)" stroke="#e8b45e" stroke-width="${Math.max(.8, g.r*.14).toFixed(2)}"/>`
+  + (g.r > 3.2 ? `<ellipse cx="${(-g.r*.26).toFixed(1)}" cy="${(-g.r*.28).toFixed(1)}"`
+      + ` rx="${(g.r*.24).toFixed(1)}" ry="${(g.r*.19).toFixed(1)}" fill="#fffdf2" opacity=".62"/>` : '')
+  + `</g>`;
+
+/* すなどけい：左右を **下から 上へ のぼる 砂の 弧**。
+   本体の 形は 実測（うで y160..168 が いちばん 太く x58..198）。
+   **上で 輪を とじないこと** ——とじると「玉の 首かざり」に 見えます */
+const QARC = { p0:[74,214], p1:[24,176], p2:[52,42] };
+const mir = g => ({ ...g, x: 255 - g.x });
+const queenSvg = () => {
+  const A = QARC;
+  /* **1本の 線に しないこと。**すじを 3本 かさねて「砂の 流れ」に する
+     ——1本だと 玉の ネックレスに、太い 帯だと オーラに 見えます */
+  const lane = (seed, off, rs) => grainChain(A.p0, A.p1, A.p2, 7.2, 2.9, 1.20, seed, 3.4, .30, off, rs);
+  const L  = [...lane(20260904, 0, 1), ...lane(41337711, -8.5, .78), ...lane(90211077, 8.0, .86)];
+  const Rg = L.map(mir);
+  const dL = grainDust(A.p0, A.p1, A.p2, 44, 5150321, 16, 1.3, 2.6);
+  const dR = grainDust(A.p0, A.p1, A.p2, 44, 9903117, 16, 1.3, 2.6).map(mir);
+  /* はぐれた 粒（外へ 1つぶ ずつ ちらす）*/
+  const stray = [{x:22,y:150,r:4.4,a:20},{x:24,y:104,r:3.6,a:70},{x:30,y:186,r:3.4,a:40},
+                 {x:44,y:26,r:3.0,a:10},{x:34,y:64,r:2.6,a:55},{x:18,y:132,r:2.4,a:60}];
+  /* 下の かたまり ——**小さくしたとき ここだけは 消えない**（砂が たまる ところ）*/
+  const foot = [{x:64,y:216,r:6.4,a:12},{x:53,y:209,r:5.4,a:40},{x:48,y:222,r:4.6,a:70},
+                {x:38,y:214,r:3.8,a:25},{x:58,y:228,r:4.0,a:55},{x:44,y:232,r:3.2,a:35},
+                {x:33,y:224,r:2.8,a:65},{x:60,y:200,r:4.2,a:20}];
+  /* 足もとの 小さな 砂の 山 */
+  const heap = [{x:72,y:238,r:3.4,a:15},{x:86,y:235,r:2.6,a:50},{x:24,y:234,r:3.0,a:65}];
+  const big  = [...L, ...Rg];
+  const all  = [...dL, ...dR, ...big, ...foot, ...foot.map(mir),
+                ...stray, ...stray.map(mir), ...heap, ...heap.map(mir)];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <radialGradient id="sand" cx=".36" cy=".30" r=".78">
+  <stop offset="0" stop-color="#fffbe4"/><stop offset=".55" stop-color="#ffe4a6"/>
+  <stop offset="1" stop-color="#ffd27e"/></radialGradient>
+ <filter id="sg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<g filter="url(#sg)" opacity=".18" fill="#ffe9b8">
+ ${[...big].map(g => `<circle cx="${g.x.toFixed(1)}" cy="${g.y.toFixed(1)}" r="${(g.r*1.2).toFixed(1)}"/>`).join('')}</g>
+${all.map(grain).join('')}
+</svg>`;
+};
+
 /* かみなりのこ：頭上の 電光の 冠 ＋ 左右に 大きめの いなずま 2つ。
    いちは base の 雲の 上ばし（実測 y=42・x=124..132 が てっぺん）に
    そって ならべる */
@@ -135,6 +228,13 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  ch_queen: {
+    kind:  'deco',
+    base:  'art/sprites/sunadokei.png',     // すなどけい（**読むだけ**）
+    out:   'art/sprites/ch_queen_e1.png',
+    dy:    0,      // よこの 余白（左右 57px ずつ）を つかうので ずらさない
+    svg:   queenSvg,
   },
   tw_ice: {
     kind:  'deco',
