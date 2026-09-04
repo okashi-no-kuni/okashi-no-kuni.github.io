@@ -188,6 +188,12 @@ const fake = await pg.evaluate(async iid => {
   /* ② e1 ＋ 架空asset あり → _e1 */
   const cv = document.createElement('canvas'); cv.width = cv.height = 64;
   const g = cv.getContext('2d'); g.fillStyle = '#ff00ff'; g.fillRect(0, 0, 64, 64);
+  /* **本物の `_e1` を こわさない。**`delete` では なく
+     もとの 値を おぼえて おいて、おわったら そのまま もどします
+     （いまは `purin_e1` が 本物。対象が ぶつかって いなくても、
+     ふえた ときに だまって 消さない ように する）*/
+  out.had = Object.prototype.hasOwnProperty.call(k.artSprite(), base + '_e1');
+  out.prev = k.artSprite()[base + '_e1'];
   k.artSprite()[base + '_e1'] = cv;
   I.evolve(iid, 'e1');
   out.keyWithFake = k.artKeyFor(gen, 'e1');
@@ -209,11 +215,13 @@ const fake = await pg.evaluate(async iid => {
     document.getElementById('chClose').click();
     return [d[0], d[1], d[2]].join(',');
   })();
-  /* ③ 架空assetを 消したら base へ もどる（fallback）*/
-  delete k.artSprite()[base + '_e1'];
+  /* ③ 架空assetを 外したら base へ もどる（fallback）——**完全復元**する */
+  if (out.had) k.artSprite()[base + '_e1'] = out.prev;
+  else delete k.artSprite()[base + '_e1'];
   out.keyAfterDel = k.artKeyFor(gen, 'e1');
   out.afterDel = await open();
-  out.stillHasFake = k.artHas(base + '_e1');
+  /* もとの 状態に もどって いるか（本物が あったなら ある、無かったなら 無い）*/
+  out.stillHasFake = k.artHas(base + '_e1') !== out.had;
   /* キャッシュキーは base と evo で 別（7-7-2 の receiver を つかって いる 証拠）*/
   k.genSprite(gen, 64);  k.genSprite(gen, 64, 'e1');
   out.cache = k.cacheKeys().gen.filter(x => x.startsWith('c_bear@64'));
@@ -252,6 +260,8 @@ const fake2 = await pg.evaluate(async () => {
     const o = { base };
     o.keyNoEvo   = k.evoArtKey(base, null);
     o.noEvo      = await open(dexId);
+    o.had  = Object.prototype.hasOwnProperty.call(k.artSprite(), base + '_e1');
+    o.prev = k.artSprite()[base + '_e1'];
     k.artSprite()[base + '_e1'] = mk();
     o.keyWithFake = k.evoArtKey(base, 'e1');
     /* 個体は まだ ない ので、詳細画面が evo を わたす 道を 直に ためす
@@ -264,13 +274,14 @@ const fake2 = await pg.evaluate(async () => {
       const g = c.getContext('2d');
       const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
       return [d[0], d[1], d[2]].join(','); })();
-    delete k.artSprite()[base + '_e1'];
+    if (o.had) k.artSprite()[base + '_e1'] = o.prev;
+    else delete k.artSprite()[base + '_e1'];
     o.keyAfterDel = k.evoArtKey(base, 'e1');
     o.afterDel    = (() => { const c = k.charThumb({ pid }, 128, 'e1');
       const g = c.getContext('2d');
       const d = g.getImageData(Math.round(c.width/2), Math.round(c.height/2), 1, 1).data;
       return [d[0], d[1], d[2]].join(','); })();
-    o.stillHasFake = k.artHas(base + '_e1');
+    o.stillHasFake = k.artHas(base + '_e1') !== o.had;
     out[tag] = o;
   }
   return out;

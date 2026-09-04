@@ -551,9 +551,16 @@ const evoCall = [];
     if (/\bevo\b/.test(lines.slice(i, i + 3).join('\n')))
       evoCall.push('似顔絵の キャッシュ（' + nm.trim() + '）に evo が 入って いる');
   }
-  /* 本番の 絵に `_e1` を まだ 入れて いない こと */
+  /* 本番の 進化の 絵。**Phase 7-7-3-8-1 から `purin_e1` の 1枚だけ**です
+     （7-7-3-6/6B の「0件」は ここで 前提が 変わりました。回帰では ありません）。
+     ふえた ときは この ならびに 足すこと ——だまって ふえるのを ふせぎます */
+  const EVO_ART = ['purin_e1'];
   const keys = (strip(src).match(/const ART_KEYS = \[[^\]]*\]/) || [''])[0];
-  if (/_e\d/.test(keys)) evoCall.push('ART_KEYS に 進化の 絵が 入って いる（このフェーズでは 0件）');
+  const got = [...keys.matchAll(/'([a-z0-9_]+_e\d[a-z]*)'/g)].map(m => m[1]);
+  for (const k of got) if (!EVO_ART.includes(k))
+    evoCall.push('ART_KEYS に 知らない 進化の 絵が ある：' + k);
+  for (const k of EVO_ART) if (!got.includes(k))
+    evoCall.push('ART_KEYS に ' + k + ' が ない');
 }
 line('進化の 絵の caller', evoCall);
 
