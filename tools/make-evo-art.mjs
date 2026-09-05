@@ -232,6 +232,50 @@ const flower = (cx, cy, s, n = 5, rot = 0) => {
     + ` fill="#fff8dc"/></g>`;
 };
 
+/* ながれぼし：**尾が のびて 長くなる**。左下へ 3本の 尾が 扇に なって
+   流れ、うしろに 速さの すじ。**左右から 本体を つつまない**
+   （`ch_donut` の 水流と 分ける）。**粒の 連なりにも しない**
+   （`ch_queen` の 砂と 分ける）——ここは **1方向の 帯**が 主役。
+   本体の 形は 実測（星＝金 x102..226 / y38..154、尾＝パステル
+   x26..139 / y100..223。左上 x12..109 / y12..70 が 空いて いる）*/
+const RTAIL = [   // 星の うしろから **左へ 扇に 広がる**。空いて いるのは
+                  // 尾の 上がわ（x12..109 / y60..115）——ここが いちばん 長く のばせる
+  { P:[[118,72],[72,78],[38,90],[17,102]],   w:[8,30,4], g:'trM' },  // 上：ミント
+  { P:[[116,90],[70,98],[34,110],[18,124]],  w:[8,36,4], g:'trL' },  // 中：ラベンダー
+  { P:[[114,106],[66,116],[30,128],[19,144]],w:[8,30,4], g:'trP' },  // 下：ピンク
+  { P:[[150,198],[104,220],[58,230],[19,222]], w:[8,40,5], g:'trP' },// 尾の さき（左下へ）
+];
+const RSTREAK = [   // 速さの すじ（尾と 同じ 向き）
+  { P:[[104,52],[74,58],[44,68],[20,80]],  w:[4,4,1.4] },
+  { P:[[138,42],[108,46],[78,54],[56,64]], w:[3.4,3.4,1.2] },
+];
+const rpurinSvg = () => {
+  const band = t => `<path d="${ribbon(t.P, t.w[0], t.w[2], t.w[1])}" fill="url(#${t.g})"`
+    + ` stroke="${{trP:'#e07fa8',trL:'#a97fd0',trM:'#6fc9a6'}[t.g]}" stroke-width="2.2"`
+    + ` stroke-linejoin="round"/>`;
+  const streak = t => `<path d="${ribbon(t.P, t.w[0], t.w[2], t.w[1])}" fill="#ffffff" opacity=".62"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="trP" x1="1" y1="0" x2="0" y2=".6">
+  <stop offset="0" stop-color="#ffd9ea"/><stop offset=".55" stop-color="#fc9fcb"/>
+  <stop offset="1" stop-color="#f9b6d6"/></linearGradient>
+ <linearGradient id="trL" x1="1" y1="0" x2="0" y2=".6">
+  <stop offset="0" stop-color="#eee2ff"/><stop offset=".55" stop-color="#cfa7f6"/>
+  <stop offset="1" stop-color="#dcc4fb"/></linearGradient>
+ <linearGradient id="trM" x1="1" y1="0" x2="0" y2=".6">
+  <stop offset="0" stop-color="#dcfbec"/><stop offset=".55" stop-color="#a0f0d0"/>
+  <stop offset="1" stop-color="#c4f6e0"/></linearGradient>
+ <filter id="rg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6"/></filter>
+</defs>
+<g filter="url(#rg)" opacity=".20" fill="#f6cfe6">
+ <path d="${ribbon(RTAIL[1].P, 18, 12, 52)}"/><path d="${ribbon(RTAIL[3].P, 16, 12, 52)}"/></g>
+${RTAIL.map(band).join('')}
+${RTAIL.map(t => `<path d="${ribbon(t.P, 2, 1.4, t.w[1] * .28)}" fill="#ffffff" opacity=".38"/>`).join('')}
+${RSTREAK.map(streak).join('')}
+${spark(30, 168, 7.5, '#ffd9ea')}${spark(20, 62, 6, '#eee2ff')}${spark(74, 236, 5, '#dcfbec', .85)}
+</svg>`;
+};
+
 /* ふたばのこ：**双葉 → つる → つぼみ → 花**の ひとつづきの 流れ。
    本体の 形は 実測（双葉は x76..180 / y25..77、茎は y73 で x123..132、
    顔は y78 から 下）。**花だけを 浮かせない** ——つるは 右の葉の
@@ -426,6 +470,14 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  sp_rpurin: {
+    kind:  'deco',
+    base:  'art/sprites/nagareboshi.png',     // ながれぼし（**読むだけ**）
+    out:   'art/sprites/sp_rpurin_e1.png',
+    dy:    0,      // 左下へ のばす（**`sp_` prefix の 実証**も かねる）
+    asym:  true,   // 尾は **1方向**。左右対称に すると 流れが 消える
+    svg:   rpurinSvg,
   },
   ch_apple: {
     kind:  'deco',

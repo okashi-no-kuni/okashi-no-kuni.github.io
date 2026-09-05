@@ -90,7 +90,10 @@ const r = await pg.evaluate(() => {
       cChocoE1:  k.artKeyFor(gen('c_choco'), 'e1'),
       twChocoE1: k.evoArtKey(k.towerArt('choco'), 'e1', 'tw_choco'),
       cIceE1:    k.artKeyFor(gen('c_icecream'), 'e1'),
-      has: { ch: k.artHas('ch_choco_e1'), tw: k.artHas('tw_ice_e1') },
+      /* `sp_` prefix（3つめの 系統）*/
+      rpBase:    k.evoArtKey(D['rpurin'], null, 'sp_rpurin'),
+      rpE1:      k.evoArtKey(D['rpurin'], 'e1', 'sp_rpurin'),
+      has: { ch: k.artHas('ch_choco_e1'), tw: k.artHas('tw_ice_e1'), rp: k.artHas('sp_rpurin_e1') },
     };
   }
 
@@ -138,6 +141,9 @@ eqs('tw_choco の e1',    r.prod.twChocoE1, 'choco');
 eqs('c_icecream の e1',  r.prod.cIceE1,    'icecream');
 if (!r.prod.has.ch) bad.push('本物の ch_choco_e1 が 読めて いない');
 if (!r.prod.has.tw) bad.push('本物の tw_ice_e1 が 読めて いない');
+eqs('ながれぼし base', r.prod.rpBase, 'nagareboshi');
+eqs('ながれぼし e1',   r.prod.rpE1,   'sp_rpurin_e1');
+if (!r.prod.has.rp) bad.push('本物の sp_rpurin_e1 が 読めて いない');
 
 const out = (t,a) => console.log('  ' + t.padEnd(16,' ') + (a.length ? '✗\n    ' + a.join('\n    ') : 'なし ✅'));
 console.log('進化の 絵の 名前（<種のID>_<evo>）');
@@ -148,6 +154,7 @@ console.log(`  かみなりのこ … base ${r.prod.chocoBase} ／ e1 ${r.prod.c
   + `（c_choco → ${r.prod.cChocoE1} ／ tw_choco → ${r.prod.twChocoE1}）`);
 console.log(`  アイス（タワー）… base ${r.prod.iceBase} ／ e1 ${r.prod.iceE1}`
   + `（c_icecream → ${r.prod.cIceE1}）`);
+console.log(`  ながれぼし … base ${r.prod.rpBase} ／ e1 ${r.prod.rpE1}（sp_ prefix）`);
 out('JSエラー', errs);
 out('canary', bad);
 const ng = errs.length + bad.length;
