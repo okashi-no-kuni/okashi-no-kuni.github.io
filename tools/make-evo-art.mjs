@@ -183,7 +183,7 @@ const leaf = (s, rot) => {
     + ` C${p(-0.86,-1.42)} ${p(-0.40,-1.52)} ${p(0,-1.16)}`
     + ` C${p(0.40,-1.52)} ${p(0.86,-1.42)} ${p(0.86,-1.02)}`
     + ` C${p(0.86,-0.52)} ${p(0.30,-0.42)} ${p(0,0)} Z"`
-    + ` fill="url(#mint)" stroke="#4f9d7c" stroke-width="${Math.max(1.4, s*.075).toFixed(2)}"`
+    + ` fill="url(#mint)" stroke="#5eaf92" stroke-width="${Math.max(1.4, s*.075).toFixed(2)}"`
     + ` stroke-linejoin="round"/>`
     + `<ellipse cx="${(-0.42*k).toFixed(1)}" cy="${(-0.92*k).toFixed(1)}"`
     + ` rx="${(0.20*k).toFixed(1)}" ry="${(0.30*k).toFixed(1)}"`
@@ -194,10 +194,10 @@ const leaf = (s, rot) => {
 const clover = (cx, cy, s, rot, stem = 0) =>
   `<g transform="translate(${cx},${cy}) rotate(${rot})">`
   + (stem ? `<path d="M0,0 q${(s*.14).toFixed(1)},${(s*.52).toFixed(1)}`
-      + ` ${(-s*.10).toFixed(1)},${(s*.95).toFixed(1)}" fill="none" stroke="#4f9d7c"`
+      + ` ${(-s*.10).toFixed(1)},${(s*.95).toFixed(1)}" fill="none" stroke="#5eaf92"`
       + ` stroke-width="${Math.max(2, s*.10).toFixed(1)}" stroke-linecap="round"/>` : '')
   + [-45, 45, 135, 225].map(a => leaf(s, a)).join('')
-  + `<circle r="${(s*.10).toFixed(1)}" fill="#66bf95"/></g>`;
+  + `<circle r="${(s*.10).toFixed(1)}" fill="#66b497"/></g>`;
 
 /* よつばのこ：**大きな 四つ葉を 2枚**（左上・右下）＋小さいのを 3枚。
    本体の 形は 実測（y88..176 で x42..219 と いちばん 広く、
@@ -207,8 +207,8 @@ const clover = (cx, cy, s, rot, stem = 0) =>
 const princeSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
 <defs>
  <linearGradient id="mint" x1="0" y1="0" x2=".6" y2="1">
-  <stop offset="0" stop-color="#cdf2dd"/><stop offset=".55" stop-color="#96dfba"/>
-  <stop offset="1" stop-color="#66bf95"/></linearGradient>
+  <stop offset="0" stop-color="#d6f7dc"/><stop offset=".55" stop-color="#94e1c0"/>
+  <stop offset="1" stop-color="#66b497"/></linearGradient>
  <filter id="lg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>
 </defs>
 <g filter="url(#lg)" opacity=".20" fill="#bdeed4">
