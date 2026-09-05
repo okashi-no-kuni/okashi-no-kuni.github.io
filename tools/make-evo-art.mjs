@@ -76,16 +76,22 @@ const bolt = (cx, cy, s, rot) => {
    一体に 見えて しまいます。粒の つらなりで えがき、色は わくより
    **明るく 黄色に 寄せ**、1粒ずつ 白い つやを 入れて 分けます */
 const rnd = seed => () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
-const qpt = (p0, p1, p2, t) => [
-  (1-t)*(1-t)*p0[0] + 2*(1-t)*t*p1[0] + t*t*p2[0],
-  (1-t)*(1-t)*p0[1] + 2*(1-t)*t*p1[1] + t*t*p2[1]];
+/* ベジエ（3点＝2次・4点＝3次）。**S字は 3次で ないと 引けません** */
+const bez = (P, t) => {
+  const u = 1 - t;
+  if (P.length === 4) return [
+    u*u*u*P[0][0] + 3*u*u*t*P[1][0] + 3*u*t*t*P[2][0] + t*t*t*P[3][0],
+    u*u*u*P[0][1] + 3*u*u*t*P[1][1] + 3*u*t*t*P[2][1] + t*t*t*P[3][1]];
+  return [ u*u*P[0][0] + 2*u*t*P[1][0] + t*t*P[2][0],
+           u*u*P[0][1] + 2*u*t*P[1][1] + t*t*P[2][1] ];
+};
 
 /* 曲線に そって、**となりと ぜったいに くっつかない** 間かくで 粒を ならべる。
-   `gap` は （r1+r2）の 何倍 はなすか。1.0 で ちょうど 接するので 1.3 以上。
+   `gap` は （r1+r2）の 何倍 はなすか。1.0 で ちょうど 接するので 1.2 以上。
    大きさを ばらつかせないと **真珠の ネックレス**に 見えます（1回 やりました）*/
-function grainChain(p0, p1, p2, r0, r1, gap, seed, jit, vary = 0, off = 0, rs = 1){
+function grainChain(P4, r0, r1, gap, seed, jit, vary = 0, off = 0, rs = 1){
   const N = 600, P = [];
-  for (let i = 0; i <= N; i++) P.push(qpt(p0, p1, p2, i/N));
+  for (let i = 0; i <= N; i++) P.push(bez(P4, i/N));
   const rAt = t => r0 + (r1 - r0) * Math.pow(t, 0.8);
   const R = rnd(seed), out = [];
   let i = 0;
@@ -104,12 +110,12 @@ function grainChain(p0, p1, p2, r0, r1, gap, seed, jit, vary = 0, off = 0, rs = 
   return out;
 }
 /* こまかい 砂ぼこり。**これが 無いと 玉の ならびに 見えます** */
-function grainDust(p0, p1, p2, n, seed, spread, r0, r1){
+function grainDust(P4, n, seed, spread, r0, r1){
   const R = rnd(seed), out = [];
   for (let i = 0; i < n; i++){
     const t = R();
-    const [x, y] = qpt(p0, p1, p2, t);
-    const [x2, y2] = qpt(p0, p1, p2, Math.min(1, t + .01));
+    const [x, y] = bez(P4, t);
+    const [x2, y2] = bez(P4, Math.min(1, t + .01));
     const nx = x2 - x, ny = y2 - y, L = Math.hypot(nx, ny) || 1;
     const j = (R() - .5) * 2 * spread;
     out.push({ x: x + (-ny/L) * j, y: y + (nx/L) * j,
@@ -124,33 +130,52 @@ const grain = g => `<g transform="translate(${g.x.toFixed(1)},${g.y.toFixed(1)})
   + (g.r > 3.2 ? `<ellipse cx="${(-g.r*.26).toFixed(1)}" cy="${(-g.r*.28).toFixed(1)}"`
       + ` rx="${(g.r*.24).toFixed(1)}" ry="${(g.r*.19).toFixed(1)}" fill="#fffdf2" opacity=".62"/>` : '')
   + `</g>`;
+/* 金の きらめき（4方向の 星。ふちを つけて 小さくても 形が のこる ように）*/
+const goldSpark = (cx, cy, r) =>
+  `<g transform="translate(${cx},${cy})">`
+  + `<path d="M0,${-r} Q${(r*.17).toFixed(1)},${(-r*.17).toFixed(1)} ${r},0 Q${(r*.17).toFixed(1)},${(r*.17).toFixed(1)} 0,${r} Q${(-r*.17).toFixed(1)},${(r*.17).toFixed(1)} ${-r},0 Q${(-r*.17).toFixed(1)},${(-r*.17).toFixed(1)} 0,${-r} Z"`
+  + ` fill="#ffdf98" stroke="#e0a94e" stroke-width="1.6" stroke-linejoin="round"/>`
+  + `<path d="M0,${(-r*.46).toFixed(1)} Q${(r*.08).toFixed(1)},${(-r*.08).toFixed(1)} ${(r*.46).toFixed(1)},0 Q${(r*.08).toFixed(1)},${(r*.08).toFixed(1)} 0,${(r*.46).toFixed(1)} Q${(-r*.08).toFixed(1)},${(r*.08).toFixed(1)} ${(-r*.46).toFixed(1)},0 Q${(-r*.08).toFixed(1)},${(-r*.08).toFixed(1)} 0,${(-r*.46).toFixed(1)} Z"`
+  + ` fill="#fffdf2" opacity=".92"/></g>`;
 
-/* すなどけい：左右を **下から 上へ のぼる 砂の 弧**。
-   本体の 形は 実測（うで y160..168 が いちばん 太く x58..198）。
+/* すなどけい：左右に **S字に うねる 砂の 流れ**。
+   本体の 形は 実測（うで y160..168 が いちばん 太く x58..198・
+   ふた y32..56 と y176..208 が x67..189）。
+   **まっすぐな 柱に しないこと** ——うねりが 無いと「湧いて いる あわ」に 見えます。
    **上で 輪を とじないこと** ——とじると「玉の 首かざり」に 見えます */
-const QARC = { p0:[74,214], p1:[24,176], p2:[52,42] };
+const QL = [[[78,224],[10,206],[16,150],[58,126]],     // 左・下半分：外へ ふくらむ
+            [[58,126],[92,106],[16,86],[46,38]]];      // 左・上半分：内へ 入って また 外へ
+const QR = [[[76,222],[16,200],[12,146],[54,122]],     // 右：すこし ちがう うねり
+            [[54,122],[88,100],[14,80],[40,34]]];
 const mir = g => ({ ...g, x: 255 - g.x });
 const queenSvg = () => {
-  const A = QARC;
   /* **1本の 線に しないこと。**すじを 3本 かさねて「砂の 流れ」に する
-     ——1本だと 玉の ネックレスに、太い 帯だと オーラに 見えます */
-  const lane = (seed, off, rs) => grainChain(A.p0, A.p1, A.p2, 7.2, 2.9, 1.20, seed, 3.4, .30, off, rs);
-  const L  = [...lane(20260904, 0, 1), ...lane(41337711, -8.5, .78), ...lane(90211077, 8.0, .86)];
-  const Rg = L.map(mir);
-  const dL = grainDust(A.p0, A.p1, A.p2, 44, 5150321, 16, 1.3, 2.6);
-  const dR = grainDust(A.p0, A.p1, A.p2, 44, 9903117, 16, 1.3, 2.6).map(mir);
-  /* はぐれた 粒（外へ 1つぶ ずつ ちらす）*/
-  const stray = [{x:22,y:150,r:4.4,a:20},{x:24,y:104,r:3.6,a:70},{x:30,y:186,r:3.4,a:40},
-                 {x:44,y:26,r:3.0,a:10},{x:34,y:64,r:2.6,a:55},{x:18,y:132,r:2.4,a:60}];
-  /* 下の かたまり ——**小さくしたとき ここだけは 消えない**（砂が たまる ところ）*/
-  const foot = [{x:64,y:216,r:6.4,a:12},{x:53,y:209,r:5.4,a:40},{x:48,y:222,r:4.6,a:70},
-                {x:38,y:214,r:3.8,a:25},{x:58,y:228,r:4.0,a:55},{x:44,y:232,r:3.2,a:35},
-                {x:33,y:224,r:2.8,a:65},{x:60,y:200,r:4.2,a:20}];
-  /* 足もとの 小さな 砂の 山 */
-  const heap = [{x:72,y:238,r:3.4,a:15},{x:86,y:235,r:2.6,a:50},{x:24,y:234,r:3.0,a:65}];
+     ——1本だと 玉の ネックレスに、太い 帯だと オーラに 見えます。
+     下半分は 太く、上半分へ 行くほど 細く（のぼって 消えて いく）*/
+  const RR = [[8.0, 5.0], [5.0, 2.4]];
+  const lane = (Q, seed, off, rs) => Q.flatMap((P, i) =>
+    grainChain(P, RR[i][0], RR[i][1], 1.20, seed + i * 7717, 3.4, .30, off, rs));
+  const L  = [...lane(QL, 20260904, 0, 1), ...lane(QL, 41337711, -8.5, .78),
+              ...lane(QL, 90211077, 8.0, .86)];
+  const Rg = [...lane(QR, 33115577, 0, 1), ...lane(QR, 60422199, -8.0, .80),
+              ...lane(QR, 12907733, 8.5, .84)].map(mir);
+  const dust = (Q, seed) => Q.flatMap((P, i) =>
+    grainDust(P, i ? 20 : 26, seed + i * 331, 15, 1.3, i ? 2.2 : 2.8));
+  const dL = dust(QL, 5150321), dR = dust(QR, 9903117).map(mir);
+  /* 大つぶ（流れの 中に ときどき まざる。つやが 強い）*/
+  const beads = [{x:31,y:190,r:9.0,a:15},{x:36,y:154,r:7.4,a:60},{x:60,y:112,r:6.2,a:30},
+                 {x:42,y:66,r:5.0,a:75}];
+  /* はぐれた 粒 */
+  const stray = [{x:18,y:168,r:3.6,a:20},{x:24,y:96,r:3.0,a:70},{x:36,y:230,r:3.4,a:40},
+                 {x:50,y:22,r:2.6,a:10},{x:16,y:196,r:2.4,a:60}];
+  /* 足もとに たまった 砂の 山 ——**小さくしたとき ここだけは 消えない** */
+  const heap = [{x:62,y:226,r:7.2,a:12},{x:50,y:232,r:6.0,a:40},{x:74,y:233,r:5.0,a:70},
+                {x:38,y:236,r:4.4,a:25},{x:60,y:240,r:4.0,a:55},{x:86,y:237,r:3.2,a:35},
+                {x:28,y:241,r:2.8,a:65},{x:46,y:222,r:4.0,a:20}];
   const big  = [...L, ...Rg];
-  const all  = [...dL, ...dR, ...big, ...foot, ...foot.map(mir),
+  const all  = [...dL, ...dR, ...big, ...beads, ...beads.map(mir),
                 ...stray, ...stray.map(mir), ...heap, ...heap.map(mir)];
+  const SPK = [[34,72,11],[16,146,8],[34,216,7],[54,30,6]];
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
 <defs>
  <radialGradient id="sand" cx=".36" cy=".30" r=".78">
@@ -161,6 +186,8 @@ const queenSvg = () => {
 <g filter="url(#sg)" opacity=".18" fill="#ffe9b8">
  ${[...big].map(g => `<circle cx="${g.x.toFixed(1)}" cy="${g.y.toFixed(1)}" r="${(g.r*1.2).toFixed(1)}"/>`).join('')}</g>
 ${all.map(grain).join('')}
+${SPK.map(([x,y,r]) => goldSpark(x,y,r)).join('')}
+${SPK.map(([x,y,r]) => goldSpark(255-x,y-8,r*.92)).join('')}
 </svg>`;
 };
 
