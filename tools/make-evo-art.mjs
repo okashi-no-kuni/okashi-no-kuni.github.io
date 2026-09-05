@@ -171,6 +171,54 @@ const waterDrop = (cx, cy, r, o = 1) =>
 /* いずみのしずく：左右へ **はねあがる 水の しぶき**＋足もとの **広い 波紋**。
    本体の 形は 実測（y150 で x55・y120 で x60・y90 で x77・てっぺん y32）。
    **粒を ばらまかない** ——すなどけいと 逆に、ひとつづきの 流れで シルエットを 作る */
+/* ── 葉と 四つ葉（`leaf` / `clover`）─────────────────────────
+   すなどけい＝粒、しずく＝ひとつづきの 流れ、こちらは
+   **同じ かたちの くりかえし**。シルエットの ことばを 1体ずつ 変える */
+
+/* ハートの 葉。**先が クローバーの まん中、くぼみが 外がわ** */
+const leaf = (s, rot) => {
+  const k = s / 1.5, p = (x, y) => (x*k).toFixed(1) + ',' + (y*k).toFixed(1);
+  return `<g transform="rotate(${rot})"><path d="M${p(0,0)}`
+    + ` C${p(-0.30,-0.42)} ${p(-0.86,-0.52)} ${p(-0.86,-1.02)}`
+    + ` C${p(-0.86,-1.42)} ${p(-0.40,-1.52)} ${p(0,-1.16)}`
+    + ` C${p(0.40,-1.52)} ${p(0.86,-1.42)} ${p(0.86,-1.02)}`
+    + ` C${p(0.86,-0.52)} ${p(0.30,-0.42)} ${p(0,0)} Z"`
+    + ` fill="url(#mint)" stroke="#4f9d7c" stroke-width="${Math.max(1.4, s*.075).toFixed(2)}"`
+    + ` stroke-linejoin="round"/>`
+    + `<ellipse cx="${(-0.42*k).toFixed(1)}" cy="${(-0.92*k).toFixed(1)}"`
+    + ` rx="${(0.20*k).toFixed(1)}" ry="${(0.30*k).toFixed(1)}"`
+    + ` transform="rotate(-18 ${(-0.42*k).toFixed(1)} ${(-0.92*k).toFixed(1)})"`
+    + ` fill="#ffffff" opacity=".5"/></g>`;
+};
+/* 四つ葉。**葉を ばらまかない** ——1つの かたまりとして 読める ように */
+const clover = (cx, cy, s, rot, stem = 0) =>
+  `<g transform="translate(${cx},${cy}) rotate(${rot})">`
+  + (stem ? `<path d="M0,0 q${(s*.14).toFixed(1)},${(s*.52).toFixed(1)}`
+      + ` ${(-s*.10).toFixed(1)},${(s*.95).toFixed(1)}" fill="none" stroke="#4f9d7c"`
+      + ` stroke-width="${Math.max(2, s*.10).toFixed(1)}" stroke-linecap="round"/>` : '')
+  + [-45, 45, 135, 225].map(a => leaf(s, a)).join('')
+  + `<circle r="${(s*.10).toFixed(1)}" fill="#66bf95"/></g>`;
+
+/* よつばのこ：**大きな 四つ葉を 2枚**（左上・右下）＋小さいのを 3枚。
+   本体の 形は 実測（y88..176 で x42..219 と いちばん 広く、
+   上 y32 は x91..170・下 y200 は x89..172 と せまい）。
+   **葉の 輪で ぐるりと 囲まないこと** ——オーラに 見えます。
+   **花・つぼみは 1つも 使わない**（`ch_apple` と 役割を 分ける）*/
+const princeSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="mint" x1="0" y1="0" x2=".6" y2="1">
+  <stop offset="0" stop-color="#cdf2dd"/><stop offset=".55" stop-color="#96dfba"/>
+  <stop offset="1" stop-color="#66bf95"/></linearGradient>
+ <filter id="lg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<g filter="url(#lg)" opacity=".20" fill="#bdeed4">
+ <circle cx="54" cy="70" r="34"/><circle cx="204" cy="196" r="32"/></g>
+${clover(54, 70, 38, -22, 1)}
+${clover(204, 196, 35, 24, 1)}
+${clover(30, 118, 13, 26)}
+${clover(230, 158, 11, -16)}
+</svg>`;
+
 /* 水は **ひとつづきの うねり**（両はしが 細く まん中が ふくらむ swoosh）。
    先ぼそりの 帯は「タコの あし」に、細い 棒＋玉は「綿棒」に 見えました（2回 やりました）*/
 const DSPL  = [[102,214], [28,208], [4,158], [54,98]];    // 大きい うねり（左）
@@ -320,6 +368,13 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  ch_prince: {
+    kind:  'deco',
+    base:  'art/sprites/yotsuba.png',        // よつばのこ（**読むだけ**）
+    out:   'art/sprites/ch_prince_e1.png',
+    dy:    0,      // 対角（NE101 / NW97 / SW80 / SE76）を つかう
+    svg:   princeSvg,
   },
   ch_donut: {
     kind:  'deco',
