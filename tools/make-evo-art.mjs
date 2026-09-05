@@ -138,6 +138,71 @@ const goldSpark = (cx, cy, r) =>
   + `<path d="M0,${(-r*.46).toFixed(1)} Q${(r*.08).toFixed(1)},${(-r*.08).toFixed(1)} ${(r*.46).toFixed(1)},0 Q${(r*.08).toFixed(1)},${(r*.08).toFixed(1)} 0,${(r*.46).toFixed(1)} Q${(-r*.08).toFixed(1)},${(r*.08).toFixed(1)} ${(-r*.46).toFixed(1)},0 Q${(-r*.08).toFixed(1)},${(-r*.08).toFixed(1)} 0,${(-r*.46).toFixed(1)} Z"`
   + ` fill="#fffdf2" opacity=".92"/></g>`;
 
+/* ── 水（`ribbon` / `waterDrop`）──────────────────────────
+   すなどけいは **粒**、こちらは **まとまった 流れ**。
+   `tw_ice` の 結晶と ぶつからない よう、**角を 1つも 作りません** */
+
+/* 中心線に そって はばの 変わる 帯。尾・水しぶき・虹の 帯に つかう */
+function ribbon(P4, w0, w1, wMid = (w0 + w1) / 2, N = 56){
+  const A = [], B = [];
+  for (let i = 0; i <= N; i++){
+    const t = i/N, [x, y] = bez(P4, t);
+    const [x2, y2] = bez(P4, Math.min(1, t + .004));
+    const nx = x2 - x, ny = y2 - y, L = Math.hypot(nx, ny) || 1;
+    /* はばも ベジエ。**`wMid` は 通過点では なく 制御点**なので、
+       まん中の 実の はばは およそ (w0 + 2*wMid + w1) / 4 に なります
+       （ここを まちがえて「思ったより 半分 細い」を 1回 やりました）*/
+    const u = 1 - t;
+    const w = (u*u*w0 + 2*u*t*wMid + t*t*w1) / 2;
+    A.push([x + (-ny/L)*w, y + (nx/L)*w]);
+    B.push([x - (-ny/L)*w, y - (nx/L)*w]);
+  }
+  const f = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  return 'M' + A.map(f).join(' L') + ' L' + B.reverse().map(f).join(' L') + ' Z';
+}
+/* まるい 水のつぶ（**とがらせない**）*/
+const waterDrop = (cx, cy, r, o = 1) =>
+  `<g transform="translate(${cx},${cy})" opacity="${o}">`
+  + `<circle r="${r}" fill="url(#aqua)" stroke="#4fa9a0" stroke-width="${Math.max(1, r*.14).toFixed(2)}"/>`
+  + (r > 3.4 ? `<ellipse cx="${(-r*.30).toFixed(1)}" cy="${(-r*.32).toFixed(1)}"`
+      + ` rx="${(r*.28).toFixed(1)}" ry="${(r*.22).toFixed(1)}" fill="#ffffff" opacity=".78"/>` : '')
+  + `</g>`;
+
+/* いずみのしずく：左右へ **はねあがる 水の しぶき**＋足もとの **広い 波紋**。
+   本体の 形は 実測（y150 で x55・y120 で x60・y90 で x77・てっぺん y32）。
+   **粒を ばらまかない** ——すなどけいと 逆に、ひとつづきの 流れで シルエットを 作る */
+/* 水は **ひとつづきの うねり**（両はしが 細く まん中が ふくらむ swoosh）。
+   先ぼそりの 帯は「タコの あし」に、細い 棒＋玉は「綿棒」に 見えました（2回 やりました）*/
+const DSPL  = [[102,214], [28,208], [4,158], [54,98]];    // 大きい うねり（左）
+const DSPL2 = [[106,222], [60,224], [24,212], [16,190]];  // 低い うねり（左）
+const donutSvg = () => {
+  /* はしは **まるく 止める**（とがらせると 氷の 結晶に 見える）*/
+  const sheet = (P, w0, w1, wm) => `<path d="${ribbon(P, w0, w1, wm)}" fill="url(#aqua)"`
+    + ` stroke="#4fa9a0" stroke-width="2.6" stroke-linejoin="round"/>`;
+  const lobe = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#aqua)"`
+    + ` stroke="#4fa9a0" stroke-width="2.6"/>`;
+  const gloss = (P, w) => `<path d="${ribbon(P, 2, 2, w)}" fill="#ffffff" opacity=".38"/>`;
+  const mirG = `translate(255,0) scale(-1,1)`;
+  const side = sheet(DSPL, 8, 10, 58) + lobe(54, 98, 5.5) + gloss(DSPL, 22)
+             + sheet(DSPL2, 5, 6, 27) + lobe(16, 190, 3.4)
+             + waterDrop(62, 72, 8.4) + waterDrop(40, 50, 5.4);
+  /* 足もとの 波紋 ——**下へ のばさず よこへ 広げる**（下の 余白は 26px しか ない）*/
+  const ring = (rx, ry, w, o) => `<ellipse cx="127.5" cy="235" rx="${rx}" ry="${ry}"`
+    + ` fill="none" stroke="#7fdccd" stroke-width="${w}" opacity="${o}"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="aqua" x1="0" y1="0" x2=".7" y2="1">
+  <stop offset="0" stop-color="#f2fffc"/><stop offset=".5" stop-color="#a9eddf"/>
+  <stop offset="1" stop-color="#6fd0c6"/></linearGradient>
+ <filter id="wg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<g filter="url(#wg)" opacity=".22" fill="#bff3e8">
+ <path d="${ribbon(DSPL, 16, 18, 76)}"/><g transform="${mirG}"><path d="${ribbon(DSPL, 16, 18, 76)}"/></g></g>
+${ring(95, 9, 5.0, .9)}${ring(69, 6.4, 3.6, .75)}${ring(45, 4.4, 2.8, .6)}
+${side}<g transform="${mirG}">${side}</g>
+</svg>`;
+};
+
 /* すなどけい：左右に **S字に うねる 砂の 流れ**。
    本体の 形は 実測（うで y160..168 が いちばん 太く x58..198・
    ふた y32..56 と y176..208 が x67..189）。
@@ -255,6 +320,13 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  ch_donut: {
+    kind:  'deco',
+    base:  'art/sprites/shizuku.png',       // いずみのしずく（**読むだけ**）
+    out:   'art/sprites/ch_donut_e1.png',
+    dy:    0,      // よこの 余白（左右 40px ずつ）と 対角を つかう
+    svg:   donutSvg,
   },
   ch_queen: {
     kind:  'deco',
