@@ -176,14 +176,14 @@ const waterDrop = (cx, cy, r, o = 1) =>
    **同じ かたちの くりかえし**。シルエットの ことばを 1体ずつ 変える */
 
 /* ハートの 葉。**先が クローバーの まん中、くぼみが 外がわ** */
-const leaf = (s, rot) => {
+const leaf = (s, rot, fill = 'url(#mint)', ink = '#5eaf92') => {
   const k = s / 1.5, p = (x, y) => (x*k).toFixed(1) + ',' + (y*k).toFixed(1);
   return `<g transform="rotate(${rot})"><path d="M${p(0,0)}`
     + ` C${p(-0.30,-0.42)} ${p(-0.86,-0.52)} ${p(-0.86,-1.02)}`
     + ` C${p(-0.86,-1.42)} ${p(-0.40,-1.52)} ${p(0,-1.16)}`
     + ` C${p(0.40,-1.52)} ${p(0.86,-1.42)} ${p(0.86,-1.02)}`
     + ` C${p(0.86,-0.52)} ${p(0.30,-0.42)} ${p(0,0)} Z"`
-    + ` fill="url(#mint)" stroke="#5eaf92" stroke-width="${Math.max(1.4, s*.075).toFixed(2)}"`
+    + ` fill="${fill}" stroke="${ink}" stroke-width="${Math.max(1.4, s*.075).toFixed(2)}"`
     + ` stroke-linejoin="round"/>`
     + `<ellipse cx="${(-0.42*k).toFixed(1)}" cy="${(-0.92*k).toFixed(1)}"`
     + ` rx="${(0.20*k).toFixed(1)}" ry="${(0.30*k).toFixed(1)}"`
@@ -191,13 +191,71 @@ const leaf = (s, rot) => {
     + ` fill="#ffffff" opacity=".5"/></g>`;
 };
 /* 四つ葉。**葉を ばらまかない** ——1つの かたまりとして 読める ように */
-const clover = (cx, cy, s, rot, stem = 0) =>
+const clover = (cx, cy, s, rot, stem = 0, fill = 'url(#mint)', ink = '#5eaf92') =>
   `<g transform="translate(${cx},${cy}) rotate(${rot})">`
   + (stem ? `<path d="M0,0 q${(s*.14).toFixed(1)},${(s*.52).toFixed(1)}`
-      + ` ${(-s*.10).toFixed(1)},${(s*.95).toFixed(1)}" fill="none" stroke="#5eaf92"`
+      + ` ${(-s*.10).toFixed(1)},${(s*.95).toFixed(1)}" fill="none" stroke="${ink}"`
       + ` stroke-width="${Math.max(2, s*.10).toFixed(1)}" stroke-linecap="round"/>` : '')
-  + [-45, 45, 135, 225].map(a => leaf(s, a)).join('')
+  + [-45, 45, 135, 225].map(a => leaf(s, a, fill, ink)).join('')
   + `<circle r="${(s*.10).toFixed(1)}" fill="#66b497"/></g>`;
+
+/* つる（`ribbon` の 帯に ふちを つけた だけ）*/
+const vine = (P4, w0, w1, fill = 'url(#leafG)', ink = '#84c3a7') =>
+  `<path d="${ribbon(P4, w0, w1)}" fill="${fill}" stroke="${ink}"`
+  + ` stroke-width="2" stroke-linejoin="round"/>`;
+
+/* つぼみ（まだ ひらいて いない。先だけ 花の 色が のぞく）*/
+const bud = (cx, cy, s, rot, fill = 'url(#leafG)', ink = '#84c3a7') =>
+  `<g transform="translate(${cx},${cy}) rotate(${rot})">`
+  + `<ellipse cy="${(-s*.10).toFixed(1)}" rx="${(s*.52).toFixed(1)}" ry="${(s*.82).toFixed(1)}"`
+  + ` fill="url(#petal)" stroke="#e79ab6" stroke-width="1.6"/>`
+  + `<path d="M${(-s*.52).toFixed(1)},${(s*.10).toFixed(1)}`
+  + ` Q0,${(s*.66).toFixed(1)} ${(s*.52).toFixed(1)},${(s*.10).toFixed(1)}`
+  + ` Q0,${(-s*.44).toFixed(1)} ${(-s*.52).toFixed(1)},${(s*.10).toFixed(1)} Z"`
+  + ` fill="${fill}" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/></g>`;
+
+/* 花（まるい 花びら n枚＋まん中）。**小花を ばらまく ためでは なく、
+   1輪を 主役に する ため**の 部品 */
+const flower = (cx, cy, s, n = 5, rot = 0) => {
+  const P = [];
+  for (let i = 0; i < n; i++){
+    const a = rot + i * 360 / n, r = a * Math.PI / 180;
+    const px = Math.cos(r - Math.PI/2) * s * .54, py = Math.sin(r - Math.PI/2) * s * .54;
+    P.push(`<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}"`
+      + ` rx="${(s*.40).toFixed(1)}" ry="${(s*.50).toFixed(1)}"`
+      + ` transform="rotate(${a.toFixed(0)} ${px.toFixed(1)} ${py.toFixed(1)})"`
+      + ` fill="url(#petal)" stroke="#e79ab6" stroke-width="1.8"/>`);
+  }
+  return `<g transform="translate(${cx},${cy})">${P.join('')}`
+    + `<circle r="${(s*.27).toFixed(1)}" fill="#ffeeb4" stroke="#e6b96a" stroke-width="1.4"/>`
+    + `<circle cx="${(-s*.09).toFixed(1)}" cy="${(-s*.09).toFixed(1)}" r="${(s*.09).toFixed(1)}"`
+    + ` fill="#fff8dc"/></g>`;
+};
+
+/* ふたばのこ：**双葉 → つる → つぼみ → 花**の ひとつづきの 流れ。
+   本体の 形は 実測（双葉は x76..180 / y25..77、茎は y73 で x123..132、
+   顔は y78 から 下）。**花だけを 浮かせない** ——つるは 右の葉の
+   すぐ うしろから 出て、目で 追える こと。
+   `ch_prince`（同じ 形の くりかえし）とは 逆に、**1本の 成長の 流れ**で 見せる */
+const AVINE = [[126,64], [152,76], [180,62], [202,48]];
+const appleSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="leafG" x1="0" y1="0" x2=".6" y2="1">
+  <stop offset="0" stop-color="#caf0d5"/><stop offset=".55" stop-color="#a9e7c8"/>
+  <stop offset="1" stop-color="#8bc4a8"/></linearGradient>
+ <radialGradient id="petal" cx=".38" cy=".32" r=".8">
+  <stop offset="0" stop-color="#fff4f8"/><stop offset=".45" stop-color="#ffcbe0"/>
+  <stop offset="1" stop-color="#ffb0cc"/></radialGradient>
+ <filter id="fg" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
+</defs>
+<g filter="url(#fg)" opacity=".22"><circle cx="210" cy="42" r="17" fill="#ffd7e6"/></g>
+${vine(AVINE, 10, 4.5)}
+<path d="M186,70 q11,7 4,15 q-8,7 -13,-2" fill="none" stroke="#84c3a7"
+ stroke-width="3" stroke-linecap="round"/>
+<g transform="translate(157,71)">${leaf(19, 128, 'url(#leafG)', '#84c3a7')}</g>
+${bud(176, 54, 13, 36)}
+${flower(210, 42, 26, 5, 12)}
+</svg>`;
 
 /* よつばのこ：**大きな 四つ葉を 2枚**（左上・右下）＋小さいのを 3枚。
    本体の 形は 実測（y88..176 で x42..219 と いちばん 広く、
@@ -369,6 +427,14 @@ export const PLAN = {
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
   },
+  ch_apple: {
+    kind:  'deco',
+    base:  'art/sprites/futaba.png',         // ふたばのこ（**読むだけ**）
+    out:   'art/sprites/ch_apple_e1.png',
+    dy:    0,      // 右上の 余白（NE 117px）を つかう
+    asym:  true,   // つる → つぼみ → 花 を **右上だけ**へ のばす（成長の 向き）
+    svg:   appleSvg,
+  },
   ch_prince: {
     kind:  'deco',
     base:  'art/sprites/yotsuba.png',        // よつばのこ（**読むだけ**）
@@ -513,8 +579,12 @@ for (const [key, plan] of Object.entries(PLAN)){
   /* わくの ふちに 当たって いたら、ぼかしの すそが 切れて 四角い 跡に なる */
   if (e.x0 === 0 || e.y0 === 0 || e.x1 === e.W-1 || e.y1 === e.H-1){
     console.log(`  ✗ わくの ふちに 当たって いる（${e.x0}..${e.x1} / ${e.y0}..${e.y1}）`); ng++; }
-  /* ③ 中心は 本体の 重心。細い 茎に 引っぱられて いないか */
-  if (Math.abs(e.cx) > 0.02){ console.log(`  ✗ よこの 中心ずれ ${e.cx.toFixed(3)}`); ng++; }
+  /* ③ 中心は **本体の 重心**。細い 茎や かざりに 引っぱられて いないか。
+     `deco` は 本体が 1:1 の まま なので 本体の 中心は 定義上 base と 同じ。
+     わざと 片がわだけに かざりを 置く ときは PLAN に `asym:true` と 書く
+     ——**書かない かぎり 落とす**（うっかりの かたよりを 見のがさない ため）*/
+  if (!plan.asym && Math.abs(e.cx) > 0.02){ console.log(`  ✗ よこの 中心ずれ ${e.cx.toFixed(3)}`); ng++; }
+  else if (plan.asym) console.log(`  （わざと 非対称：よこの 中心ずれ ${e.cx.toFixed(3)}）`);
 }
 console.log(ng ? '\n✗ ' + ng + '件' : '\n合格 ✅');
 process.exit(ng ? 1 : 0);
