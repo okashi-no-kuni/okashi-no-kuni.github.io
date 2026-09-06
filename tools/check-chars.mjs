@@ -26,6 +26,7 @@
 import { launch } from './_pw.mjs';
 import { resolve } from 'path';
 import { readdirSync, existsSync, readFileSync } from 'fs';
+import { createHash } from 'crypto';
 
 const MIN_BIG = 0.55;   // わくに たいして これより 小さいと ぽつんと 見える
 const MAX_OFF = 0.10;   // まん中からの ずれの ゆるせる はば
@@ -586,6 +587,34 @@ const evoCall = [];
       evoCall.push(k + '：ART_KEYS に あるのに ファイルが ない');
   }
 }
+/* ---------- 正式採用ずみの e1 は **凍結**（2026-09-05）----------
+   Batch 1 の 7体＋先に 通した 3体 ＝ **10枚**は 量産の 基準画像です。
+   Batch 2 いこうの 変更で **SHA-256 が 変わったら 落とします** ——
+   道具（`make-evo-art.mjs`）の 部品を 直した ときに、気づかず
+   もう 通った 絵まで 動いて しまう のを 防ぐ ため。
+   直すのは「作りなおして よい」と 決まった ときだけ。
+   その ときは ここの 値も いっしょに 書きかえます */
+const EVO_LOCK = [
+  ['c_purin_e1', '7f31c0b014fb39f189cb2f7cc1f675e85f17f639c8858a640023a678857f709e'],
+  ['ch_choco_e1', 'ce145f8c76a4fbd577c57f9297ba536141ed0418f3d4764a04dac3bf1d7cfdc1'],
+  ['tw_ice_e1', '15fc38226582e04248b39029dff3602444217a3698d38ca5649cf898cb1d12b3'],
+  ['ch_queen_e1', 'b6f2837d9d3789920f3bd151cc3c93b49e4737483fe7492ebd27293fb1952d30'],
+  ['ch_donut_e1', '339fb293804badc7731a168298f76fc26e93a3943d158f08f76bc29af784b76e'],
+  ['ch_prince_e1', '4f8437863da8dc3f509b382451eb7d4ee05fb42e8afbe70c2d26768169c22ce4'],
+  ['ch_apple_e1', 'a0e3980000c4840e8333df33324ccf1df02b4ac823eab98507e51e999e80e264'],
+  ['sp_rpurin_e1', '669dd52e9031cd9fcb7355eae21546279f9a5e8e705fa222cc61413510ce463b'],
+  ['ch_gumgum_e1', 'c2a33746378ecc2c5f135768eecb7d300bc6e932b9389ebd1e8949ff63c8872a'],
+  ['ch_fairy_e1', 'ab240f98fbd1937e4a90ff2e8dea82e7b4ec2e477567646cba3c57a413272309'],
+];
+const lockBad = [];
+for (const [k, want] of EVO_LOCK){
+  const f = resolve(spriteDir, k + '.png');
+  if (!existsSync(f)){ lockBad.push(k + '.png が ない'); continue; }
+  const got = createHash('sha256').update(readFileSync(f)).digest('hex');
+  if (got !== want) lockBad.push(k + ' の SHA-256 が 変わった（' + got.slice(0,8) + ' ／ ' + want.slice(0,8) + ' の はず）');
+}
+line('e1の 凍結', lockBad);
+
 line('進化の 絵の caller', evoCall);
 
 /* ---------- Phase 7-7-3-7 ——進化の 手つづきの じゅんばん ----------
