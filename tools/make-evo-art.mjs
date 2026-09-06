@@ -232,6 +232,53 @@ const flower = (cx, cy, s, n = 5, rot = 0) => {
     + ` fill="#fff8dc"/></g>`;
 };
 
+/* まっすぐな すじ（雨・速さの 線）。**丸い つぶに しない**
+   ——`ch_donut` の しずくと 分ける ため */
+const streak = (x1, y1, x2, y2, w, col, o = 1) =>
+  `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}"`
+  + ` stroke-width="${w}" stroke-linecap="round" opacity="${o}"/>`;
+
+/* わたぐも：**雲が 天気を 生みだす**。上の 角に わき雲、下に 雨の すだれ、
+   左下に 細い 虹。本体の 形は 実測（いちばん 太いのは y118..142 で x25..230、
+   上は y38 で x107..148、下の あしは y182..214）。
+   **円い 輪に しない**（`ch_fairy` と 分ける）・**大きな 水流に しない**
+   （`ch_donut` と 分ける）・**粒の 連なりに しない**（`ch_queen` と 分ける）*/
+const gumgumSvg = () => {
+  /* わき雲。**1つずつ ふちを 引くと「あわ」に 見えます** ——ふち色の
+     大きい 円を 先に 敷いて から 中を 塗ると、かさなりが 1つの 雲に なる */
+  const PUFF = [[54,62,25],[32,80,17],[72,46,16],[202,62,24],[224,80,16],[184,46,15]];
+  const puff = PUFF.map(([x,y,r]) => `<circle cx="${x}" cy="${y}" r="${(r+2.4).toFixed(1)}" fill="#9db9cc"/>`).join('')
+             + PUFF.map(([x,y,r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#cloudG)"/>`).join('');
+  /* 雨（少し かたむいた 直線。長さを そろえない）*/
+  const RN = [[62,192,48,232],[82,200,70,238],[104,208,94,240],[126,212,118,238],
+              [148,208,138,240],[170,200,158,236],[192,190,180,228],
+              [46,178,34,210],[208,180,198,214]];
+  const rain = RN.map(([a,b,c,d], i) =>
+    streak(a, b, c, d, i % 3 === 0 ? 5.2 : 4.2, '#8ec8e6', .95)
+    + streak(a + 1.2, b + 2, c + 1.2, d - 5, 1.6, '#e8f7ff', .8)).join('');
+  /* 細い 虹（**半円の 記号に しない**。左下だけを 通る みじかい 弧）*/
+  const RB = [['#ffd0dc', 0], ['#fbe6b0', 5.5], ['#bfe9d4', 11], ['#d5c8f2', 16.5]];
+  const bow = RB.map(([c, o]) =>
+    `<path d="M${(88+o*0.55).toFixed(1)},${(196+o*0.83).toFixed(1)}`
+    + ` C${(56+o*0.62).toFixed(1)},${(208+o*0.78).toFixed(1)}`
+    + ` ${(32+o*0.72).toFixed(1)},${(214+o*0.68).toFixed(1)}`
+    + ` ${(16+o*0.86).toFixed(1)},${(208+o*0.5).toFixed(1)}"`
+    + ` fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" opacity=".92"/>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="cloudG" x1="0" y1="0" x2=".4" y2="1">
+  <stop offset="0" stop-color="#fbffff"/><stop offset=".55" stop-color="#eef9fb"/>
+  <stop offset="1" stop-color="#d3e7f2"/></linearGradient>
+ <filter id="gg" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<g filter="url(#gg)" opacity=".18" fill="#cfe8f6">
+ <circle cx="52" cy="62" r="30"/><circle cx="204" cy="62" r="29"/></g>
+${bow}
+${rain}
+${puff}
+</svg>`;
+};
+
 /* ながれぼし：**尾が のびて 長くなる**。左下へ 3本の 尾が 扇に なって
    流れ、うしろに 速さの すじ。**左右から 本体を つつまない**
    （`ch_donut` の 水流と 分ける）。**粒の 連なりにも しない**
@@ -470,6 +517,13 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  ch_gumgum: {
+    kind:  'deco',
+    base:  'art/sprites/watagumo.png',        // わたぐも（**読むだけ**）
+    out:   'art/sprites/ch_gumgum_e1.png',
+    dy:    0,      // 上下の 角（NE/NW 77・SW/SE 84〜87）を つかう
+    svg:   gumgumSvg,
   },
   sp_rpurin: {
     kind:  'deco',
