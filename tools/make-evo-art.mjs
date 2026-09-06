@@ -1032,6 +1032,92 @@ const hinotamaSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" 
       stroke-width="2.6" stroke-linejoin="round"/>
 </svg>`;
 
+/* ---------- c_devil（あくま）——**背後に 開く 1つの 大きな コウモリ影** ----------
+   Batch 2 の 8つめ（最後）。
+
+     c_firebird … **実体の 翼**（明るい 暖色・不とうめい・羽根の すじ・**下外**へ 打ち下ろす）
+     c_ghost    … **重なった 薄い 層**（淡色・3層・**下**へ 波打つ）
+     c_lavagolem… **離れた 岩**（不とうめい・独立した 5つ）
+     c_devil    … **1つの 大きな 影**（暗紫・こい 半とうめい・すじなし・**上外〜横**へ 開く）
+
+   base の 実測 ——bbox x42..213 / y25..230（172x206）・面積 24,853px²・
+   連結成分は **1つだけ**。上の あきは **25px しか なく**（角が y28 から）、
+   ゆとりは **左右**（y174〜206 で 63〜83px）と **ななめ下**（SW 93 / SE 62）。
+
+   **いちばん 大事な こと ——base は すでに 肩に 小さな コウモリ翼を
+   持って います**（左 x43..88 / 右 x168..213・y135..173）。だから 影は
+   「別の ものを 貼った」では なく **その 翼の 延長**として 置けます。
+   `c_firebird_e1` で 確立した 型（外がわに 独立装飾を 置かず、既存部位の
+   延長として 大きな シルエットを 作る）が そのまま つかえます。
+
+   付け根は **上 (86,140) → 下 (104,206)**（左）と、x=128 で うつした 右。
+   どちらも **本体の 中**なので かくれます */
+
+/* コウモリ影。前縁は 肩から **外へ・上へ** なめらかに ひらき、
+   後縁は 腰へ もどる。切れ込みは **外がわ 半分に 2つだけ**。
+   **前縁から 後縁まで 1本の 閉じた パス**で、切れ込みごとに 別の パスを
+   作りません（`crestPath`・`onibiKid`・`wingBlade` と 同じ きまり
+   ——分けると かさなりに 内側の 線が のこって「三角を ならべただけ」に なります）。
+
+   `sign` −1＝左・+1＝右。base の 小翼は x=128 に ついて 対称
+   （43+213 / 88+168 が どちらも 256）なので、うつすだけで そろいます */
+function batShadow(sign, P){
+  const { A, LC1, LC2, T, TC1, TC2, R, notch, lo, hi, n } = P;
+  const M = p => [ sign < 0 ? p[0] : 256 - p[0], p[1] ];
+  const cub = (p0, p1, p2, p3, t) => { const u = 1 - t;
+    return [ u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0],
+             u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1] ]; };
+
+  const K = 96;
+  const lead = [];                                   // 前縁：肩 → 翼さき
+  for (let i = 0; i <= K; i++) lead.push(cub(A, LC1, LC2, T, i/K));
+
+  /* 後縁：翼さき → 腰。切れ込みは **外がわ（付け根では ない ほう）だけ**に かける。
+     まど `[lo,hi]`（0＝さき・1＝付け根）を u に ならして `sin(nπu)` の 山を
+     そのまま 谷に します。まどを つかうのは、**谷が 本体の うしろに
+     入ると 36px で 1pxも 出ない**ため ——base は y110〜158 で 左右 33〜44px
+     しか あいて いないので、そこに 谷を 置いても 読めません。
+     いまの 2つの 谷は (25,167) と (57,202) で、どちらも 本体の 外です */
+  const trailC = [];
+  for (let i = 0; i <= K; i++) trailC.push(cub(T, TC1, TC2, R, i/K));
+  const inside = [ (A[0] + T[0]) / 2, (A[1] + T[1]) / 2 - 18 ];   // 翼の 内がわの めやす
+  const trail = trailC.map((p, i) => {
+    const t = i/K, u = (t - lo) / (hi - lo);                      // t=0 が さき
+    if (u <= 0 || u >= 1) return p;
+    const a = trailC[Math.max(0, i-1)], b = trailC[Math.min(K, i+1)];
+    const tx = b[0]-a[0], ty = b[1]-a[1], L = Math.hypot(tx, ty) || 1;
+    let nx = -ty/L, ny = tx/L;
+    if ((inside[0]-p[0])*nx + (inside[1]-p[1])*ny < 0){ nx = -nx; ny = -ny; }
+    const d = notch * Math.pow(Math.abs(Math.sin(n*Math.PI*u)), 0.7) * (1 - 0.16*u);
+    return [ p[0] + nx*d, p[1] + ny*d ];
+  });
+
+  const f = p => { const q = M(p); return q[0].toFixed(1) + ',' + q[1].toFixed(1); };
+  return 'M' + lead.map(f).join(' L') + ' L' + trail.map(f).join(' L') + ' Z';
+}
+
+/* 肩（A）から 外へ 上へ ひらいて 翼さき（T）、そこから 腰（R）へ もどる。
+   R は **本体の 中**なので かくれます。
+   切れ込みは **2つ**（3つ以上に しない）——36px で 谷が 読めるのは
+   1〜2個までで、4個に すると 平らに なります（設計フェーズで 実測）*/
+const DEV_WING = {
+  A:   [ 86, 140],                  // 付け根の 上（既存の 小翼の 肩・**本体の 中**）
+  LC1: [ 58,  50], LC2: [ 24,  44],
+  T:   [ 15,  98],                  // 翼さき（**上外〜横**。firebird の 下外と 分ける）
+  TC1: [ 11, 170], TC2: [ 34, 220],
+  R:   [104, 206],                  // 付け根の 下＝腰（本体の 中＝かくれる）
+  notch: 22, lo: 0.30, hi: 0.78, n: 2,   // 谷は **2つだけ**（3つ以上に しない）
+};const devilSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="dvS" x1="0" y1="0" x2=".35" y2="1">
+  <stop offset="0" stop-color="#63264d"/><stop offset=".5" stop-color="#5c2243"/>
+  <stop offset="1" stop-color="#522040"/></linearGradient>
+</defs>
+${[-1, 1].map(s => `<path d="${batShadow(s, DEV_WING)}" fill="url(#dvS)"`
+  + ` fill-opacity=".62" stroke="#522040" stroke-opacity=".88" stroke-width="2.8"`
+  + ` stroke-linejoin="round"/>`).join('\n')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1159,6 +1245,13 @@ export const PLAN = {
     out:   'art/sprites/c_hinotama_e1.png',
     dy:    0,      // 上へ ずらすと つかえる あきも 減って **かえって 低く なる**
     svg:   hinotamaSvg,
+  },
+  c_devil: {
+    kind:  'deco',
+    base:  'art/sprites/devil.png',           // あくま（**読むだけ**）
+    out:   'art/sprites/c_devil_e1.png',
+    dy:    0,      // 上は 25px しか ない。**左右**へ 開く ので ずらさない
+    svg:   devilSvg,
   },
   tw_ice: {
     kind:  'deco',
