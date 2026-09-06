@@ -232,11 +232,52 @@ const flower = (cx, cy, s, n = 5, rot = 0) => {
     + ` fill="#fff8dc"/></g>`;
 };
 
+/* 放射光。**外へ 行くほど 細く**、ふちは 引かない（光なので）。
+   太い うす明かり ＋ 細い 芯 の 2枚で「にじむ 光」に する */
+const ray = (deg, r0, r1, w0, w1, col) => {
+  const a = deg * Math.PI / 180, dx = Math.cos(a), dy = -Math.sin(a);
+  const P = [0, .34, .67, 1].map(t => [ (127.5 + dx*(r0 + (r1-r0)*t)),
+                                        (127.5 + dy*(r0 + (r1-r0)*t)) ]);
+  return `<path d="${ribbon(P, w0, w1)}" fill="${col}" opacity=".34"/>`
+    + `<path d="${ribbon(P, w0*.52, w1*.5)}" fill="${col}" opacity=".78"/>`;
+};
+
 /* まっすぐな すじ（雨・速さの 線）。**丸い つぶに しない**
    ——`ch_donut` の しずくと 分ける ため */
 const streak = (x1, y1, x2, y2, w, col, o = 1) =>
   `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}"`
   + ` stroke-width="${w}" stroke-linecap="round" opacity="${o}"/>`;
+
+/* ひかりのわ：**二重の 光の 輪 ＋ 斜めへ のびる 放射光**。
+   Batch 1 の 中で **円・halo・放射光は この子の 専用**に する
+   （雲の かたまり・雨すじ・虹は つかわない ——`ch_gumgum` と 分ける）。
+   本体の 形は 実測（輪じたいは 半径 70〜79、すでに ある すじが 半径 100〜104
+   まで のびる。よこの 余白は **19px しか ない**が、**ななめは 91〜97px**）。
+   **太い オーラの 円盤に しない** ——外の 輪は 細く、すきとおらせる */
+const FRAY = [   // すでに ある すじの **すき間**へ 入れる。長さと 角度を そろえない
+  [ 38, 74, 150, 26, 7, '#d5bcfe'],
+  [133, 74, 143, 26, 7, '#fcaace'],
+  [224, 74, 148, 26, 7, '#aee8d7'],
+  [312, 74, 153, 26, 7, '#d5bcfe'],
+  [ 86, 74, 113, 22, 6, '#fcaace'],
+  [268, 74, 112, 22, 6, '#aee8d7'],
+];
+const fairySvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <radialGradient id="hg" cx=".5" cy=".5" r=".5">
+  <stop offset=".72" stop-color="#fff6d8" stop-opacity="0"/>
+  <stop offset="1" stop-color="#fff2c8" stop-opacity=".55"/></radialGradient>
+ <filter id="hb" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<g filter="url(#hb)" opacity=".55"><ellipse cx="127.5" cy="127.5" rx="94" ry="98" fill="url(#hg)"/></g>
+${FRAY.map(r => ray(...r)).join('')}
+<ellipse cx="127.5" cy="127.5" rx="97" ry="101" fill="none" stroke="#ffeec8"
+ stroke-width="2.8" opacity=".62"/>
+<ellipse cx="127.5" cy="127.5" rx="107" ry="111" fill="none" stroke="#fff8e4"
+ stroke-width="6" opacity=".92"/>
+<ellipse cx="127.5" cy="127.5" rx="107" ry="111" fill="none" stroke="#ffdf9c"
+ stroke-width="2.8" opacity=".95"/>
+</svg>`;
 
 /* わたぐも：**雲が 天気を 生みだす**。上の 角に わき雲、下に 雨の すだれ、
    左下に 細い 虹。本体の 形は 実測（いちばん 太いのは y118..142 で x25..230、
@@ -517,6 +558,13 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  ch_fairy: {
+    kind:  'deco',
+    base:  'art/sprites/hikari.png',          // ひかりのわ（**読むだけ**）
+    out:   'art/sprites/ch_fairy_e1.png',
+    dy:    0,      // よこは 19px しか ない。**ななめ（91〜97px）**で 外周を 広げる
+    svg:   fairySvg,
   },
   ch_gumgum: {
     kind:  'deco',
