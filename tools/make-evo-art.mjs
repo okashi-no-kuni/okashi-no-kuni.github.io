@@ -593,6 +593,78 @@ ${shard(209,142,44,16)}${shard(175,190,23,-15,.95)}
 ${spark(38,88,9,'#eafaff')}${spark(218,90,8,'#eafaff')}${spark(128,236,7,'#eafaff',.75)}
 </svg>`;
 
+/* ---------- c_salamander（サラマンダー）——背中に 沿って 育つ 稜線 ----------
+   `c_lavagolem` とは 正反対に します ——あちらは **体から はなれて 浮く 岩**、
+   こちらは **体の 輪郭に つながって 生える 稜線**。だから
+   **1本ずつ 別の パスに しては いけません** ——かさなった ところに 線が
+   のこって「三角を ならべただけ」に 見えます（ぱふそでの ふちと 同じ 失敗）。
+   union を 自分で 計算して **1つの パス**に します */
+
+/* 背中の 根の 線（`salamander.png` を 1px きざみで 実測した 上の 輪郭の
+   **谷**を なぞって、さらに 下へ 逃がした もの）。ここより 下は 体に かくれます */
+const SBACK = [[26,172],[36,155],[46,142],[56,133],[66,129],[76,123],[86,121],
+               [96,116],[106,113],[116,108],[126,110],[136,108],[144,110]];
+const sRootY = x => {
+  if (x <= SBACK[0][0]) return SBACK[0][1];
+  for (let i = 1; i < SBACK.length; i++){
+    const [x0,y0] = SBACK[i-1], [x1,y1] = SBACK[i];
+    if (x <= x1) return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  }
+  return SBACK[SBACK.length-1][1];
+};
+
+/* [根の 中心x, たかさ, 半はば, 先の かたむき]。**そろえない** ——
+   等間かくの 同じ 三角に すると「くし」に 見えます。
+   いちばん 高い ところでも **頭のてっぺん（y=40）より 下**に とどめて、
+   主役が 頭の ままである ように します（実測：てっぺん y=70）*/
+const SSPIKE = [[132,18, 9,-3], [115,35,12,-5], [96,46,13,-5], [77,38,12,-5],
+                [58,44,13,-6], [42,24,10,-4]];
+
+function crestPath(spikes, scaleH = 1, scaleW = 1, drop = 12, p = 0.85){
+  const xL = Math.min(...spikes.map(s => s[0] - s[2] * scaleW));
+  const xR = Math.max(...spikes.map(s => s[0] + s[2] * scaleW));
+  const topAt = x => {
+    let y = sRootY(x) + 3;              // 棘の 外は 背中の すぐ下（＝かくれる）
+    for (const [cx, h, hw0, t] of spikes){
+      const hw = hw0 * scaleW, u = (x - cx) / hw;
+      if (u <= -1 || u >= 1) continue;
+      const u0 = Math.max(-0.85, Math.min(0.85, t / hw));
+      const f = u <= u0 ? Math.pow((u + 1) / (u0 + 1), p)
+                        : Math.pow((1 - u) / (1 - u0), p);
+      y = Math.min(y, sRootY(x) - h * scaleH * f);
+    }
+    return y;
+  };
+  /* 先を すこし まるめる ——base の 板は まるい ので、とがった まま だと
+     この子だけ するどく なります。**上の 線を ならして** まるめる こと
+     （`stroke-linejoin` の まるめは 1px ほどしか 効かない）*/
+  const xs = [], ys = [];
+  for (let x = xL; x <= xR; x += 0.5){ xs.push(x); ys.push(topAt(x)); }
+  const sm = ys.map((_, i) => {
+    let w = 0, v = 0;
+    for (let k = -6; k <= 6; k++){
+      const j = i + k; if (j < 0 || j >= ys.length) continue;
+      const g = Math.exp(-(k * k) / (2 * 2.4 * 2.4)); w += g; v += ys[j] * g;
+    }
+    return v / w;
+  });
+  let d = '';
+  for (let i = 0; i < xs.length; i++) d += (d ? 'L' : 'M') + xs[i].toFixed(2) + ',' + sm[i].toFixed(2);
+  for (let x = xR; x >= xL; x -= 3)   d += 'L' + x.toFixed(2) + ',' + (sRootY(x) + drop).toFixed(2);
+  return d + 'Z';
+}
+
+const salamanderSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="salC" x1="0" y1="0" x2=".15" y2="1">
+  <stop offset="0" stop-color="#fdcc91"/><stop offset=".55" stop-color="#fcb078"/>
+  <stop offset="1" stop-color="#f19673"/></linearGradient>
+</defs>
+<path d="${crestPath(SSPIKE)}" fill="url(#salC)" stroke="#d5775a"
+      stroke-width="2.6" stroke-linejoin="round"/>
+<path d="${crestPath(SSPIKE, .60, .52, 4)}" fill="#fdcc91" opacity=".9"/>
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -674,6 +746,14 @@ export const PLAN = {
     out:   'art/sprites/ch_queen_e1.png',
     dy:    0,      // よこの 余白（左右 57px ずつ）を つかうので ずらさない
     svg:   queenSvg,
+  },
+  c_salamander: {
+    kind:  'deco',
+    base:  'art/sprites/salamander.png',    // サラマンダー（**読むだけ**）
+    out:   'art/sprites/c_salamander_e1.png',
+    dy:    0,      // 背中の 上（N 99px）に のばす。本体は 1ミリも 動かさない
+    asym:  true,   // よこ向きの子。稜線は 背中がわ だけ に 生える
+    svg:   salamanderSvg,
   },
   tw_ice: {
     kind:  'deco',
