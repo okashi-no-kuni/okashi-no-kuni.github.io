@@ -232,6 +232,64 @@ const flower = (cx, cy, s, n = 5, rot = 0) => {
     + ` fill="#fff8dc"/></g>`;
 };
 
+/* 岩の かけら。**tw_ice の 結晶と ぜったいに ちがう 形に する** ——
+   あちらは すきとおる 対称の 六角、こちらは **不とうめいで 不規則**。
+   `seed` ごとに 辺の 数も 半径も ばらつかせる */
+function rockPts(s, seed){
+  const R = rnd(seed), n = R() < .5 ? 6 : 7, P = [];
+  for (let i = 0; i < n; i++){
+    const a = (i / n) * Math.PI * 2 + (R() - .5) * .55;
+    const r = s * (.66 + R() * .48);
+    P.push([Math.cos(a) * r, Math.sin(a) * r]);
+  }
+  return P;
+}
+const rock = (cx, cy, s, rot, seed) => {
+  const P = rockPts(s, seed), f = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  const d = 'M' + P.map(f).join(' L') + ' Z';
+  /* 面（うすい ところ）——上ばんぶんだけ 明るく して 立体に 見せる */
+  const hi = 'M' + P.slice(0, Math.ceil(P.length/2)).map(f).join(' L')
+           + ' L' + (P[0][0]*.2).toFixed(1) + ',' + (P[0][1]*.2).toFixed(1) + ' Z';
+  /* 割れ目（**この子の 進化の 印**。浮いた 岩の がわに 光る すじを 持たせる）*/
+  const R = rnd(seed + 991);
+  const c = [[-s*.55, -s*.16], [-s*.10, s*.10], [s*.18, -s*.14], [s*.60, s*.12]]
+    .map(([x, y]) => [x + (R()-.5)*s*.12, y + (R()-.5)*s*.16]);
+  const cd = 'M' + c.map(f).join(' L');
+  return `<g transform="translate(${cx},${cy}) rotate(${rot})">`
+    + `<path d="${d}" fill="url(#rockG)" stroke="#8f5058" stroke-width="${Math.max(1.8, s*.11).toFixed(2)}" stroke-linejoin="round"/>`
+    + `<path d="${hi}" fill="#f0e2e3" opacity=".34"/>`
+    + `<path d="${cd}" fill="none" stroke="#fc907e" stroke-width="${(s*.17).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`
+    + `<path d="${cd}" fill="none" stroke="#ffdcc0" stroke-width="${(s*.07).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>`
+    + `</g>`;
+};
+
+/* ようがんゴーレム：**本体から 割れて 浮きあがった 岩の かけら**。
+   炎や オーラで つつまない。本体の 形は 実測（頭 y40..88 で x90..166、
+   こぶし y120..160 で x25..230、胴 y168..208 で x78..178）。
+   四すみが 大きく 空いて いる（NE124 / NW125 / SW105 / SE104）*/
+const GROCK = [   // [cx, cy, 大きさ, かたむき, たね]  ——**そろえない**。
+                  // 左上に 大小 2つ かためて「板が 割れて はがれた」ように 見せ、
+                  // 右上は わざと 空ける（四すみに 等間かくで 置かない）
+  [ 48,  68, 26, -16, 7001],
+  [ 80,  32, 14,  38, 7002],
+  [212,  92, 21,  26, 7003],
+  [ 60, 194, 15,  10, 7004],
+  [204, 184, 24, -34, 7005],
+];
+/* **かけらは 5つ まで。**細かい かけらを 足すと `ch_queen` の
+   「粒の 連なり」に 近づきます */
+const golemSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="rockG" x1="0" y1="0" x2=".45" y2="1">
+  <stop offset="0" stop-color="#ede3e5"/><stop offset=".5" stop-color="#b99a9d"/>
+  <stop offset="1" stop-color="#9f575f"/></linearGradient>
+ <filter id="lv" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<g filter="url(#lv)" opacity=".30" fill="#fc9078">
+ ${[...GROCK].map(([x,y,s]) => `<circle cx="${x}" cy="${y}" r="${(s*.72).toFixed(1)}"/>`).join('')}</g>
+${GROCK.map(a => rock(...a)).join('')}
+</svg>`;
+
 /* 放射光。**外へ 行くほど 細く**、ふちは 引かない（光なので）。
    太い うす明かり ＋ 細い 芯 の 2枚で「にじむ 光」に する */
 const ray = (deg, r0, r1, w0, w1, col) => {
@@ -558,6 +616,13 @@ export const PLAN = {
     out:   'art/sprites/ch_choco_e1.png',
     dy:    16,     // 本体を 下へ ずらして、冠の 場所を 作る（大きさは 等倍）
     svg:   chocoSvg,
+  },
+  c_lavagolem: {
+    kind:  'deco',
+    base:  'art/sprites/lavagolem.png',       // ようがんゴーレム（**読むだけ**）
+    out:   'art/sprites/c_lavagolem_e1.png',
+    dy:    0,      // 四すみが 大きく 空いて いる ので ずらさない
+    svg:   golemSvg,
   },
   ch_fairy: {
     kind:  'deco',
