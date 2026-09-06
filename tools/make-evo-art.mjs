@@ -724,6 +724,102 @@ const onibiSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" hei
 ${OKID.map(k => onibiKid(...k)).join('\n')}
 </svg>`;
 
+/* ---------- c_lavasnail（ようがんカタツムリ）——**殻の うずが 外へ のびる** ----------
+   Batch 2 の 4つめの 進化言語は **うず（回転・巻きこみ）**です。
+     c_lavagolem  … はなれた 大きな 岩
+     c_salamander … 体に つながって 育つ 輪郭
+     c_onibi      … 3つの 小さな 独立した 炎
+     c_lavasnail  … **1本の 帯が 巻いて もどる**
+
+   だから 次と かならず 分けます。
+     ch_fairy   … **同心の 輪**（中心が まん中・左右対称）
+       → こちらは **中心を 殻がわ（右下）に 寄せた 非対称**の うず
+     sp_rpurin  … **1方向の 尾**（まっすぐ）
+       → こちらは **巻いて もどる**（さいごに 330°の ロール）
+     c_lavagolem / ch_queen … 浮いた もの・粒
+       → こちらは **ひとつづきの 帯**。粒は 火の粉 3つ だけ
+
+   base の あきは **右に 30〜46px・上に 32px** しか ないので、帯は
+   その わっかを 通します。ただの わっか（halo）に 見せない ために
+     ① はばを 20 → 2px に **強く すぼめる**（halo は はばが 一定）
+     ② さいごに **330°の ロール**（`c_lavasnail` の いちばん だいじな 形）
+     ③ ロールは 頭と 殻の あいだの **くさび**（y58 で x99..151 が あく）に 入れる
+   の 3つを かならず 入れます */
+
+/* 中心線に そって はばの 変わる 帯。`ribbon()` は ベジエ 4点 用なので、
+   うずのように 折れまがる 線には こちらを つかいます */
+function flowPath(pts, wf){
+  const A = [], B = [], n = pts.length;
+  for (let i = 0; i < n; i++){
+    const [x, y] = pts[i], [x2, y2] = pts[Math.min(n-1, i+1)], [x0, y0] = pts[Math.max(0, i-1)];
+    const tx = x2 - x0, ty = y2 - y0, L = Math.hypot(tx, ty) || 1;
+    const w = wf(i / (n-1)) / 2;
+    A.push([x - ty/L*w, y + tx/L*w]);
+    B.push([x + ty/L*w, y - tx/L*w]);
+  }
+  const f = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  return 'M' + A.map(f).join(' L') + ' L' + B.reverse().map(f).join(' L') + ' Z';
+}
+
+/* Catmull-Rom（制御点を **通る**）。ベジエだと 通らないので、
+   実測した あきの まん中を なぞる ときは こちら */
+function catmull(P, per = 14){
+  const out = [], Q = [P[0], ...P, P[P.length-1]];
+  for (let i = 1; i < Q.length - 2; i++){
+    const [p0,p1,p2,p3] = [Q[i-1], Q[i], Q[i+1], Q[i+2]];
+    for (let k = 0; k < per; k++){
+      const t = k/per, t2 = t*t, t3 = t2*t;
+      out.push([
+        .5*((2*p1[0]) + (-p0[0]+p2[0])*t + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+        .5*((2*p1[1]) + (-p0[1]+p2[1])*t + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)]);
+    }
+  }
+  out.push(P[P.length-1]);
+  return out;
+}
+
+/* 帯の 通り道。殻の 中（かくれる）→ 殻の 上の あき（y<44）→ ロールへ */
+const LSW = [[186,88],[178,74],[171,60],[164,44],[156,26]];
+
+/* さいごの ロールが **この子の いちばん だいじな 形**です。
+   中心 (132,50)＝**頭と 殻の あいだの くさび**（y58 で x99..151 が あく）。
+   45° → 405°（**ちょうど 1周**）・半けい 34 → 13。1周ぶんの 間かくは 21px で
+   帯の はば（6px）より 広いので、**うずの みぞが 36px でも 見えます**。
+   1.25周・1.8周も 作りましたが、間かくが せまくなって
+   **とじた わっか（handle）**に 見えました（2回 やりました）。
+   まきの 向きは base の みぞと そろえる こと ——base は
+   **外へ 行くほど 右まわり**なので、内へ 行くのは 左まわり */
+const lsRoll = () => {
+  const C = [132, 50], out = [];
+  for (let d = 45; d <= 405; d += 3){
+    const t = (d - 45) / 360, r = 34 + (13 - 34) * t, a = d * Math.PI / 180;
+    out.push([C[0] + Math.cos(a) * r, C[1] - Math.sin(a) * r]);
+  }
+  return out;
+};
+
+const LS_PTS = [...catmull(LSW), ...lsRoll()];
+/* はばは 22 → 1.5px。**halo は はばが 一定**なので、ここを ゆるめると
+   ただの わっかに 見えます */
+const lsW = t => t < .30 ? 22 - 11*(t/.30)               // 22 → 11
+           : 11 - 9.5*((t-.30)/.70);                     // 11 →  1.5
+
+const lavasnailSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="lsSh" x1="0" y1="0" x2=".3" y2="1">
+  <stop offset="0" stop-color="#c78d94"/><stop offset=".55" stop-color="#be8088"/>
+  <stop offset="1" stop-color="#a46b72"/></linearGradient>
+</defs>
+<path d="${flowPath(LS_PTS, lsW)}" fill="url(#lsSh)" stroke="#986369"
+      stroke-width="2.6" stroke-linejoin="round"/>
+<path d="${flowPath(LS_PTS, t => lsW(t) * 0.38)}" fill="#f7ad7f" opacity=".92"/>
+<path d="${flowPath(LS_PTS, t => lsW(t) * 0.16)}" fill="#fcc78e"/>
+${[[178,24,3.4],[102,26,2.8],[152,80,2.4]].map(([x,y,r]) =>
+  `<g transform="translate(${x},${y})"><path d="M0,${-r*2.2} Q${r*.34},${-r*.34} ${r*2.2},0`
+  + ` Q${r*.34},${r*.34} 0,${r*2.2} Q${-r*.34},${r*.34} ${-r*2.2},0`
+  + ` Q${-r*.34},${-r*.34} 0,${-r*2.2} Z" fill="#fcc78e" opacity=".85"/></g>`).join('')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -821,6 +917,14 @@ export const PLAN = {
     dy:    0,      // 四すみ（NW32 / NE30 / SW18 / SE24px）に 子を 置く
     asym:  true,   // 群れは **左と 下**へ 寄せる（円に しない）
     svg:   onibiSvg,
+  },
+  c_lavasnail: {
+    kind:  'deco',
+    base:  'art/sprites/lavasnail.png',       // ようがんカタツムリ（**読むだけ**）
+    out:   'art/sprites/c_lavasnail_e1.png',
+    dy:    0,      // あきは 右 30〜46px・上 32px。そこを 帯が 通る
+    asym:  true,   // うずの 中心は **殻がわ**へ 寄せる（ch_fairy の 同心円と 分ける）
+    svg:   lavasnailSvg,
   },
   tw_ice: {
     kind:  'deco',
