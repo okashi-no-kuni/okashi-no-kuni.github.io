@@ -820,6 +820,74 @@ ${[[178,24,3.4],[102,26,2.8],[152,80,2.4]].map(([x,y,r]) =>
   + ` Q${-r*.34},${-r*.34} 0,${-r*2.2} Z" fill="#fcc78e" opacity=".85"/></g>`).join('')}
 </svg>`;
 
+/* ---------- c_ghost（おばけ）——**重なった うすい ヴェールが 下へ 広がる** ----------
+   Batch 2 の 5つめの 進化言語は **半とうめいの 層**です。
+
+     c_lavagolem  … はなれた 大きな 岩
+     c_salamander … 体に つながって 育つ 輪郭
+     c_onibi      … 3つの 小さな 独立した 炎
+     c_lavasnail  … 巻いて 中心へ もどる 1本の うず
+     c_ghost      … **左右へ 広がりながら 下へ 波打つ 層**
+
+   だから 次と かならず 分けます。
+     sp_rpurin  … **1方向へ のびる 帯** → こちらは **左右へ 広がる**。
+                  長い 一方向の 尾・プルームに しない
+     ch_donut   … 連続した **水流**（水滴・波紋・水色）
+                  → こちらは 水滴も 波紋も 無く、白〜うすむらさき〜淡いピンク
+     ch_fairy   … 同心円・放射光 → こちらは **halo に しない**（発光は 入れない）
+     c_onibi    … 小さな 分身の 群れ
+                  → **粒を まわりに 散らして 差を 作らない**
+
+   base の あきは 下に 35px（y210..245）と、体が すぼまる y150 より 下の
+   左右の くさび（y196 で x10..69・x180..245）。ヴェールは そこへ 広げます */
+
+/* すその 波。base の 下ばしと 同じ「ホタテ」の ことばに そろえます。
+   **同じ 山を 等間かくで ならべない** ——1山ごとに はばと 深さを たねで ゆらす */
+function waveVeil(x0, x1, yFn, bumps, depth, seed){
+  const R = rnd(seed), w = [];
+  let tot = 0;
+  for (let i = 0; i < bumps; i++){ const v = 0.72 + R() * 0.56; w.push(v); tot += v; }
+  let x = x0, d = '';
+  for (let i = 0; i < bumps; i++){
+    const nx = x + (x1 - x0) * w[i] / tot, mx = (x + nx) / 2;
+    d += ` Q${mx.toFixed(1)},${(yFn(mx) + depth * (0.62 + R() * 0.74)).toFixed(1)}`
+       + ` ${nx.toFixed(1)},${yFn(nx).toFixed(1)}`;
+    x = nx;
+  }
+  return d;
+}
+
+/* 1まいの ヴェール。**上ばしは 本体の 中**（`aL`〜`aR`）に かくれるので、
+   見えるのは 体の 下がわから 出て 広がる ところ だけ です */
+function veil(o){
+  const yFn = x => o.yEdge + o.sag * Math.sin(Math.PI * (x - o.xL) / (o.xR - o.xL));
+  return `M${o.aL},${o.yTop}`
+    + ` C${o.aL - 16},${o.yTop + 28} ${o.xL + 10},${(yFn(o.xL) - 38).toFixed(1)} ${o.xL},${yFn(o.xL).toFixed(1)}`
+    + waveVeil(o.xL, o.xR, yFn, o.bumps, o.depth, o.seed)
+    + ` C${o.xR - 10},${(yFn(o.xR) - 38).toFixed(1)} ${o.aR + 16},${o.yTop + 28} ${o.aR},${o.yTop} Z`;
+}
+
+/* 3層。**下（奥）ほど 広く・深く・うすく**、上（手前）ほど せまく・こく。
+   逆に して 手前を いちばん 広く すると、手前の 1まいが うしろを
+   ぜんぶ おおって、**すそが 1本しか 見えません**（1回 やりました）。
+   はば・深さ・波の いち・とうめい度を 1層ずつ ずらして、
+   「同じ 波線を 等間かくで ならべた」ように 見えない ように します */
+const GVEIL = [
+  { aL:60, aR:196, yTop:155, xL:21, xR:235, yEdge:218, sag:4, bumps:4, depth:17, seed:8803, fo:.30, so:.62, ink:2.0 },
+  { aL:68, aR:188, yTop:150, xL:31, xR:224, yEdge:205, sag:5, bumps:5, depth:15, seed:8802, fo:.46, so:.74, ink:2.2 },
+  { aL:76, aR:180, yTop:146, xL:44, xR:212, yEdge:194, sag:4, bumps:3, depth:13, seed:8801, fo:.66, so:.86, ink:2.4 },
+];
+
+const ghostSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="gvL" x1="0" y1="0" x2=".15" y2="1">
+  <stop offset="0" stop-color="#fdf7f4"/><stop offset=".5" stop-color="#f6e6f1"/>
+  <stop offset="1" stop-color="#dcd2ef"/></linearGradient>
+</defs>
+${GVEIL.map(v => `<path d="${veil(v)}" fill="url(#gvL)" fill-opacity="${v.fo}"`
+  + ` stroke="#d1acc0" stroke-opacity="${v.so}" stroke-width="${v.ink}" stroke-linejoin="round"/>`).join('\n')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -925,6 +993,13 @@ export const PLAN = {
     dy:    0,      // あきは 右 30〜46px・上 32px。そこを 帯が 通る
     asym:  true,   // うずの 中心は **殻がわ**へ 寄せる（ch_fairy の 同心円と 分ける）
     svg:   lavasnailSvg,
+  },
+  c_ghost: {
+    kind:  'deco',
+    base:  'art/sprites/ghost.png',           // おばけ（**読むだけ**）
+    out:   'art/sprites/c_ghost_e1.png',
+    dy:    0,      // すそは 下の あき（y210..245）と 左右の くさびへ 広げる
+    svg:   ghostSvg,
   },
   tw_ice: {
     kind:  'deco',
