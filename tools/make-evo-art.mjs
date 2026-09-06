@@ -665,6 +665,65 @@ const salamanderSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}
 <path d="${crestPath(SSPIKE, .60, .52, 4)}" fill="#fdcc91" opacity=".9"/>
 </svg>`;
 
+/* ---------- c_onibi（おにび）——**小さな 分身が 漂う** ----------
+   Batch 2 の 3つめの 進化言語です。1つめ（`c_lavagolem`）は
+   **体から はなれた 大きな 岩**、2つめ（`c_salamander`）は
+   **体に つながって 育つ 輪郭**、ここは
+   **小さくて じりつした 火が 何個も 漂う**。
+
+   だから 次と かならず 分けます。
+     ch_queen   … 大量の 細かい 粒の **連なり**（1つ1つは 読めない）
+     ch_prince  … 大きな **同じ形**の くりかえし
+     c_lavagolem… 大きく **角ばった** 浮遊岩
+     ch_fairy   … 同心の **輪**と 放射
+     c_hinotama … **本体そのもの**が 上へ のびる 炎（あとで 作る）
+
+   ものさしは「**1つ1つが 小さな 鬼火に 読める**」こと ——だから
+   ただの 丸い 粒には しません（頭＋細い 尾）。
+   ただし **顔は 描きません**（ミニキャラを ならべる 方向に しない）*/
+
+/* 子の 鬼火。**頭と 尾を 1つの パスで**えがきます ——別々に すると
+   「頭に ひもを つけた」＝おたまじゃくしに 見えました（1回 やりました）。
+   上は base と おなじ「大きな 舌＋左に 小さな 舌」、下は そのまま
+   細く のびて 尾に なる。原点は **ふくらみの まん中** */
+const KID = 'M0,-0.88 C0.06,-0.60 0.20,-0.56 0.27,-0.44'   // まん中の 舌
+  + ' C0.32,-0.58 0.42,-0.64 0.48,-0.70'        // 右の 舌
+  + ' C0.54,-0.48 0.62,-0.30 0.64,-0.04'
+  + ' C0.66,0.32 0.44,0.64 0.18,0.72'           // まるい 下
+  + ' C0.12,0.84 0.06,0.94 0.03,1.02'           // **細い 尾**
+  + ' C-0.06,0.90 -0.18,0.80 -0.30,0.68'
+  + ' C-0.52,0.52 -0.66,0.26 -0.64,-0.04'
+  + ' C-0.62,-0.34 -0.48,-0.52 -0.38,-0.66'     // 左の 舌
+  + ' C-0.32,-0.48 -0.21,-0.46 -0.15,-0.58'     // くぼみ
+  + ' C-0.09,-0.72 -0.04,-0.82 0,-0.88 Z';
+
+/* w＝ふくらみの はば（px）。尾の 向きは かたむけて 決める */
+function onibiKid(cx, cy, w, rot){
+  const s = w / 1.30;
+  return `<g transform="translate(${cx},${cy}) rotate(${rot}) scale(${s.toFixed(3)})">
+ <path d="${KID}" fill="url(#oniG)" stroke="#8995c7"
+   stroke-width="${(3.2 / s).toFixed(4)}" stroke-linejoin="round"/>
+ <ellipse cx="-0.06" cy="0.20" rx="0.26" ry="0.30" fill="#f7fcfd" opacity=".68"/>
+</g>`;
+}
+
+/* [x, y, ふくらみの はば, かたむき]
+   **円にも 左右対称にも 等間かくにも しない。**中心から 見た 角は
+   137° / 220° / 313° で、313→137 の あいだ（180°）は まるごと 空けて
+   「左と 下を ながれて いく 群れ」に します。大きさも 44 / 34 / 28 */
+const OKID = [[ 48, 50, 44, -26],    // NW ……いちばん 大きい
+              [ 40,212, 34, -14],    // SW ……中くらい
+              [214,212, 28,  18]];   // SE ……小さい
+
+const onibiSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <radialGradient id="oniG" cx=".46" cy=".70" r=".78">
+  <stop offset="0" stop-color="#f7fcfd"/><stop offset=".52" stop-color="#c7d0fb"/>
+  <stop offset="1" stop-color="#9fabe4"/></radialGradient>
+</defs>
+${OKID.map(k => onibiKid(...k)).join('\n')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -754,6 +813,14 @@ export const PLAN = {
     dy:    0,      // 背中の 上（N 99px）に のばす。本体は 1ミリも 動かさない
     asym:  true,   // よこ向きの子。稜線は 背中がわ だけ に 生える
     svg:   salamanderSvg,
+  },
+  c_onibi: {
+    kind:  'deco',
+    base:  'art/sprites/onibi.png',          // おにび（**読むだけ**）
+    out:   'art/sprites/c_onibi_e1.png',
+    dy:    0,      // 四すみ（NW32 / NE30 / SW18 / SE24px）に 子を 置く
+    asym:  true,   // 群れは **左と 下**へ 寄せる（円に しない）
+    svg:   onibiSvg,
   },
   tw_ice: {
     kind:  'deco',
