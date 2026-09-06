@@ -160,6 +160,23 @@ function ribbon(P4, w0, w1, wMid = (w0 + w1) / 2, N = 56){
   const f = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
   return 'M' + A.map(f).join(' L') + ' L' + B.reverse().map(f).join(' L') + ' Z';
 }
+
+/* 羽根の すじ。**シルエットを こわさず**に「羽根」を 足す ため、
+   輪郭では なく 中の 線で 見せます（base の 手前翼と 同じ 見せかた）*/
+function wingVeins(P, wTrail, n = 2, tipCut = 0.86){
+  const pts = catmull(P, 18), N2 = pts.length, out = [];
+  for (let v = 1; v <= n; v++){
+    const q = [];
+    for (let i = Math.round(N2*0.22); i < N2*0.96; i++){
+      const t = i/(N2-1), a = pts[Math.max(0,i-1)], b = pts[Math.min(N2-1,i+1)];
+      const tx=b[0]-a[0], ty=b[1]-a[1], L=Math.hypot(tx,ty)||1;
+      const w = wTrail * (1 - t*t*tipCut) * (v/(n+1)) * 0.92;
+      q.push([(pts[i][0] - ty/L*w*-1).toFixed(1), (pts[i][1] - tx/L*w*-1).toFixed(1)]);
+    }
+    out.push('M' + q.map(p=>p[0]+','+p[1]).join(' L'));
+  }
+  return out;
+}
 /* まるい 水のつぶ（**とがらせない**）*/
 const waterDrop = (cx, cy, r, o = 1) =>
   `<g transform="translate(${cx},${cy})" opacity="${o}">`
@@ -888,6 +905,71 @@ ${GVEIL.map(v => `<path d="${veil(v)}" fill="url(#gvL)" fill-opacity="${v.fo}"`
   + ` stroke="#d1acc0" stroke-opacity="${v.so}" stroke-width="${v.ink}" stroke-linejoin="round"/>`).join('\n')}
 </svg>`;
 
+/* ---------- c_firebird（ひのとり）——**翼を 下外へ 大きく 開く** ----------
+   Batch 2 の 6つめ。**打ち下ろしの 二重翼**です。
+
+   **上へ 開く 姿勢は この わくでは 作れません**（設計フェーズの 結論）。
+   36px に すると base は まん中の 高さで すでに よこ幅の **97%**
+   （29 / 30px）を つかって いるので、肩の 高さで 横へ 開いても
+   1pxも 増えません。差が 出せるのは **下1/4（y24..y31）だけ**です。
+   だから 翼は **下外**へ 開きます。
+
+   だから 次と かならず 分けます。
+     c_hinotama … **縦へ 高く のびる 炎** → こちらは 上へ 1pxも 足さない
+     c_devil    … うしろの 大きな **暗い 影** → こちらは 明るい 暖色・
+                  **肩に つながる・左右2枚に 分かれる・羽根先が とがる**
+     c_ghost    … 水平に 広がる **半とうめいの ヴェール**
+                  → こちらは **不とうめい・ななめの 前縁・とがった 先**
+
+   base の 実測 ——手前の 翼 x116..156 / y126..172（先端 156,170）、
+   遠い 翼の 三日月 x26..39 / y129..180、尾羽 x150..232 / y37..175。
+   あきは **右下 7,403px²（x148..245 / y166..245）**と
+   **左下 4,023px²（x10..64 / y158..245）**。y176 から 急に 開きます */
+
+/* 翼。**放射の 扇では なく、そった 1本の 三日月**に します
+   ——扇に すると 手・葉・破れた 旗に 見えました（4回 やりました）。
+   前縁は なめらかな 弧、後縁は 羽根の こぶ（base の 手前翼と 同じ
+   「まるい こぶ＋するどい くぼみ」）。union された 1つの パスです */
+function wingBlade(P, wLead, wTrail, lobes, tipCut = 0.86){
+  const pts = catmull(P, 18), n = pts.length;
+  const nrm = i => { const a = pts[Math.max(0, i-1)], b = pts[Math.min(n-1, i+1)];
+    const tx = b[0]-a[0], ty = b[1]-a[1], L = Math.hypot(tx, ty) || 1;
+    return [-ty/L, tx/L]; };
+  const A = [], B = [];
+  for (let i = 0; i < n; i++){
+    const t = i/(n-1), [nx, ny] = nrm(i), [x, y] = pts[i];
+    const k  = 1 - t*t*tipCut;                       // 先へ すぼめる
+    const wl = wLead * k;
+    /* 羽根の くぼみは **外がわ 半分だけ**。ぜんたいに かけると
+       手・葉・雲に 見えました（4回 やりました）*/
+    const u  = Math.max(0, (t - 0.46) / 0.54);
+    const m  = 1 - 0.26 * Math.pow(Math.abs(Math.sin(lobes*Math.PI*u)), 0.55);
+    const wt = wTrail * k * m;                       // 後縁だけ こぶを つける
+    A.push([x - nx*wl, y - ny*wl]);
+    B.push([x + nx*wt, y + ny*wt]);
+  }
+  const f = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
+  return 'M' + A.map(f).join(' L') + ' L' + B.reverse().map(f).join(' L') + ' Z';
+}
+
+/* 中心線は **肩から 外へ そらせる**。近い翼＝大（こぶ3）・遠い翼＝小（こぶ2）*/
+const FBWING = [
+  { P:[[116,126],[154,162],[194,196],[228,226]], wl:32, wt:38, lobes:2 },
+  { P:[[ 46,140],[ 38,172],[ 28,200],[ 18,226]], wl:20, wt:26, lobes:1 },
+];
+
+const firebirdSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="fbW" x1="0" y1="0" x2=".55" y2="1">
+  <stop offset="0" stop-color="#fcbc95"/><stop offset=".5" stop-color="#fc9b80"/>
+  <stop offset="1" stop-color="#fc937e"/></linearGradient>
+</defs>
+${FBWING.map(w => `<path d="${wingBlade(w.P, w.wl, w.wt, w.lobes)}"`
+  + ` fill="url(#fbW)" stroke="#c4685b" stroke-width="2.6" stroke-linejoin="round"/>`
+  + wingVeins(w.P, w.wt).map(d => `<path d="${d}" fill="none" stroke="#c4685b"`
+      + ` stroke-width="1.8" stroke-opacity=".55" stroke-linecap="round"/>`).join('')).join('\n')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1000,6 +1082,14 @@ export const PLAN = {
     out:   'art/sprites/c_ghost_e1.png',
     dy:    0,      // すそは 下の あき（y210..245）と 左右の くさびへ 広げる
     svg:   ghostSvg,
+  },
+  c_firebird: {
+    kind:  'deco',
+    base:  'art/sprites/firebird.png',        // ひのとり（**読むだけ**）
+    out:   'art/sprites/c_firebird_e1.png',
+    dy:    0,      // よこが 25px しか ない。あきは **下**（y176 から）だけ
+    asym:  true,   // 3/4 の 見えかた。近い 翼が 大・遠い 翼が 小
+    svg:   firebirdSvg,
   },
   tw_ice: {
     kind:  'deco',
