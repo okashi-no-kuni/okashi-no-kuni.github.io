@@ -1325,6 +1325,60 @@ const cobraSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" hei
  stroke="#bc904e" stroke-width="3.0" stroke-linejoin="round"/>
 </svg>`;
 
+/* ------------------------------------------------------------------
+   `c_witch` ——肩から 斜め後方へ 流れる 一枚の 魔法の cape
+
+   ★ **base に cape は ありません。**さがした ところ、肩布も 背面布も
+     留め具も 無い、ふつうの 一枚の ワンピースでした。だから これは
+     「元の 部位が 育つ」では なく **新しい 進化装備が 出てくる** 型です
+     （`c_lavagolem_e1` の 浮遊岩・`c_onibi_e1` の 子の 炎と 同じ）。
+
+   ★ **新要素型 A は 自由に 足して よい わけでは ありません。**
+     ① その species の 意味と 強く むすびつく（まじょ ↔ マント）
+     ② 128px で 貼りものでは なく 自然な 進化に 見える
+     ③ base の 主要 identity を こわさない（**ほうき**）
+     ④ 予約ずみ 言語と かぶらない
+     ⑤ 36px / 24px でも 差が のこる
+     の 5つを ぜんぶ みたす ときだけ です。
+
+   ★ **接続は 帽子の つばの うしろへ 完全に かくします。**
+     つば（y89..117 / x45..210）は 肩（x92..174）より 広く、その 真上に
+     あるので、cape の 上ばしを そこへ 入れれば 継ぎめが 出ません。
+     `c_deer` と ちがい、ここでは **成長の 接続点を 見せる 必要が ありません**
+     ——のびるのでは なく「着る」ためです。
+
+   ★ **ほうきの 負の 空間を 1pxも 侵さない**（`c_crab` の 注意則）。
+     ほうきは まじょの identity です。右へ 流す 案（W2）は 柄の まわりを
+     99% うめて しまい、36px の 2run行が 6 → 4 に 落ちました。
+     採用した W5 は **左・みじかめ・穂の 手前で 止まる**ので 侵入 0px、
+     2run行も 6 の ままです。
+
+   ★ 分けかた ——`c_ghost_e1`（胴の 下・下へ・3層・半とうめい・左右）／
+     `c_cobra_e1`（頭と 首・左右対称・頭の 上で つながる）／
+     `c_devil_e1`（暗紫・半とうめい・左右・切れこみ）／
+     `c_firebird_e1`（左右 2枚の 実体の 翼）。
+     こちらは **片がわ 1枚・不とうめい・切れこみなし**。                */
+
+/* cape の 輪郭（実測で 決めた 9点）。
+   (134,112) と (138,148) は **帽子の つば・胴の うしろ**＝見えない。
+   下は y202 で 止める ——ほうきの 穂が y209..225 / x52..92 に あるため。
+   左は x38 まで ——ここが 24px の 読みを 決めます（W5 の x48 では
+   厚みが 5列 しか のこらず、控えめすぎました）。**x27 まで 広げないこと**
+   ——片がわの 面が 大きく なりすぎて「うしろに 大きな 板」に 寄り、
+   `c_cobra_e1` の 一枚盾とも 近く なります */
+const WCAPE = [[134,112],[96,116],[62,138],[42,168],[38,194],
+               [66,202],[104,196],[126,176],[138,148]];
+
+const witchSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="wcF" x1=".25" y1="0" x2=".75" y2="1">
+  <stop offset="0" stop-color="#d7b7fb"/><stop offset=".55" stop-color="#caa8f2"/>
+  <stop offset="1" stop-color="#a77cba"/></linearGradient>
+</defs>
+<path d="${'M' + catmull(WCAPE, 14).map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L') + ' Z'}"
+ fill="url(#wcF)" stroke="#8c5d9b" stroke-width="2.8" stroke-linejoin="round"/>
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1481,6 +1535,14 @@ export const PLAN = {
     out:   'art/sprites/c_cobra_e1.png',
     dy:    0,      // 上は 14px しか ない。**よこ**（左右 32px）へ 開く
     svg:   cobraSvg,
+  },
+  c_witch: {
+    kind:  'deco',
+    base:  'art/sprites/witch.png',           // まじょ（**読むだけ**）
+    out:   'art/sprites/c_witch_e1.png',
+    dy:    0,      // 下は 14px しか ない。あきは よこ（左右 34px）
+    asym:  true,   // **片がわ 1枚**。左右対称に すると 翼に なる
+    svg:   witchSvg,
   },
   tw_ice: {
     kind:  'deco',
