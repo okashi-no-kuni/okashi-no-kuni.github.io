@@ -1379,6 +1379,57 @@ const witchSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" hei
  fill="url(#wcF)" stroke="#8c5d9b" stroke-width="2.8" stroke-linejoin="round"/>
 </svg>`;
 
+/* ★ `lg_chocoknight_e1`（ショコラのきし）——**持って いる 盾に チョコの
+     補強フレームが つく**。Batch 4 で はじめて 通った「持ちもの」の 進化。
+
+   ★ **同素材で 大きく しては いけません。**制作前に 10案 くらべて、
+     ビスケットの まま 同心に +11px（K1）も、片方向へ +13px（K4）も
+     **二重盾**に なりました（`c_turtle` と まったく 同じ 落ちかた）。
+     効いたのは **拡張の 向きでは なく 素材の 境め**です。
+
+   ★ だから 元の 盾の 輪郭を
+     「小さい 盾の 外縁」では なく **「ビスケットの 面と チョコの
+     補強部の 境め」**として 読ませます。これが `c_turtle` に 無かった
+     逃げ道 ——あちらには 甲羅の 外に 置ける 自然な 別素材が
+     ありませんでした。騎士は **チョコの よろい＋クリームの 縁どり**を
+     もともと 持って います。
+
+   ★ 盾は **最小二乗で あてはめた 楕円**（100点・rms 0.0315）——
+     中心 (170,181) / rx 26 / ry 31。**目分量に しないこと**
+     ——設計の 下絵は 中心を 2.5px ずらして いたので、外周が
+     右下だけ 厚く 見えました。
+
+   ★ `ch_fairy_e1` の 輪に 寄せない 4つの きまり
+       ① **不とうめい**（半とうめいに しない）
+       ② **暗い チョコ**（金・発光に しない）
+       ③ **盾の 上だけ**（キャラの 中心の 輪に しない）
+       ④ **放射を 足さない**
+     `c_cobra_e1` とも 別ものです ——あちらは **体の 一部**（フード）が
+     **横へ 一方向に +50%**。こちらは **持ちもの**の **局所の 素材強化**。
+
+   ★ びょう・spark・halo・dust は **足しません**（14）。
+     外周そのもの だけで 成立させます。                                */
+
+/* 盾の 楕円（base の 外周 100点を 最小二乗で あてはめた 実測値） */
+const KSH = { cx:170, cy:181, rx:26, ry:31 };
+
+/* 補強フレームの 厚み。K7 の +13px。
+   同心（中心は 盾の 中心）なので、**盾の 局所では 左右上下が 均等**です
+   ——キャラ全体は 非対称（`asym:true`）でも、盾だけは 整った 楕円 */
+const KRIM = 13, KTRIM = 6.5;
+
+const knightSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="knF" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#c08168"/><stop offset=".55" stop-color="#a76953"/>
+  <stop offset="1" stop-color="#90604a"/></linearGradient>
+</defs>
+<ellipse cx="${KSH.cx}" cy="${KSH.cy}" rx="${KSH.rx + KRIM}" ry="${KSH.ry + KRIM}"
+ fill="url(#knF)" stroke="#663220" stroke-width="3"/>
+<ellipse cx="${KSH.cx}" cy="${KSH.cy}" rx="${KSH.rx + KTRIM}" ry="${KSH.ry + KTRIM}"
+ fill="none" stroke="#fbe7c4" stroke-width="2.6"/>
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1543,6 +1594,14 @@ export const PLAN = {
     dy:    0,      // 下は 14px しか ない。あきは よこ（左右 34px）
     asym:  true,   // **片がわ 1枚**。左右対称に すると 翼に なる
     svg:   witchSvg,
+  },
+  lg_chocoknight: {
+    kind:  'deco',
+    base:  'art/sprites/chocoknight.png',   // ショコラのきし（**読むだけ**）
+    out:   'art/sprites/lg_chocoknight_e1.png',
+    dy:    0,      // 盾の 右に 48px・下に 33px ある。本体は ずらさない
+    asym:  true,   // 盾は 右がわ だけ。盾の 局所は 中心 (170,181) に 均等
+    svg:   knightSvg,
   },
   tw_ice: {
     kind:  'deco',
