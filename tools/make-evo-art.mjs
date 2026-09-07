@@ -1118,6 +1118,87 @@ ${[-1, 1].map(s => `<path d="${batShadow(s, DEV_WING)}" fill="url(#dvS)"`
   + ` stroke-linejoin="round"/>`).join('\n')}
 </svg>`;
 
+/* ---------- c_octopus（タコ）——**元からある 触手が 長く うねって 育つ** ----------
+   Batch 3 の 1体目。`c_firebird_e1` の「既存部位の 延長」を **複数本**に
+   おしすすめる はじめての 例です。
+
+     sp_rpurin  … **1本**の 太い 帯が 一方向へ（谷が ない）
+     ch_donut   … 連続した **水流＋波紋**（閉じた 曲線）
+     c_scorpion … **1本**の 節のある 弧が 片がわへ
+     c_mummy    … **細い 帯**が ばらばらに 垂れる（外形線が 破れて ふさに なる）
+     c_octopus  … **太い 有機的な 曲線が、それぞれ 独立に 育つ**
+
+   base の 実測 ——bbox x25..230 / y34..221（206x188）・面積 27,161px²・
+   重心 (127.6,134.7)。**8本 あるのに 36px では 2ローブ、24px では
+   ほぼ 1ローブ**に つぶれて います（下ふちの 山 31 に 対して 谷 28）。
+
+   余白は **横が 14px しか なく**、下 23px、下すみ（45°/135°）が
+   **2,161 / 2,166px² で いちばん 大きい**。触手ごとに のばせる 長さは
+
+     T1 外がわ (28,187) … 真下 **57** ／ ななめ **81**  ←ここが いちばん あいて いる
+     T2        (52,204) … 真下 40 ／ ななめ 57
+     T3 前     (82,221) … 真下 **23** ／ ななめ 33     ←すでに 読めて いて、余地が ない
+
+   **36px で すでに 読めて いる 前の 2本が いちばん のばせない**、
+   **1本も 読めて いない 外がわの 2本が いちばん のばせる** ——直感と 逆です。
+   だから 主役は **T1 / T1'**、前の T3 / T3' は **ほんの すこし 深くする だけ**。
+   T2 / T2' と T4 / T4' は **さわりません**（とくに T4 は 中央の 谷を
+   うめて しまう ——36px で ゆいいつ 深い 切れこみ です）*/
+
+/* 触手 1本 ＝ **1つの 閉じた パス**。吸盤も 節も 先も 別パーツに しません
+   （ルール④）。中心線に S字と 先の 巻きを 入れて あるので、
+   `catmull` ＋ `flowPath` の ままで 足ります ——**新しい primitive は
+   足して いません** */
+/* つやの すじ。中心線を 外がわへ ずらして、根もと寄りの 半分だけ 引きます
+   ——base の 足の ハイライトと 同じ 出かた（部品では なく 陰影）*/
+function glossPath(pts, wf, sign){
+  const n = pts.length, out = [];
+  for (let i = 0; i < n; i++){
+    const t = i/(n-1);
+    if (t > 0.62) break;
+    const [x,y] = pts[i], [x2,y2] = pts[Math.min(n-1,i+1)], [x0,y0] = pts[Math.max(0,i-1)];
+    const tx = x2-x0, ty = y2-y0, L = Math.hypot(tx,ty) || 1;
+    const w = wf(t)/2 * 0.42 * (sign < 0 ? 1 : -1);
+    out.push([x - ty/L*w, y + tx/L*w]);
+  }
+  return 'M' + out.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+}
+
+const OARM = [
+  /* T1（外がわ・主役）。**付け根は base の 中**（y150 で base は x66..189）。
+     外へ ふくらんで → 下へ → 先が 内へ 巻く S字。base の 足と 同じ
+     「太い 根もと → ゆるい S → すこし 細く → 先が 内へ 巻く」。
+     **先を x56 より 右へ 出さない こと** ——x57..67 は T3 との あいだの
+     谷で、ここを うめると 36px で 4つの 山が 2つに つぶれます */
+  { P: [[102,158],[86,170],[70,181],[54,192],[40,204],[31,217],[37,228],[51,229],[59,220]],
+    w: t => 54 - 47*Math.pow(t, 1.15) },
+  /* T3（前・補助）。base の 先（82,221）より **10px ほど 深く する だけ**。
+     のばしすぎると 主役が T1 でなく なり、base の 2ローブを 長くした
+     だけに なります。**右は x112 より 内がわへ 出さない** ——x113..127 は
+     まん中の 谷で、base で ゆいいつ 深い 切れこみ（36px で 28行）です */
+  { P: [[104,177],[98,193],[93,206],[92,218],[100,225],[108,220],[111,211]],
+    w: t => 46 - 39*Math.pow(t, 1.15) },
+];
+
+const octopusSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="ocA" x1=".15" y1="0" x2=".85" y2="1">
+  <stop offset="0" stop-color="#f7b6cd"/><stop offset=".55" stop-color="#f187a8"/>
+  <stop offset="1" stop-color="#ea96ae"/></linearGradient>
+</defs>
+${[-1, 1].map(s => OARM.map(a => {
+  const P = a.P.map(([x,y]) => [ s < 0 ? x : 256 - x, y ]);
+  const pts = catmull(P, 16);
+  return `<path d="${flowPath(pts, a.w)}" fill="url(#ocA)"`
+    + ` stroke="#cb5f7e" stroke-width="2.8" stroke-linejoin="round"/>`
+    /* つや。base の 足と おなじ「上外がわに 明るい すじ」。**部品では なく
+       陰影**なので 1本の やわらかい ストロークで えがきます */
+    + `<path d="${glossPath(pts, a.w, s)}" fill="none" stroke="#fdd9e6"`
+    + ` stroke-opacity=".72" stroke-linecap="round"`
+    + ` stroke-width="${(a.w(0)*0.20).toFixed(1)}"/>`;
+}).join('\n')).join('\n')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1252,6 +1333,13 @@ export const PLAN = {
     out:   'art/sprites/c_devil_e1.png',
     dy:    0,      // 上は 25px しか ない。**左右**へ 開く ので ずらさない
     svg:   devilSvg,
+  },
+  c_octopus: {
+    kind:  'deco',
+    base:  'art/sprites/octopus.png',         // タコ（**読むだけ**）
+    out:   'art/sprites/c_octopus_e1.png',
+    dy:    0,      // 進化差は **下半分だけ**。上の あき 23px は つかわない
+    svg:   octopusSvg,
   },
   tw_ice: {
     kind:  'deco',
