@@ -1262,6 +1262,69 @@ ${MWRAP.map(a => `<path d="${flowPath(catmull(a.P, 16), a.w)}" fill="url(#mwF)"`
   + ` stroke="#d3bca2" stroke-width="2.6" stroke-linejoin="round"/>`).join('\n')}
 </svg>`;
 
+/* ------------------------------------------------------------------
+   `c_cobra` ——首まわりの フードが 左右へ 大きく 開いて 一枚の 盾に なる
+
+   ★ 主役は **よこはばそのものでは なく**、元の フードと つながった
+     一枚の 面が「威嚇するように 左右へ 開く」こと。
+
+   ★ base の フードの 外がわの 輪郭を **実測**して（`CHOOD`）、
+     そこへ 外向きの ふくらみ（`chBump`）を 足すだけ。だから
+     **頂点（y25）では 追加が 0** ——base と 輪郭が ぴたり 重なり、
+     上に 継ぎめが 出ません。ここが いちばん だいじです。
+
+   ★ 「翼・マント・影・ハロー」に 見せない 5つの きまり
+       ① 左右を **頭の 上で つなぐ**（頂点で ふくらみ 0）。割ると 翼に なる
+       ② base と **同じ 金茶の 不とうめいの 素材**。半とうめい・暗色は 影
+       ③ 重心を **頭の 高さ**に 置く。肩へ 下ろすと マント
+       ④ 外縁に 切れこみ・ぎざぎざ・羽根の すじ・波を 入れない
+       ⑤ **たてに のばさない**（たて +0.5% / よこ +35%）。相似だと ハロー
+
+   ★ 下は y170 あたりから **とぐろの うしろ**へ すべりこませて 消す。
+     見える ところで 切ると「別の 板」に なります                      */
+
+/* base の フードの 外がわの 輪郭（左がわ・[y, x]。原画を 1px きざみで 実測）。
+   右は `255 - x` の 鏡 ——base の フードは x=127.5 に ついて 厳密に 対称 */
+const CHOOD = [[25,122],[35,88],[45,73],[55,63],[65,56],[75,52],[85,50],
+               [95,51],[105,54],[115,60],[125,69]];
+
+/* 外へ 出す ふくらみ。頂点で 0・y100 あたりで 最大 34px。
+   `1.12` で 山を 下へ ずらす ——いちばん 広い ところが 下に ある ほうが
+   本物の コブラの フードに 近く、ハローにも 見えません */
+const chBump = y => {
+  const t = (y - 25) / 105;
+  if (t <= 0) return 0;
+  return 34 * Math.pow(Math.sin(Math.min(1, Math.min(1.25, t) / 1.12) * Math.PI * 0.86), 0.62);
+};
+
+/* 盾の 左の 輪郭。下の 5点は **とぐろの うしろへ しずめる** ための みち
+   （H5 に のこって いた 角は catmull が ならす）*/
+const CSHIELD = CHOOD.map(([y, x]) => [y, x - chBump(y)])
+  .concat([[136,46],[148,44],[158,48],[168,60],[178,84],[186,112]]);
+
+/* 左の 輪郭 → catmull で なめらかに → うつして 1枚に 閉じる。
+   **左右を 別の path に しないこと** ——2枚に すると 翼に 見えます。
+
+   うつす 軸は **X=128.0**（`256 - x`）。base の フードは 画素で
+   `L50 ↔ R205`（たすと 255）なので、画素 i の 相手は 255-i ＝
+   連続座標では 128.0 が 軸です。**127.5 に すると 0.5px ずれて、
+   左だけ 1px 広い 絵に なります**（じっさい x15..239 に なった）*/
+function cobraShield(L){
+  const s = catmull(L, 14);
+  const p = [...s, ...s.map(([y, x]) => [y, 256 - x]).reverse()];
+  return 'M' + p.map(q => q[1].toFixed(1) + ',' + q[0].toFixed(1)).join(' L') + ' Z';
+}
+
+const cobraSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="cbF" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#f7e8c6"/><stop offset=".55" stop-color="#ebca82"/>
+  <stop offset="1" stop-color="#c49a57"/></linearGradient>
+</defs>
+<path d="${cobraShield(CSHIELD)}" fill="url(#cbF)"
+ stroke="#bc904e" stroke-width="3.0" stroke-linejoin="round"/>
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1411,6 +1474,13 @@ export const PLAN = {
     dy:    0,      // 上下の あきは T15 / B14 しか ない。ななめと 横を つかう
     asym:  true,   // base の 非対称（右の 頭の 帯）を **増幅**する
     svg:   mummySvg,
+  },
+  c_cobra: {
+    kind:  'deco',
+    base:  'art/sprites/cobra.png',           // コブラ（**読むだけ**）
+    out:   'art/sprites/c_cobra_e1.png',
+    dy:    0,      // 上は 14px しか ない。**よこ**（左右 32px）へ 開く
+    svg:   cobraSvg,
   },
   tw_ice: {
     kind:  'deco',
