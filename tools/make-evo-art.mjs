@@ -1430,6 +1430,58 @@ const knightSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" he
  fill="none" stroke="#fbe7c4" stroke-width="2.6"/>
 </svg>`;
 
+/* ★ `c_snowqueen_e1`（ゆきのじょおう）——**元からある 左右の 太い 長髪が、
+     同じ 髪の まま さらに 長く・豊かに 育つ**。
+
+   ★ **cape・veil・翼を 足す 進化では ありません。**主役は
+     **元から ある 髪その もの**です。`c_witch_e1`（片がわ 1枚の cape）・
+     `c_ghost_e1`（下へ 3層の 半とうめい）・`c_octopus_e1`（下に 4本の 触手）
+     とは、36px の 最終シルエットで 分かれます
+     ——こちらは **左右 対称に、ドレスの 外を たてに 流れる 不とうめいの 髪束**。
+
+   ★ **二重髪に ならない 理由**は、髪が もともと「束の 前後が 重なる」
+     描きかただから です。元の 輪郭が **束と 束の 境め**に そのまま 読めます。
+     `c_turtle`（閉じた 面）や `c_rabbit`（1つの 強い 終端）とは ちがいます。
+
+   ★ 通り道は 実測で 決めます ——ドレスの いちばん 広い ところが
+     **x66..189（y212）**、毛先は x56〜62 なので、**x45..66 / x189..210 の
+     たてに 長い 通路**が y186 から 下に あいて います。そこを 流します。
+
+   ★ 3つの きまり
+       ① **先を 巻く**（base の 毛先と 同じ 終わりかた）。まっすぐな 帯は
+         リボンに 見えます（S1〜S3 で 実測）
+       ② 幅を 一定に しない。中ほどを ふくらませて 先を すぼめる
+       ③ **中ほどに ゆるい うねりを 1つ**。なめらか すぎると 帯に 見え、
+         強すぎると ダイヤ形の 穴が あいて リボンの 折り返しに なる
+
+   ★ 下は **y229 で 止める**（設計の S7 は y234 まで あり、安全枠まで
+     10px しか のこらなかった）。secondary は **なし** ——snow・spark・
+     halo・dust・宝石を 1つも 足しません。                             */
+
+/* 左の 髪束の 中心線（実測した 通路の まん中）。右は `256 - x` の 鏡。
+   さいごの 2点が **毛先の カール**（内へ 巻いて 終わる） */
+const SQ_OUT = [[72,156],[60,171],[64,182],[58,194],[56,206],[60,219],[69,224],[73,216]];
+const SQ_IN  = [[80,162],[71,178],[76,193],[67,205],[72,214],[79,210]];
+
+/* 髪の 幅。中ほどで ふくらませ、毛先で すぼめる（`bulge`）*/
+const sqStrand = (pts, w0, w1, bulge = 1.10) => {
+  const C = catmull(pts, 16);
+  return flowPath(C, t => 2 * (w0 + (w1 - w0) * t) * (1 + (bulge - 1) * Math.sin(Math.PI * t)));
+};
+const sqMir = pts => pts.map(([x, y]) => [256 - x, y]);
+
+const snowqueenSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <linearGradient id="sqH" x1=".25" y1="0" x2=".75" y2="1">
+  <stop offset="0" stop-color="#f4fafe"/><stop offset=".36" stop-color="#e2f4fb"/>
+  <stop offset=".72" stop-color="#d6e2f2"/><stop offset="1" stop-color="#c8cfe4"/></linearGradient>
+</defs>
+${[SQ_OUT, sqMir(SQ_OUT)].map(p => `<path d="${sqStrand(p, 9, 3.4)}"
+ fill="url(#sqH)" stroke="#aaafce" stroke-width="2.3" stroke-linejoin="round"/>`).join('')}
+${[SQ_IN, sqMir(SQ_IN)].map(p => `<path d="${sqStrand(p, 7, 3)}"
+ fill="url(#sqH)" stroke="#aaafce" stroke-width="2.3" stroke-linejoin="round"/>`).join('')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1602,6 +1654,13 @@ export const PLAN = {
     dy:    0,      // 盾の 右に 48px・下に 33px ある。本体は ずらさない
     asym:  true,   // 盾は 右がわ だけ。盾の 局所は 中心 (170,181) に 均等
     svg:   knightSvg,
+  },
+  c_snowqueen: {
+    kind:  'deco',
+    base:  'art/sprites/snowqueen.png',   // ゆきのじょおう（**読むだけ**）
+    out:   'art/sprites/c_snowqueen_e1.png',
+    dy:    0,      // 左右に 45px・下は ドレスの 外に 通路が ある
+    svg:   snowqueenSvg,
   },
   tw_ice: {
     kind:  'deco',
