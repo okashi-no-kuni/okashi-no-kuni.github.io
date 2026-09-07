@@ -1482,6 +1482,76 @@ ${[SQ_IN, sqMir(SQ_IN)].map(p => `<path d="${sqStrand(p, 7, 3)}"
  fill="url(#sqH)" stroke="#aaafce" stroke-width="2.3" stroke-linejoin="round"/>`).join('')}
 </svg>`;
 
+/* ★ `c_redpanda_e1`（レッサーパンダ）——**元からある 太い 縞の 尾が、
+     同じ 尾の まま 上へ さらに 長く のびる**。
+
+   ★ **巻かない・房を 足さない・2本目の 尾に しない。**
+     `c_lavasnail_e1`（巻いて 中心へ もどる うず）・`c_octopus_e1`（下に
+     複数の 太い 触手）・`ch_gumgum_e1`（ふくらむ かたまり）・
+     `sp_rpurin_e1`（細い 1方向の 帯）とは、36px の 最終シルエットで
+     分かれます ——こちらは **片がわ 1本の、52px の 太い 縞の 尾が
+     たてに のびる**。32px の IoU は base 0.889／最近傍 `c_lavasnail_e1`
+     0.719 で、しきい値 0.86 を こえるのは base だけ です。
+
+   ★ **いちばん 大事な こと ——ドームの すぐ上の 帯を、base の 先端
+     キャップと 同じ「オレンジ」に する。**
+     base の 尾先は 閉じた 丸い ドーム（y107〜126・オレンジ）です。
+     そこへ **クリームの 帯**を かさねると 明度差で 輪郭が 完全に 立ち、
+     **閉じた ドームが クリームの 中に のこって「古い 尾先が すけて 見える」**
+     ——`c_turtle` / `c_squirrel` と まったく 同じ 二重に なりました
+     （下絵 R8b・R10b で 実証）。同じ オレンジで つなぐと ぬりが つながり、
+     **のこるのは 細い 弧だけ**に なって「毛の 折れ」に 読めます。
+     さらに 弧の すぐ上に やわらかい かげ（`rpSh`）を 敷いて 段に します。
+     `lg_chocoknight_e1` の「素材境界に 読みかえる」とは 別の、
+     **同色で つないで 輪郭を かげに 落とす**やりかたです。
+
+   ★ ふちは **base の 左右の ふちを そのまま 上へ つづける**こと。
+     中心線＋はばで 帯を 引くと base と はばが 合わず、**別の 縞の 筒が
+     うしろに 立ちます**（R1〜R7 で 実証）。
+
+   ★ 上へ 行くほど **左へ 寄せる**。耳の 左ふちが y36〜104 で **x78〜87**
+     なので、まっすぐ 上へ のばすと 頭と くっつきます。R19 は 右ふちを
+     y112:83 → y54:63 と しぼって、すき間を **2px** のこします
+     （36px の 2run行は 11 → 16 と ふえる ＝ 融合して いない）。
+
+   ★ しまは base と 同じ **16px ピッチ・−15/260 の かたむき**。
+     クリームの 帯は y90..74 と y58..42。**新しい 模様を 作らないこと。**  */
+
+/* base の 尾の 左右の ふち（実測）を そのまま 上へ つづける。下 → 上 */
+const RP_L = [[38,134],[35,112],[31,90],[28,70],[26,54]];
+const RP_R = [[88,134],[83,112],[76,90],[69,70],[63,54]];
+/* しまの 帯（y の はんい）。base の ピッチ 16px に そろえる */
+const RP_BAND = [[90,74],[58,42]];
+const RP_SHADOW = [92,112];          // ドームの すぐ上の かげ
+
+const rpPt = q => q.map(v => v.toFixed(1)).join(',');
+const rpTailPath = () => {
+  const a = RP_L[RP_L.length-1], b = RP_R[RP_R.length-1];
+  const r = Math.hypot(b[0]-a[0], b[1]-a[1]) / 2;      // 先は 半円で とじる
+  return 'M' + RP_L.map(rpPt).join('L')
+       + `A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${rpPt(b)}`
+       + 'L' + RP_R.slice().reverse().map(rpPt).join('L') + 'Z';
+};
+
+const redpandaSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <clipPath id="rpC"><path d="${rpTailPath()}"/></clipPath>
+ <linearGradient id="rpF" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="#d96d4c"/><stop offset=".38" stop-color="#e8855e"/>
+  <stop offset="1" stop-color="#f2a077"/></linearGradient>
+ <linearGradient id="rpSh" x1="0" y1="1" x2="0" y2="0">
+  <stop offset="0" stop-color="#c9663f" stop-opacity=".55"/>
+  <stop offset="1" stop-color="#c9663f" stop-opacity="0"/></linearGradient>
+</defs>
+<path d="${rpTailPath()}" fill="url(#rpF)"/>
+<g clip-path="url(#rpC)">
+${RP_BAND.map(([y0,y1]) => `<path d="M${rpPt([-30,y0])}L${rpPt([230,y0-15])}`
+  + `L${rpPt([230,y1-15])}L${rpPt([-30,y1])}Z" fill="#fdf3e1"/>`).join('')}
+<rect x="-30" y="${RP_SHADOW[0]}" width="260" height="${RP_SHADOW[1]-RP_SHADOW[0]}" fill="url(#rpSh)"/>
+</g>
+<path d="${rpTailPath()}" fill="none" stroke="#a94c2f" stroke-width="3.2" stroke-linejoin="round"/>
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1661,6 +1731,14 @@ export const PLAN = {
     out:   'art/sprites/c_snowqueen_e1.png',
     dy:    0,      // 左右に 45px・下は ドレスの 外に 通路が ある
     svg:   snowqueenSvg,
+  },
+  c_redpanda: {
+    kind:  'deco',
+    base:  'art/sprites/redpanda.png',    // レッサーパンダ（**読むだけ**）
+    out:   'art/sprites/c_redpanda_e1.png',
+    dy:    0,      // 尾先の 上に 97〜106px ある。本体は ずらさない
+    asym:  true,   // 尾は 左がわ だけ。上へ 行くほど 左へ 流す
+    svg:   redpandaSvg,
   },
   tw_ice: {
     kind:  'deco',

@@ -619,6 +619,7 @@ const EVO_LOCK = [
   ['c_witch_e1', '4ddc38e6a91978f8555668526758713052d284a5355fcb26027ed12adc4b2962'],
   ['lg_chocoknight_e1', '246b6cf1a3b25c924baff85660c43149b09f9c2d13d2901c9c39dc8d1665be86'],
   ['c_snowqueen_e1', '6eb88042773fe4ae2dc28685d01c6238548e8c2d01d35d5a42f08a19e4ae6e57'],
+  ['c_redpanda_e1', '91c015c55be99d1dcb2e1305f51cd9e2df33c601aa25260fd497251f0fb21907'],
 ];
 const lockBad = [];
 for (const [k, want] of EVO_LOCK){
