@@ -39,6 +39,7 @@ export const CORE = [
 /* あとから いる もの。キャラの 絵と 画面の 絵、ほかの ページ */
 export const REST = [
   'invite.html',
+  'puzzle.html',        // おかしのブロックパズル（Phaser と アイコンは CORE と 共用）
   'privacy.html',
   'support.html',
   'art/sprites',

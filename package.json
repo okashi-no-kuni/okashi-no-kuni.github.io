@@ -7,7 +7,7 @@
     "build": "node tools/build-www.mjs",
     "icons": "node tools/make-icons.mjs",
     "shots": "node tools/shots.mjs",
-    "check": "node tools/check-chars.mjs && node tools/check-path.mjs && node tools/check-btn.mjs && node tools/check-flyer.mjs && node tools/sim.mjs",
+    "check": "node tools/check-chars.mjs && node tools/check-path.mjs && node tools/check-btn.mjs && node tools/check-flyer.mjs && node tools/sim.mjs && node tools/check-puzzle.mjs",
     "ios:add": "npm run build && npx cap add ios",
     "ios:sync": "npm run build && npx cap sync ios"
   },

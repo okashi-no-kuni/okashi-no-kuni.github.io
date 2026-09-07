@@ -67,6 +67,20 @@ for (const m of html.matchAll(/'(duel_[a-z]+)'/g))
   if (!existsSync(resolve(WWW, 'art/screens/' + m[1] + '.webp')))
     miss.push('art/screens/' + m[1] + '.webp');
 
+/* ④ ほかの ページが 名ざしで 読む ファイル（src= と href=）。
+   **index.html だけを 見ていると、あとから 足した ページの
+   読みおとしを 取りこぼす** ——web では 動くのに アプリだけ 出ない、が
+   いちばん 気づきにくい 形なので、KEEP の html は ぜんぶ 見る */
+for (const rel of KEEP){
+  if (!rel.endsWith('.html') || rel === 'index.html') continue;
+  const src = readFileSync(resolve(root, rel), 'utf8');
+  for (const m of src.matchAll(/(?:src|href)="([^"#?:]+)"/g)){
+    const t = m[1];
+    if (t.startsWith('/') || t.startsWith('.')) continue;
+    if (!existsSync(resolve(WWW, t))) miss.push(rel + ' → ' + t);
+  }
+}
+
 const uniq = [...new Set(miss)];
 const mb = n => (n / 1024 / 1024).toFixed(1) + 'MB';
 console.log('www/ … ' + mb(bytes));

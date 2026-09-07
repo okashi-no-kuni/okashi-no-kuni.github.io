@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#ffd9ec">
+<title>おかしのブロックパズル</title>
+<!-- SNSに はったときの プレビュー。**無いと 絵の 出ない ただのURLに なります。**
+     絵は タワーディフェンスと 同じ おかしの国の もの（同じ シリーズなので）-->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="まほうの おかしの国">
+<meta property="og:title"       content="おかしのブロックパズル">
+<meta property="og:description" content="おかしを ならべて、おなじ色を タップで はじけさせよう！ 3つ そろえば ブラスト、1列 うまれば ライン消し。ダウンロードなしで すぐ あそべます。">
+<meta property="og:url"         content="https://okashi-no-kuni.github.io/puzzle.html">
+<meta property="og:image"       content="https://okashi-no-kuni.github.io/art/screens/ogp.jpg">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="ja_JP">
+<meta name="twitter:card"       content="summary_large_image">
+<meta name="twitter:title"      content="おかしのブロックパズル">
+<meta name="twitter:description" content="おかしを ならべて、おなじ色を タップで はじけさせよう！">
+<meta name="twitter:image"      content="https://okashi-no-kuni.github.io/art/screens/ogp.jpg">
+<meta name="description"        content="おかしを ならべて、おなじ色を タップで はじけさせる パズルゲーム。ダウンロードなしで すぐ あそべます。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="おかしパズル">
+<style>
+  /* 配色は シリーズ共通（CLAUDE.md の アートディレクション）。
+     ここを 変えると タワーディフェンスと 見た目が ちぐはぐに なる */
+  :root{
+    --pink:#ff8fc4;
+    --pink-d:#e05f9e;
+    --lav:#c9a7ff;
+    --mint:#8fe3c4;
+    --aqua:#2e9fc9;
+    --cream:#fff6e9;
+    --ink:#6b4a63;
+    --card:rgba(255,255,255,.72);
+    --line:rgba(255,255,255,.9);
+    /* 文字の 大きさは ここ 1つで まとめて 変える */
+    --fs:1.10;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  html,body{height:100%}
+  body{
+    margin:0;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    font-family:system-ui,-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+    font-weight:800;
+    color:var(--ink);
+    background:
+      radial-gradient(90% 60% at 20% 0%,  #fff0f8 0%, transparent 60%),
+      radial-gradient(90% 60% at 90% 30%, #eef0ff 0%, transparent 60%),
+      linear-gradient(180deg,#ffe6f3 0%, #f3e8ff 55%, #e6f6ff 100%);
+    background-attachment:fixed;
+    display:flex;justify-content:center;
+    overflow-x:hidden;user-select:none;
+  }
+  /* 下の 余白は 20px ＋ セーフエリア。ボタンの かげは
+     getBoundingClientRect() に 入らないので、これより せまいと
+     iPhone の ホームバーに ボタンが かかる（タワーディフェンスで 実際に 起きた）*/
+  /* あまった たては 上下に **40:60** で 分ける。
+     まん中（50:50）だと たて長の 端末で 盤面が 沈んで 見え、
+     下ぞろえだと 空きが ぜんぶ 上へ 行く（表紙の --titleUp と 同じ話）。
+     のびしろの 合計は 100 に すること ——1未満に すると あまりが
+     ぜんぶ 配られず、ねらいより 上に 行く */
+  #app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;
+       padding:6px 10px calc(20px + env(safe-area-inset-bottom));
+       display:flex;flex-direction:column;gap:6px}
+  /* flex の のびしろを 持った からの 箱。margin:auto では かならず
+     半分ずつに なるので それでは できない。場所が 足りない ときは
+     のびしろが 0 の ままなので、上が 切れることも ない */
+  #app::before{content:'';flex:40 0 0;min-height:0}
+  #app::after {content:'';flex:60 0 0;min-height:0}
+
+  /* ---------- HUD（文字は DOM。canvas より 読みやすく 直しやすい）---------- */
+  #hud{display:flex;gap:6px}
+  .card{
+    background:var(--card);border:2px solid var(--line);border-radius:16px;
+    box-shadow:0 4px 14px rgba(190,140,180,.22);backdrop-filter:blur(6px);
+  }
+  .stat{flex:1;padding:4px;text-align:center;line-height:1.1}
+  .stat .k{font-size:calc(10px * var(--fs));opacity:.6;letter-spacing:.06em}
+  .stat .v{font-size:calc(19px * var(--fs));font-variant-numeric:tabular-nums;
+           display:flex;align-items:center;justify-content:center;gap:3px}
+  /* 中みが 出たり 消えたり すると HUDの 高さが かわって 盤面が びくびく 動く。
+     から でも 1行ぶん 場所を とらせること */
+  .stat .sub{font-size:calc(9px * var(--fs));color:#e0a52e;line-height:1.2;
+             min-height:calc(11px * var(--fs))}
+  .stat .sub.cmb{color:var(--pink-d)}
+  #scBox .v{color:var(--pink-d)}
+
+  /* ---------- 盤面 ---------- */
+  #wrap{position:relative;align-self:center}
+  canvas{display:block;border-radius:20px;touch-action:none;
+    box-shadow:0 8px 26px rgba(180,130,175,.3), inset 0 0 0 3px rgba(255,255,255,.85)}
+
+  /* ---------- 下のボタン ---------- */
+  /* 高さは 決めうち。あとから 高くなると そのぶんが 画面の 外に 出る
+     （resize() は 1回 測って 盤面の 大きさを 決めるため）*/
+  #ctrl{display:flex;gap:6px}
+  .btn{
+    flex:1;height:46px;border:none;border-radius:16px;font:inherit;
+    font-size:calc(12.5px * var(--fs));color:#fff;cursor:pointer;
+    background:linear-gradient(180deg,#ffa6d0,var(--pink));box-shadow:0 4px 0 var(--pink-d);
+    display:flex;align-items:center;justify-content:center;gap:4px;line-height:1.15;
+  }
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--pink-d)}
+  .btn.lav{background:linear-gradient(180deg,#dcc4ff,var(--lav));box-shadow:0 4px 0 #9d76e0}
+  .btn.lav:active{box-shadow:0 2px 0 #9d76e0}
+  .btn.ico{flex:0 0 54px;font-size:20px}
+  .btn:disabled{opacity:.45}
+
+  /* ---------- おおいかぶさる 画面 ---------- */
+  /* カードが 画面より 高い ときは スクロールさせる。
+     **align-items:center だけに しないこと** ——カードの 上が 切れて、
+     スクロールしても 出てこない（375x667 で 上が 19px 欠けた 実績あり）。
+     margin:auto なら はみ出した ぶんも ちゃんと たどれる */
+  .ov{
+    position:fixed;inset:0;z-index:40;display:none;
+    justify-content:center;padding:16px;overflow-y:auto;
+    background:rgba(120,90,120,.34);backdrop-filter:blur(3px);
+    -webkit-overflow-scrolling:touch;
+  }
+  .ov.on{display:flex}
+  /* カードは margin:auto で まん中に。align-items だけだと カードが
+     画面より 高いとき 上が 切れて スクロールしても 出てこない */
+  .ov .cd{
+    margin:auto;width:100%;max-width:340px;padding:18px 16px;text-align:center;
+    background:linear-gradient(180deg,#fffdfa,#fff2f8);
+    border:3px solid #fff;border-radius:26px;
+    box-shadow:0 14px 40px rgba(150,100,150,.34);
+  }
+  .ov h2{margin:0 0 8px;font-size:calc(19px * var(--fs));color:var(--pink-d)}
+  .ov p{margin:6px 0;font-size:calc(11.5px * var(--fs));line-height:1.65}
+  .ov .big{font-size:calc(34px * var(--fs));color:var(--pink-d);
+           font-variant-numeric:tabular-nums;line-height:1.1;margin:2px 0 0}
+  .ov .btn{margin-top:12px;width:100%}
+  .rule{
+    text-align:left;background:rgba(255,255,255,.7);border-radius:16px;
+    padding:9px 11px;margin:9px 0;font-size:calc(11px * var(--fs));line-height:1.7;
+  }
+  .rule b{color:var(--pink-d)}
+  .rule .li{display:flex;gap:7px;align-items:flex-start}
+  .rule .li+.li{margin-top:5px}
+  .rule .em{flex:0 0 auto;font-size:15px;line-height:1.25}
+  .foot{margin-top:10px;font-size:calc(10px * var(--fs));opacity:.6}
+  .foot a{color:var(--pink-d)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="card stat" id="scBox">
+      <div class="k">スコア</div>
+      <div class="v" id="scV">0</div>
+      <div class="sub cmb" id="cmbV"></div>
+    </div>
+    <div class="card stat">
+      <div class="k">さいこう記録</div>
+      <div class="v" id="bestV">0</div>
+      <div class="sub" id="newV"></div>
+    </div>
+  </div>
+
+  <div id="wrap"><div id="cv"></div></div>
+
+  <div id="ctrl">
+    <button class="btn" id="btnHelp">📕 あそびかた</button>
+    <button class="btn lav" id="btnNew">🔄 やりなおす</button>
+    <button class="btn ico" id="btnSnd" aria-label="音">🔊</button>
+  </div>
+</div>
+
+<!-- はじめの 画面 -->
+<div class="ov" id="startOv"><div class="cd">
+  <h2>🍬 おかしのブロックパズル</h2>
+  <p>おかしを ならべて、はじけさせよう！</p>
+  <div class="rule" id="startRule"></div>
+  <button class="btn" id="startGo">はじめる ✨</button>
+  <div class="foot"><a href="index.html">🏰 まほうの おかしの国（タワーディフェンス）へ</a></div>
+</div></div>
+
+<!-- ゲームオーバー -->
+<div class="ov" id="overOv"><div class="cd">
+  <h2 id="overT">おしまい！</h2>
+  <p id="overS">もう おける ところが ありません</p>
+  <div class="k" style="font-size:calc(10px * var(--fs));opacity:.6">スコア</div>
+  <p class="big" id="overN">0</p>
+  <p class="sub" id="overB" style="font-size:calc(11px * var(--fs));color:#e0a52e">&nbsp;</p>
+  <button class="btn" id="overGo">もういちど 🔄</button>
+</div></div>
+
+<!-- あそびかた -->
+<div class="ov" id="helpOv"><div class="cd">
+  <h2>📕 あそびかた</h2>
+  <div class="rule" id="helpRule"></div>
+  <button class="btn" id="helpGo">とじる</button>
+</div></div>
+
+<script src="vendor/phaser.min.js"></script>
+<script>
+/* ==========================================================
+   おかしのブロックパズル
+   —— Toon Blast（おなじ色を タップで はじけさせる）と
+      Block Blast（ブロックを おいて 1列 そろえる）の かけあわせ
+
+   **2つを どう 1つに するか**（ここが この ゲームの 核）
+
+     ① ブロックを おく のは Block Blast の まま。**落ちません**
+        （じゅうりょくを 入れると、せっかく そろえた 列が くずれて
+         おく 場所を 考える たのしさが 消える）
+     ② 1れつ そろったら 消える のも Block Blast の まま
+     ③ そのうえで、**おなじ色が 3つ つながったら タップで はじける**
+        ——これが Toon Blast の ぶぶん
+
+   **ブロックの 色は 1マスずつ ばらばら**に します。
+   1つの ブロックを ぜんぶ 同じ色に すると、おいた しゅんかんに
+   自分だけで 3つ そろって しまい、**盤面が 一生 うまりません**
+   （＝ゲームが 終わらない＝手ごたえが 消える）。
+   ばらばらに すると「同じ色を 少しずつ つなげて いく」計画が
+   そのまま あそびに なります。ただし まったくの ランダムだと
+   にごって 見えるので、ブロックごとに 主役の色を 1つ 決めて
+   **その色が 出やすい**ように してあります（PIECE_BASE_P）。
+
+   **ゲームオーバー**は「どの ブロックも おけない、しかも
+   はじける ところも 無い」とき だけ。はじける ところが のこって
+   いれば、まだ 場所を 作れるので 終わりません。
+
+   絵は ぜんぶ Canvas 2D。土台は Phaser 3（ループ・入力・画面サイズ）。
+   —— くわしくは CLAUDE.md の「技術方針」
+   ========================================================== */
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ==========================================================
+   1. せってい —— バランスの 数字は ぜんぶ ここに あつめる
+   ========================================================== */
+const COLS = 8, ROWS = 8;      // 盤面の ますめ
+const TRAY_N = 3;              // いちどに くばる ブロックの 数
+const BLAST_MIN = 3;           // 何こ つながったら はじけるか
+
+/* おかしの 色。パステル（CLAUDE.md の 配色）。
+   c1=うわ / c2=した の グラデ、dk=ふちと 顔の 線。
+   **白に 近い色を 入れないこと** ——うすい 背景に とけて 形が 見えなくなる */
+const COLORS = [
+  { n:'いちご',   c1:'#ffc2de', c2:'#ff8fc4', dk:'#d9528f' },
+  { n:'ぶどう',   c1:'#e0cdff', c2:'#c9a7ff', dk:'#8d63d6' },
+  { n:'ミント',   c1:'#c2f2e0', c2:'#8fe3c4', dk:'#3fa985' },
+  { n:'レモン',   c1:'#ffe4a0', c2:'#ffc85c', dk:'#cf8f14' },
+  { n:'ソーダ',   c1:'#c8e8ff', c2:'#8fd0ff', dk:'#3d92cc' },
+];
+const NC = COLORS.length;
+
+/* とくべつな おかし（Toon Blast の ロケット・ばくだん・ミラーボール）。
+   大きく はじけさせた ごほうび。**タップで つかう** */
+const SP_NONE = 0, SP_ROW = 1, SP_COL = 2, SP_BOMB = 3, SP_RAIN = 4;
+/* 何こ はじけたら 何が 生まれるか。上から 見て はじめに あたった もの */
+const SP_MAKE = [
+  { min:9, sp:SP_RAIN, name:'にじのアメ' },
+  { min:7, sp:SP_BOMB, name:'ばくだん' },
+  { min:5, sp:0,       name:'ロケット' },   // sp=0 は 形で たて・よこを 決める しるし
+];
+
+/* ブロックの 形。'x' が ますめ。**回転は 書きくだす**
+   ——その場で 回すと、どの 向きが 出やすいか が 分からなくなる。
+   w は 出やすさ（大きいほど よく 出る）。小さい ブロックを 多めに して、
+   つまった ときの 逃げ道を のこす */
+const SHAPES = [
+  { w:10, c:['x'] },
+  { w:14, c:['xx'] },              { w:14, c:['x','x'] },
+  { w:11, c:['xxx'] },             { w:11, c:['x','x','x'] },
+  { w:5,  c:['xxxx'] },            { w:5,  c:['x','x','x','x'] },
+  { w:2,  c:['xxxxx'] },           { w:2,  c:['x','x','x','x','x'] },
+  { w:12, c:['xx','xx'] },
+  { w:4,  c:['xxx','xxx'] },       { w:4,  c:['xx','xx','xx'] },
+  { w:2,  c:['xxx','xxx','xxx'] },
+  /* かどっこ（3こ）。4むき */
+  { w:9,  c:['xx','x.'] },         { w:9,  c:['xx','.x'] },
+  { w:9,  c:['x.','xx'] },         { w:9,  c:['.x','xx'] },
+  /* L と J（4こ）*/
+  { w:5,  c:['x.','x.','xx'] },    { w:5,  c:['.x','.x','xx'] },
+  { w:5,  c:['xxx','x..'] },       { w:5,  c:['xxx','..x'] },
+  { w:5,  c:['xx','.x','.x'] },    { w:5,  c:['xx','x.','x.'] },
+  { w:5,  c:['..x','xxx'] },       { w:5,  c:['x..','xxx'] },
+  /* T（4こ）*/
+  { w:5,  c:['xxx','.x.'] },       { w:5,  c:['.x.','xxx'] },
+  { w:5,  c:['x.','xx','x.'] },    { w:5,  c:['.x','xx','.x'] },
+  /* S と Z（4こ）*/
+  { w:4,  c:['.xx','xx.'] },       { w:4,  c:['xx.','.xx'] },
+  { w:4,  c:['x.','xx','.x'] },    { w:4,  c:['.x','xx','x.'] },
+  /* おおきい かどっこ（5こ）*/
+  { w:3,  c:['x..','x..','xxx'] }, { w:3,  c:['..x','..x','xxx'] },
+  { w:3,  c:['xxx','x..','x..'] }, { w:3,  c:['xxx','..x','..x'] },
+];
+/* 形を ますめの ならびに ひらく（'xx' → [[0,0],[1,0]]）*/
+for (const s of SHAPES){
+  s.cells = [];
+  for (let r=0;r<s.c.length;r++) for (let c=0;c<s.c[r].length;c++)
+    if (s.c[r][c] === 'x') s.cells.push([c,r]);
+  s.cw = Math.max(...s.cells.map(p => p[0])) + 1;
+  s.ch = Math.max(...s.cells.map(p => p[1])) + 1;
+}
+const SHAPE_W = SHAPES.reduce((a,s) => a + s.w, 0);
+
+/* ブロックの 主役の色が 出る かくりつ。
+   1.0 に すると 単色に なって、おいた しゅんかん 自分だけで
+   3つ そろって しまう（＝盤面が うまらない）。
+   0 だと にごって 見えて、色を つなげる 計画が 立てられない */
+const PIECE_BASE_P = 0.55;
+
+/* 点。はじけた ぶんは 2乗で のびる ——大きく そろえた ほうが
+   気もちいい、を 数字でも うらづける */
+const SC_BLAST = n => n * n * 5;
+const SC_LINE  = k => 120 * k * (k + 1) / 2;   // 同時に 消した 列の 数で のびる
+const SC_PUT   = n => n;                       // おいた だけでも 少し 入る
+const COMBO_MAX = 5;                           // コンボの ばいりつの 上限
+
+const SAVE_KEY = 'okashiPz';   // タワーディフェンス（sweetTD）とは 別の 引き出し
+
+/* ==========================================================
+   2. じょうたい
+   ========================================================== */
+let CELL = 40, DPR = 1, W = 320, H = 400;
+let GAP = 14, TRAY_Y = 0, TRAY_H = 60;
+
+const N = COLS * ROWS;
+const grid = new Int8Array(N).fill(-1);   // 色（-1 は から）
+const face = new Uint8Array(N);           // 顔の しゅるい
+const spec = new Uint8Array(N);           // とくべつな おかし
+const born = new Float32Array(N);         // おかれた 時こく（ぽんっと 出る 演出）
+
+let tray = [];              // いま くばられている ブロック（つかうと null）
+let score = 0, best = 0, combo = 0, over = false, started = false;
+let newBest = false;
+let time = 0;               // ゲームが はじまってからの びょう
+let drag = null;            // つかんでいる ブロック
+let tapCell = -1, tapAt = 0, tapX = 0, tapY = 0;
+let parts = [], pops = [], rings = [];    // キラキラ・とび出す文字・わっか
+let flash = 0, shake = 0;
+let sndOn = true, vibOn = true;
+let game = null, ctx = null;
+
+/* 見た目の たね。同じ ますは いつも 同じ ゆれかたを する */
+const wob = new Float32Array(N);
+for (let i=0;i<N;i++) wob[i] = Math.random() * Math.PI * 2;
+
+const idx = (c,r) => r * COLS + c;
+const inB = (c,r) => c >= 0 && c < COLS && r >= 0 && r < ROWS;
+const px  = c => c * CELL;
+const py  = r => r * CELL;
+const fmtN = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+/* ==========================================================
+   3. 音と ふるえ
+   **音と ふるえは かならず 対で 出すこと。**音を 切っている人にも
+   つたわり、ふるえの ない 端末（iPhone の Safari には
+   navigator.vibrate が ない）には 音で つたわる
+   ========================================================== */
+let actx = null;
+function wakeAudio(){
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state !== 'running') actx.resume();
+  }catch(e){}
+}
+for (const ev of ['pointerdown','touchend'])
+  document.addEventListener(ev, wakeAudio, { capture:true, passive:true });
+
+function beep(f, dur, type, vol, slide){
+  if (!sndOn) return;
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f, actx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(f * (slide || 1.4), actx.currentTime + dur);
+    g.gain.setValueAtTime(vol || .05, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.connect(g).connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + dur);
+  }catch(e){}
+}
+/* [高さ, ながさ, 波の形, 大きさ, すべり, 何びょう後] の ならびを ならす */
+function playSnd(list){
+  if (!list) return;
+  for (const s of list){
+    if (s[5]) setTimeout(() => beep(s[0], s[1], s[2], s[3], s[4]), s[5] * 1000);
+    else beep(s[0], s[1], s[2], s[3], s[4]);
+  }
+}
+let vibTimers = [];
+function vib(pat){
+  if (!vibOn) return;
+  for (const t of vibTimers) clearTimeout(t);
+  vibTimers.length = 0;
+  /* アプリの 中では Capacitor の Haptics ごしに 鳴らす。
+     ネイティブは「トンッ」の 単発しか 出せないので、リズムは 自分で 組む */
+  let H = null;
+  try{ H = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics) || null; }catch(e){}
+  if (H){
+    const list = Array.isArray(pat) ? pat : [pat];
+    let at = 0;
+    for (let i=0;i<list.length;i+=2){
+      const ms = list[i] | 0;
+      const style = ms >= 40 ? 'HEAVY' : ms >= 20 ? 'MEDIUM' : 'LIGHT';
+      vibTimers.push(setTimeout(() => { try{ H.impact({ style }); }catch(e){} }, at));
+      at += ms + (list[i+1] | 0);
+    }
+    return;
+  }
+  if (!navigator.vibrate) return;
+  try{ navigator.vibrate(pat); }catch(e){}
+}
+
+/* できごとの 音。**形を 変えること** ——目を つぶっても
+   いま 何が おきたか わかるのが ねらい（CLAUDE.md の きまり）*/
+const SND = {
+  put:   [[520,.05,'triangle',.035,1.2]],
+  bad:   [[160,.09,'square',.03,.7]],
+  blast: n => {                             // つながった 数だけ 音が 上がる
+    const out = [];
+    const k = Math.min(6, n - BLAST_MIN + 2);
+    for (let i=0;i<k;i++) out.push([660 * Math.pow(1.16, i), .07, 'triangle', .04, 1.5, i * .035]);
+    return out;
+  },
+  line:  [[740,.09,'sine',.05,1.6],[930,.09,'sine',.05,1.6,.07],[1240,.16,'sine',.05,1.8,.14]],
+  rocket:[[1500,.26,'sawtooth',.045,.28]],                        // ひゅーん と 落ちる
+  bomb:  [[150,.16,'square',.055,.7],[110,.22,'square',.05,.6,.09]],
+  rain:  [[880,.06,'triangle',.045,1.5],[1100,.06,'triangle',.045,1.5,.05],
+          [1380,.06,'triangle',.045,1.5,.10],[1720,.06,'triangle',.045,1.5,.15],
+          [2100,.20,'triangle',.05,1.7,.20]],
+  combo: n => [[520 * Math.pow(1.12, Math.min(10,n)), .10, 'sine', .045, 1.6]],
+  over:  [[520,.22,'sine',.05,.55],[380,.30,'sine',.05,.5,.16]],
+};
+const VIB = { put:8, blast:[16], line:[22,40,22], rocket:[30], bomb:[45,60,30],
+              rain:[20,40,20,40,40], over:[40,80,40] };
+
+/* えらぶ ボタンの 手ごたえ。ok=false は「いま つかえない」の 合図 */
+function tapSel(ok){
+  if (ok === false){ playSnd(SND.bad); vib([14,50,14]); return; }
+  beep(660,.05,'triangle',.03); vib(10);
+}
+
+/* ==========================================================
+   4. セーブ（さいこう記録と 音の せってい だけ）
+   ========================================================== */
+function load(){
+  try{
+    const o = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+    best  = o.best | 0;
+    sndOn = o.snd !== false;
+    vibOn = o.vib !== false;
+  }catch(e){}
+}
+function save(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ best, snd:sndOn, vib:vibOn })); }catch(e){}
+}
+
+/* ==========================================================
+   5. 大きさ —— 下のUIの 高さを 実際に 測って 盤面を 決める
+   決めうちの 引き算に すると、文字の 大きさを 変えるたびに
+   その数字も 手で 直す ことに なる（タワーディフェンスで やった 失敗）
+   ========================================================== */
+/* たてに つかう ますめの ぶん。盤面8 ＋ すきま .35 ＋ トレイ 1.55 */
+const H_UNITS = ROWS + 0.35 + 1.55;
+
+function safeBottom(){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;bottom:0;height:env(safe-area-inset-bottom);visibility:hidden';
+  document.body.appendChild(d);
+  const h = d.getBoundingClientRect().height || 0;
+  d.remove();
+  return h;
+}
+function resize(){
+  DPR = Math.min(3, window.devicePixelRatio || 1);
+  const app = $('app');
+  const pad = 6 + 20 + safeBottom();           // #app の うえと したの 余白
+  let below = 0;
+  for (const el of [$('hud'), $('ctrl')]) below += el.getBoundingClientRect().height;
+  below += 6 * 2;                               // #app の gap（3つの 子の あいだ）
+  /* レイアウトが できていない 起動直後は 0 に なるので、そのときだけ 決めうち */
+  if (below < 40) below = 46 + 46 + 12;
+
+  const availW = Math.min(480, window.innerWidth) - 20;
+  const availH = window.innerHeight - pad - below;
+  CELL = Math.floor(Math.min(availW / COLS, availH / H_UNITS));
+  CELL = Math.max(24, Math.min(66, CELL));
+
+  GAP    = Math.round(CELL * 0.35);
+  /* トレイは **あまった たてを もらって 大きくする**。
+     たてに 5ます ある ブロックは わくの 高さで 大きさが 決まるので、
+     決めうちの 1.55 の ままだと 1ますが 12px ほどに なって
+     何の 形か 見えない（つかむのも むずかしい）*/
+  const spare = availH - ROWS*CELL - GAP;
+  TRAY_H = Math.round(Math.max(CELL*1.55, Math.min(CELL*2.6, spare)));
+  W = COLS * CELL;
+  TRAY_Y = ROWS * CELL + GAP;
+  H = TRAY_Y + TRAY_H;
+
+  if (game && game.canvas){
+    const cw = Math.round(W * DPR), ch = Math.round(H * DPR);
+    if (game.canvas.width !== cw || game.canvas.height !== ch){
+      game.scale.resize(cw, ch);
+      game.canvas.width = cw; game.canvas.height = ch;
+    }
+    game.canvas.style.width  = W + 'px';
+    game.canvas.style.height = H + 'px';
+  }
+  bakeTiles();
+}
+/* iOS は セーフエリアを すぐには 返さない。0 の まま 測ると
+   そのぶん 下が 画面の 外に 出るので、落ちついてから 何度か 測りなおす。
+   resize() は 何回 よんでも 同じ 結果に なるので これで よい */
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 250));
+
+/* ==========================================================
+   6. おかしを えがく
+   **1まいに 焼いて おく**（CLAUDE.md「うごかないものは 1枚に 焼く」）。
+   顔つきの おかしを 毎フレーム 64こ えがくと それだけで こま落ちする。
+   大きさが 変わった ときだけ 焼きなおし、あとは 貼るだけ
+   ========================================================== */
+const FACES = 3;                       // にこにこ / あーん / ウインク
+let TILE = [], SPT = {}, tileSize = 0;
+
+function rr(g, x, y, w, h, rad){
+  const k = Math.min(rad, w/2, h/2);
+  g.beginPath();
+  g.moveTo(x+k, y);
+  g.arcTo(x+w, y,   x+w, y+h, k); g.arcTo(x+w, y+h, x, y+h, k);
+  g.arcTo(x,   y+h, x,   y,   k); g.arcTo(x,   y,   x+w, y,   k);
+  g.closePath();
+}
+/* 4方向に とがった キラキラ（シリーズ共通の 形）*/
+function sparkle(g, x, y, r, rot, color){
+  g.save(); g.translate(x,y); g.rotate(rot||0); g.fillStyle = color || '#fff';
+  g.beginPath();
+  for (let i=0;i<4;i++){
+    const a = i * Math.PI/2;
+    g.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+    g.quadraticCurveTo(0, 0, Math.cos(a+Math.PI/4)*r*0.22, Math.sin(a+Math.PI/4)*r*0.22);
+  }
+  g.closePath(); g.fill(); g.restore();
+}
+
+/* 顔。**目・ほっぺ・口 は かならず つける**（シリーズの きまり）。
+   目には ハイライトを 入れる。ほっぺは ピンクの 半とうめいの 円 */
+function drawFace(g, S, dk, fi){
+  const ex = S*0.155, ey = S*0.47, er = S*0.072;
+  g.fillStyle = dk;
+  for (const s of [-1, 1]){
+    const x = S/2 + ex*s;
+    if (fi === 2 && s < 0){                       // ウインク（かたほうだけ 線に する）
+      g.strokeStyle = dk; g.lineWidth = S*0.045; g.lineCap = 'round';
+      g.beginPath(); g.arc(x, ey + er*0.4, er*1.05, Math.PI*1.15, Math.PI*1.85); g.stroke();
+      continue;
+    }
+    g.beginPath(); g.arc(x, ey, er, 0, 7); g.fill();
+  }
+  g.fillStyle = 'rgba(255,255,255,.92)';
+  for (const s of [-1, 1]){
+    if (fi === 2 && s < 0) continue;
+    g.beginPath(); g.arc(S/2 + ex*s - er*0.32, ey - er*0.36, er*0.40, 0, 7); g.fill();
+  }
+  g.fillStyle = 'rgba(255,120,170,.30)';
+  for (const s of [-1, 1]){
+    g.beginPath(); g.ellipse(S/2 + S*0.255*s, ey + S*0.115, S*0.072, S*0.055, 0, 0, 7); g.fill();
+  }
+  const my = ey + S*0.155;
+  if (fi === 1){                                   // あーん（あいた口）
+    g.fillStyle = dk;
+    g.beginPath(); g.ellipse(S/2, my, S*0.062, S*0.052, 0, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,150,190,.85)';
+    g.beginPath(); g.ellipse(S/2, my + S*0.018, S*0.036, S*0.024, 0, 0, 7); g.fill();
+  } else {                                         // にこにこ
+    g.strokeStyle = dk; g.lineWidth = S*0.038; g.lineCap = 'round';
+    g.beginPath(); g.arc(S/2, my - S*0.030, S*0.070, Math.PI*0.18, Math.PI*0.82); g.stroke();
+  }
+}
+
+/* おかし 1つ。sp>0 なら とくべつな おかし */
+function drawTile(g, S, ci, fi, sp){
+  const C = COLORS[ci];
+  const m = S*0.055, w = S - m*2, rad = S*0.28;
+  g.clearRect(0, 0, S, S);
+
+  // かげは 黒では なく 紫がかった 半とうめい（シリーズの きまり）
+  g.fillStyle = 'rgba(120,90,120,.18)';
+  rr(g, m, m + S*0.055, w, w, rad); g.fill();
+
+  if (sp === SP_RAIN){
+    /* にじのアメ。5色の うずまき。色で 何が おきるか わかるように する */
+    g.save(); rr(g, m, m, w, w, rad); g.clip();
+    for (let i=0;i<NC;i++){
+      g.fillStyle = COLORS[i].c2;
+      g.beginPath();
+      g.moveTo(S/2, S/2);
+      g.arc(S/2, S/2, S*0.9, (i/NC)*7 - 1.2, ((i+1)/NC)*7 - 1.2);
+      g.closePath(); g.fill();
+    }
+    g.fillStyle = 'rgba(255,255,255,.55)';
+    g.beginPath(); g.arc(S/2, S/2, S*0.30, 0, 7); g.fill();
+    g.restore();
+  } else {
+    const gr = g.createLinearGradient(0, m, 0, m + w);
+    gr.addColorStop(0, C.c1); gr.addColorStop(1, C.c2);
+    g.fillStyle = gr;
+    rr(g, m, m, w, w, rad); g.fill();
+  }
+  // ふち。**うすい子ほど 線が いのち**（うすい 背景に とけないように）
+  g.strokeStyle = C.dk; g.lineWidth = S*0.048;
+  rr(g, m, m, w, w, rad); g.stroke();
+  // つや
+  g.fillStyle = 'rgba(255,255,255,.55)';
+  g.beginPath(); g.ellipse(S*0.36, S*0.245, S*0.155, S*0.085, -0.4, 0, 7); g.fill();
+
+  if (sp === SP_ROW || sp === SP_COL){
+    /* ロケット。**顔の 左右（たては 上下）の はしに 出す** ——
+       まん中に 置くと 顔と かさなって、どちらも 読めなくなる */
+    g.save(); g.translate(S/2, S/2); if (sp === SP_COL) g.rotate(Math.PI/2);
+    for (const s of [-1, 1]){
+      g.save(); g.translate(S*0.355*s, 0); g.scale(s, 1);
+      g.fillStyle = '#fff'; g.strokeStyle = C.dk; g.lineWidth = S*0.030;
+      g.beginPath();
+      g.moveTo(S*0.085, 0); g.lineTo(-S*0.055, -S*0.105); g.lineTo(-S*0.055, S*0.105);
+      g.closePath(); g.fill(); g.stroke();
+      g.restore();
+    }
+    g.restore();
+  } else if (sp === SP_BOMB){
+    /* ばくだん。四すみに とび散る しるし（まわりの 3x3 に 効く、の 絵）。
+       **白では 見えない** ——おかしが うすい 色なので、
+       白い キラキラは 消えて しまう（実測：1つも 見えなかった）。
+       だから その子の こい色で ぬって、白で ふちどる */
+    for (let i=0;i<4;i++){
+      const a = i * Math.PI/2 + Math.PI/4;
+      const x = S/2 + Math.cos(a)*S*0.315, y = S/2 + Math.sin(a)*S*0.315;
+      g.save();
+      g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = S*0.055;
+      g.lineJoin = 'round';
+      g.translate(x, y); g.rotate(0.25);
+      g.beginPath();
+      for (let k=0;k<4;k++){
+        const b = k*Math.PI/2, r = S*0.135;
+        g.lineTo(Math.cos(b)*r, Math.sin(b)*r);
+        g.quadraticCurveTo(0, 0, Math.cos(b+Math.PI/4)*r*0.22, Math.sin(b+Math.PI/4)*r*0.22);
+      }
+      g.closePath(); g.stroke();
+      g.fillStyle = C.dk; g.fill();
+      g.restore();
+    }
+  }
+  drawFace(g, S, sp === SP_RAIN ? '#7a5570' : C.dk, fi);
+  if (sp === SP_RAIN){
+    // にじのアメだけ 王冠の かわりに 上に きらり
+    sparkle(g, S*0.5, S*0.135, S*0.11, 0, '#fff');
+  }
+}
+
+function mkCv(S){
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  return c;
+}
+function bakeTiles(){
+  const S = Math.max(16, Math.round(CELL * DPR));
+  if (S === tileSize) return;
+  tileSize = S;
+  TILE = []; SPT = {};
+  for (let ci=0;ci<NC;ci++) for (let fi=0;fi<FACES;fi++){
+    const c = mkCv(S); drawTile(c.getContext('2d'), S, ci, fi, SP_NONE);
+    TILE[ci*FACES + fi] = c;
+  }
+  for (const sp of [SP_ROW, SP_COL, SP_BOMB, SP_RAIN]) for (let ci=0;ci<NC;ci++){
+    const c = mkCv(S); drawTile(c.getContext('2d'), S, ci, 0, sp);
+    SPT[sp + '_' + ci] = c;
+  }
+}
+const tileOf = (ci, fi, sp) => sp ? SPT[sp + '_' + ci] : TILE[ci*FACES + fi];
+
+/* ==========================================================
+   7. あそびの しくみ
+   ========================================================== */
+/* --- ブロックを 作る ------------------------------------- */
+function pickShape(){
+  let r = Math.random() * SHAPE_W;
+  for (const s of SHAPES){ r -= s.w; if (r <= 0) return s; }
+  return SHAPES[0];
+}
+function genPiece(){
+  const s = pickShape();
+  const base = Math.random() * NC | 0;
+  const cols = [], faces = [];
+  for (let i=0;i<s.cells.length;i++){
+    /* 主役の色を 少し 多めに。単色に すると おいた しゅんかん
+       自分だけで そろって しまい、盤面が うまらない */
+    cols.push(Math.random() < PIECE_BASE_P ? base : Math.random() * NC | 0);
+    faces.push(Math.random() * FACES | 0);
+  }
+  return { cells:s.cells, cw:s.cw, ch:s.ch, cols, faces };
+}
+function fits(p, gc, gr){
+  for (const [c,r] of p.cells){
+    const x = gc + c, y = gr + r;
+    if (!inB(x,y) || grid[idx(x,y)] >= 0) return false;
+  }
+  return true;
+}
+function canPlaceAnywhere(p){
+  for (let r=0;r<=ROWS-p.ch;r++) for (let c=0;c<=COLS-p.cw;c++)
+    if (fits(p, c, r)) return true;
+  return false;
+}
+/* トレイを くばりなおす。
+   **たすけ**：3つとも おけない 手を くばると、遊ぶ人には ただの
+   理不じんに 見える。はじける ところも 無いなら、何回か くばりなおす */
+function refill(){
+  const spaceLeft = grid.some(v => v < 0);
+  for (let n=0;n<12;n++){
+    tray = [genPiece(), genPiece(), genPiece()];
+    if (!spaceLeft) break;
+    if (tray.some(canPlaceAnywhere)) break;
+    if (anyBlast()) break;              // はじけば 場所は 作れるので これでよい
+  }
+}
+
+/* --- つながりを さがす（Toon Blast の ぶぶん）------------- */
+function groupAt(i){
+  const ci = grid[i];
+  if (ci < 0) return [];
+  const seen = new Uint8Array(N), out = [], st = [i];
+  seen[i] = 1;
+  while (st.length){
+    const k = st.pop(); out.push(k);
+    const c = k % COLS, r = (k / COLS) | 0;
+    const nb = [[c-1,r],[c+1,r],[c,r-1],[c,r+1]];
+    for (const [x,y] of nb){
+      if (!inB(x,y)) continue;
+      const j = idx(x,y);
+      if (!seen[j] && grid[j] === ci){ seen[j] = 1; st.push(j); }
+    }
+  }
+  return out;
+}
+/* はじける ところが 1つでも あるか（ゲームオーバーの 判定に つかう）*/
+function anyBlast(){
+  for (let i=0;i<N;i++) if (grid[i] >= 0 && spec[i]) return true;
+  const seen = new Uint8Array(N);
+  for (let i=0;i<N;i++){
+    if (grid[i] < 0 || seen[i]) continue;
+    const g = groupAt(i);
+    for (const k of g) seen[k] = 1;
+    if (g.length >= BLAST_MIN) return true;
+  }
+  return false;
+}
+
+/* --- とくべつな おかしが とばす はんい -------------------- */
+function spCells(i, sp, ci){
+  const c = i % COLS, r = (i / COLS) | 0, out = [];
+  if (sp === SP_ROW){ for (let x=0;x<COLS;x++) out.push(idx(x,r)); }
+  else if (sp === SP_COL){ for (let y=0;y<ROWS;y++) out.push(idx(c,y)); }
+  else if (sp === SP_BOMB){
+    for (let y=r-1;y<=r+1;y++) for (let x=c-1;x<=c+1;x++) if (inB(x,y)) out.push(idx(x,y));
+  }
+  else if (sp === SP_RAIN){ for (let k=0;k<N;k++) if (grid[k] === ci) out.push(k); }
+  return out;
+}
+
+/* --- ますを 消す。とくべつな おかしは つながって はじける ---
+   これが SNS で いちばん 見せたい ところなので、連さは 止めない */
+function clearSet(list){
+  const done = new Uint8Array(N);
+  let queue = list.slice(), total = 0, chained = 0;
+  while (queue.length){
+    const i = queue.pop();
+    if (done[i] || grid[i] < 0) continue;
+    done[i] = 1;
+    const sp = spec[i], ci = grid[i], fi = face[i];
+    burst(i, ci, fi, sp);
+    grid[i] = -1; spec[i] = 0;
+    total++;
+    if (sp){
+      chained++;
+      playSnd(sp === SP_BOMB ? SND.bomb : sp === SP_RAIN ? SND.rain : SND.rocket);
+      vib(sp === SP_BOMB ? VIB.bomb : sp === SP_RAIN ? VIB.rain : VIB.rocket);
+      ring(i, sp);
+      shake = Math.max(shake, sp === SP_BOMB ? .34 : .22);
+      for (const j of spCells(i, sp, ci)) if (!done[j] && grid[j] >= 0) queue.push(j);
+    }
+  }
+  if (chained) flash = Math.max(flash, .30);
+  return total;
+}
+
+/* --- 1れつ そろったら 消す（Block Blast の ぶぶん）--------
+   **おいた ときだけ** しらべる。はじけて 空いても 列は そろわない */
+function clearLines(){
+  const rowsF = [], colsF = [];
+  for (let r=0;r<ROWS;r++){
+    let full = true;
+    for (let c=0;c<COLS;c++) if (grid[idx(c,r)] < 0){ full = false; break; }
+    if (full) rowsF.push(r);
+  }
+  for (let c=0;c<COLS;c++){
+    let full = true;
+    for (let r=0;r<ROWS;r++) if (grid[idx(c,r)] < 0){ full = false; break; }
+    if (full) colsF.push(c);
+  }
+  const k = rowsF.length + colsF.length;
+  if (!k) return 0;
+  const list = [];
+  for (const r of rowsF) for (let c=0;c<COLS;c++) list.push(idx(c,r));
+  for (const c of colsF) for (let r=0;r<ROWS;r++) list.push(idx(c,r));
+  for (const r of rowsF) lineFx(-1, r);
+  for (const c of colsF) lineFx(c, -1);
+  const n = clearSet(list);
+  playSnd(SND.line); vib(VIB.line);
+  flash = Math.max(flash, .22 + k * .06);
+  bumpCombo();
+  const pts = addScore(SC_LINE(k) + n * 4);
+  popAt(COLS/2, rowsF.length ? rowsF[0] + .5 : ROWS/2,
+        (k > 1 ? k + 'れつ！ ' : '') + '+' + fmtN(pts), '#ff7ab8', 1.25);
+  return n;
+}
+
+/* --- 点と コンボ ------------------------------------------ */
+const comboMul = () => Math.min(COMBO_MAX, 1 + Math.max(0, combo - 1) * 0.25);
+function addScore(base){
+  const v = Math.round(base * comboMul());
+  score += v;
+  if (score > best){ best = score; newBest = true; }
+  syncHUD();
+  return v;
+}
+function bumpCombo(){
+  combo++;
+  if (combo >= 2){ playSnd(SND.combo(combo)); }
+  syncHUD();
+}
+
+/* --- タップして はじけさせる ------------------------------ */
+function blastAt(i){
+  if (over || grid[i] < 0) return false;
+  if (spec[i]){                            // とくべつな おかしは 1つで はたらく
+    const n = clearSet([i]);
+    bumpCombo();
+    const pts = addScore(SC_BLAST(Math.max(BLAST_MIN, n)));
+    popAt(i % COLS + .5, (i / COLS | 0) + .5, '+' + fmtN(pts), '#ffd166', 1.3);
+    afterAction();
+    return true;
+  }
+  const g = groupAt(i);
+  if (g.length < BLAST_MIN){ tapSel(false); return false; }
+
+  const ci = grid[i], n = g.length;
+  /* 大きく そろえた ごほうび。**タップした ますに のこす** ——
+     どこに 生まれたか 分からないと つかいようが ない */
+  let sp = 0;
+  for (const m of SP_MAKE) if (n >= m.min){
+    sp = m.sp;
+    if (!sp){                              // ロケットは 形で むきを 決める
+      let x0=9,x1=-1,y0=9,y1=-1;
+      for (const k of g){ const c=k%COLS, r=k/COLS|0;
+        x0=Math.min(x0,c); x1=Math.max(x1,c); y0=Math.min(y0,r); y1=Math.max(y1,r); }
+      sp = (x1-x0) >= (y1-y0) ? SP_ROW : SP_COL;
+    }
+    break;
+  }
+  playSnd(SND.blast(n)); vib(VIB.blast);
+  const cleared = clearSet(g);
+  bumpCombo();
+  const pts = addScore(SC_BLAST(n));
+  popAt(i % COLS + .5, (i / COLS | 0) + .5, '+' + fmtN(pts), '#ff9ecb', 1 + Math.min(.6, n*.05));
+  if (sp){
+    grid[i] = ci; spec[i] = sp; face[i] = 0; born[i] = time;
+    ring(i, sp);
+    popAt(i % COLS + .5, (i / COLS | 0) - .15,
+          sp === SP_RAIN ? 'にじのアメ！' : sp === SP_BOMB ? 'ばくだん！' : 'ロケット！',
+          '#fff', 1.0);
+    flash = Math.max(flash, .26);
+  }
+  afterAction();
+  return cleared > 0;
+}
+
+/* --- ブロックを おく -------------------------------------- */
+function put(pi, gc, gr){
+  const p = tray[pi];
+  if (!p || !fits(p, gc, gr)) return false;
+  for (let k=0;k<p.cells.length;k++){
+    const [c,r] = p.cells[k], i = idx(gc + c, gr + r);
+    grid[i] = p.cols[k]; face[i] = p.faces[k]; spec[i] = SP_NONE; born[i] = time;
+  }
+  tray[pi] = null;
+  playSnd(SND.put); vib(VIB.put);
+  score += SC_PUT(p.cells.length);
+
+  const n = clearLines();
+  if (!n){ combo = 0; }                    // 何も 消えなければ コンボは 切れる
+  if (!tray.some(Boolean)) refill();
+  syncHUD();
+  afterAction();
+  return true;
+}
+
+/* --- 1手 うつたびに おわりを しらべる --------------------- */
+function afterAction(){
+  if (over) return;
+  if (!tray.some(p => p && canPlaceAnywhere(p)) && !anyBlast()) gameOver();
+}
+function gameOver(){
+  over = true;
+  playSnd(SND.over); vib(VIB.over);
+  save();
+  $('overN').textContent = fmtN(score);
+  $('overB').innerHTML = newBest
+    ? '🎉 じこベスト こうしん！'
+    : 'さいこう記録 ' + fmtN(best);
+  $('overT').textContent = newBest ? '✨ あたらしい 記録！' : 'おしまい！';
+  setTimeout(() => $('overOv').classList.add('on'), 620);
+}
+
+function reset(){
+  grid.fill(-1); spec.fill(0); face.fill(0); born.fill(0);
+  score = 0; combo = 0; over = false; newBest = false;
+  parts = []; pops = []; rings = []; dies = []; flash = 0; shake = 0;
+  drag = null; tapCell = -1;
+  refill();
+  $('overOv').classList.remove('on');
+  syncHUD();
+}
+
+/* ==========================================================
+   8. 演出 —— 大きめ・長めに（動画で 撮ったときに 動きが わかるように）
+   ========================================================== */
+let dies = [];                      // はじけた おかしの のこり像
+const ccx = i => (i % COLS + 0.5) * CELL;
+const ccy = i => ((i / COLS | 0) + 0.5) * CELL;
+
+function burst(i, ci, fi, sp){
+  const x = ccx(i), y = ccy(i);
+  dies.push({ x, y, ci, fi, sp, t:0 });
+  /* 数が 多いときは 1ますあたりの つぶを へらす。
+     にじのアメで 30ます 消えると つぶが 200こを こえて こま落ちする */
+  const k = parts.length > 220 ? 2 : parts.length > 120 ? 4 : 7;
+  const col = COLORS[ci] ? COLORS[ci].c1 : '#fff';
+  for (let n=0;n<k;n++){
+    const a = Math.random() * 7, v = CELL * (1.6 + Math.random() * 3.4);
+    parts.push({ x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v - CELL*1.4,
+                 r:CELL*(0.07 + Math.random()*0.08), rot:Math.random()*7,
+                 vr:(Math.random()-.5)*10, t:0, life:.42 + Math.random()*.34,
+                 c: Math.random() < .45 ? '#fff' : col });
+  }
+}
+function ring(i, sp){
+  if (sp === SP_ROW)  rings.push({ k:'row', v:(i/COLS|0), t:0, life:.34 });
+  else if (sp === SP_COL) rings.push({ k:'col', v:(i%COLS), t:0, life:.34 });
+  else rings.push({ k:'ring', x:ccx(i), y:ccy(i), t:0, life:.40,
+                    max: sp === SP_RAIN ? CELL*6 : CELL*2.4 });
+}
+function lineFx(c, r){
+  if (r >= 0) rings.push({ k:'row', v:r, t:0, life:.30 });
+  else        rings.push({ k:'col', v:c, t:0, life:.30 });
+}
+function popAt(gx, gy, text, color, sc){
+  /* 連さすると 1手で 何まいも 出て、かさなって どれも 読めなくなる。
+     古いものから 捨てて、いつでも 4まいまで */
+  while (pops.length >= 4) pops.shift();
+  pops.push({ x:gx*CELL, y:gy*CELL, text, c:color || '#fff', sc:sc || 1, t:0, life:1.0 });
+}
+
+/* ==========================================================
+   9. HUD（文字は DOM）
+   ========================================================== */
+function syncHUD(){
+  $('scV').textContent   = fmtN(score);
+  $('bestV').textContent = fmtN(best);
+  $('cmbV').textContent  = combo >= 2 ? 'コンボ ×' + comboMul().toFixed(2).replace(/\.?0+$/,'') : '';
+  $('newV').textContent  = newBest ? '🎉 こうしん中' : '';
+}
+
+/* ==========================================================
+   10. 入力
+   **Phaser の p.x / p.y は つかわない。**Phaser は canvas の 画面での
+   いちを おぼえていて、resize か scroll のときしか はかりなおさない。
+   HUDの 高さが 変わって 盤面が 上下に ずれると タップが ずれ、
+   何の メッセージも 出ないまま「きかない」ように 見える
+   ========================================================== */
+function toCv(ev){
+  const cv = game && game.canvas;
+  const t = (ev && ev.changedTouches && ev.changedTouches[0]) || ev;
+  if (!cv || !t || t.clientX === undefined) return null;
+  const r = cv.getBoundingClientRect();
+  const k = r.width ? W / r.width : 1;
+  return { x:(t.clientX - r.left) * k, y:(t.clientY - r.top) * k };
+}
+/* トレイの 3つの わく */
+function traySlot(n){
+  const w = W / TRAY_N;
+  return { x:n * w, y:TRAY_Y, w, h:TRAY_H };
+}
+/* トレイの 中の 1ますの 大きさ。ブロックが わくから はみ出さないように */
+function trayCell(p){
+  const s = traySlot(0);
+  return Math.min((s.w - CELL*0.5) / p.cw, (s.h - CELL*0.28) / p.ch, CELL * 0.60);
+}
+/* つかんでいる ブロックの 左うえが 来る ますめ。
+   指の 少し 上に 持ち上げて 出す ——指で かくれると どこに 置くか 見えない */
+const DRAG_LIFT = 1.15;
+function dragTarget(){
+  if (!drag) return null;
+  const p = tray[drag.pi];
+  const tlx = drag.x - p.cw * CELL / 2;
+  const tly = drag.y - CELL * DRAG_LIFT - p.ch * CELL / 2;
+  const gc = Math.round(tlx / CELL), gr = Math.round(tly / CELL);
+  return { gc, gr, ok: fits(p, gc, gr) };
+}
+function onDown(ev){
+  const q = toCv(ev); if (!q || over || !started) return;
+  if (q.y >= TRAY_Y){
+    for (let n=0;n<TRAY_N;n++){
+      const s = traySlot(n);
+      if (!tray[n] || q.x < s.x || q.x > s.x + s.w) continue;
+      drag = { pi:n, x:q.x, y:q.y, t:0 };
+      tapSel(true);
+      return;
+    }
+    tapSel(false);
+    return;
+  }
+  const c = Math.floor(q.x / CELL), r = Math.floor(q.y / CELL);
+  tapCell = inB(c,r) ? idx(c,r) : -1;
+  tapX = q.x; tapY = q.y; tapAt = time;
+}
+function onMove(ev){
+  if (!drag) return;
+  const q = toCv(ev); if (!q) return;
+  drag.x = q.x; drag.y = q.y;
+}
+function onUp(ev){
+  const q = toCv(ev);
+  if (drag){
+    const t = dragTarget();
+    if (t && t.ok) put(drag.pi, t.gc, t.gr);
+    else if (q && q.y < TRAY_Y) tapSel(false);   // 盤面に 置こうとして 入らなかった
+    drag = null;
+    return;
+  }
+  if (tapCell < 0 || !q) { tapCell = -1; return; }
+  /* 指が 大きく 動いていたら タップでは ない（スクロールの つもり）*/
+  if (Math.hypot(q.x - tapX, q.y - tapY) < CELL * 0.6 && time - tapAt < 0.8)
+    blastAt(tapCell);
+  tapCell = -1;
+}
+
+/* ==========================================================
+   11. うごき
+   ========================================================== */
+function update(dt){
+  time += dt;
+  if (flash > 0) flash = Math.max(0, flash - dt * 1.9);
+  if (shake > 0) shake = Math.max(0, shake - dt * 2.2);
+
+  for (let i=parts.length-1;i>=0;i--){
+    const p = parts[i];
+    p.t += dt;
+    if (p.t >= p.life){ parts.splice(i,1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += CELL * 9 * dt;                 // ちょっとだけ 落ちる
+    p.rot += p.vr * dt;
+  }
+  for (let i=pops.length-1;i>=0;i--){
+    const p = pops[i]; p.t += dt;
+    if (p.t >= p.life) pops.splice(i,1);
+  }
+  for (let i=rings.length-1;i>=0;i--){
+    const r = rings[i]; r.t += dt;
+    if (r.t >= r.life) rings.splice(i,1);
+  }
+  for (let i=dies.length-1;i>=0;i--){
+    const d = dies[i]; d.t += dt;
+    if (d.t >= 0.30) dies.splice(i,1);
+  }
+}
+
+/* ==========================================================
+   12. えがく
+   ========================================================== */
+const easeOutBack = t => { const c = 1.9; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
+
+function boardBg(){
+  const h = ROWS * CELL;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, 'rgba(255,255,255,.82)');
+  g.addColorStop(1, 'rgba(255,243,250,.72)');
+  ctx.fillStyle = g;
+  rr(ctx, 0, 0, W, h, CELL*0.42); ctx.fill();
+  /* 盤面と トレイは **色を 分ける**こと。おなじ 白だと 1まいの 板に 見えて、
+     どこまでが 置ける ところか わからない */
+  ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = CELL*0.09;
+  rr(ctx, 0, 0, W, h, CELL*0.42); ctx.stroke();
+  // からの ますは うっすら 四角で 出す（どこに 置けるか わかるように）
+  ctx.fillStyle = 'rgba(201,167,255,.15)';
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+    if (grid[idx(c,r)] >= 0) continue;
+    const m = CELL*0.13;
+    rr(ctx, px(c)+m, py(r)+m, CELL-m*2, CELL-m*2, CELL*0.22); ctx.fill();
+  }
+}
+function drawCellAt(i, x, y, sc, alpha){
+  const im = tileOf(grid[i], face[i], spec[i]);
+  if (!im) return;
+  ctx.save();
+  if (alpha !== undefined) ctx.globalAlpha = alpha;
+  ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.drawImage(im, -CELL/2, -CELL/2, CELL, CELL);
+  ctx.restore();
+}
+function boardCells(){
+  for (let i=0;i<N;i++){
+    if (grid[i] < 0) continue;
+    const age = time - born[i];
+    let sc = 1;
+    if (age < 0.26) sc = 0.35 + 0.65 * easeOutBack(Math.max(0, age) / 0.26);
+    // ふわふわ（待機中も 何かが 動いている 状態に する）
+    const dy = Math.sin(time * 2.2 + wob[i]) * CELL * 0.022;
+    if (spec[i]){
+      sc *= 1 + Math.sin(time * 6 + i) * 0.045;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,236,150,.34)';
+      ctx.beginPath(); ctx.arc(ccx(i), ccy(i) + dy, CELL * 0.62, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    drawCellAt(i, ccx(i), ccy(i) + dy, sc);
+  }
+}
+/* おいたら そろう 列を 光らせる ——「あと1つ」が 目で わかると
+   置く 場所を 考えるのが たのしくなる */
+function ghost(){
+  const t = dragTarget(); if (!t) return;
+  const p = tray[drag.pi];
+  if (!t.ok){
+    ctx.save(); ctx.globalAlpha = .5;
+    for (const [c,r] of p.cells){
+      const x = t.gc + c, y = t.gr + r;
+      if (!inB(x,y)) continue;
+      ctx.strokeStyle = '#ff6f9a'; ctx.lineWidth = CELL*0.07;
+      rr(ctx, px(x)+CELL*.12, py(y)+CELL*.12, CELL*.76, CELL*.76, CELL*0.22); ctx.stroke();
+    }
+    ctx.restore(); return;
+  }
+  // かりに 置いて、そろう 列を さがす
+  const tmp = new Uint8Array(N);
+  for (const [c,r] of p.cells) tmp[idx(t.gc+c, t.gr+r)] = 1;
+  const hitR = [], hitC = [];
+  for (let r=0;r<ROWS;r++){
+    let f = true;
+    for (let c=0;c<COLS;c++) if (grid[idx(c,r)] < 0 && !tmp[idx(c,r)]){ f = false; break; }
+    if (f) hitR.push(r);
+  }
+  for (let c=0;c<COLS;c++){
+    let f = true;
+    for (let r=0;r<ROWS;r++) if (grid[idx(c,r)] < 0 && !tmp[idx(c,r)]){ f = false; break; }
+    if (f) hitC.push(c);
+  }
+  const pulse = 0.18 + Math.sin(time*7)*0.07;
+  ctx.save(); ctx.fillStyle = 'rgba(255,214,102,' + (pulse + .25) + ')';
+  for (const r of hitR){ rr(ctx, 0, py(r), W, CELL, CELL*0.2); ctx.fill(); }
+  for (const c of hitC){ rr(ctx, px(c), 0, CELL, ROWS*CELL, CELL*0.2); ctx.fill(); }
+  ctx.restore();
+
+  ctx.save(); ctx.globalAlpha = .52;
+  for (let k=0;k<p.cells.length;k++){
+    const [c,r] = p.cells[k];
+    const im = tileOf(p.cols[k], p.faces[k], 0);
+    if (im) ctx.drawImage(im, px(t.gc+c), py(t.gr+r), CELL, CELL);
+  }
+  ctx.restore();
+}
+function trayDraw(){
+  const y0 = TRAY_Y;
+  const tg = ctx.createLinearGradient(0, y0, 0, y0 + TRAY_H);
+  tg.addColorStop(0, 'rgba(226,214,255,.55)');
+  tg.addColorStop(1, 'rgba(255,226,244,.55)');
+  ctx.fillStyle = tg;
+  rr(ctx, 0, y0, W, TRAY_H, CELL*0.34); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = CELL*0.07;
+  rr(ctx, 0, y0, W, TRAY_H, CELL*0.34); ctx.stroke();
+  for (let n=0;n<TRAY_N;n++){
+    const p = tray[n], s = traySlot(n);
+    if (!p) continue;
+    if (drag && drag.pi === n) continue;          // つかんでいる ものは 指のところに 出す
+    const tc = trayCell(p);
+    const ox = s.x + (s.w - p.cw*tc)/2, oy = s.y + (s.h - p.ch*tc)/2;
+    const bob = Math.sin(time*2.4 + n*1.7) * tc*0.05;
+    // おけない ブロックは うすく（なぜ 進めないかが 見て わかる）
+    ctx.save();
+    ctx.globalAlpha = canPlaceAnywhere(p) ? 1 : .38;
+    for (let k=0;k<p.cells.length;k++){
+      const [c,r] = p.cells[k];
+      const im = tileOf(p.cols[k], p.faces[k], 0);
+      if (im) ctx.drawImage(im, ox + c*tc, oy + r*tc + bob, tc, tc);
+    }
+    ctx.restore();
+  }
+}
+function dragDraw(){
+  if (!drag) return;
+  const p = tray[drag.pi];
+  const ox = drag.x - p.cw*CELL/2, oy = drag.y - CELL*DRAG_LIFT - p.ch*CELL/2;
+  ctx.save();
+  ctx.globalAlpha = .95;
+  for (let k=0;k<p.cells.length;k++){
+    const [c,r] = p.cells[k];
+    const im = tileOf(p.cols[k], p.faces[k], 0);
+    if (im) ctx.drawImage(im, ox + c*CELL, oy + r*CELL, CELL, CELL);
+  }
+  ctx.restore();
+}
+function fxDraw(){
+  for (const d of dies){
+    const k = d.t / 0.30;
+    const im = tileOf(d.ci, d.fi, d.sp);
+    if (!im) continue;
+    ctx.save(); ctx.globalAlpha = 1 - k;
+    ctx.translate(d.x, d.y); ctx.scale(1 + k*0.7, 1 + k*0.7);
+    ctx.drawImage(im, -CELL/2, -CELL/2, CELL, CELL);
+    ctx.restore();
+  }
+  for (const r of rings){
+    const k = r.t / r.life;
+    ctx.save(); ctx.globalAlpha = (1 - k) * .8;
+    if (r.k === 'row'){
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      const h = CELL * (1 + k*0.5);
+      rr(ctx, 0, py(r.v) + CELL/2 - h/2, W, h, h/2); ctx.fill();
+    } else if (r.k === 'col'){
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      const w = CELL * (1 + k*0.5);
+      rr(ctx, px(r.v) + CELL/2 - w/2, 0, w, ROWS*CELL, w/2); ctx.fill();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = CELL*0.16*(1-k);
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.max*k, 0, 7); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  for (const p of parts){
+    const k = p.t / p.life;
+    ctx.save(); ctx.globalAlpha = 1 - k*k;
+    sparkle(ctx, p.x, p.y, p.r * (1 - k*0.4), p.rot, p.c);
+    ctx.restore();
+  }
+  /* 数字が ふえる しゅんかんは かならず 浮かび上がる 文字で 見せる */
+  for (const p of pops){
+    const k = p.t / p.life;
+    ctx.save();
+    ctx.globalAlpha = k < .75 ? 1 : (1 - (k-.75)/.25);
+    ctx.translate(p.x, p.y - CELL * (0.25 + k*1.15));
+    const s = p.sc * (k < .18 ? 0.5 + 0.5*(k/.18) + .25*(k/.18) : 1.25 - .25*Math.min(1,(k-.18)/.3));
+    ctx.scale(s, s);
+    ctx.font = '800 ' + Math.round(CELL*0.42) + 'px system-ui,"Hiragino Maru Gothic ProN",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = CELL*0.20; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#fff'; ctx.strokeText(p.text, 0, 0);
+    ctx.lineWidth = CELL*0.07;
+    ctx.strokeStyle = 'rgba(150,110,150,.35)'; ctx.strokeText(p.text, 0, 0);
+    ctx.fillStyle = p.c; ctx.fillText(p.text, 0, 0);
+    ctx.restore();
+  }
+}
+function render(){
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.save();
+  if (shake > 0){
+    const a = shake * CELL * 0.22;
+    ctx.translate((Math.random()-.5)*a, (Math.random()-.5)*a);
+  }
+  boardBg();
+  ctx.save();
+  rr(ctx, 0, 0, W, ROWS*CELL, CELL*0.42); ctx.clip();   // 盤面から はみ出させない
+  boardCells();
+  if (drag) ghost();
+  fxDraw();
+  ctx.restore();
+  trayDraw();
+  dragDraw();
+  if (flash > 0){
+    ctx.fillStyle = 'rgba(255,255,255,' + (flash * 0.5) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+  ctx.restore();
+}
+
+/* ==========================================================
+   13. あそびかたの 文
+   **数字を 手で 書かない。**上の せっていから 組みたてる ——
+   3こ を 4こ に した とたん、説明だけ うそに なる（CLAUDE.md の きまり）
+   ========================================================== */
+function ruleHTML(full){
+  const li = (em, tx) => '<div class="li"><span class="em">' + em + '</span><span>' + tx + '</span></div>';
+  let s = '';
+  s += li('🧩', '下の おかしを <b>ドラッグ</b>して 盤面（' + COLS + '×' + ROWS + '）に おく');
+  s += li('👆', 'おなじ色が <b>' + BLAST_MIN + 'こ いじょう つながったら タップ</b>で はじける');
+  s += li('✨', 'たて・よこが <b>1れつ そろっても</b> 消える');
+  if (full){
+    s += li('🚀', '<b>' + SP_MAKE[2].min + 'こ</b> いじょう まとめて はじけさせると <b>ロケット</b>'
+              + '（たて か よこ 1れつ）が うまれる');
+    s += li('💣', '<b>' + SP_MAKE[1].min + 'こ</b>で <b>' + SP_MAKE[1].name + '</b>（まわりの 3×3）');
+    s += li('🌈', '<b>' + SP_MAKE[0].min + 'こ</b>で <b>' + SP_MAKE[0].name + '</b>（おなじ色 ぜんぶ）'
+              + '。うまれた おかしは <b>タップで つかう</b>');
+    s += li('🔥', 'つづけて 消すと <b>コンボ</b>。点が さいだい ×' + COMBO_MAX + ' に なる');
+    s += li('🕐', 'おける ところが なくなって、はじける ところも 無くなったら おしまい');
+    s += li('🔊', 'ボタンで 音と ふるえを 止められる');
+  } else {
+    s += li('🚀', '大きく はじけさせると <b>ロケット・' + SP_MAKE[1].name + '・' + SP_MAKE[0].name
+              + '</b> が うまれる');
+  }
+  return s;
+}
+
+/* ==========================================================
+   14. ボタン
+   ========================================================== */
+function setSnd(on){
+  sndOn = vibOn = on;
+  $('btnSnd').textContent = on ? '🔊' : '🔇';
+  save();
+}
+$('btnSnd').onclick  = () => { setSnd(!sndOn); if (sndOn) tapSel(true); };
+$('btnHelp').onclick = () => { tapSel(true); $('helpOv').classList.add('on'); };
+$('helpGo').onclick  = () => { tapSel(true); $('helpOv').classList.remove('on'); };
+$('btnNew').onclick  = () => { tapSel(true); reset(); };
+$('overGo').onclick  = () => { tapSel(true); reset(); };
+$('startGo').onclick = () => {
+  tapSel(true);
+  $('startOv').classList.remove('on');
+  started = true;
+  resize();
+};
+
+/* ==========================================================
+   15. Phaser（ループ・入力・画面サイズ）
+   絵は Canvas 2D の まま。Phaser の Graphics には グラデーションも
+   合成モードも 無く、この つやと 立体感が 出せない。
+   だから レンダラは CANVAS（CLAUDE.md の 技術方針）
+   ========================================================== */
+class Painter extends Phaser.GameObjects.GameObject {
+  constructor(sc, fn){
+    super(sc, 'Painter');
+    this.fn = fn;
+    this.setActive(true);
+    this.renderFlags = 0xF;      // これを 立てないと Phaser が えがきに 来ない
+  }
+  renderCanvas(renderer){
+    const c = renderer.currentContext || renderer.gameContext;
+    const prev = ctx;
+    c.save(); c.setTransform(DPR, 0, 0, DPR, 0, 0); ctx = c;
+    try{ this.fn(); } finally { ctx = prev; c.restore(); }
+  }
+}
+const BoardScene = {
+  key: 'board',
+  create(){
+    this.add.existing(new Painter(this, render));
+    this.input.on('pointerdown', p => onDown(p.event));
+    this.input.on('pointermove', p => onMove(p.event));
+    this.input.on('pointerup',        p => onUp(p.event));
+    this.input.on('pointerupoutside', p => onUp(p.event));
+  },
+  update(_t, dtMs){
+    update(Math.min(0.05, dtMs / 1000));
+    /* canvas の 実寸が ずれていたら 直す。Phaser の scale.resize() は
+       すぐに 反映されない ことが ある。**render の 中では やらないこと**
+       ——あそこは Phaser の save/restore の 内がわで、canvas を
+       作りなおすと Phaser の 状態が こわれる */
+    if (game && game.canvas){
+      const cw = Math.round(W*DPR), ch = Math.round(H*DPR);
+      if (game.canvas.width !== cw || game.canvas.height !== ch){
+        game.scale.resize(cw, ch);
+        game.canvas.width = cw; game.canvas.height = ch;
+        game.canvas.style.width = W + 'px';
+        game.canvas.style.height = H + 'px';
+      }
+    }
+  },
+};
+
+/* ==========================================================
+   16. はじまり
+   ========================================================== */
+load();
+setSnd(sndOn);
+$('startRule').innerHTML = ruleHTML(false);
+$('helpRule').innerHTML  = ruleHTML(true);
+resize();
+
+game = new Phaser.Game({
+  type: Phaser.CANVAS,          // 絵は Canvas 2D で えがくので WebGL には しない
+  parent: 'cv',
+  width: W*DPR, height: H*DPR,
+  transparent: true,            // 角まるの 外がわを すかす
+  scene: BoardScene,
+  scale: { mode: Phaser.Scale.NONE, zoom: 1/DPR },
+  banner: false,
+  audio: { noAudio: true },     // 音は じぶんの WebAudio で ならす
+});
+
+reset();
+/* iOS は セーフエリアを すぐには 返さない。落ちついてから 何度か 測りなおす */
+window.addEventListener('load', resize);
+setTimeout(resize, 300); setTimeout(resize, 1200);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
+
+const DBG = location.search.indexOf('dbg=1') >= 0;
+if (DBG){ started = true; }
+else $('startOv').classList.add('on');
+
+/* 検査どうぐ（tools/check-puzzle.mjs）の 入り口。
+   ふつうに あそぶ ときに 中を さわれると 記録の いみが なくなるので、
+   ?dbg=1 の ときだけ 出す */
+if (DBG) window.__pz = {
+  state: () => ({ score, best, combo, over, cells:Array.from(grid), spec:Array.from(spec),
+                  tray:tray.map(p => p && { cw:p.cw, ch:p.ch, n:p.cells.length }),
+                  W, H, CELL, TRAY_Y, TRAY_H }),
+  /* いちばん さいしょに おける ところへ 置く。true なら 置けた */
+  autoPut(n){
+    const p = tray[n]; if (!p) return false;
+    for (let r=0;r<=ROWS-p.ch;r++) for (let c=0;c<=COLS-p.cw;c++)
+      if (fits(p, c, r)) return put(n, c, r);
+    return false;
+  },
+  put:(n,c,r) => put(n,c,r),
+  /* はじける ところを 1つ さがして タップする */
+  autoBlast(){
+    for (let i=0;i<N;i++) if (grid[i] >= 0 && spec[i]) return blastAt(i);
+    for (let i=0;i<N;i++) if (grid[i] >= 0 && groupAt(i).length >= BLAST_MIN) return blastAt(i);
+    return false;
+  },
+  blastAt:i => blastAt(i),
+  canMove: () => tray.some(p => p && canPlaceAnywhere(p)),
+  anyBlast, reset,
+  /* 盤面を 決めうちで 作る（'.' は から、0〜4 は 色）*/
+  setBoard(rows){
+    grid.fill(-1); spec.fill(0);
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+      const ch = rows[r] ? rows[r][c] : '.';
+      grid[idx(c,r)] = ch === '.' || ch === undefined ? -1 : (+ch);
+    }
+    syncHUD();
+  },
+  setTray(list){ tray = list.map(() => genPiece()); },
+  /* 形を 決めうちで 1つ くばる（0こ目に 入れる）*/
+  giveShape(i, colorIdx){
+    const s = SHAPES[i % SHAPES.length];
+    tray[0] = { cells:s.cells, cw:s.cw, ch:s.ch,
+                cols:s.cells.map(() => colorIdx | 0), faces:s.cells.map(() => 0) };
+  },
+  fps: 0,
+};
+})();
+</script>
+</body>
+</html>
