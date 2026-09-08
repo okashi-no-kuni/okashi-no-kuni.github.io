@@ -1552,6 +1552,84 @@ ${RP_BAND.map(([y0,y1]) => `<path d="M${rpPt([-30,y0])}L${rpPt([230,y0-15])}`
 <path d="${rpTailPath()}" fill="none" stroke="#a94c2f" stroke-width="3.2" stroke-linejoin="round"/>
 </svg>`;
 
+/* ★ `c_tower_e1`（マカロンタワー）——**積まれた マカロンが もう 1つ ふえて、
+     タワーが 高く なる**。
+
+   ★ **これまでとは 型が ちがいます。**`c_redpanda` までは「連続した 1つの
+     部位を のばす」型で、base の 終端の 輪郭が 中に のこる のを どう
+     読みかえるかが 毎回 問題でした（`c_turtle` の 二重面・`c_squirrel` の
+     二重尾）。マカロンは **離散した 反復ユニット**なので、
+     **base の いちばん上の 輪郭が 見えて いるのが 正しい**
+     ——ユニットどうしは もともと 別の ものだから、二重に 見えようが ない。
+
+   ★ 幾何的に 選べる 道は **上だけ**でした。2段目を 3個に すると 3段目より
+     広く なり、4段目を 5個に すると 258px で わくを こえます。
+
+   ★ **上の あきは 35px、base の マカロンは 41px。**だから 同じ 大きさは
+     入りません。**44x31（base の 75%）**に して 下ばしを y47 に ぴたり
+     のせます（重ねない・浮かせない）。タワーは 上ほど 細いので 自然です。
+
+   ★ **フィリングの ところで すこし くびれる**のが マカロンの 形です。
+     ここを **外へ フレア**させると **ボウラーハット**に、
+     **横を まっすぐ**に すると **カプセル**に なりました（2回 やりました）。
+     半はばは base の いちばん上の マカロンを 1pxきざみで 測った ものです。
+
+   ★ 色は **ミント**。base の いちばん上と 同じ ピンクに すると
+     **段の 切れめが 見えにくく なります**（下絵 T8）。タワーに すでに ある
+     色から えらぶ こと ——新しい 色を 足さない。
+
+   ★ 32px の IoU は base 0.925／`ch_prince_e1`（同形の 反復）0.557／
+     `ch_gumgum_e1`（もこもこ）0.498／`c_redpanda_e1`（縞の 尾）0.506。
+     しきい値 0.86 を こえるのは base だけ です。                      */
+
+/* base の いちばん上の マカロン（y47..87・半はば 最大29）を 1pxきざみで
+   実測して 正規化。**フィリング（t 0.585〜0.805）で 0.948 に くびれる** */
+const MC_PR = [[0.000,0.00],[0.024,0.431],[0.073,0.603],[0.122,0.724],[0.171,0.810],
+ [0.220,0.879],[0.268,0.914],[0.317,0.931],[0.366,0.948],[0.415,0.948],[0.463,1.000],
+ [0.512,1.000],[0.561,0.948],[0.610,0.941],[0.659,0.948],[0.707,0.983],[0.756,1.000],
+ [0.805,0.966],[0.854,0.948],[0.902,0.914],[0.951,0.855],[0.985,0.700],[1.000,0.00]];
+const mcHw = t => {
+  for (let i = 1; i < MC_PR.length; i++) if (t <= MC_PR[i][0]){
+    const a = MC_PR[i-1], b = MC_PR[i];
+    return a[1] + (b[1]-a[1]) * ((t-a[0]) / (b[0]-a[0] || 1));
+  }
+  return 0;
+};
+/* 追加する マカロン。中心 x=127・下ばし y=47（base の 上に ぴたり）・44x31 */
+const MC = { cx:127, by:47, h:31, w:44, F0:0.585, F1:0.805 };
+
+const towerSvg = () => {
+  const { cx, by, h, w, F0, F1 } = MC, ty = by - h, R = w / 2;
+  const P = q => q.map(v => v.toFixed(1)).join(',');
+  const L = [], Rt = [];
+  for (let k = 0; k <= 72; k++){
+    const t = k / 72, y = ty + h * t, x = mcHw(t) * R;
+    L.push([cx - x, y]); Rt.push([cx + x, y]);
+  }
+  const d = 'M' + L.map(P).join('L') + 'L' + Rt.reverse().map(P).join('L') + 'Z';
+  const y0 = ty + h * F0, y1 = ty + h * F1;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}">
+<defs>
+ <clipPath id="mcC"><path d="${d}"/></clipPath>
+ <linearGradient id="mcF" x1=".18" y1="0" x2=".85" y2=".95">
+  <stop offset="0" stop-color="#c6f2e0"/><stop offset=".42" stop-color="#a6e6c8"/>
+  <stop offset="1" stop-color="#7fd0ac"/></linearGradient>
+ <radialGradient id="mcG" cx=".5" cy=".5" r=".5">
+  <stop offset="0" stop-color="#ffffff" stop-opacity=".70"/>
+  <stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+</defs>
+<path d="${d}" fill="url(#mcF)"/>
+<g clip-path="url(#mcC)">
+ <rect x="${cx-R*1.3}" y="${y0}" width="${R*2.6}" height="${y1-y0}" fill="#eafbee"/>
+ <rect x="${cx-R*1.3}" y="${y0-0.8}" width="${R*2.6}" height="1.8" fill="#57a689" opacity=".85"/>
+ <rect x="${cx-R*1.3}" y="${y1-1.0}" width="${R*2.6}" height="1.8" fill="#57a689" opacity=".85"/>
+ <ellipse cx="${cx-R*0.34}" cy="${ty+h*0.20}" rx="${R*0.40}" ry="${h*0.14}"
+  transform="rotate(-18 ${cx-R*0.34} ${ty+h*0.20})" fill="url(#mcG)"/>
+</g>
+<path d="${d}" fill="none" stroke="#4e9f7d" stroke-width="2.6" stroke-linejoin="round"/>
+</svg>`;
+};
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1739,6 +1817,13 @@ export const PLAN = {
     dy:    0,      // 尾先の 上に 97〜106px ある。本体は ずらさない
     asym:  true,   // 尾は 左がわ だけ。上へ 行くほど 左へ 流す
     svg:   redpandaSvg,
+  },
+  c_tower: {
+    kind:  'deco',
+    base:  'art/sprites/tower.png',       // マカロンタワー（**読むだけ**）
+    out:   'art/sprites/c_tower_e1.png',
+    dy:    0,      // 上に 35px ある。本体は ずらさない
+    svg:   towerSvg,
   },
   tw_ice: {
     kind:  'deco',
