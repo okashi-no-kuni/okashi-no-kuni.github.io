@@ -1630,6 +1630,70 @@ const towerSvg = () => {
 </svg>`;
 };
 
+/* ═══ c_ostrich（ダチョウ）——後方へ ながれる、かさなった やわらかい 尾羽の 房 ═══
+   base の 尾羽は **クリームの scallop（丸い ふくらみ 8つ）**で できて いて、
+   外周が **繰りかえす 弧**です。だから うしろに 1層 足すと、元の 弧は
+   「手前の 羽の ふち」＝**羽の かさなり境界**に 読めます
+   （`c_redpanda` の 縞と 同じ 条件。`c_horse` の 閉じた コンマ形には 無かった もの）。
+
+   16案 くらべて 分かった しばりが 3つ。**どれか 1つ 欠けると 別の ものに なります。**
+     ① 放射させない（等間かくの 放射は **扇・孔雀**、細い 放射は **花びら**）
+     ② 長さを ふぞろいに して **すこし 下へ たれさせる**（そろえると 扇）
+     ③ 毛先を base と おなじ **ぎざぎざ（scallop）**で 終わらせる
+        （まるい こぶで 終わらせると **雲**＝`ch_gumgum` に 寄る）*/
+const OS = { cx:148, cy:118, rIn:18 };      // 尾羽の 付け根（原画で 実測）
+const D2R = Math.PI / 180;
+
+/* 羽 1枚。1つの 閉じた パスなので 中に よぶんな 線が のこりません。
+   `drop` は 先へ 行くほど 効く たれ（重力）。`nb` は 毛先の ぎざぎざの 数 */
+function osPlume(a0, a1, len, w, drop, nb){
+  const { cx, cy, rIn } = OS, spine = [];
+  for (const t of [0, .3, .6, .85, 1]){
+    const a = (a0 + (a1 - a0) * t) * D2R, r = rIn - 4 + len * t;
+    spine.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r + drop * t * t]);
+  }
+  const line = catmull(spine, 16), n = line.length;
+  const wf = t => w * (.55 + .60 * Math.sin(Math.PI * Math.min(1, t * .92)) ** .5);
+  const L = [], R = [];
+  for (let i = 0; i < n; i++){
+    const [x, y] = line[i], [x2, y2] = line[Math.min(n-1, i+1)], [x0, y0] = line[Math.max(0, i-1)];
+    const tx = x2 - x0, ty = y2 - y0, M = Math.hypot(tx, ty) || 1, h = wf(i / (n-1)) / 2;
+    L.push([x - ty/M*h, y + tx/M*h]); R.push([x + ty/M*h, y - tx/M*h]);
+  }
+  /* 毛先：はばを nb 等分して 半円を ならべる（base の scallop と 同じ 終わりかた）*/
+  const [ex, ey] = line[n-1], [px, py] = line[n-2];
+  const tx = ex - px, ty = ey - py, M = Math.hypot(tx, ty) || 1;
+  const ux = tx/M, uy = ty/M, nx = -uy, ny = ux, h = wf(1) / 2, bump = [];
+  for (let b = 0; b < nb; b++){
+    const s0 = h - 2*h*b/nb, s1 = h - 2*h*(b+1)/nb;
+    const mid = (s0 + s1) / 2, rad = Math.abs(s0 - s1) / 2;
+    for (let k = 0; k <= 8; k++){
+      const th = Math.PI * (k / 8);
+      const off = mid + rad * Math.cos(th), out = rad * Math.sin(th) * 1.15;
+      bump.push([ex + nx*off + ux*out, ey + ny*off + uy*out]);
+    }
+  }
+  const f = q => q[0].toFixed(1) + ',' + q[1].toFixed(1);
+  return 'M' + L.map(f).join(' L') + ' L' + bump.map(f).join(' L')
+       + ' L' + R.reverse().map(f).join(' L') + ' Z';
+}
+
+/* 4枚。**長さは ふぞろい**（44 / 52 / 50 / 40）で、下の 羽ほど たれます。
+   上の 羽から 順に えがくので、下（手前）の 羽が 上に かさなります */
+const OS_PLUMES = [
+  [-46, -20, 44, 20,  4, 3],
+  [-24,   4, 52, 22,  7, 3],
+  [ -4,  26, 50, 21, 10, 3],
+  [ 14,  44, 40, 18, 10, 3],
+];
+
+const ostrichSvg = () => `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}" viewBox="0 0 ${N} ${N}">
+<defs><radialGradient id="oF" cx="0.35" cy="0.3" r="0.85">
+ <stop offset="0" stop-color="#fdfaf0"/><stop offset=".55" stop-color="#fbefd5"/>
+ <stop offset="1" stop-color="#eac8ab"/></radialGradient></defs>
+${OS_PLUMES.map(p => `<path d="${osPlume(...p)}" fill="url(#oF)" stroke="#a96e60" stroke-width="2.8" stroke-linejoin="round"/>`).join('\n')}
+</svg>`;
+
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
 export const PLAN = {
@@ -1824,6 +1888,14 @@ export const PLAN = {
     out:   'art/sprites/c_tower_e1.png',
     dy:    0,      // 上に 35px ある。本体は ずらさない
     svg:   towerSvg,
+  },
+  c_ostrich: {
+    kind:  'deco',
+    base:  'art/sprites/ostrich.png',      // ダチョウ（**読むだけ**）
+    out:   'art/sprites/c_ostrich_e1.png',
+    dy:    0,      // 後方に 61〜78px ある。本体は ずらさない
+    asym:  true,   // 尾羽は 後ろがわ だけ。左右対称に すると 翼に なる
+    svg:   ostrichSvg,
   },
   tw_ice: {
     kind:  'deco',
