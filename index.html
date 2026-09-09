@@ -3585,7 +3585,10 @@ function buildShop(){
     // 絵は図鑑と同じ顔つきイラスト（tw_ の似顔絵）。絵文字だと図鑑と別人に見えるため
     d.innerHTML = `<div class="ic"></div><div class="nm">${T.name}</div>` +
       `<div class="cs">⭐${T.cost}<span class="twC"></span></div>`;
-    d.querySelector('.ic').append(charThumb({ pid: 'tw_' + k }, 46));
+    /* C1 ——お菓子タワーの 種の ID は `tw_<key>`。**同じ 種を ④⑤とも
+       同じ 式で 引く**ので、1つの 画面で base と e1 が まざりません */
+    d.querySelector('.ic').append(
+      charThumb({ pid:'tw_' + k }, 46, evoOfSpecies('tw_' + k), 'tw_' + k));
     d.onclick = () => {
       selTower = null; closeInfo();
       selTool = (selTool === k) ? null : k;
@@ -4328,7 +4331,8 @@ function buildPick(){
     d.className = 'pk' + (stars < T.cost ? ' poor' : '');
     const box = document.createElement('div');
     box.style.cssText = 'width:56px;height:56px;margin:0 auto';
-    box.__draw = () => box.replaceWith(genThumb(o, 56));
+    // C1 ——すがただけ。えらべるか・⭐・所持判定には 1つも さわらない
+    box.__draw = () => box.replaceWith(genThumb(o, 56, evoOfSpecies(o.id)));
     pickIo.observe(box);
     d.append(box);
     d.insertAdjacentHTML('beforeend',
@@ -4365,7 +4369,9 @@ function syncShop(){
       const ic = el.querySelector('.ic');
       if (on){
         ic.textContent = ''; ic.style.fontSize = '';
-        ic.append(TOWERS[selTool].avatar ? avThumb(avMe, 42) : genThumb(TOWERS[selTool].gen, 42));
+        // C1 ——なかまの 種の ID は `T.gen.id`（＝`selTool`）
+        ic.append(TOWERS[selTool].avatar ? avThumb(avMe, 42)
+          : genThumb(TOWERS[selTool].gen, 42, evoOfSpecies(TOWERS[selTool].gen.id)));
       } else if (!ic.dataset.plain){
         ic.textContent = '🧸'; ic.style.cssText = 'font-size:32px;line-height:46px';
       }
@@ -4388,14 +4394,15 @@ function openInfo(t){
   // なかまは 絵文字ではなく じぶんの すがたを 出す（おかしの絵文字だと 別人に見える）
   infoIc.textContent = '';
   if (T.avatar && avMe) infoIc.append(avThumb(avMe, 46));
-  else if (T.gen) infoIc.append(genThumb(T.gen, 46));
+  else if (T.gen) infoIc.append(genThumb(T.gen, 46, evoOfSpecies(T.gen.id)));   // C1
   /* Phase 5D-1 ——お菓子の タワーは **盤面の ショップバーと おなじ 似顔絵**。
      絵文字（TOWERS[k].ic）だと 盤面の 子と 別人に 見えます。
      31px は いまの font-size と 同じ。`#infoTx`（61.08px）が
      `#info` の 高さを 決めているので、24〜46px の どれでも
      `#panel` は 1pxも 変わりません（6画面で 実測）。
      `TOWERS[k].ic` は フォールバックとして データに のこして あります */
-  else if (ORDER.indexOf(t.k) >= 0) infoIc.append(charThumb({ pid:'tw_' + t.k }, 31));
+  else if (ORDER.indexOf(t.k) >= 0)                                            // C1
+    infoIc.append(charThumb({ pid:'tw_' + t.k }, 31, evoOfSpecies('tw_' + t.k), 'tw_' + t.k));
   else infoIc.textContent = T.ic;
   syncInfo();
 }
@@ -9897,6 +9904,31 @@ function instEvoOf(id){
   const r = inst[id];
   return (r && typeof r.evo === 'string' && r.evo) ? r.evo : null;
 }
+/* **Phase 7-7-3-8-4-C1**：表示のために、**種から いまの 進化を 読むだけ**の 口。
+
+   #### かならず 読むだけに する
+
+   `ensureInst()` を **呼びません** ——見るだけで 個体が でき、セーブまで
+   変わって しまいます（`detailIid` と まったく 同じ 理由）。
+   `dex` も 書きかえず、`saveInst()` も しません。**個体が 無ければ `null`**、
+   つまり これまでどおり base の 絵に 落ちます。
+
+   #### いまは 1種＝1個体 だから 一意に 引ける
+
+   `MINT_MULTI` が から の あいだは、`instOfSpecies()` が かえす 個体は
+   **その種で ただ 1つ**です。だから「この種の すがた」が 曖昧に なりません。
+   複数所持を 開けたら、**ここを「どの 個体の すがたを 一覧に 出すか」に
+   差しかえます**（呼ぶ 側は 1行も 直りません。`detailIid` と 同じ 逃げ道）。
+
+   #### てきには つかわないこと
+
+   盤面の てき（`e.gi`）は **世界の てき**で、プレイヤーの 個体では ありません。
+   ここを てきの 描画へ つないでは いけません */
+function evoOfSpecies(sp){
+  if (!sp) return null;
+  const iid = instOfSpecies(sp);
+  return iid ? instEvoOf(iid) : null;
+}
 /* ゆるされた 進化IDの **ゆいいつの あつまり**（Phase 7-7-3-4）。
 
    **文字列なら 何でも 通す 形に しては いけません。**セーブに 直に 入るので、
@@ -10970,7 +11002,11 @@ let colIo = null;
 function lazyThumb(o, size){
   const box = document.createElement('div');
   box.style.cssText = 'width:' + size + 'px;height:' + size + 'px;margin:0 auto';
-  box.__draw = () => box.replaceWith(o.gen ? genThumb(o.gen, size) : charThumb(o, size));
+  /* C1 ——**えがく しゅんかんに** 種の 進化を 読む。ここで 先に 読むと、
+     進化した あとに 図鑑を ひらきなおしても 古い すがたが のこります。
+     未所持・個体なしは `null` ＝ これまでどおり base */
+  box.__draw = () => { const evo = evoOfSpecies(o.id);
+    box.replaceWith(o.gen ? genThumb(o.gen, size, evo) : charThumb(o, size, evo, o.id)); };
   colIo.observe(box);
   return box;
 }
@@ -16763,6 +16799,10 @@ window.__chk = {
   /* Phase 7-7-3-6B ——似顔絵（`drawPortrait`）の 系統。`rc` を 持たない
      2つの 道（`DEX_ART` / `TOWERS[k].art`）が この しっぽを 共有する */
   evoArtKey, dexArt: () => DEX_ART, towerArt: k => (TOWERS[k] || {}).art || null,
+  /* Phase 7-7-3-8-4-C1 ——表示のために 種から 進化を 読むだけの 口。
+     検査から「作らない・書かない・保存しない」ことを たしかめる */
+  evoOfSpecies, instOfSpecies, instEvoOf,
+  instCount: () => Object.keys(inst).length,
   charThumb, drawPortrait,
   /* Phase 7-7-3-1 ——戦闘用の しきり。検査から 架空の アイテムで ためす */
   isBattleItem, battleItems: () => BATTLE_ITEMS.map(i => i.id), itemsRaw: () => ITEMS,

@@ -463,15 +463,24 @@ const artEvo = [];
 }
 line('絵の resolver', artEvo);
 
-/* ---------- Phase 7-7-3-6 ——進化の 絵を わたす caller は 1つだけ ----------
-   `evo` を 知って いるのは **individual-aware な 画面がわ**（詳細画面）だけ。
+/* ---------- 進化の 絵を わたして よい ところ（7-7-3-6 → C1 で 更新）----------
+   `evo` を 知って いるのは **individual-aware な 画面がわ**だけ。
    えがく ほう（`drawGen` / `genSprite` / `genThumb` / `drawPortrait` /
    `charThumb`）は **わたされた ものだけ**を 見ます（7-7-2 の 責任分離）。
 
-   だから ここでは 2つ 見ます。
+   **7-7-3-8-4-C1 で 前提が 変わりました。**7-7-3-6 では
+   「わたす のは 詳細画面 1か所だけ」でしたが、いまは **非戦闘UI の 5系統**にも
+   ひろがって います（回帰では なく 前提の 変更）。だから ここでは
+
      ① えがく 関数の 中から 個体を のぞいて いないか
-     ② `genThumb` に evo を わたす 本番の ところが **`buildCharDetail` 1つだけ**か
-        （図鑑の カード＝`lazyThumb` は 2引数の まま＝base）*/
+     ② evo を わたして いるのが **ゆるした 窓の 中だけ**か
+
+   を 見ます。**「どの 表示先が e1 に なるか」の 中みは
+   `tools/check-evo-surfaces.mjs` の しごと**です ——ここは
+   「よその 場所へ もれて いないか」だけ を 見はります。
+
+   **盤面（`drawTower` / `drawEnemy`）は C1 では base の まま**なので、
+   ゆるした 窓に 入って いません */
 const evoCall = [];
 {
   const lines = strip(src).split('\n');
@@ -497,47 +506,39 @@ const evoCall = [];
   const [ga, gz] = span('function genThumb(o, size, evo){', 'return c;');
   if (ga >= 0 && !lines.slice(ga, gz + 1).some(l => /drawGen\(g, size, o, evo\)/.test(l)))
     evoCall.push('genThumb が evo を drawGen へ 流して いない');
-  /* ② `genThumb` に 3つめを わたす 本番の ところ */
-  /* しっぽは **中の さいごの 文**で とる。`'}'` で さがすと 途中の
-     かっこに 当たって、窓が 短すぎて 呼び出しを 外して しまいます */
-  const [ba, bz] = span('function buildCharDetail(){', "row('すがた'");
-  const [la, lz] = span('function lazyThumb(o, size){', 'return box;');
-  const callers = [];
+  const [ca, cz] = span('function charThumb(ch, size, evo, sp){', 'return c;');
+  /* ② evo を わたして よい **窓**。しっぽは 中の さいごの 文で とる
+     ——`'}'` で さがすと 途中の かっこに 当たって 窓が 短く なります */
+  const WIN = [
+    ['詳細画面',           'function buildCharDetail(){',            "row('すがた'"],
+    ['① 図鑑一覧カード',   'function lazyThumb(o, size){',           'return box;'],
+    ['② 仲間を選ぶ',       'box.__draw = () => box.replaceWith(genThumb(o, 56,', 'pickIo.observe(box);'],
+    ['③ ショップバーの札', 'function buildShop(){',                  'shopEl.append(d);'],
+    ['④ 選択中の札',       'function syncShop(){',                   'ic.dataset.plain ='],
+    ['⑤ 情報カード',       'function openInfo(t){',                  'syncInfo();'],
+  ].map(([nm, h, t]) => { const [a, z] = span(h, t); if (a < 0 || z < a) evoCall.push('窓が 見つからない：' + nm);
+                          return { nm, a, z }; });
+  const inWin = i => WIN.some(w => w.a >= 0 && i >= w.a && i <= w.z);
+  const leak = [];
   lines.forEach((ln, i) => {
     if (chkAt >= 0 && i > chkAt) return;                       // 検査どうぐ
-    if (ga >= 0 && i >= ga && i <= gz) return;                 // 定義そのもの
-    for (const m of ln.matchAll(/(?<![\w.])genThumb\(([^()]*)\)/g)){
-      const args = m[1].split(',').map(x => x.trim()).filter(Boolean);
-      if (args.length < 3) continue;
-      callers.push({ i, ln: ln.trim().slice(0, 70) });
-    }
+    if (ga >= 0 && i >= ga && i <= gz) return;                 // genThumb の 定義
+    if (ca >= 0 && i >= ca && i <= cz) return;                 // charThumb の 定義
+    for (const fn of ['genThumb', 'charThumb'])
+      for (const m of ln.matchAll(new RegExp('(?<![\\w.])' + fn + '\\(([^()]*)\\)', 'g')))
+        if (m[1].split(',').map(x => x.trim()).filter(Boolean).length >= 3 && !inWin(i))
+          leak.push(fn + ' L' + (i+1) + '：' + ln.trim().slice(0, 60));
   });
-  if (callers.length !== 1)
-    evoCall.push('genThumb に evo を わたす ところが ' + callers.length + 'か所（1か所の はず）：' +
-                 callers.map(c => 'L' + (c.i+1)).join(','));
-  else if (!(ba >= 0 && callers[0].i >= ba && callers[0].i <= bz))
-    evoCall.push('evo を わたして いるのが 詳細画面（buildCharDetail）の 外：L' + (callers[0].i+1));
-  /* 図鑑の カードは base の まま（2引数）*/
-  if (la >= 0)
-    for (let i = la; i <= lz; i++)
-      for (const fn of ['genThumb', 'charThumb'])
-        for (const m of lines[i].matchAll(new RegExp('(?<![\\w.])' + fn + '\\(([^()]*)\\)', 'g')))
-          if (m[1].split(',').filter(x => x.trim()).length >= 3)
-            evoCall.push('図鑑の カード（lazyThumb）に evo を わたして いる：L' + (i+1));
-  /* `charThumb` に evo を わたす 本番の ところも 1か所だけ（Phase 7-7-3-6B）*/
-  const [ca, cz] = span('function charThumb(ch, size, evo, sp){', 'return c;');
-  const cCallers = [];
-  lines.forEach((ln, i) => {
-    if (chkAt >= 0 && i > chkAt) return;
-    if (ca >= 0 && i >= ca && i <= cz) return;
-    for (const m of ln.matchAll(/(?<![\w.])charThumb\(([^()]*)\)/g))
-      if (m[1].split(',').map(x => x.trim()).filter(Boolean).length >= 3) cCallers.push(i);
-  });
-  if (cCallers.length !== 1)
-    evoCall.push('charThumb に evo を わたす ところが ' + cCallers.length + 'か所（1か所の はず）：' +
-                 cCallers.map(i => 'L' + (i+1)).join(','));
-  else if (!(ba >= 0 && cCallers[0] >= ba && cCallers[0] <= bz))
-    evoCall.push('evo を わたして いるのが 詳細画面の 外：L' + (cCallers[0]+1));
+  if (leak.length) evoCall.push('ゆるして いない ところへ evo が もれて いる：' + leak.join(' / '));
+  /* **盤面と てきには 流さない**（C2 の しごと。C1 では base の まま）*/
+  for (const [nm, head, tail] of [['drawTower', 'function drawTower(t)', 'function '],
+                                  ['drawEnemy', 'function drawEnemy(e)', 'function ']]){
+    const [a, z] = span(head, tail);
+    if (a < 0) { evoCall.push(nm + ' が 見つからない'); continue; }
+    for (let i = a; i <= z; i++)
+      if (/evoOfSpecies|instEvoOf|instOfSpecies|detailIid/.test(lines[i]))
+        evoCall.push(nm + ' L' + (i+1) + ' が 個体の 進化を のぞいて いる（C1 では 盤面は base）');
+  }
   /* `drawPortrait` に evo を わたすのは `charThumb` だけ */
   const dCallers = [];
   lines.forEach((ln, i) => {
