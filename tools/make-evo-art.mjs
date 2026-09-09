@@ -1696,6 +1696,124 @@ ${OS_PLUMES.map(p => `<path d="${osPlume(...p)}" fill="url(#oF)" stroke="#a96e60
 
 /* 1件ずつ 原画を 実測して 書く。**目分量で 書かないこと** ——
    `--measure` で その場で はかれます */
+/* ---------- lg_berryqueen（いちごのじょおう）——裾の フリルが もう 1段 ----------
+   進化言語は **「元からある スカート裾の クリーム色フリルが、同じ 素材・
+   同じ 波形の まま、外側へ もう 1段 重なって 裾が ゆたかに なる」**。
+   `c_ostrich_e1` と おなじ **「元の 輪郭を 重なり境界に 読みかえる」**型ですが、
+   あちらが 片がわ・後方・長い 房なのに 対して、こちらは
+   **左右対称・下端・水平の フリル段**です。
+
+   **こぶを 正弦の 谷で 作っては いけません。**7案 ぜんぶ ノコギリ（王冠の
+   とんがり）に 見えました ——base の こぶは **円の union**（半径 9.0・
+   ピッチ 15.3 → 谷の ふかさ 4.0px）なので、谷が まるく なります。
+   さらに **union の 内がわの 線は 消して**、こぶの 仕切りだけ 細く 入れます
+   （全部の 円に ふちを 引くと **真珠の つらなり**に 見えました）。
+
+   **横へ 広げては いけません。**36px の bbox は すでに よこ 22列 いっぱいで、
+   いちばん 広い 行が 裾の 終端そのもの。よこへ 出すと 幅は 1列も ふえずに
+   「スカートが 大きく なった」だけに なります。下は いちばん下の 行が
+   まるごと 空いて いるので、**下へ 出すと 新しい 行が 1行 生まれます**。 */
+
+/* `berryqueen.png` の 裾の 輪郭を (128,150) から 実測して ならした もの
+   （26°〜154° を 2°きざみ。0=左・90=下・180=右）。
+   **目分量で 書かないこと。**`tools/make-evo-art.mjs` の 検査が
+   出したあとに はかりなおします */
+const BQ_R = [
+  88.54, 88.97, 89.47, 89.97, 90.41, 90.72, 91.16, 91.59, 91.79, 91.82,
+  91.70, 91.46, 91.07, 90.47, 89.71, 88.83, 87.89, 86.96, 86.10, 85.32,
+  84.60, 83.94, 83.36, 82.84, 82.36, 81.93, 81.57, 81.27, 81.06, 80.89,
+  80.77, 80.69, 80.66, 80.67, 80.74, 80.85, 81.01, 81.21, 81.50, 81.87,
+  82.31, 82.79, 83.32, 83.92, 84.59, 85.32, 86.11, 86.98, 87.92, 88.88,
+  89.79, 90.57, 91.19, 91.63, 91.91, 92.06, 92.08, 91.92, 91.54, 91.16,
+  90.87, 90.47, 89.98, 89.51, 89.11,
+];
+const BQ = {
+  cx: 128, cy: 150,          // 裾の 弧の 中心（スカートの こし）
+  d0: 26, dstep: 2,          // BQ_R の 角度
+  span: [32, 148],           // 段を 出す はんい。端は わきの クリームの うしろ
+  tap: 22,                   // 端を なめらかに 引く
+  tuck: 18,                  // 端で **base の 中へ もぐりこませる** ぶん
+  oMin: 9, oMax: 16,         // 中央 9px・外側 16px（下は 14px しか ない）
+  mix: 0.55,                 // 0=法線 1=真下。0.55 で「下へ、すこし 外へ」
+  pitch: 15.3, lobe: 9.0,    // base の こぶの 弧長ピッチと 半けい（実測）
+  ink: '#b8484f', sep: '#c8767c', sw: 1.8,
+};
+/* 段の 色は 既存フリルの 実測（`#fdf1d7` / `#f6e2c2`）を **6%ほど こく**した もの。
+   新しい 色では なく **同じ クリームの かげ** ——下の 段は 上の 段の かげに
+   入るのが 正しく、白・クリームの 地での 見えも 上がります
+   （白の 地で 平均 35.8 → 43.4・20%以上の 画素 60% → 89%） */
+const BQ_CREAM = ['#fbf0d2', '#f8e9c6', '#eed7ae', '#e2c398'];
+
+const bqDir = d => { const r = d * Math.PI / 180; return [-Math.cos(r), Math.sin(r)]; };
+const bqR = d => {
+  const t = (d - BQ.d0) / BQ.dstep;
+  const i = Math.max(0, Math.min(BQ_R.length - 2, Math.floor(t)));
+  return BQ_R[i] + (BQ_R[i + 1] - BQ_R[i]) * (t - i);
+};
+const berryqueenSvg = () => {
+  const { cx, cy, span, tap, tuck, oMin, oMax, mix, pitch, lobe, ink, sep, sw } = BQ;
+  /* 弧長。こぶを **等間かく**に ならべる ため（角度で ならべると
+     半けいの ちがう ところで ピッチが ずれます） */
+  const S = [];
+  for (let d = span[0], s = 0, p = null; d <= span[1] + 1e-9; d += 0.5){
+    const [dx, dy] = bqDir(d), r = bqR(d), q = [cx + dx * r, cy + dy * r];
+    if (p) s += Math.hypot(q[0] - p[0], q[1] - p[1]);
+    S.push([d, s]); p = q;
+  }
+  const sOf  = d => S[Math.max(0, Math.min(S.length - 1, Math.round((d - span[0]) / 0.5)))][1];
+  const dOfS = s => { let lo = 0, hi = S.length - 1;
+    while (lo < hi){ const m = (lo + hi) >> 1; if (S[m][1] < s) lo = m + 1; else hi = m; }
+    return S[lo][0]; };
+  const w = d => { const v = Math.min(1, Math.min((d - span[0]) / tap, (span[1] - d) / tap));
+                   return v <= 0 ? 0 : ss(v); };
+  /* 外へ 出す ぶん。中央は ひかえめ・外側ほど ゆたか。
+     端では **`tuck` ぶん 内がわ**に して base の うしろへ 隠します */
+  const off = d => oMin + (oMax - oMin) * ss(Math.max(0, Math.min(1, (Math.abs(d - 90) - 8) / 34)));
+  const nrm = d => { const [dx, dy] = bqDir(d);
+    const nx = dx * (1 - mix), ny = dy * (1 - mix) + mix, nl = Math.hypot(nx, ny);
+    return [nx / nl, ny / nl]; };
+  const pos = d => { const [dx, dy] = bqDir(d), r = bqR(d), [nx, ny] = nrm(d);
+    const k = off(d) * w(d) - (1 - w(d)) * tuck;
+    return [cx + dx * r + nx * k, cy + dy * r + ny * k]; };
+
+  /* こぶは base と おなじ **円の union**。山を base の 谷に 合わせる（半ピッチ ずらす） */
+  const cir = [], sp = [];
+  for (let s = sOf(span[0]) + pitch / 2; s <= sOf(span[1]); s += pitch){
+    const d = dOfS(s); if (d < span[0] || d > span[1]) continue;
+    const ww = w(d); if (ww <= 0.02) continue;
+    const [px, py] = pos(d), [nx, ny] = nrm(d);
+    cir.push([px - nx * lobe, py - ny * lobe, lobe * (0.45 + 0.55 * ww)]);
+  }
+  /* こぶの 仕切り（谷から 内がわへ 短く）。base の フリルにも 入って います */
+  for (let s = sOf(span[0]) + pitch; s <= sOf(span[1]); s += pitch){
+    const d = dOfS(s); if (d < span[0] || d > span[1]) continue;
+    const ww = w(d); if (ww <= 0.1) continue;
+    const [px, py] = pos(d), [nx, ny] = nrm(d);
+    sp.push([px - nx * lobe * 0.25, py - ny * lobe * 0.25,
+             px - nx * lobe * 1.35, py - ny * lobe * 1.35]);
+  }
+  /* 段を つなぐ 帯。もどりは 本体の ずっと 内がわ（base の うしろに かくれる） */
+  const out = [], back = [];
+  for (let d = span[0]; d <= span[1]; d += 0.5){
+    const [px, py] = pos(d), [nx, ny] = nrm(d);
+    out.push([px - nx * lobe * 0.5, py - ny * lobe * 0.5]);
+  }
+  for (let d = span[1]; d >= span[0]; d -= 2){
+    const [dx, dy] = bqDir(d), r = bqR(d) - 30; back.push([cx + dx * r, cy + dy * r]);
+  }
+  const band = 'M' + out.concat(back).map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' L') + ' Z';
+  const shapes = `<path d="${band}"/>`
+    + cir.map(([x,y,r]) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r.toFixed(2)}"/>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${N}" height="${N}" viewBox="0 0 ${N} ${N}">
+<defs><linearGradient id="bqc" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="${BQ_CREAM[0]}"/><stop offset=".5" stop-color="${BQ_CREAM[1]}"/>
+<stop offset=".84" stop-color="${BQ_CREAM[2]}"/><stop offset="1" stop-color="${BQ_CREAM[3]}"/></linearGradient></defs>
+<g fill="none" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round">${shapes}</g>
+<g fill="url(#bqc)" stroke="none">${shapes}</g>
+${sp.map(([a,b,c,e]) => `<line x1="${a.toFixed(1)}" y1="${b.toFixed(1)}" x2="${c.toFixed(1)}" y2="${e.toFixed(1)}" stroke="${sep}" stroke-width="1.35" stroke-linecap="round" opacity=".78"/>`).join('')}
+</svg>`;
+};
+
 export const PLAN = {
   /* キーは **種の ID**（`dexList` の id）。base の 画像キー（`purin`）とは
      別ものです ——`candy` / `star` / `icecream` / `choco` は GEN と
@@ -1896,6 +2014,13 @@ export const PLAN = {
     dy:    0,      // 後方に 61〜78px ある。本体は ずらさない
     asym:  true,   // 尾羽は 後ろがわ だけ。左右対称に すると 翼に なる
     svg:   ostrichSvg,
+  },
+  lg_berryqueen: {
+    kind:  'deco',
+    base:  'art/sprites/berryqueen.png',    // いちごのじょおう（**読むだけ**）
+    out:   'art/sprites/lg_berryqueen_e1.png',
+    dy:    0,      // 下に 14px。**よこへは 1pxも 広げない**（36px の 幅は もう 上限）
+    svg:   berryqueenSvg,
   },
   tw_ice: {
     kind:  'deco',
