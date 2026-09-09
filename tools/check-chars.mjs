@@ -430,20 +430,23 @@ const artEvo = [];
   for (const [nm, re2] of [['DEX_ART の 道', /const ak = evoArtKey\(DEX_ART\[id\], evo, sp\);/],
                            ['TOWERS.art の 道', /const ta = evoArtKey\(T\.art, evo, sp\);/]])
     if (!re2.test(strip(src))) artEvo.push('似顔絵の「' + nm + '」が evoArtKey を 通って いない');
-  /* 生の `ART_SPRITE[T.art]` が **`drawPortrait` の 中に** のこって いないか
-     （片方だけ 直す のを ふせぐ）。盤面（`drawTower`）は 別の 関数で、
-     evo を わたさない ので そのまま が 正しい */
-  {
-    const a = lines.findIndex(l => l.includes('function drawPortrait(g, id, S, evo, sp){'));
-    const z = a < 0 ? -1 : a + lines.slice(a).findIndex((l, i) => i > 0 && l.includes('function '));
-    if (a >= 0)
-      for (let i = a; i <= z; i++)
-        if (/ART_SPRITE\[T\.art\]/.test(lines[i]))
-          artEvo.push('似顔絵の お菓子タワーの 道に 生の ART_SPRITE[T.art] が のこって いる：L' + (i+1));
-  }
-  /* ゲームの ほうから evo を わたして いないか（検査どうぐは のぞく）*/
+  /* 生の `ART_SPRITE[T.art]` が のこって いないか（片方だけ 直す のを ふせぐ）。
+     **C2 で 盤面（`drawTower`）も resolver を とおす ように なった**ので、
+     いまは **どこにも のこって いては いけません** */
   lines.forEach((ln, i) => {
     if (chkAt >= 0 && i > chkAt) return;
+    if (/ART_SPRITE\[T\.art\]/.test(ln))
+      artEvo.push('生の ART_SPRITE[T.art] が のこって いる（resolver を とおすこと）：L' + (i+1));
+  });
+  /* ゲームの ほうから evo を わたして いないか（検査どうぐは のぞく）。
+     **ゆるすのは 盤面の `drawTower` の 中だけ**（Phase 7-7-3-8-4-C2）——
+     なかまと お菓子タワーは 自分の 個体の すがたで えがきます。
+     `drawEnemy` は 対象外な ので、あちらに 書けば ここで 落ちます */
+  const tw0 = lines.findIndex(l => l.includes('function drawTower(t){'));
+  const tw1 = tw0 < 0 ? -1 : tw0 + lines.slice(tw0).findIndex((l, i) => i > 0 && l.includes('function '));
+  lines.forEach((ln, i) => {
+    if (chkAt >= 0 && i > chkAt) return;
+    if (tw0 >= 0 && i >= tw0 && i <= tw1) return;             // ← C2 の 窓
     for (const [fn, n] of [['drawGen', 3], ['genSprite', 2], ['rbSprite', 3]]){
       const re = new RegExp('(?<![\\w.])' + fn + '\\(([^()]*)\\)', 'g');
       for (const m of ln.matchAll(re)){
@@ -530,14 +533,31 @@ const evoCall = [];
           leak.push(fn + ' L' + (i+1) + '：' + ln.trim().slice(0, 60));
   });
   if (leak.length) evoCall.push('ゆるして いない ところへ evo が もれて いる：' + leak.join(' / '));
-  /* **盤面と てきには 流さない**（C2 の しごと。C1 では base の まま）*/
-  for (const [nm, head, tail] of [['drawTower', 'function drawTower(t)', 'function '],
-                                  ['drawEnemy', 'function drawEnemy(e)', 'function ']]){
-    const [a, z] = span(head, tail);
-    if (a < 0) { evoCall.push(nm + ' が 見つからない'); continue; }
-    for (let i = a; i <= z; i++)
+  /* **盤面**（Phase 7-7-3-8-4-C2）——なかまと お菓子タワーは
+     `drawTower` の 中**だけ** ゆるします。中みの すじは
+     `tools/check-evo-board.mjs` が 見ます。
+
+     **てき（`drawEnemy`）は これまでどおり きんし。**盤面の てきは
+     世界の てきで、プレイヤーの 個体では ありません */
+  {
+    const [a, z] = span('function drawTower(t)', 'function ');
+    if (a < 0) evoCall.push('drawTower が 見つからない');
+    else {
+      const body = lines.slice(a, z + 1).join('\n');
+      if (!/const tEvo = evoOfSpecies\(tSp\);/.test(body))
+        evoCall.push('drawTower が 種から evo を とって いない（C2）');
+      for (let i = a; i <= z; i++){
+        if (/instEvoOf|instOfSpecies/.test(lines[i]))
+          evoCall.push('drawTower L' + (i+1) + ' が 個体を 直に のぞいて いる（evoOfSpecies を とおすこと）');
+        if (/detailIid/.test(lines[i]))
+          evoCall.push('drawTower L' + (i+1) + ' が 詳細画面の 個体えらびを つかって いる（盤面は 種から）');
+      }
+    }
+    const [ea, ez] = span('function drawEnemy(e)', 'function ');
+    if (ea < 0) evoCall.push('drawEnemy が 見つからない');
+    else for (let i = ea; i <= ez; i++)
       if (/evoOfSpecies|instEvoOf|instOfSpecies|detailIid/.test(lines[i]))
-        evoCall.push(nm + ' L' + (i+1) + ' が 個体の 進化を のぞいて いる（C1 では 盤面は base）');
+        evoCall.push('drawEnemy L' + (i+1) + ' が 個体の 進化を のぞいて いる（てきは 世界の てき）');
   }
   /* `drawPortrait` に evo を わたすのは `charThumb` だけ */
   const dCallers = [];

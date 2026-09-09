@@ -11428,7 +11428,17 @@ function buildCharAct(o, iid, evo){
     yes.onclick = () => {
       const r = tryEvolve(o);
       chConfirm = false;
-      if (r === 'ok'){ beep(760,.12,'triangle',.05); setTimeout(()=>beep(980,.16,'triangle',.05),110); vib([20,40,20]); }
+      if (r === 'ok'){
+        beep(760,.12,'triangle',.05); setTimeout(()=>beep(980,.16,'triangle',.05),110); vib([20,40,20]);
+        /* 進化した その場で **ほかの 画面も そろえる**（Phase 7-7-3-8-4-C2）。
+           盤面は 毎フレーム えがきなおすので すぐ e1 に なりますが、
+           ショップバーの 札・情報カード・図鑑の カードは **ひらいた ときに
+           1回**しか 作られません。そのままだと おなじ子が
+           **盤面＝e1 ／ 札＝base** に 見えます */
+        buildShop(); syncShop();
+        if (selTower) openInfo(selTower);
+        buildColGrid();
+      }
       else tapSel(false);
       buildCharDetail();                 // 出しなおす（すがた・在庫・絵）
       if (r !== 'ok') $('chMsg') && ($('chMsg').textContent = EVO_NG[r] || EVO_NG.ng);
@@ -15696,6 +15706,20 @@ function drawTower(t){
   const pop = 1 + t.pulse*0.16;
   const R = CELL*(0.31 + (t.lv-1)*0.022) * sp;
 
+  /* 進化した すがた（Phase 7-7-3-8-4-C2）。**1種＝1個体の いまだけ**
+     種から 一意に 引けます。なかまは `t.k` その ものが 種の ID、
+     お菓子タワーは `'tw_' + t.k`（`candy` は GEN の キャンディと
+     base の 絵を 分けあうので、**種の ID を かならず わたす**）。
+
+     **`drawEnemy` に 同じ ものを 入れないこと。**盤面の てきは 世界の てきで、
+     プレイヤーの 個体では ありません */
+  const tSp  = T.gen ? t.k : 'tw_' + t.k;
+  const tEvo = evoOfSpecies(tSp);
+  /* 絵の キーは generic な resolver に かえしてもらう。
+     **`base + '_e1'` の fallback を 作らないこと** ——`icecream` は
+     `tw_ice` と `c_icecream` の 2つが 分けあって います */
+  const tArt = T.gen ? T.art : evoArtKey(T.art, tEvo, tSp);
+
   // 選択中は射程を表示
   if (selTower === t){
     ctx.fillStyle = 'rgba(255,143,196,.14)';
@@ -15710,7 +15734,7 @@ function drawTower(t){
 
   // ようせいのはねと マカロンの台座。
   // なかまと アバターは じぶんの すがたが あって 絵が こみあうので つけない
-  if (!T.gen && !T.avatar && !(T.art && ART_SPRITE[T.art])){
+  if (!T.gen && !T.avatar && !(tArt && ART_SPRITE[tArt])){
     const flap = Math.sin(time*7 + t.ph);
     const wk = 1 + (t.lv-1)*0.18;
     for (const s of [-1,1]){
@@ -15762,14 +15786,14 @@ function drawTower(t){
   } else if (T.gen){
     // なかまは コレクションの絵を そのまま つかう
     const px = R*TOWER_PX;
-    const sp = genSprite(T.gen, px);
-    ctx.drawImage(t.rb ? rbSprite(sp, px, 'g_'+T.gen.id) : sp, -px/2, -px/2, px, px);
-  } else if (T.art && ART_SPRITE[T.art]){
+    const sp = genSprite(T.gen, px, tEvo);
+    ctx.drawImage(t.rb ? rbSprite(sp, px, 'g_'+T.gen.id, tEvo) : sp, -px/2, -px/2, px, px);
+  } else if (tArt && ART_SPRITE[tArt]){
     // コレクションと 同じ 絵。はね・だい・リボンは この あとも つくので
     // 「タワーの すがた」で あることは 見わけられる
     const px = R*TOWER_PX;
-    const sp = ART_SPRITE[T.art];
-    ctx.drawImage(t.rb ? rbSprite(sp, px, 'a_'+T.art) : sp, -px/2, -px/2, px, px);
+    const sp = ART_SPRITE[tArt];
+    ctx.drawImage(t.rb ? rbSprite(sp, px, 'a_'+tArt) : sp, -px/2, -px/2, px, px);
   } else {
     sweetBody(ctx, t.k, R, T.color, T.dark, false);
     drawFace(R*SWEET_FACE[t.k], t.ph, 'smile');
@@ -15783,7 +15807,7 @@ function drawTower(t){
      save と restore は かならず 同じ ブロックの 中で 対に すること */
 
   // むねのリボン（Lv4からきんいろ）。コレクションの子は もう かざりが 多いので つけない
-  if (!T.gen && !T.avatar && !(T.art && ART_SPRITE[T.art]))
+  if (!T.gen && !T.avatar && !(tArt && ART_SPRITE[tArt]))
     drawBow(-R*0.6, -R*0.74, R*(0.3 + (t.lv-1)*0.05), t.lv >= 4 ? '#e8b12e' : T.dark);
 
   // Lv3からまわりを星がくるくるまわる（レベルで数がふえる）

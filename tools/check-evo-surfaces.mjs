@@ -6,6 +6,8 @@
  *   ① 対象の 5系統が **evo を 受けとって いる**（ソース＋実行）
  *   ② **詳細画面（#chOv）の 既存経路を こわして いない**
  *   ③ **てきの 道へ evo を 流して いない**（あれは 世界の てきで、自分の 個体では ない）
+ *      ——盤面の **なかまと お菓子タワー**は C2 で ゆるしました（`check-evo-board.mjs`）。
+ *        てきだけは これからも きんしです
  *   ④ **表示の 処理から `ensureInst()` を 呼んで いない**（見るだけで 個体が できる）
  *   ⑤ **EVO_LOCK が 1件も 変わって いない**
  *
@@ -97,7 +99,8 @@ for (const [name, re] of SITES) if (!re.test(src)) bad.push(name + ' が evo を
     const near = src.slice(Math.max(0, m.index - 2000), m.index);
     const fnName = (near.match(/function (\w+)\s*\(/g) || []).pop() || '';
     if (ok.some(o => line.includes(o) || fnName.includes(o.replace('function ', '')))) continue;
-    if (/lazyThumb|buildShop|syncShop|openInfo|buildPick|buildColGrid|genThumb|charThumb/.test(fnName))
+    /* 盤面の えがきもの（drawTower）も 「見るだけ」なので 作っては いけない */
+    if (/lazyThumb|buildShop|syncShop|openInfo|buildPick|buildColGrid|genThumb|charThumb|drawTower|drawEnemy/.test(fnName))
       bad.push('表示の 処理（' + fnName + '）が ensureInst を 呼んで いる');
   }
 }
