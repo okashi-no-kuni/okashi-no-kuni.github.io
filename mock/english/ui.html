@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>えいごの おかしの国 — UIイメージ</title>
+<!-- 英語学習ゲームの UIイメージ（モック）。
+     ここは「絵を 決めるため」の 板で、ゲーム本体では ありません。
+     配色・角丸・かげ・文字づかいは CLAUDE.md の アートディレクションに そろえてあります。
+     キャラは 既存の art/sprites/ を そのまま つかいます
+     （新しく 絵を 出さずに 見た目を 決められるため）。 -->
+<style>
+  :root{
+    --pink:#ff8fc4; --pink-d:#e05f9e; --pink-l:#ffd9ec;
+    --lav:#c9a7ff;  --lav-d:#8f6fd6;
+    --mint:#8fe3c4; --mint-d:#35a883;
+    --cream:#fff6e9; --ink:#6b4a63; --aqua:#2e9fc9; --gold:#ffcf5a;
+    --card:rgba(255,255,255,.72); --line:rgba(255,255,255,.9);
+    --sh:rgba(120,90,120,.18);           /* かげは 黒では なく 紫がかった 半とうめい */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#f6eef7; color:var(--ink);
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+    font-weight:800; padding:26px; -webkit-font-smoothing:antialiased;
+  }
+  h1.pt{font-size:20px;color:var(--pink-d);margin-bottom:4px}
+  p.pn{font-size:13px;font-weight:700;opacity:.7;margin-bottom:20px}
+  .row{display:flex;flex-wrap:wrap;gap:26px}
+  figure{width:393px}
+  figcaption{font-size:13px;margin-top:8px;color:var(--pink-d);line-height:1.5}
+  figcaption span{display:block;font-size:11.5px;font-weight:700;color:var(--ink);opacity:.72}
+
+  /* ============ 画面のわく（iPhone 実寸 393x852） ============ */
+  .phone{
+    position:relative;width:393px;height:852px;overflow:hidden;border-radius:34px;
+    /* 背景は 上から下へ ピンク → 藤 → 水色。radial を 重ねて 奥ゆきを 出す */
+    background:
+      radial-gradient(90% 60% at 20% 0%,  #fff0f8 0%, transparent 60%),
+      radial-gradient(90% 60% at 90% 28%, #eef0ff 0%, transparent 60%),
+      linear-gradient(180deg,#ffe6f3 0%, #f3e8ff 55%, #e6f6ff 100%);
+    box-shadow:0 14px 40px rgba(150,110,150,.28);
+  }
+  .scr{position:absolute;inset:0;display:flex;flex-direction:column;padding:14px 10px 20px;gap:7px}
+
+  /* ============ キラキラ（4方向に とがった 星） ============ */
+  .sp{position:absolute;background:#fff;opacity:.85;
+    clip-path:polygon(50% 0,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0 50%,42% 42%)}
+  .sp.p{background:var(--pink-l)} .sp.l{background:#e4d4ff} .sp.g{background:#ffe9b3}
+
+  /* ============ 共通の 部品 ============ */
+  .card{background:var(--card);border:2px solid var(--line);border-radius:16px;
+    box-shadow:0 4px 14px rgba(190,140,180,.22)}
+  .btn{border:none;border-radius:18px;color:#fff;font-family:inherit;font-weight:800;
+    background:linear-gradient(180deg,#ffa6d0,var(--pink));
+    box-shadow:0 4px 0 var(--pink-d), 0 6px 16px rgba(224,95,158,.3);
+    padding:12px 18px;font-size:17px;display:flex;align-items:center;justify-content:center;gap:7px}
+  .btn.lav{background:linear-gradient(180deg,#dcc6ff,var(--lav));box-shadow:0 4px 0 var(--lav-d),0 6px 16px rgba(143,111,214,.28)}
+  .btn.mint{background:linear-gradient(180deg,#aef0d6,var(--mint));box-shadow:0 4px 0 var(--mint-d),0 6px 16px rgba(53,168,131,.26)}
+  .btn.sm{padding:8px 12px;font-size:13px;border-radius:14px}
+
+  /* HUD（3つの札）。中みが 出たり 消えたり しても 高さが 変わらない ように
+     下の行は からでも 場所を とらせる */
+  .hud{display:flex;gap:6px}
+  .stat{flex:1;padding:5px 4px;text-align:center;line-height:1.12}
+  .stat .k{font-size:10px;opacity:.6;letter-spacing:.06em}
+  .stat .v{font-size:20px;display:flex;align-items:center;justify-content:center;gap:3px;font-variant-numeric:tabular-nums}
+  .stat .sub{font-size:9.5px;color:#e0a52e;min-height:12px}
+  .stat .sub.pk{color:var(--pink-d)}
+
+  /* ステージの 帯 */
+  .stage{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:16px}
+  .stage .wv{font-size:12px;color:#fff;background:linear-gradient(180deg,#ffa6d0,var(--pink));
+    border-radius:11px;padding:3px 9px;box-shadow:0 2px 0 var(--pink-d)}
+  .stage .nm{font-size:14.5px}
+  .stage .dots{margin-left:auto;display:flex;gap:4px}
+  .stage .dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.85);
+    box-shadow:inset 0 0 0 2px rgba(224,95,158,.3)}
+  .stage .dots i.on{background:var(--pink);box-shadow:0 2px 0 var(--pink-d)}
+  .bar{height:8px;border-radius:9px;background:rgba(255,255,255,.7);overflow:hidden;
+    box-shadow:inset 0 1px 3px rgba(120,90,120,.2)}
+  .bar i{display:block;height:100%;border-radius:9px;
+    background:linear-gradient(90deg,var(--mint),#ffe07a 60%,var(--pink))}
+
+  /* ============ マッチングの 盤面 ============ */
+  .board{position:relative;flex:1;display:grid;grid-template-columns:168px 1fr 152px;
+    grid-template-rows:repeat(4,1fr);gap:14px 0;margin-top:4px}
+  .board svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .mc{position:relative;display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:18px;
+    border:2px solid rgba(255,255,255,.95);
+    box-shadow:0 4px 0 rgba(224,95,158,.18), 0 5px 12px var(--sh)}
+  .mc.ja{background:linear-gradient(180deg,#fff,#ffeaf4)}
+  .mc.en{background:linear-gradient(180deg,#fff,#efe6ff);justify-content:center}
+  .mc img{width:60px;height:60px;object-fit:contain;filter:drop-shadow(0 2px 3px var(--sh));flex:0 0 60px}
+  .mc .w{font-size:20px;line-height:1.1;white-space:nowrap}
+  .mc .en{font-size:24px;letter-spacing:.01em;color:#5d4a86}
+  /* えらんでいる 札。ふちを こく して 光の わくを 出す */
+  .mc.sel{border-color:var(--pink-d);box-shadow:0 0 0 4px rgba(255,143,196,.38),0 4px 0 var(--pink-d),0 8px 16px rgba(224,95,158,.3);
+    transform:translateY(-1px)}
+  /* そろった 札。ミントに して ✓。もう おせない ことを うすさでも 見せる */
+  .mc.done{background:linear-gradient(180deg,#f2fffa,#d8f7ea);border-color:#eafff8;
+    box-shadow:0 3px 0 rgba(53,168,131,.22),0 4px 10px var(--sh)}
+  .mc.done .w,.mc.done .en{opacity:.75}
+  .mc.done::after{content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);
+    font-size:18px;color:var(--mint-d)}
+  .mc.en.done::after{right:6px}
+  .mc .sp{width:10px;height:10px}
+
+  /* まん中の つなぎめ（マッチの しるし） */
+  .knot{display:flex;align-items:center;justify-content:center;font-size:15px}
+
+  /* ワザ的な 下のボタン列 */
+  .tools{display:flex;gap:6px;align-items:center}
+  .tool{flex:1;border-radius:15px;padding:7px 4px;text-align:center;font-size:11.5px;line-height:1.25;
+    background:rgba(255,255,255,.7);border:2px solid rgba(255,255,255,.95);box-shadow:0 3px 0 rgba(224,95,158,.16)}
+  .tool b{display:block;font-size:19px;line-height:1.25}
+  .tool.on{background:linear-gradient(180deg,#fff,#ffeaf4);border-color:var(--pink);color:var(--pink-d)}
+  .tool.off{opacity:.62}
+
+  /* 足もとの ひとこと（マスコット） */
+  .say{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:16px}
+  .say img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 3px var(--sh))}
+  .say p{font-size:13px;line-height:1.35}
+  .say p b{color:var(--pink-d)}
+
+  /* ============ 発音の 画面 ============ */
+  .dim{position:absolute;inset:0;background:rgba(108,74,104,.36);backdrop-filter:blur(2px)}
+  .pop{position:absolute;left:18px;right:18px;top:50%;transform:translateY(-50%);
+    background:linear-gradient(180deg,#fffdfa,#fff2f9);border:3px solid #fff;border-radius:28px;
+    box-shadow:0 16px 36px rgba(120,90,120,.34);padding:18px 16px 16px;text-align:center}
+  .pop .yay{position:absolute;left:50%;top:-16px;transform:translateX(-50%);
+    background:linear-gradient(180deg,#ffe07a,var(--gold));color:#fff;font-size:15px;
+    padding:5px 20px;border-radius:14px;box-shadow:0 4px 0 #e5a63c,0 6px 14px rgba(229,166,60,.34);white-space:nowrap}
+  .pop>img{width:126px;height:126px;object-fit:contain;filter:drop-shadow(0 6px 8px var(--sh));margin:6px 0 2px}
+  .pop .big{font-size:44px;color:#fff;letter-spacing:.02em;line-height:1.1;
+    text-shadow:2px 2px 0 var(--pink), 0 5px 0 rgba(224,95,158,.42), 0 10px 16px rgba(224,95,158,.3)}
+  .pop .ipa{font-size:14px;font-weight:700;color:var(--lav-d);margin-top:3px}
+  .pop .ja{font-size:20px;color:var(--pink-d);margin-top:6px}
+  /* 音が 鳴っている しるし。止まった 絵でも 分かるように わっかを 3つ 出す */
+  .ring{position:relative;width:86px;height:86px;margin:34px auto 12px}
+  .ring i{position:absolute;inset:0;border-radius:50%;border:3px solid var(--mint);opacity:.55}
+  .ring i:nth-child(2){inset:-12px;opacity:.3}
+  .ring i:nth-child(3){inset:-24px;opacity:.16}
+  .ring b{position:absolute;inset:8px;border-radius:50%;font-size:38px;color:#fff;
+    background:linear-gradient(180deg,#aef0d6,var(--mint));display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 0 var(--mint-d),0 6px 14px rgba(53,168,131,.3)}
+  .pop .btns{display:flex;gap:8px;margin-top:12px}
+  .pop .btns .btn{flex:1}
+  .pop .note{font-size:10.5px;font-weight:700;opacity:.62;margin-top:8px}
+
+  /* ============ クリア画面 ============ */
+  .clr{margin:auto 2px;text-align:center;padding:18px 14px 16px;border-radius:26px;
+    background:linear-gradient(180deg,#fffdfa,#fff2f9);border:3px solid #fff;
+    box-shadow:0 14px 32px rgba(120,90,120,.28)}
+  .clr h2{font-size:27px;color:var(--pink-d);line-height:1.2}
+  .clr .rank{font-size:13px;color:var(--gold);margin-top:2px}
+  .sc{display:flex;gap:7px;margin:12px 0 4px}
+  .sc div{flex:1;border-radius:15px;padding:7px 2px;background:rgba(255,255,255,.8);
+    border:2px solid #fff;box-shadow:0 3px 0 rgba(224,95,158,.14)}
+  .sc em{display:block;font-size:10px;font-style:normal;opacity:.6}
+  .sc b{font-size:19px;color:var(--aqua)}
+  .rew{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0 2px;
+    padding:9px;border-radius:16px;background:linear-gradient(180deg,#fff9e8,#ffefc9);border:2px solid #fff}
+  .rew span{font-size:21px;color:#e0a52e}
+  .nxt{margin-top:12px;padding:11px 10px;border-radius:18px;text-align:left;
+    background:rgba(255,255,255,.78);border:2px dashed rgba(224,95,158,.35)}
+  .nxt .h{font-size:11px;opacity:.6}
+  .nxt .t{font-size:16px;color:var(--lav-d);margin:2px 0 5px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{font-size:12px;padding:3px 9px;border-radius:11px;background:#fff;color:#5d4a86;
+    box-shadow:0 2px 0 rgba(143,111,214,.22)}
+  .clr .btn{margin-top:13px;width:100%}
+
+  /* ============ ウェーブの みちのり ============ */
+  .head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:16px}
+  .head h2{font-size:17px;color:var(--pink-d)}
+  .head .x{margin-left:auto;width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.8);
+    display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--pink-d);
+    box-shadow:0 3px 0 rgba(224,95,158,.18)}
+  .wl{display:flex;flex-direction:column;gap:7px;overflow:hidden;position:relative}
+  .wv1{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:17px;
+    background:rgba(255,255,255,.72);border:2px solid rgba(255,255,255,.95);box-shadow:0 3px 0 rgba(224,95,158,.14)}
+  .wv1 .n{flex:0 0 34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:#fff;background:linear-gradient(180deg,#ffa6d0,var(--pink));box-shadow:0 3px 0 var(--pink-d)}
+  .wv1.cur{border-color:var(--pink);background:linear-gradient(180deg,#fff,#ffeaf4);
+    box-shadow:0 0 0 3px rgba(255,143,196,.3),0 4px 0 var(--pink-d)}
+  .wv1.lock{opacity:.6}
+  .wv1.lock .n{background:linear-gradient(180deg,#e8def5,#cdbfe0);box-shadow:0 3px 0 #b3a3c9}
+  .wv1 .b1{font-size:14.5px;line-height:1.25}
+  .wv1 .b2{font-size:11px;font-weight:700;opacity:.72;margin-top:1px}
+  .wv1 .r{margin-left:auto;text-align:right;flex:0 0 auto}
+  .wv1 .st{font-size:11px;color:var(--gold);letter-spacing:.5px}
+  .wv1 .tag{font-size:10px;color:var(--mint-d)}
+  .fade{position:absolute;left:0;right:0;bottom:0;height:46px;
+    background:linear-gradient(180deg,transparent,#eaf1fb)}
+
+  /* ============ おとの せってい ============ */
+  .set{display:flex;flex-direction:column;gap:8px}
+  .sw{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:17px;
+    background:rgba(255,255,255,.74);border:2px solid rgba(255,255,255,.95);box-shadow:0 3px 0 rgba(224,95,158,.13)}
+  .sw .ic{font-size:21px;flex:0 0 26px;text-align:center}
+  .sw .t1{font-size:14.5px}
+  .sw .t2{font-size:10.5px;font-weight:700;opacity:.65;margin-top:1px}
+  .tg{margin-left:auto;flex:0 0 54px;width:54px;height:30px;border-radius:15px;position:relative;
+    background:linear-gradient(180deg,#ffa6d0,var(--pink));box-shadow:inset 0 2px 4px rgba(224,95,158,.35)}
+  .tg::after{content:"";position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;
+    background:#fff;box-shadow:0 2px 4px var(--sh)}
+  .tg.off{background:rgba(190,170,200,.45);box-shadow:inset 0 2px 4px rgba(120,90,120,.2)}
+  .tg.off::after{right:auto;left:3px}
+  .seg{display:flex;gap:5px;margin-left:auto}
+  .seg b{font-size:11.5px;padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.9);color:#9a86a8;
+    box-shadow:0 2px 0 rgba(120,90,120,.12)}
+  .seg b.on{background:linear-gradient(180deg,#ffa6d0,var(--pink));color:#fff;box-shadow:0 2px 0 var(--pink-d)}
+  .sl{padding:11px 12px 13px;border-radius:17px;background:rgba(255,255,255,.74);
+    border:2px solid rgba(255,255,255,.95);box-shadow:0 3px 0 rgba(224,95,158,.13)}
+  .sl .lb{display:flex;font-size:14.5px;align-items:center;gap:8px}
+  .sl .lb em{margin-left:auto;font-style:normal;font-size:12px;color:var(--pink-d)}
+  .track{position:relative;height:10px;border-radius:9px;margin:13px 4px 4px;
+    background:rgba(190,170,200,.35);box-shadow:inset 0 1px 3px rgba(120,90,120,.18)}
+  .track i{display:block;height:100%;width:46%;border-radius:9px;background:linear-gradient(90deg,var(--mint),var(--pink))}
+  .track b{position:absolute;top:50%;left:46%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;
+    background:#fff;box-shadow:0 3px 6px var(--sh),inset 0 0 0 3px var(--pink)}
+  .track u{position:absolute;top:16px;font-size:10px;font-weight:700;opacity:.6;text-decoration:none}
+  .tip{font-size:11px;font-weight:700;line-height:1.5;opacity:.72;padding:2px 6px}
+
+  /* ============ 表紙 ============ */
+  .ttl{margin-top:146px;text-align:center}
+  .ttl .sub2{font-size:13px;color:var(--lav-d);letter-spacing:.22em}
+  .ttl .lg{font-size:41px;color:#fff;line-height:1.34;margin-top:8px;
+    text-shadow:2px 2px 0 var(--pink), 0 6px 0 rgba(224,95,158,.4), 0 12px 20px rgba(224,95,158,.32)}
+  .ttl .lg small{font-size:26px;display:block}
+  .ttl .rom{font-size:11.5px;letter-spacing:.3em;color:var(--pink-d);margin-top:16px;opacity:.9}
+  /* にじ。まん中が あきすぎて さびしかったので、なかまの うしろに 敷く */
+  .rainbow{position:absolute;left:50%;bottom:196px;transform:translateX(-50%);
+    width:560px;height:330px;opacity:.55;pointer-events:none;
+    background:radial-gradient(circle 300px at 50% 100%, transparent 0 48%,
+      #ffd1e8 48% 56%, #ffe6b8 56% 63%, #d7f5e2 63% 70%, #cfe9ff 70% 77%, #e2d6ff 77% 84%, transparent 84%);
+    -webkit-mask-image:linear-gradient(180deg,#000 52%,transparent 96%);
+            mask-image:linear-gradient(180deg,#000 52%,transparent 96%)}
+  .cast{position:absolute;left:0;right:0;bottom:300px;display:flex;align-items:flex-end;justify-content:center;gap:2px}
+  .cast img{object-fit:contain;filter:drop-shadow(0 5px 7px var(--sh))}
+  /* 表紙の「はじめる」は いつも 金の ふちで 光らせる（いちばん 押してほしい ところ）*/
+  .go{position:absolute;left:50%;bottom:186px;transform:translateX(-50%);width:214px;
+    padding:15px 0;border-radius:26px;text-align:center;font-size:22px;color:#fff;
+    background:linear-gradient(180deg,#ffa6d0,var(--pink));
+    box-shadow:0 5px 0 var(--pink-d), 0 0 0 4px rgba(255,214,120,.95), 0 0 22px 6px rgba(255,205,90,.6)}
+  .foot{position:absolute;left:0;right:0;bottom:64px;display:flex;justify-content:center;gap:10px}
+  .foot span{width:46px;height:46px;border-radius:16px;background:rgba(255,255,255,.8);
+    display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 3px 0 rgba(224,95,158,.2)}
+  .ver{position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:10.5px;font-weight:700;opacity:.55}
+</style>
+</head>
+<body>
+<h1 class="pt">えいごの おかしの国 — UIイメージ（モック）</h1>
+<p class="pn">iPhone 実寸 393×852。配色・角丸・かげ・文字づかいは おかしの国 シリーズに そろえてあります。キャラは 既存の art/sprites/ を つかっています。</p>
+<div class="row">
+
+<!-- ================= ① 表紙 ================= -->
+<figure>
+<section class="phone" id="f1">
+  <div class="sp"    style="left:38px;top:96px;width:20px;height:20px"></div>
+  <div class="sp p"  style="left:322px;top:70px;width:26px;height:26px"></div>
+  <div class="sp l"  style="left:286px;top:158px;width:14px;height:14px"></div>
+  <div class="sp g"  style="left:64px;top:206px;width:16px;height:16px"></div>
+  <div class="sp"    style="left:344px;top:300px;width:12px;height:12px"></div>
+  <div class="sp p"  style="left:22px;top:330px;width:16px;height:16px"></div>
+  <div class="sp g"  style="left:200px;top:52px;width:13px;height:13px"></div>
+  <div class="rainbow"></div>
+  <div class="scr">
+    <div class="ttl">
+      <div class="sub2">ENGLISH WORD MATCH</div>
+      <div class="lg">えいごの<small>おかしの国</small></div>
+      <div class="rom">OKASHI NO KUNI</div>
+    </div>
+  </div>
+  <div class="cast">
+    <img src="../../art/sprites/rabbit.png" style="width:104px;height:104px">
+    <img src="../../art/sprites/star.png"   style="width:132px;height:132px">
+    <img src="../../art/sprites/bear.png"   style="width:110px;height:110px">
+  </div>
+  <div class="go">はじめる</div>
+  <div class="foot"><span>🔊</span><span>📕</span><span>⚙</span></div>
+  <div class="ver">ウェーブ1から すこしずつ むずかしく なります</div>
+</section>
+<figcaption>① 表紙<span>おかしの国シリーズの 見た目そのまま。「はじめる」は 金のふちで つねに 光らせる。</span></figcaption>
+</figure>
+
+<!-- ================= ② ウェーブ1 の 盤面 ================= -->
+<figure>
+<section class="phone" id="f2">
+  <div class="sp"   style="left:352px;top:330px;width:13px;height:13px"></div>
+  <div class="sp p" style="left:18px;top:420px;width:11px;height:11px"></div>
+  <div class="sp g" style="left:340px;top:600px;width:12px;height:12px"></div>
+  <div class="scr">
+    <!-- HUD：ウェーブ・せいかい・スコア -->
+    <div class="hud">
+      <div class="card stat"><div class="k">ウェーブ</div><div class="v">1</div><div class="sub pk">どうぶつ</div></div>
+      <div class="card stat"><div class="k">せいかい</div><div class="v">2<span style="font-size:13px;opacity:.6">/4</span></div><div class="sub pk">ミス 0</div></div>
+      <div class="card stat"><div class="k">スコア</div><div class="v">⭐ 240</div><div class="sub">れんぞく ×2</div></div>
+    </div>
+
+    <!-- ステージの 帯 ＋ のこり時間 -->
+    <div class="card stage">
+      <span class="wv">WAVE 1</span>
+      <span class="nm">どうぶつの もり</span>
+      <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i></span>
+    </div>
+    <div class="bar"><i style="width:64%"></i></div>
+
+    <!-- マッチングの 盤面。左＝日本語（絵つき）／右＝英語。
+         そろった 組は ミントの リボンで つながる（交差してよい） -->
+    <div class="board">
+      <svg id="ribbon"></svg>
+
+      <div class="mc ja done"><img src="../../art/sprites/sandcat.png"><span class="w">ねこ</span></div>
+      <div class="knot"></div>
+      <div class="mc en done"><span class="en">bear</span></div>
+
+      <div class="mc ja sel"><img src="../../art/sprites/pig.png"><span class="w">ぶた</span></div>
+      <div class="knot"></div>
+      <div class="mc en done"><span class="en">cat</span></div>
+
+      <div class="mc ja done"><img src="../../art/sprites/bear.png"><span class="w">くま</span></div>
+      <div class="knot"></div>
+      <div class="mc en"><span class="en">owl</span></div>
+
+      <div class="mc ja"><img src="../../art/sprites/owl.png"><span class="w">ふくろう</span></div>
+      <div class="knot"></div>
+      <div class="mc en"><span class="en">pig</span></div>
+    </div>
+
+    <!-- 足もとの ひとこと。数字が 増える ところは 浮かぶ文字で 見せる -->
+    <div class="card say">
+      <img src="../../art/sprites/star.png">
+      <p><b>ぶた</b> だね！<br>おなじ いみの えいごを タップしてね</p>
+    </div>
+
+    <!-- 発音は ここで いつでも オン・オフ できる -->
+    <div class="tools">
+      <div class="tool on"><b>🔊</b>はつおん<br>ON</div>
+      <div class="tool"><b>💡</b>ヒント<br>のこり2</div>
+      <div class="tool"><b>🌈</b>みちのり</div>
+      <div class="tool off"><b>⏸</b>おやすみ</div>
+    </div>
+  </div>
+</section>
+<figcaption>② ウェーブ1 の 盤面（マッチング）<span>左＝日本語＋絵、右＝英語。そろうと ミントの リボンで つながって ✓。いま えらんでいる 札は ピンクの わくで 光る。</span></figcaption>
+</figure>
+
+<!-- ================= ③ マッチ成功 → 発音 ================= -->
+<figure>
+<section class="phone" id="f3">
+  <!-- うしろの 盤面は うすく のこす（どこで 起きたか 分かるように）-->
+  <div class="scr" style="filter:saturate(.9)">
+    <div class="hud">
+      <div class="card stat"><div class="k">ウェーブ</div><div class="v">1</div><div class="sub pk">どうぶつ</div></div>
+      <div class="card stat"><div class="k">せいかい</div><div class="v">3<span style="font-size:13px;opacity:.6">/4</span></div><div class="sub pk">ミス 0</div></div>
+      <div class="card stat"><div class="k">スコア</div><div class="v">⭐ 340</div><div class="sub">れんぞく ×3</div></div>
+    </div>
+    <div class="card stage">
+      <span class="wv">WAVE 1</span><span class="nm">どうぶつの もり</span>
+      <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+    </div>
+    <div class="bar"><i style="width:58%"></i></div>
+  </div>
+  <div class="dim"></div>
+  <div class="sp"   style="left:44px;top:206px;width:22px;height:22px;z-index:3"></div>
+  <div class="sp p" style="left:322px;top:226px;width:26px;height:26px;z-index:3"></div>
+  <div class="sp g" style="left:298px;top:640px;width:18px;height:18px;z-index:3"></div>
+  <div class="sp l" style="left:58px;top:668px;width:15px;height:15px;z-index:3"></div>
+  <div class="pop">
+    <div class="yay">やったね！ ⭐+100</div>
+    <img src="../../art/sprites/pig.png">
+    <div class="big">pig</div>
+    <div class="ipa">/pɪɡ/ ・ ピッグ</div>
+    <div class="ja">ぶた</div>
+    <div class="ring"><i></i><i></i><i></i><b>♪</b></div>
+    <div class="btns">
+      <div class="btn mint">♪ もういちど</div>
+      <div class="btn">つぎへ ▶</div>
+    </div>
+    <div class="note">はつおんは 下の ボタンで いつでも オフに できます</div>
+  </div>
+</section>
+<figcaption>③ そろった しゅんかん → 発音<span>絵・英語・発音記号・カタカナ・日本語を 1枚に。🔊 の わっかで「いま 鳴っている」ことを 止まった絵でも 見せる。</span></figcaption>
+</figure>
+
+<!-- ================= ④ ウェーブクリア ================= -->
+<figure>
+<section class="phone" id="f4">
+  <div class="sp"   style="left:40px;top:150px;width:20px;height:20px"></div>
+  <div class="sp p" style="left:330px;top:130px;width:24px;height:24px"></div>
+  <div class="sp g" style="left:300px;top:206px;width:14px;height:14px"></div>
+  <div class="sp l" style="left:54px;top:250px;width:16px;height:16px"></div>
+  <div class="sp p" style="left:26px;top:690px;width:18px;height:18px"></div>
+  <div class="sp g" style="left:348px;top:712px;width:15px;height:15px"></div>
+  <div class="scr">
+    <div class="clr">
+      <img src="../../art/sprites/star.png" style="width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 5px 7px var(--sh))">
+      <h2>ウェーブ1 クリア！</h2>
+      <div class="rank">✨ パーフェクト ✨</div>
+      <div class="sc">
+        <div><em>せいかい</em><b>4/4</b></div>
+        <div><em>じかん</em><b>0:32</b></div>
+        <div><em>ミス</em><b>0</b></div>
+      </div>
+      <div class="rew"><span>⭐ +480</span><span style="font-size:19px;opacity:.8">🍬 おかし ×1</span></div>
+      <div class="nxt">
+        <div class="h">つぎの ウェーブ</div>
+        <div class="t">WAVE 2 ・ たべものの まき</div>
+        <div class="chips"><span class="chip">cake</span><span class="chip">milk</span><span class="chip">egg</span><span class="chip">apple</span><span class="chip">+1</span></div>
+        <div style="font-size:11px;font-weight:700;opacity:.7;margin-top:7px">単語が 1つ ふえて、すこし 長く なります</div>
+      </div>
+      <div class="btn">つぎの ウェーブへ ▶</div>
+      <div class="btn lav sm" style="margin-top:7px;width:100%">きょうは ここまで</div>
+    </div>
+  </div>
+</section>
+<figcaption>④ ウェーブクリア<span>つぎの ウェーブの 中みを 先に 見せて「もう1回」に つなげる。ここで 何が むずかしく なるかを 1行で 言う。</span></figcaption>
+</figure>
+
+<!-- ================= ⑤ ウェーブの みちのり ================= -->
+<figure>
+<section class="phone" id="f5">
+  <div class="scr">
+    <div class="card head">
+      <h2>🌈 ウェーブの みちのり</h2>
+      <div class="x">✕</div>
+    </div>
+    <div class="wl">
+      <div class="wv1"><div class="n">1</div><div><div class="b1">どうぶつの もり</div><div class="b2">cat・pig・bear・owl</div></div>
+        <div class="r"><div class="st">★☆☆☆☆</div><div class="tag">クリア ✓</div></div></div>
+      <div class="wv1 cur"><div class="n">2</div><div><div class="b1">たべものの まき</div><div class="b2">cake・milk・egg・apple</div></div>
+        <div class="r"><div class="st">★☆☆☆☆</div><div class="tag" style="color:var(--pink-d)">いま ここ</div></div></div>
+      <div class="wv1 lock"><div class="n">3</div><div><div class="b1">いろと かず</div><div class="b2">red・blue・seven・nine</div></div>
+        <div class="r"><div class="st">★★☆☆☆</div><div class="tag">🔒</div></div></div>
+      <div class="wv1 lock"><div class="n">4</div><div><div class="b1">おうちの なか</div><div class="b2">door・chair・window</div></div>
+        <div class="r"><div class="st">★★☆☆☆</div><div class="tag">🔒</div></div></div>
+      <div class="wv1 lock"><div class="n">5</div><div><div class="b1">きもちの くに</div><div class="b2">happy・sleepy・hungry</div></div>
+        <div class="r"><div class="st">★★★☆☆</div><div class="tag">🔒</div></div></div>
+      <div class="wv1 lock"><div class="n">6</div><div><div class="b1">うごきの たに</div><div class="b2">jump・listen・choose</div></div>
+        <div class="r"><div class="st">★★★☆☆</div><div class="tag">🔒</div></div></div>
+      <div class="wv1 lock"><div class="n">7</div><div><div class="b1">がっこうの まち</div><div class="b2">teacher・library・homework</div></div>
+        <div class="r"><div class="st">★★★★☆</div><div class="tag">🔒</div></div></div>
+      <div class="wv1 lock"><div class="n">8</div><div><div class="b1">おしゃべりの 空</div><div class="b2">I'm hungry.・Let's go!</div></div>
+        <div class="r"><div class="st">★★★★★</div><div class="tag">🔒</div></div></div>
+      <div class="wv1 lock" style="border-style:dashed;border-color:rgba(224,95,158,.3);background:rgba(255,255,255,.5)">
+        <div class="n" style="font-size:19px">∞</div>
+        <div><div class="b1">この先も つづきます</div><div class="b2">ウェーブ9 からは 出た単語が まざって 出ます</div></div></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="card say" style="margin-top:2px">
+      <img src="../../art/sprites/owl.png">
+      <p>すすむほど <b>単語が 長く・数が 多く</b> なります。<br>クリアした ウェーブは いつでも 練習できます。</p>
+    </div>
+    <div class="btn mint" style="margin:0 2px">🔁 クリアした ウェーブを 練習する</div>
+  </div>
+</section>
+<figcaption>⑤ ウェーブの みちのり<span>「進むほど むずかしくなる」を 1画面で。単語の 数・長さ・抽象度で 5段階。文までいく。</span></figcaption>
+</figure>
+
+<!-- ================= ⑥ おとの せってい ================= -->
+<figure>
+<section class="phone" id="f6">
+  <div class="scr">
+    <div class="card head"><h2>🔊 おと の せってい</h2><div class="x">✕</div></div>
+    <div class="set">
+      <div class="sw"><div class="ic">🔊</div><div><div class="t1">はつおん を 鳴らす</div><div class="t2">そろったとき 英語を 読みあげます</div></div><div class="tg"></div></div>
+      <div class="sw"><div class="ic">🔁</div><div><div class="t1">2回 くりかえす</div><div class="t2">ゆっくり → ふつう の 2回</div></div><div class="tg"></div></div>
+      <div class="sl">
+        <div class="lb"><span>🐢</span><span>読みあげの はやさ</span><em>ゆっくり ×0.8</em></div>
+        <div class="track"><i></i><b></b><u style="left:2%">×0.5</u><u style="left:44%">×0.8</u><u style="right:2%">×1.2</u></div>
+      </div>
+      <div class="sw"><div class="ic">🎵</div><div><div class="t1">BGM</div><div class="t2">おかしの国の しずかな曲</div></div><div class="tg"></div></div>
+      <div class="sw"><div class="ic">🔔</div><div><div class="t1">こうか音</div><div class="t2">タップ・せいかい・ミス</div></div><div class="tg"></div></div>
+      <div class="sw"><div class="ic">📳</div><div><div class="t1">ふるえ</div><div class="t2">iPhone では 鳴りません</div></div><div class="tg off"></div></div>
+      <div class="sw"><div class="ic">🔤</div><div><div class="t1">出題の むき</div><div class="t2">どちらから 出すか</div></div>
+        <div class="seg"><b class="on">日→英</b><b>英→日</b><b>ミックス</b></div></div>
+      <div class="sw"><div class="ic">🅰</div><div><div class="t1">発音記号を 見せる</div><div class="t2">/pɪɡ/ と カタカナ</div></div><div class="tg"></div></div>
+    </div>
+    <div class="tip">はつおんを OFF に しても ゲームは あそべます（音が 出せない ところでも 遊べるように）。<br>読みあげは 端末の 音声を つかうので、ダウンロードは いりません。</div>
+    <div style="flex:1"></div>
+    <div class="btn mint" style="margin:0 2px">とじる</div>
+  </div>
+</section>
+<figcaption>⑥ おと の せってい<span>発音の ON/OFF は ここと 盤面の 🔊 の 2か所から。音を 切っても 遊べる、が きまり。</span></figcaption>
+</figure>
+
+</div>
+<script>
+/* リボン（そろった 組・いま つないでいる 線）は 札の いちを 測って 引く。
+   札の 高さを 変えるたびに 数字を 書きなおすと、かならず ずれるため。
+   [左の行, 右の行, しゅるい] —— done＝ミントの リボン／now＝いま つないでいる 点線 */
+const LINKS = [[0,1,'done'],[2,0,'done'],[1,3,'now']];
+const board = document.querySelector('#f2 .board');
+const svg   = document.getElementById('ribbon');
+const ja    = [...board.querySelectorAll('.mc.ja')];
+const en    = [...board.querySelectorAll('.mc.en')];
+const B     = board.getBoundingClientRect();
+svg.setAttribute('viewBox', `0 0 ${B.width} ${B.height}`);
+const mid = el => { const r = el.getBoundingClientRect();
+  return { l:r.left-B.left, r:r.right-B.left, y:r.top-B.top+r.height/2 }; };
+for (const [a,b,kind] of LINKS){
+  const L = mid(ja[a]), R = mid(en[b]);
+  const x1 = L.r, x2 = R.l, cx = (x2-x1)*0.55;
+  /* いま つないでいる 線は 指の 先まで（札の 手前で 止める）*/
+  const ex = kind === 'now' ? x2 - 6 : x2;
+  const d  = `M${x1} ${L.y} C${x1+cx} ${L.y} ${ex-cx} ${R.y} ${ex} ${R.y}`;
+  const add = (w,c,dash,op) => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke',c);
+    p.setAttribute('stroke-width',w); p.setAttribute('stroke-linecap','round');
+    if (dash) p.setAttribute('stroke-dasharray',dash);
+    p.setAttribute('opacity',op); svg.appendChild(p);
+  };
+  if (kind === 'done'){ add(8,'#8fe3c4',0,.95); add(2.5,'#fff',0,.7); }
+  else {
+    add(5,'#ff8fc4','9 8',1);
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',ex); c.setAttribute('cy',R.y); c.setAttribute('r',8);
+    c.setAttribute('fill','#fff'); c.setAttribute('opacity','.92'); svg.appendChild(c);
+  }
+}
+</script>
+</body>
+</html>
