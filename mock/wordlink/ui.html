@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>WORDLINK — UIイメージ</title>
+<!-- 英単語マッチングゲームの UIイメージ（モック）。
+     **おかしの国とは 別のゲーム**なので、ブランド・配色・字づかい・部品を
+     すべて 分けてあります。おかしの国の スプライトも パステルも 使いません。
+       ・キャラクターを 出さない（主役は 単語そのもの）
+       ・角丸は 10〜16px（おかしの国は 14〜20px）
+       ・影は 黒の 低い もの。紫がかった かげは 使わない
+       ・絵文字を 絵として 使わない（アイコンは 線の SVG）
+     配色は ダーク／ライトの 2つを 同じ HTMLから 出します
+     （html[data-theme] を 切りかえるだけ）。 -->
+<style>
+  /* ============ 配色トークン ============ */
+  [data-theme="dark"]{
+    --bg0:#070a1a; --bg1:#0e1430; --bg2:#151a3d;
+    --surf:rgba(255,255,255,.055); --surf2:rgba(255,255,255,.10); --surfS:rgba(255,255,255,.14);
+    --line:rgba(255,255,255,.12); --line2:rgba(255,255,255,.2);
+    --tx:#eaeeff; --tx2:#9aa3cc; --tx3:#6b739b;
+    --acc:#4cc9f0; --acc2:#8b7dff; --ok:#39d98a; --ng:#ff5d73; --warn:#ffc857;
+    --accSoft:rgba(76,201,240,.14); --okSoft:rgba(57,217,138,.13);
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  [data-theme="light"]{
+    --bg0:#eef1f9; --bg1:#f7f9fd; --bg2:#ffffff;
+    --surf:#ffffff; --surf2:#ffffff; --surfS:#ffffff;
+    --line:#dde3f0; --line2:#c7cfe3;
+    --tx:#101634; --tx2:#5c668a; --tx3:#8790ad;
+    --acc:#2563eb; --acc2:#6d3fe0; --ok:#0f9d6a; --ng:#dc3b55; --warn:#c98200;
+    --accSoft:rgba(37,99,235,.09); --okSoft:rgba(15,157,106,.1);
+    --shadow:0 8px 22px rgba(20,30,70,.1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#20243a; color:#cfd6f5; padding:26px;
+    font-family:-apple-system,"SF Pro Text","Helvetica Neue","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  [data-theme="light"] body{background:#dfe4f2;color:#2a3150}
+  h1.pt{font-size:19px;font-weight:700;letter-spacing:.02em}
+  p.pn{font-size:12.5px;opacity:.75;margin:6px 0 20px;line-height:1.6}
+  .row{display:flex;flex-wrap:wrap;gap:24px}
+  figure{width:393px}
+  figcaption{font-size:12.5px;margin-top:9px;line-height:1.55;font-weight:600}
+  figcaption span{display:block;font-size:11.5px;font-weight:400;opacity:.7;margin-top:2px}
+
+  /* ============ 画面のわく（iPhone 実寸 393x852） ============ */
+  .phone{position:relative;width:393px;height:852px;overflow:hidden;border-radius:30px;
+    color:var(--tx);box-shadow:0 18px 44px rgba(0,0,0,.42)}
+  [data-theme="dark"] .phone{
+    background:
+      radial-gradient(110% 70% at 50% -8%, #1d2557 0%, transparent 58%),
+      radial-gradient(80% 50% at 108% 18%, #2a1f5c 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg1) 0%, var(--bg0) 62%, #050713 100%);}
+  [data-theme="light"] .phone{
+    background:
+      radial-gradient(110% 70% at 50% -8%, #ffffff 0%, transparent 62%),
+      linear-gradient(180deg,var(--bg1) 0%, var(--bg0) 100%);}
+  .scr{position:absolute;inset:0;display:flex;flex-direction:column;
+    padding:16px 16px calc(20px);gap:12px}
+  /* 星（ダークのときだけ 見える 点）。ここが おかしの国の キラキラの かわり */
+  .star{position:absolute;border-radius:50%;background:#fff;opacity:.5}
+  [data-theme="light"] .star{display:none}
+  /* ライトのときだけ 敷く うすい 方眼 */
+  .grid{position:absolute;inset:0;opacity:0;pointer-events:none;
+    background:linear-gradient(90deg,rgba(20,40,120,.05) 1px,transparent 1px) 0 0/28px 28px,
+               linear-gradient(180deg,rgba(20,40,120,.05) 1px,transparent 1px) 0 0/28px 28px;
+    -webkit-mask-image:linear-gradient(180deg,#000,transparent 70%);
+            mask-image:linear-gradient(180deg,#000,transparent 70%)}
+  [data-theme="light"] .grid{opacity:1}
+
+  /* ============ 共通の 部品 ============ */
+  svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;display:block}
+  svg.i.sm{width:16px;height:16px}
+  .top{display:flex;align-items:center;gap:10px;height:34px;flex:0 0 auto}
+  .top .ico{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:var(--surf);border:1px solid var(--line);color:var(--tx2);flex:0 0 34px}
+  .top h2{font-size:15px;font-weight:700;letter-spacing:.01em}
+  .top .sp{flex:1}
+  .top .wv{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--acc);
+    background:var(--accSoft);border-radius:8px;padding:4px 9px}
+
+  .panel{background:var(--surf);border:1px solid var(--line);border-radius:16px}
+  [data-theme="light"] .panel{box-shadow:var(--shadow)}
+
+  .btn{border:none;border-radius:14px;font-family:inherit;font-weight:700;font-size:16px;
+    padding:15px 18px;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--acc);color:#04122b;letter-spacing:.02em}
+  [data-theme="light"] .btn{color:#fff}
+  .btn.ghost{background:var(--surf2);color:var(--tx);border:1px solid var(--line2)}
+  .btn.sm{font-size:13.5px;padding:11px 14px;border-radius:12px}
+
+  /* 数字は 等幅に する（そろわないと 読みにくい） */
+  .num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+  /* 3つの 指標（正解・連続・残り） */
+  .kpis{display:flex;align-items:center;padding:10px 4px}
+  .kpi{flex:1;text-align:center}
+  .kpi .k{font-size:10px;letter-spacing:.1em;color:var(--tx3);font-weight:700}
+  .kpi .v{font-size:19px;font-weight:700;margin-top:3px}
+  .kpi .v small{font-size:12px;color:var(--tx3);font-weight:600}
+  .kpi + .kpi{border-left:1px solid var(--line)}
+  .kpi .v.acc{color:var(--acc)} .kpi .v.ok{color:var(--ok)}
+
+  .bar{height:4px;border-radius:3px;background:var(--surf2);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:3px;background:var(--acc)}
+  .bar.ok i{background:var(--ok)}
+
+  /* ============ 盤面 ============ */
+  .board{position:relative;flex:1;display:grid;grid-template-columns:1fr 54px 1fr;
+    grid-template-rows:repeat(5,1fr);gap:10px 0}
+  .board svg.link{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .wc{position:relative;display:flex;flex-direction:column;justify-content:center;gap:2px;
+    padding:8px 12px;border-radius:14px;background:var(--surf);border:1px solid var(--line)}
+  [data-theme="light"] .wc{box-shadow:0 2px 6px rgba(20,30,70,.06)}
+  .wc .en{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .wc .ipa{font-size:11px;color:var(--tx3);font-weight:500}
+  .wc .ja{font-size:18px;font-weight:600;text-align:center}
+  .wc.r{align-items:center}
+  .wc .pos{position:absolute;right:9px;top:8px;font-size:9.5px;font-weight:700;
+    color:var(--tx3);letter-spacing:.06em}
+  /* えらんでいる 札 */
+  .wc.sel{border-color:var(--acc);background:var(--accSoft);
+    box-shadow:0 0 0 1px var(--acc), 0 6px 20px -6px var(--acc)}
+  /* そろった 札 —— 色だけに たよらず、左に 線と ✓ も 出す */
+  .wc.done{border-color:color-mix(in oklab,var(--ok) 55%,transparent);background:var(--okSoft)}
+  .wc.done::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;
+    border-radius:0 3px 3px 0;background:var(--ok)}
+  .wc.done .ck{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--ok)}
+  .wc.done .en,.wc.done .ja{opacity:.85}
+
+  /* 下の 道具 */
+  .tools{display:flex;gap:8px;flex:0 0 auto}
+  .tool{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+    padding:11px 6px;border-radius:13px;background:var(--surf);border:1px solid var(--line);
+    font-size:12.5px;font-weight:600;color:var(--tx2)}
+  .tool.on{color:var(--acc);border-color:color-mix(in oklab,var(--acc) 45%,transparent);background:var(--accSoft)}
+  .tool b{font-size:11px;color:var(--tx3);font-weight:700}
+
+  /* ============ 発音（下から 出る シート） ============ */
+  .dim{position:absolute;inset:0;background:rgba(3,6,20,.62)}
+  [data-theme="light"] .dim{background:rgba(20,30,70,.34)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;padding:18px 18px calc(22px);
+    background:var(--bg2);border-top:1px solid var(--line);border-radius:22px 22px 0 0;
+    box-shadow:0 -18px 46px rgba(0,0,0,.4)}
+  [data-theme="light"] .sheet{background:#fff}
+  .sheet .grab{width:38px;height:4px;border-radius:3px;background:var(--line2);margin:0 auto 14px}
+  .tagrow{display:flex;gap:6px;align-items:center;margin-bottom:9px}
+  .tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:7px;
+    background:var(--surf2);border:1px solid var(--line);color:var(--tx2)}
+  .tag.ok{color:var(--ok);border-color:color-mix(in oklab,var(--ok) 45%,transparent);background:var(--okSoft)}
+  .tag.acc{color:var(--acc);border-color:color-mix(in oklab,var(--acc) 45%,transparent);background:var(--accSoft)}
+  .word{font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  .ipa2{font-size:14px;color:var(--tx2);margin-top:5px;font-weight:500}
+  .mean{font-size:22px;font-weight:700;margin-top:10px}
+  /* 音が 鳴っている ことを 波形で 見せる（止まった 絵でも 分かる） */
+  .wave{display:flex;align-items:center;gap:3px;height:38px;margin:14px 0 2px}
+  .wave i{width:3px;border-radius:2px;background:var(--acc);opacity:.85}
+  .ex{margin-top:14px;padding:12px 13px;border-radius:13px;background:var(--surf);border:1px solid var(--line)}
+  .ex .e1{font-size:14.5px;line-height:1.45;font-weight:600}
+  .ex .e1 b{color:var(--acc)}
+  .ex .e2{font-size:12.5px;color:var(--tx2);margin-top:5px}
+  .sheet .btns{display:flex;gap:9px;margin-top:16px}
+  .sheet .btns .btn{flex:1}
+  .sheet .note{font-size:11px;color:var(--tx3);text-align:center;margin-top:11px}
+
+  /* ============ レベル・記録 ============ */
+  .lv{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:15px;
+    background:var(--surf);border:1px solid var(--line)}
+  [data-theme="light"] .lv{box-shadow:0 2px 6px rgba(20,30,70,.05)}
+  .lv.cur{border-color:var(--acc);background:var(--accSoft)}
+  .lv .tagn{flex:0 0 42px;height:42px;border-radius:12px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;background:var(--surf2);border:1px solid var(--line);
+    font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--tx2)}
+  .lv.cur .tagn{background:var(--acc);border-color:transparent;color:#04122b}
+  [data-theme="light"] .lv.cur .tagn{color:#fff}
+  .lv.done2 .tagn{color:var(--ok);border-color:color-mix(in oklab,var(--ok) 40%,transparent)}
+  .lv .b{flex:1;min-width:0}
+  .lv .t{font-size:15px;font-weight:700}
+  .lv .g{font-size:11.5px;color:var(--tx2);margin-top:2px}
+  .lv .bar{margin-top:8px}
+  .lv .r{flex:0 0 auto;text-align:right}
+  .lv .pct{font-size:13px;font-weight:700}
+  .lv .sub{font-size:10.5px;color:var(--tx3);margin-top:2px}
+
+  .hero{padding:16px}
+  .hero .k{font-size:11px;letter-spacing:.1em;color:var(--tx3);font-weight:700}
+  .hero .v{font-size:40px;font-weight:700;line-height:1.1;margin-top:4px}
+  .hero .v small{font-size:15px;color:var(--tx2);font-weight:600;margin-left:4px}
+
+  /* 1週間の 学習（1系列なので 凡例は いらない。目立たせるのは 今日だけ）*/
+  .chart{display:flex;align-items:flex-end;gap:8px;height:74px;margin-top:12px}
+  .chart .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:6px}
+  .chart .c i{display:block;border-radius:4px 4px 0 0;background:color-mix(in oklab,var(--acc) 42%,transparent)}
+  .chart .c.now i{background:var(--acc)}
+  .chart .c u{font-size:10px;text-align:center;color:var(--tx3);text-decoration:none;font-weight:600}
+  .chart .c.now u{color:var(--acc)}
+  .chLab{font-size:10.5px;color:var(--tx3);font-weight:600;margin-top:2px}
+  .step{position:relative;display:flex;align-items:center;gap:0;margin-top:2px}
+  .step::before{content:"";position:absolute;left:12%;right:12%;top:5.5px;height:1px;background:var(--line)}
+  .step .s{flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--tx3)}
+  .step .s i{display:block;width:12px;height:12px;border-radius:50%;margin:0 auto 6px;
+    background:var(--surf2);border:1px solid var(--line2)}
+  .step .s.done i{background:var(--ok);border-color:transparent}
+  .step .s.now i{background:var(--acc);border-color:transparent;box-shadow:0 0 0 4px var(--accSoft)}
+  .step .s.done,.step .s.now{color:var(--tx)}
+  .stepline{height:1px;background:var(--line);margin:-19px 12% 0;position:relative;z-index:-1}
+
+  /* ============ 設定 ============ */
+  .set{display:flex;flex-direction:column;gap:9px}
+  .sw{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;
+    background:var(--surf);border:1px solid var(--line)}
+  .sw .t1{font-size:14.5px;font-weight:600}
+  .sw .t2{font-size:11px;color:var(--tx3);margin-top:2px}
+  .sw .ic2{color:var(--tx2)}
+  .tg{margin-left:auto;flex:0 0 46px;width:46px;height:27px;border-radius:14px;position:relative;
+    background:var(--acc)}
+  .tg::after{content:"";position:absolute;top:3px;right:3px;width:21px;height:21px;border-radius:50%;background:#fff}
+  .tg.off{background:var(--surf2);border:1px solid var(--line2)}
+  .tg.off::after{right:auto;left:3px;background:var(--tx3)}
+  .seg{margin-left:auto;display:flex;gap:3px;background:var(--surf2);border:1px solid var(--line);
+    border-radius:11px;padding:3px}
+  .seg b{font-size:11.5px;font-weight:700;padding:5px 9px;border-radius:8px;color:var(--tx2)}
+  .seg b.on{background:var(--acc);color:#04122b}
+  [data-theme="light"] .seg b.on{color:#fff}
+  .note2{font-size:11px;color:var(--tx3);line-height:1.6;padding:2px 4px}
+
+  /* ============ タイトル ============ */
+  .logo{font-size:40px;font-weight:800;letter-spacing:.16em;line-height:1;
+    background:linear-gradient(100deg,var(--acc),var(--acc2));-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .logoSub{font-size:12px;letter-spacing:.4em;color:var(--tx3);font-weight:700;margin-top:10px}
+  .lede{font-size:13.5px;color:var(--tx2);line-height:1.7;margin-top:14px}
+  .lede b{color:var(--tx);font-weight:700}
+  .pillrow{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+  .pill{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:9px;
+    background:var(--surf);border:1px solid var(--line);color:var(--tx2)}
+</style>
+</head>
+<body>
+<!-- 線の アイコン。絵文字を 絵として つかわない（見た目が 端末まかせに なるため）-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ic-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="ic-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7"/><path d="M19 6a9 9 0 010 12"/></symbol>
+  <symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.5.9 1.2.9 1.9V16h5.2v-.2c0-.7.3-1.4.9-1.9A6 6 0 0012 3z"/></symbol>
+  <symbol id="ic-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="ic-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V20a2 2 0 11-4 0v-.1A1.6 1.6 0 008 18.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 003.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H8a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V8a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></symbol>
+  <symbol id="ic-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+  <symbol id="ic-repeat" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></symbol>
+  <symbol id="ic-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/></symbol>
+  <symbol id="ic-type" viewBox="0 0 24 24"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></symbol>
+  <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></symbol>
+</defs></svg>
+
+<h1 class="pt">WORDLINK — UIイメージ（モック）</h1>
+<p class="pn">おかしの国とは 別のゲーム。キャラクターを 出さず、単語そのものを 主役に した 画面です。iPhone 実寸 393×852。ダーク／ライトの 2つを 同じ HTMLから 出しています。</p>
+<div class="row">
+
+<!-- ================= ① タイトル ================= -->
+<figure>
+<section class="phone" id="f1">
+  <div class="grid"></div>
+  <div class="star" style="left:42px;top:96px;width:2px;height:2px"></div>
+  <div class="star" style="left:318px;top:74px;width:3px;height:3px;opacity:.7"></div>
+  <div class="star" style="left:276px;top:158px;width:2px;height:2px"></div>
+  <div class="star" style="left:88px;top:212px;width:2px;height:2px;opacity:.35"></div>
+  <div class="star" style="left:350px;top:262px;width:2px;height:2px"></div>
+  <div class="star" style="left:26px;top:300px;width:3px;height:3px;opacity:.6"></div>
+  <div class="scr">
+    <div class="top">
+      <div class="sp"></div>
+      <div class="ico"><svg class="i"><use href="#ic-chart"/></svg></div>
+      <div class="ico"><svg class="i"><use href="#ic-gear"/></svg></div>
+    </div>
+
+    <div style="margin-top:44px">
+      <div class="logo">WORDLINK</div>
+      <div class="logoSub">英 単 語 リ ン ク</div>
+      <div class="lede">日本語と 英語を つないで 消す。<br><b>ウェーブが 進むほど 語は 長く、数は 多く。</b></div>
+      <div class="pillrow">
+        <span class="pill">小学〜大学・TOEIC</span><span class="pill">7,200語</span><span class="pill">1回 90秒</span>
+      </div>
+    </div>
+
+    <!-- つながりの 図。キャラの かわりに これが 表紙の 絵に なる -->
+    <svg viewBox="0 0 361 230" style="width:100%;margin-top:4px;flex:1">
+      <defs>
+        <!-- userSpaceOnUse に すること。objectBoundingBox の ままだと
+             まっすぐな 線（arrive の 行）は 箱の 高さが 0に なり、
+             グラデーションが つぶれて **線が 1本 消えます** -->
+        <linearGradient id="lg1" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="232" y2="0">
+          <stop offset="0" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--acc2)"/>
+        </linearGradient>
+      </defs>
+      <g stroke="url(#lg1)" stroke-width="1.8" fill="none" opacity=".9">
+        <path d="M150 40 C186 40 196 115 232 115"/>
+        <path d="M150 115 C186 115 196 40 232 40"/>
+        <path d="M150 190 C186 190 196 190 232 190"/>
+      </g>
+      <g font-size="15" font-weight="700" fill="var(--tx)" font-family="inherit">
+        <text x="138" y="45" text-anchor="end">weather</text>
+        <text x="138" y="120" text-anchor="end">decide</text>
+        <text x="138" y="195" text-anchor="end">arrive</text>
+        <text x="246" y="45">決める</text>
+        <text x="246" y="120">天気</text>
+        <text x="246" y="195">到着する</text>
+      </g>
+      <g fill="var(--acc)">
+        <circle cx="150" cy="40" r="3.6"/><circle cx="150" cy="115" r="3.6"/><circle cx="150" cy="190" r="3.6"/>
+        <circle cx="232" cy="40" r="3.6"/><circle cx="232" cy="115" r="3.6"/><circle cx="232" cy="190" r="3.6"/>
+      </g>
+    </svg>
+
+    <div class="panel" style="padding:11px 14px;display:flex;align-items:center;gap:10px">
+      <svg class="i sm" style="color:var(--ok)"><use href="#ic-check"/></svg>
+      <div style="font-size:12.5px;color:var(--tx2)">連続 <b style="color:var(--tx)">7日</b> ／ 今日 <b style="color:var(--tx)">22分・15語</b></div>
+    </div>
+    <div class="btn"><svg class="i"><use href="#ic-play"/></svg>はじめる</div>
+    <div class="btn ghost sm" style="margin-top:-4px">つづきから（WAVE 12・中学）</div>
+  </div>
+</section>
+<figcaption>① タイトル<span>キャラクターを 置かず、つながりの 図を 表紙の 絵に する。語と 意味が 線で つながる ＝ このゲームが 何かを 1枚で 言う。</span></figcaption>
+</figure>
+
+<!-- ================= ② レベルを選ぶ ================= -->
+<figure>
+<section class="phone" id="f2">
+  <div class="grid"></div>
+  <div class="scr">
+    <div class="top">
+      <div class="ico"><svg class="i"><use href="#ic-back"/></svg></div>
+      <h2>レベルを選ぶ</h2><div class="sp"></div>
+    </div>
+    <div class="note2">学年は 目安です。<b style="color:var(--acc)">どのレベルも いつでも 選べます。</b>下の 復習も、上への 挑戦も 自由です。</div>
+    <div class="set" style="gap:10px">
+      <div class="lv done2"><div class="tagn">L1</div>
+        <div class="b"><div class="t">小学</div><div class="g">600語 ・ 英検5〜4級</div>
+          <div class="bar ok"><i style="width:100%"></i></div></div>
+        <div class="r"><div class="pct" style="color:var(--ok)">100%</div><div class="sub">修了</div></div></div>
+      <div class="lv cur"><div class="tagn">L2</div>
+        <div class="b"><div class="t">中学</div><div class="g">1,200語 ・ 英検4〜3級</div>
+          <div class="bar"><i style="width:62%"></i></div></div>
+        <div class="r"><div class="pct" style="color:var(--acc)">62%</div><div class="sub">WAVE 12</div></div></div>
+      <div class="lv"><div class="tagn">L3</div>
+        <div class="b"><div class="t">高校</div><div class="g">2,400語 ・ 共通テスト／英検2級</div>
+          <div class="bar"><i style="width:8%"></i></div></div>
+        <div class="r"><div class="pct">8%</div><div class="sub">193語</div></div></div>
+      <div class="lv"><div class="tagn">L4</div>
+        <div class="b"><div class="t">大学・社会人</div><div class="g">3,000語 ・ TOEIC／英検準1級</div>
+          <div class="bar"><i style="width:2%"></i></div></div>
+        <div class="r"><div class="pct">2%</div><div class="sub">61語</div></div></div>
+      <div class="lv"><div class="tagn" style="font-size:11px">MIX</div>
+        <div class="b"><div class="t">総復習</div><div class="g">7,200語から ランダム ・ 終わりなし</div>
+          <div class="bar"><i style="width:34%"></i></div></div>
+        <div class="r"><div class="pct">34%</div><div class="sub">2,448語</div></div></div>
+    </div>
+    <div class="sp" style="flex:1"></div>
+    <div class="panel" style="padding:13px 14px;display:flex;gap:11px;align-items:center">
+      <svg class="i" style="color:var(--acc);flex:0 0 20px"><use href="#ic-target"/></svg>
+      <div style="font-size:12.5px;line-height:1.5">迷ったら <b>30秒の レベル判定</b>。10問で ちょうどの ウェーブから 始められます。</div>
+    </div>
+    <div class="btn ghost sm">レベル判定を受ける</div>
+    <div class="btn">L2 中学ではじめる</div>
+  </div>
+</section>
+<figcaption>② レベルを選ぶ<span>学年で ロックしない。小学生が 上を のぞくのも、大学生が 中学を 復習するのも ふつうの ことなので。</span></figcaption>
+</figure>
+
+<!-- ================= ③ 盤面 ================= -->
+<figure>
+<section class="phone" id="f3">
+  <div class="grid"></div>
+  <div class="scr">
+    <div class="top">
+      <div class="ico"><svg class="i"><use href="#ic-back"/></svg></div>
+      <span class="wv">WAVE 12</span>
+      <h2 style="font-weight:600;color:var(--tx2);font-size:13px">L2 中学 ・ 動詞と天気</h2>
+      <div class="sp"></div>
+      <div class="ico"><svg class="i"><use href="#ic-pause"/></svg></div>
+    </div>
+
+    <div class="panel kpis">
+      <div class="kpi"><div class="k">正解</div><div class="v num">2<small>/5</small></div></div>
+      <div class="kpi"><div class="k">連続</div><div class="v num acc">×3</div></div>
+      <div class="kpi"><div class="k">残り</div><div class="v num">0:42</div></div>
+      <div class="kpi"><div class="k">XP</div><div class="v num">+180</div></div>
+    </div>
+    <div class="bar"><i style="width:47%"></i></div>
+
+    <div class="board">
+      <svg class="link" id="link3"></svg>
+
+      <div class="wc done"><span class="pos">動</span><span class="en">decide</span><span class="ipa">/dɪˈsaɪd/</span>
+        <svg class="i sm ck"><use href="#ic-check"/></svg></div>
+      <div></div>
+      <div class="wc r"><span class="ja">天気</span></div>
+
+      <div class="wc done"><span class="pos">名</span><span class="en">weather</span><span class="ipa">/ˈweðər/</span>
+        <svg class="i sm ck"><use href="#ic-check"/></svg></div>
+      <div></div>
+      <div class="wc r"><span class="ja">危険な</span></div>
+
+      <div class="wc sel"><span class="pos">形</span><span class="en">dangerous</span><span class="ipa">/ˈdeɪndʒərəs/</span></div>
+      <div></div>
+      <div class="wc r done"><span class="ja">台所</span><svg class="i sm ck"><use href="#ic-check"/></svg></div>
+
+      <div class="wc"><span class="pos">動</span><span class="en">arrive</span><span class="ipa">/əˈraɪv/</span></div>
+      <div></div>
+      <div class="wc r done"><span class="ja">決める</span><svg class="i sm ck"><use href="#ic-check"/></svg></div>
+
+      <div class="wc"><span class="pos">名</span><span class="en">kitchen</span><span class="ipa">/ˈkɪtʃɪn/</span></div>
+      <div></div>
+      <div class="wc r"><span class="ja">到着する</span></div>
+    </div>
+
+    <div class="tools">
+      <div class="tool on"><svg class="i sm"><use href="#ic-sound"/></svg>発音 ON</div>
+      <div class="tool"><svg class="i sm"><use href="#ic-bulb"/></svg>ヒント <b>2</b></div>
+      <div class="tool"><svg class="i sm"><use href="#ic-doc"/></svg>例文</div>
+    </div>
+  </div>
+</section>
+<figcaption>③ 盤面<span>左＝英語＋発音記号＋品詞、右＝意味。つながった 組は 緑の 線・左の 帯・チェックの 3つで 示す（色だけに たよらない）。</span></figcaption>
+</figure>
+
+<!-- ================= ④ 正解 → 発音 ================= -->
+<figure>
+<section class="phone" id="f4">
+  <div class="grid"></div>
+  <div class="scr">
+    <div class="top">
+      <div class="ico"><svg class="i"><use href="#ic-back"/></svg></div>
+      <span class="wv">WAVE 12</span>
+      <h2 style="font-weight:600;color:var(--tx2);font-size:13px">L2 中学 ・ 動詞と天気</h2>
+      <div class="sp"></div>
+      <div class="ico"><svg class="i"><use href="#ic-pause"/></svg></div>
+    </div>
+    <div class="panel kpis">
+      <div class="kpi"><div class="k">正解</div><div class="v num">3<small>/5</small></div></div>
+      <div class="kpi"><div class="k">連続</div><div class="v num acc">×4</div></div>
+      <div class="kpi"><div class="k">残り</div><div class="v num">0:38</div></div>
+      <div class="kpi"><div class="k">XP</div><div class="v num">+260</div></div>
+    </div>
+    <div class="bar"><i style="width:62%"></i></div>
+    <div class="board">
+      <div class="wc done"><span class="pos">動</span><span class="en">decide</span><span class="ipa">/dɪˈsaɪd/</span>
+        <svg class="i sm ck"><use href="#ic-check"/></svg></div><div></div>
+      <div class="wc r"><span class="ja">天気</span></div>
+      <div class="wc done"><span class="pos">名</span><span class="en">weather</span><span class="ipa">/ˈweðər/</span>
+        <svg class="i sm ck"><use href="#ic-check"/></svg></div><div></div>
+      <div class="wc r done"><span class="ja">危険な</span><svg class="i sm ck"><use href="#ic-check"/></svg></div>
+      <div class="wc done"><span class="pos">形</span><span class="en">dangerous</span><span class="ipa">/ˈdeɪndʒərəs/</span>
+        <svg class="i sm ck"><use href="#ic-check"/></svg></div><div></div>
+      <div class="wc r done"><span class="ja">台所</span><svg class="i sm ck"><use href="#ic-check"/></svg></div>
+      <div class="wc"><span class="pos">動</span><span class="en">arrive</span><span class="ipa">/əˈraɪv/</span></div><div></div>
+      <div class="wc r done"><span class="ja">決める</span><svg class="i sm ck"><use href="#ic-check"/></svg></div>
+      <div class="wc"><span class="pos">名</span><span class="en">kitchen</span><span class="ipa">/ˈkɪtʃɪn/</span></div><div></div>
+      <div class="wc r"><span class="ja">到着する</span></div>
+    </div>
+  </div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="tagrow"><span class="tag ok">正解 ＋80 XP</span><span class="tag">形容詞</span><span class="tag acc">英検3級</span></div>
+    <div class="word">dangerous</div>
+    <div class="ipa2">/ˈdeɪndʒərəs/ ・ 第1音節を 強く</div>
+    <div class="mean">危険な</div>
+    <div class="wave">
+      <i style="height:22%"></i><i style="height:48%"></i><i style="height:74%"></i><i style="height:96%"></i>
+      <i style="height:62%"></i><i style="height:38%"></i><i style="height:80%"></i><i style="height:100%"></i>
+      <i style="height:56%"></i><i style="height:30%"></i><i style="height:66%"></i><i style="height:88%"></i>
+      <i style="height:44%"></i><i style="height:70%"></i><i style="height:34%"></i><i style="height:52%"></i>
+      <i style="height:24%"></i><i style="height:42%"></i><i style="height:18%"></i><i style="height:28%"></i>
+      <i style="height:14%"></i><i style="height:22%"></i><i style="height:10%"></i><i style="height:16%"></i>
+    </div>
+    <div class="ex">
+      <div class="e1">This road is <b>dangerous</b> at night.</div>
+      <div class="e2">この道は 夜は 危険だ。</div>
+    </div>
+    <div class="btns">
+      <div class="btn ghost"><svg class="i"><use href="#ic-sound"/></svg>もう一度</div>
+      <div class="btn">次へ</div>
+    </div>
+    <div class="note note2" style="text-align:center">自動で 次へ進む ／ 発音は 設定で オフにできます</div>
+  </div>
+</section>
+<figcaption>④ 正解 → 発音<span>下から 出る シート。スピーカーの 絵の かわりに 波形で「いま 鳴っている」ことを 示す。例文まで 1枚で 見せる。</span></figcaption>
+</figure>
+
+<!-- ================= ⑤ ウェーブ結果 ================= -->
+<figure>
+<section class="phone" id="f5">
+  <div class="grid"></div>
+  <div class="star" style="left:60px;top:120px;width:2px;height:2px"></div>
+  <div class="star" style="left:330px;top:150px;width:3px;height:3px;opacity:.6"></div>
+  <div class="scr">
+    <div class="top"><div class="sp"></div>
+      <div class="ico"><svg class="i"><use href="#ic-close"/></svg></div></div>
+
+    <div style="margin-top:20px">
+      <span class="wv">WAVE 12</span>
+      <div style="font-size:30px;font-weight:700;letter-spacing:-.01em;margin-top:12px">クリア</div>
+      <div style="font-size:13px;color:var(--tx2);margin-top:5px">L2 中学 ・ 動詞と天気</div>
+    </div>
+
+    <div class="panel hero" style="margin-top:14px">
+      <div class="k">正 解 率</div>
+      <div class="v num">100<small>%</small> <span style="font-size:15px;color:var(--tx2);font-weight:600">5/5語</span></div>
+      <div class="bar ok" style="margin-top:12px"><i style="width:100%"></i></div>
+      <div class="chLab" style="margin-top:8px">これまでの 平均 88% ／ 自己ベスト 更新</div>
+    </div>
+
+    <div class="panel kpis" style="padding:13px 4px">
+      <div class="kpi"><div class="k">時間</div><div class="v num">0:38</div></div>
+      <div class="kpi"><div class="k">最大連続</div><div class="v num acc">×5</div></div>
+      <div class="kpi"><div class="k">獲得</div><div class="v num ok">+340 XP</div></div>
+    </div>
+
+    <div class="panel" style="padding:14px">
+      <div style="font-size:11px;letter-spacing:.1em;color:var(--tx3);font-weight:700">次 の ウ ェ ー ブ</div>
+      <div style="font-size:17px;font-weight:700;margin-top:6px">WAVE 13 ・ 学校と生活</div>
+      <div class="pillrow" style="margin-top:9px">
+        <span class="pill">subject</span><span class="pill">absent</span><span class="pill">borrow</span><span class="pill">+3</span>
+      </div>
+      <div class="chLab" style="margin-top:10px">語数 5 → 6 ／ 制限時間 90秒 ／ 4文字以上の語が 増えます</div>
+    </div>
+
+    <div class="panel" style="padding:14px">
+      <div style="font-size:11px;letter-spacing:.1em;color:var(--tx3);font-weight:700">こ の ウ ェ ー ブ の 5 語</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:11px;font-size:13.5px">
+        <div style="display:flex;gap:9px"><b style="flex:0 0 96px">decide</b><span style="color:var(--tx2)">決める</span>
+          <span class="sp" style="flex:1"></span><svg class="i sm" style="color:var(--ok)"><use href="#ic-check"/></svg></div>
+        <div style="display:flex;gap:9px"><b style="flex:0 0 96px">weather</b><span style="color:var(--tx2)">天気</span>
+          <span class="sp" style="flex:1"></span><svg class="i sm" style="color:var(--ok)"><use href="#ic-check"/></svg></div>
+        <div style="display:flex;gap:9px"><b style="flex:0 0 96px">dangerous</b><span style="color:var(--tx2)">危険な</span>
+          <span class="sp" style="flex:1"></span><svg class="i sm" style="color:var(--ok)"><use href="#ic-check"/></svg></div>
+        <div style="display:flex;gap:9px"><b style="flex:0 0 96px">arrive</b><span style="color:var(--tx2)">到着する</span>
+          <span class="sp" style="flex:1"></span><svg class="i sm" style="color:var(--ok)"><use href="#ic-check"/></svg></div>
+        <div style="display:flex;gap:9px"><b style="flex:0 0 96px">kitchen</b><span style="color:var(--tx2)">台所</span>
+          <span class="sp" style="flex:1"></span><svg class="i sm" style="color:var(--ok)"><use href="#ic-check"/></svg></div>
+      </div>
+    </div>
+    <div class="sp" style="flex:1"></div>
+    <div class="btn">次のウェーブへ</div>
+    <div class="btn ghost sm">今日はここまで（3ウェーブ・15語）</div>
+  </div>
+</section>
+<figcaption>⑤ ウェーブ結果<span>円グラフは 使わない。1つの 割合は 大きな 数字と 細い バーの ほうが 速く 読めるため。次に 何が 難しくなるかを 1行で 言う。</span></figcaption>
+</figure>
+
+<!-- ================= ⑥ 記録 ================= -->
+<figure>
+<section class="phone" id="f6">
+  <div class="grid"></div>
+  <div class="scr">
+    <div class="top">
+      <div class="ico"><svg class="i"><use href="#ic-back"/></svg></div>
+      <h2>記録</h2><div class="sp"></div>
+      <div class="ico"><svg class="i"><use href="#ic-gear"/></svg></div>
+    </div>
+
+    <div class="panel hero">
+      <div class="k">連 続 学 習</div>
+      <div class="v num">7<small>日</small></div>
+      <!-- 1週間の 学習時間。1系列なので 凡例は 置かず、今日だけ 濃くする -->
+      <div class="chLab" style="margin-top:14px">今週の 学習時間（分）</div>
+      <div class="chart">
+        <div class="c"><i style="height:38%"></i><u>月</u></div>
+        <div class="c"><i style="height:52%"></i><u>火</u></div>
+        <div class="c"><i style="height:26%"></i><u>水</u></div>
+        <div class="c"><i style="height:70%"></i><u>木</u></div>
+        <div class="c"><i style="height:44%"></i><u>金</u></div>
+        <div class="c"><i style="height:16%"></i><u>土</u></div>
+        <div class="c now"><i style="height:88%"></i><u>今日</u></div>
+      </div>
+      <div class="chLab" style="margin-top:7px">今日 22分 ／ 週の合計 1時間52分</div>
+    </div>
+
+    <div class="panel" style="padding:15px">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div style="font-size:11px;letter-spacing:.1em;color:var(--tx3);font-weight:700">覚 え た 語</div>
+        <div class="sp" style="flex:1"></div>
+        <div class="num" style="font-size:20px;font-weight:700">2,448</div>
+        <div style="font-size:12px;color:var(--tx3)">/ 7,200語</div>
+      </div>
+      <div class="bar" style="margin-top:10px"><i style="width:34%"></i></div>
+      <div class="step" style="margin-top:16px">
+        <div class="s done"><i></i>L1 小学</div>
+        <div class="s now"><i></i>L2 中学</div>
+        <div class="s"><i></i>L3 高校</div>
+        <div class="s"><i></i>L4 大学</div>
+      </div>
+    </div>
+
+    <div class="panel" style="padding:14px;display:flex;align-items:center;gap:12px">
+      <svg class="i" style="color:var(--warn);flex:0 0 20px"><use href="#ic-repeat"/></svg>
+      <div style="flex:1">
+        <div style="font-size:14.5px;font-weight:700">今日の 復習 24語</div>
+        <div class="chLab" style="margin-top:2px">間違えた語は 1日 → 3日 → 7日 と 間を あけて 出ます</div>
+      </div>
+    </div>
+    <div class="btn ghost sm" style="margin-top:-4px">復習をはじめる</div>
+
+    <div class="panel" style="padding:14px">
+      <div style="font-size:11px;letter-spacing:.1em;color:var(--tx3);font-weight:700">よ く 間 違 え る 語</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:11px">
+        <div style="display:flex;align-items:baseline;gap:9px;font-size:14px">
+          <b style="font-weight:700">through</b><span style="color:var(--tx2);font-size:13px">〜を通って</span>
+          <span class="sp" style="flex:1"></span><span class="num" style="color:var(--ng);font-size:12.5px">4回</span></div>
+        <div style="display:flex;align-items:baseline;gap:9px;font-size:14px">
+          <b style="font-weight:700">though</b><span style="color:var(--tx2);font-size:13px">〜だけれど</span>
+          <span class="sp" style="flex:1"></span><span class="num" style="color:var(--ng);font-size:12.5px">3回</span></div>
+        <div style="display:flex;align-items:baseline;gap:9px;font-size:14px">
+          <b style="font-weight:700">weather</b><span style="color:var(--tx2);font-size:13px">天気</span>
+          <span class="sp" style="flex:1"></span><span class="num" style="color:var(--warn);font-size:12.5px">2回</span></div>
+      </div>
+    </div>
+    <div class="sp" style="flex:1"></div>
+    <div class="btn">つづきから（WAVE 13）</div>
+  </div>
+</section>
+<figcaption>⑥ 記録<span>続けている ことが 見えるほど 続く。連続日数・今週の 時間・覚えた語・復習の たまり を 1画面に。</span></figcaption>
+</figure>
+
+<!-- ================= ⑦ 設定 ================= -->
+<figure>
+<section class="phone" id="f7">
+  <div class="grid"></div>
+  <div class="scr">
+    <div class="top">
+      <div class="ico"><svg class="i"><use href="#ic-back"/></svg></div>
+      <h2>設定</h2><div class="sp"></div>
+    </div>
+    <div class="set">
+      <div class="sw"><svg class="i ic2"><use href="#ic-sound"/></svg>
+        <div><div class="t1">発音を鳴らす</div><div class="t2">正解のとき 英語を 読み上げる</div></div><div class="tg"></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-play"/></svg>
+        <div><div class="t1">読み上げ速度</div></div>
+        <div class="seg"><b>×0.8</b><b class="on">×1.0</b><b>×1.2</b></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-repeat"/></svg>
+        <div><div class="t1">出題の向き</div></div>
+        <div class="seg"><b class="on">英→日</b><b>日→英</b><b>両方</b></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-type"/></svg>
+        <div><div class="t1">発音記号を表示</div><div class="t2">/ˈdeɪndʒərəs/ のように 出す</div></div><div class="tg"></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-type"/></svg>
+        <div><div class="t1">カタカナ表記</div><div class="t2">L1 小学では 最初から ON</div></div><div class="tg off"></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-doc"/></svg>
+        <div><div class="t1">例文を表示</div><div class="t2">正解のとき 使いかたも 見せる</div></div><div class="tg"></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-moon"/></svg>
+        <div><div class="t1">画面</div></div>
+        <div class="seg"><b class="on">ダーク</b><b>ライト</b><b>自動</b></div></div>
+      <div class="sw"><svg class="i ic2"><use href="#ic-target"/></svg>
+        <div><div class="t1">1日の目標</div><div class="t2">達成すると 連続日数が 伸びます</div></div>
+        <div class="seg"><b>10語</b><b class="on">20語</b><b>40語</b></div></div>
+    </div>
+    <div class="note2">発音を OFF にしても 遊べます（音を 出せない 場所でも 使えるように）。<br>読み上げは 端末の 音声を 使うので、追加の ダウンロードは いりません。</div>
+    <div class="sp" style="flex:1"></div>
+    <div class="btn ghost">閉じる</div>
+  </div>
+</section>
+<figcaption>⑦ 設定<span>年齢の 幅が 広いので、発音記号・カタカナ・例文・画面の 明るさを 1つずつ 切れるように する。</span></figcaption>
+</figure>
+
+</div>
+<script>
+/* つながりの 線は 札の いちを 測って 引く。
+   札の 大きさを 変えるたびに 数字を 書きなおすと、かならず ずれるため。
+   [左の行, 右の行, しゅるい] —— done＝つながった／now＝いま つないでいる */
+const LINKS = [[0,3,'done'],[1,0,'done'],[2,1,'now']];
+const board = document.querySelector('#f3 .board');
+const svg   = document.getElementById('link3');
+const cells = [...board.children].filter(n => n.classList.contains('wc'));
+const left  = cells.filter((_,i) => i % 2 === 0);
+const right = cells.filter((_,i) => i % 2 === 1);
+const B = board.getBoundingClientRect();
+svg.setAttribute('viewBox', `0 0 ${B.width} ${B.height}`);
+const mid = el => { const r = el.getBoundingClientRect();
+  return { l:r.left-B.left, r:r.right-B.left, y:r.top-B.top+r.height/2 }; };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+for (const [a,b,kind] of LINKS){
+  const L = mid(left[a]), R = mid(right[b]);
+  const x1 = L.r, x2 = R.l, cx = (x2-x1)*0.6;
+  const ex = kind === 'now' ? x2 - 5 : x2;
+  const d  = `M${x1} ${L.y} C${x1+cx} ${L.y} ${ex-cx} ${R.y} ${ex} ${R.y}`;
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',d); p.setAttribute('fill','none'); p.setAttribute('stroke-linecap','round');
+  if (kind === 'done'){
+    p.setAttribute('stroke','var(--ok)'); p.setAttribute('stroke-width','2');
+    p.style.filter = 'drop-shadow(0 0 5px color-mix(in oklab, var(--ok) 60%, transparent))';
+  } else {
+    p.setAttribute('stroke','var(--acc)'); p.setAttribute('stroke-width','2');
+    p.setAttribute('stroke-dasharray','6 6');
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',ex); c.setAttribute('cy',R.y); c.setAttribute('r',4.5);
+    c.setAttribute('fill','var(--acc)'); svg.appendChild(c);
+  }
+  svg.appendChild(p);
+}
+</script>
+</body>
+</html>
