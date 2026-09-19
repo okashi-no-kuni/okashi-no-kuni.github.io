@@ -14,7 +14,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const OUT  = resolve(here, 'shots');
 mkdirSync(OUT, { recursive: true });
 
-const NAMES = ['title', 'board', 'sound', 'clear', 'waves', 'settings'];
+const NAMES = ['title', 'course', 'board-basic', 'board-adv', 'sound-basic', 'sound-adv',
+               'clear', 'waves', 'settings'];
 
 const b = await launch();
 const p = await b.newPage({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 2 });
@@ -39,7 +40,7 @@ for (let i = 0; i < NAMES.length; i++){
 /* ぜんぶ ならべた 1まい（ぱっと 見るため）。
    ここだけ 等倍で 撮る ——2倍だと よこ 5000px・2.5MB に なって、
    ぱっと 見るための 絵なのに かえって 開きにくい */
-const p2 = await b.newPage({ viewport: { width: 2720, height: 1000 }, deviceScaleFactor: 1 });
+const p2 = await b.newPage({ viewport: { width: 4000, height: 1000 }, deviceScaleFactor: 1 });
 await p2.goto('file://' + resolve(here, 'ui.html'));
 await p2.waitForTimeout(1200);
 const row = await p2.$('.row');
